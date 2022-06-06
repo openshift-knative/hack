@@ -2,9 +2,11 @@
 # Inputs:
 #  1: number of minimum worker nodes
 function scale_worker_nodes() {
-  echo "Reconcile workers to at least ${1} nodes"
+  num_workers=${1:?Pass num_workers as arg[1]}
 
-  additional_replicas=$(oc get machineset -n openshift-machine-api | awk '{print $2}' | tail -n +2 | awk -v workers="$1" '{sum+=$1} END {print workers-sum}')
+  echo "Reconcile workers to at least ${num_workers} nodes"
+
+  additional_replicas=$(oc get machineset -n openshift-machine-api | awk '{print $2}' | tail -n +2 | awk -v workers="${num_workers}" '{sum+=$1} END {print workers-sum}')
   echo "Additional replicas ${additional_replicas}"
 
   if [[ ${additional_replicas} -gt 0 ]]; then
@@ -20,7 +22,8 @@ function scale_worker_nodes() {
 # Inputs:
 #  1: machineset name
 function wait_for_machine_set_to_be_ready() {
-  replicas=$(oc get machineset -n openshift-machine-api "${1}" -o=jsonpath='{.spec.replicas}')
+  machineset_name=${1:?Pass machineset_name as arg[1]}
+  replicas=$(oc get machineset -n openshift-machine-api "${machineset_name}" -o=jsonpath='{.spec.replicas}')
   oc wait machineset "${machineset}" -n openshift-machine-api --for=jsonpath='{.status.readyReplicas}'="${replicas}" --timeout=30m
 }
 
