@@ -17,6 +17,10 @@ from subprocess import run, PIPE
 # 3. The repository has a Makefile in the root and has some targets containing the keyword
 #    `test`
 
+# Usage:
+# ./generate_ci.py \
+#   --openshift-release-remove git@github.com:pierDipi/release.git # Remote to your fork
+
 openshift_release_remote = "git@github.com:pierDipi/release.git"
 
 parser = argparse.ArgumentParser(description='Generate a test case')
@@ -101,10 +105,9 @@ openshift_versions = [
 ]
 
 supported_branches = [
-    "release-v1.0",
-    "release-v1.1",
-    "release-v1.2",
-    "release-v1.3",
+    # TODO for now we're reconciling only branches that come next to avoid changing existing working branches.
+    #  Eventually, we will generate all supported branches, this means that for now, we need to manually
+    #  delete periodic jobs from unsupported branches.
     "release-v1.4",
     "release-next"
 ]
@@ -142,7 +145,7 @@ def filter_targets(r, targets):
     new_targets = []
     print("Original targets", targets)
     for t in targets:
-        if t == "":
+        if len(t) == 0:
             continue
         t = t.rstrip("\t")
         t = t.rstrip(" ")
@@ -162,7 +165,7 @@ def filter_targets(r, targets):
 def get_test_targets(name, r):
     tests = run(f"cat {name}/Makefile | grep ^.*test.*:", stdout=PIPE, stderr=PIPE, universal_newlines=True,
                 shell=True)
-    return filter_targets(r, tests.stdout.split("\n"))
+    return filter_targets(r, tests.stdout.split('\n'))
 
 
 def get_images(path, name, r, prefix_ctx=""):
@@ -200,19 +203,16 @@ for name, r in repos.items():
     clone_repository(name)
 
 clone_repository(openshift_release, def_branch="master")
-result = run(f"git apply ../../Makefile.patch", stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True,
-             cwd=openshift_release)
-print(result.stdout)
-print(result.stderr)
-assert result.returncode == 0
 
 for name, r in repos.items():
 
-    run(f"rm -rf {openshift_release_ci_config}/{name}/*.yaml", stdout=PIPE, stderr=PIPE,
-        universal_newlines=True, shell=True)
-
     for ov in openshift_versions:
         for supported_branch in supported_branches:
+
+            # TODO: for now we're reconciling only supported branches, eventually we need to reconcile the entire
+            #  directory to make sure that we delete periodic jobs from unsupported branches
+            run(f"rm -rf {openshift_release_ci_config}/{name}/*{supported_branch}*.yaml", stdout=PIPE, stderr=PIPE,
+                universal_newlines=True, shell=True)
 
             if supported_branch == "release-next":
                 promotion_name = "knative-nightly"
@@ -334,7 +334,7 @@ for name, r in repos.items():
       - success
       - failure
       - error
-      report_template: '{{if eq .Status.State "success"}} :rainbow: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :rainbow: {{else}} :volcano: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :volcano: {{end}}'
+      report_template: '{{{{if eq .Status.State "success"}}}} :rainbow: Job *{{{{.Spec.Job}}}}* ended with *{{{{.Status.State}}}}*. <{{{{.Status.URL}}}}|View logs> :rainbow: {{{{else}}}} :volcano: Job *{{{{.Spec.Job}}}}* ended with *{{{{.Status.State}}}}*. <{{{{.Status.URL}}}}|View logs> :volcano: {{{{end}}}}'
     """
 
     dir = f"{openshift_release_ci_jobs}/{name}"
