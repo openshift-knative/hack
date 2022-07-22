@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import dataclasses
 import os
 import re
 import shutil
@@ -115,6 +116,11 @@ supported_branches = [
 openshift_release = "openshift/release"
 openshift_release_ci_config = openshift_release + "/ci-operator/config"
 openshift_release_ci_jobs = openshift_release + "/ci-operator/jobs"
+openshift_release_image_mirroring = f"{openshift_release}/core-services/image-mirroring/knative"
+openshift_release_registry_namespace = "openshift"
+openshift_release_registry = f"registry.ci.openshift.org/{openshift_release_registry_namespace}"
+
+quay_registry = "quay.io/openshift-knative"
 
 
 def checkout_branch(name, branch):
@@ -186,7 +192,11 @@ def get_images(path, name, r, prefix_ctx=""):
             prefix = r["images"]["prefix"]
 
         image_name = prefix + "-" + prefix_ctx + image_name
-        images.append((d.lstrip(name), image_name.upper()))
+        images.append(Image(
+            name=image_name.lower().replace("_", "-"),
+            env_name=image_name.upper().replace("-", "_"),
+            path=d.lstrip(name),
+        ))
 
     return sorted(images)
 
@@ -204,7 +214,21 @@ for name, r in repos.items():
 
 clone_repository(openshift_release, def_branch="master")
 
+
+@dataclasses.dataclass
+class Image:
+    name: str
+    env_name: str
+    path: str
+
+    def __lt__(self, other):
+        return self.name < other.name
+
+
 for name, r in repos.items():
+
+    org = name[:name.index('/')]
+    repo_name = name[name.index('/') + 1:]
 
     for ov in openshift_versions:
         for supported_branch in supported_branches:
@@ -234,16 +258,26 @@ for name, r in repos.items():
                                      prefix_ctx="test-")
             print("---> Test images", test_images)
 
+            mirroring_lines = []
+            for img in test_images:
+                frm = f"{openshift_release_registry}/{promotion_name}:{img.name}"
+                to = f"{quay_registry}/{img.name}:{promotion_name}"
+                mirroring_lines.append(f"{frm} {to}\n")
+
+            file_name = f"mapping_{promotion_name}_{repo_name}_quay"
+            with open(f"{openshift_release_image_mirroring}/{file_name}", "w") as f:
+                f.writelines(mirroring_lines)
+
             images_field = ""
             dependencies = ""
             for img in images + test_images:
                 images_field += f"""
-- dockerfile_path: openshift/{img[0]}/Dockerfile
-  to: {img[1].lower().replace('_', '-')}"""
+- dockerfile_path: openshift/{img.path}/Dockerfile
+  to: {img.name}"""
 
                 dependencies += f"""
-      - env: {img[1].replace('-', '_')}
-        name: {img[1].lower().replace('_', '-')}"""
+      - env: {img.env_name}
+        name: {img.name}"""
 
             tests_field = ""
             continuous = ""
@@ -292,7 +326,7 @@ promotion:
     {name[name.index("/") + 1:]}-src: src
   disabled: {"true" if openshift_versions[-1] != ov else "false"}
   name: {promotion_name}
-  namespace: openshift
+  namespace: {openshift_release_registry_namespace}
 releases:
   initial:
     integration:
@@ -311,12 +345,12 @@ resources:
 tests: {tests_field}
 zz_generated_metadata:
   branch: {supported_branch}
-  org: {name[:name.index('/')]}
-  repo: {name[name.index('/') + 1:]}
+  org: {org}
+  repo: {repo_name}
   variant: "{ov.replace('.', '')}"
     """
             dir = f"{openshift_release_ci_config}/{name}"
-            with open(f"{dir}/{name.replace('/', '-')}-{supported_branch}__{ov.replace('.', '')}.yaml", "w") as f:
+            with open(f"{dir}/{org}-{repo_name}-{supported_branch}__{ov.replace('.', '')}.yaml", "w") as f:
                 f.write(ci)
 
 result = run("make jobs ci-operator-config", stdout=PIPE, stderr=PIPE, universal_newlines=True,
