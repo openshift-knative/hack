@@ -6,7 +6,7 @@ import re
 import shutil
 from os import listdir
 from os.path import isfile, join
-from subprocess import run, PIPE
+from subprocess import run as shrun, PIPE
 
 # Assumptions with the idea of creating conventions over configurations.
 
@@ -52,6 +52,13 @@ repos = {
             # Optional prefix
             # Default to repository name
             "prefix": "knative-eventing"
+        },
+        "branch": {
+            # Additional supported branches
+            "additional": [
+                "release-v1.5",
+                "release-v1.6",
+            ]
         }
     },
     # TODO serving version branches, they have minor versions should we align those to be floating?
@@ -123,27 +130,26 @@ openshift_release_registry = f"registry.ci.openshift.org/{openshift_release_regi
 quay_registry = "quay.io/openshift-knative"
 
 
-def checkout_branch(name, branch):
-    print(f"Checkout branch {branch}")
-    result = run(f"git checkout {branch}", stdout=PIPE, stderr=PIPE, universal_newlines=True,
-                 shell=True, cwd=name)
+def run(*args, **kwargs):
+    result = shrun(*args, **kwargs)
     print(result.stdout)
     print(result.stderr)
     assert result.returncode == 0
+    return result
+
+
+def checkout_branch(name, branch):
+    print(f"Checkout branch {branch}")
+    run(f"git checkout {branch}", stdout=PIPE, stderr=PIPE, universal_newlines=True,
+        shell=True, cwd=name)
 
 
 def clone_repository(name: str, def_branch="main"):
     print(f"Clone repository {name}")
-    result = run(f"git clone --mirror https://github.com/{name}.git {name}/.git", stdout=PIPE, stderr=PIPE,
-                 universal_newlines=True, shell=True)
-    print(result.stdout)
-    print(result.stderr)
-    assert result.returncode == 0
-    result = run("git config --bool core.bare false", stdout=PIPE, stderr=PIPE, universal_newlines=True,
-                 shell=True, cwd=name)
-    print(result.stdout)
-    print(result.stderr)
-    assert result.returncode == 0
+    run(f"git clone --mirror https://github.com/{name}.git {name}/.git", stdout=PIPE, stderr=PIPE,
+        universal_newlines=True, shell=True)
+    run("git config --bool core.bare false", stdout=PIPE, stderr=PIPE, universal_newlines=True,
+        shell=True, cwd=name)
     checkout_branch(name, def_branch)
 
 
@@ -230,8 +236,12 @@ for name, r in repos.items():
     org = name[:name.index('/')]
     repo_name = name[name.index('/') + 1:]
 
+    branches = supported_branches
+    if r.get("branch") is not None and r["branch"].get("additional") is not None:
+        branches = supported_branches + r["branch"]["additional"]
+
     for ov in openshift_versions:
-        for supported_branch in supported_branches:
+        for supported_branch in branches:
 
             # TODO: for now we're reconciling only supported branches, eventually we need to reconcile the entire
             #  directory to make sure that we delete periodic jobs from unsupported branches
@@ -353,9 +363,8 @@ zz_generated_metadata:
             with open(f"{dir}/{org}-{repo_name}-{supported_branch}__{ov.replace('.', '')}.yaml", "w") as f:
                 f.write(ci)
 
-result = run("make jobs ci-operator-config", stdout=PIPE, stderr=PIPE, universal_newlines=True,
-             shell=True, cwd=openshift_release)
-assert result.returncode == 0
+run("make jobs ci-operator-config", stdout=PIPE, stderr=PIPE, universal_newlines=True,
+    shell=True, cwd=openshift_release)
 
 # Add periodics reporter
 for name, r in repos.items():
@@ -384,43 +393,23 @@ for name, r in repos.items():
             f.write(content)
 
 # Reformat CI config with the reporter
-result = run("make ci-operator-config jobs", stdout=PIPE, stderr=PIPE, universal_newlines=True,
-             shell=True, cwd=openshift_release)
-assert result.returncode == 0
+run("make ci-operator-config jobs", stdout=PIPE, stderr=PIPE, universal_newlines=True,
+    shell=True, cwd=openshift_release)
 
 # Restore Makefile changes
-result = run(f"git restore Makefile", stdout=PIPE, stderr=PIPE, universal_newlines=True,
-             shell=True, cwd=openshift_release)
-print(result.stdout)
-print(result.stderr)
-assert result.returncode == 0
-
+run(f"git restore Makefile", stdout=PIPE, stderr=PIPE, universal_newlines=True,
+    shell=True, cwd=openshift_release)
 # Commit changes
 branch = "sync-serverless-ci"
-result = run(f"git checkout -b {branch}", stdout=PIPE, stderr=PIPE, universal_newlines=True,
-             shell=True, cwd=openshift_release)
-print(result.stdout)
-print(result.stderr)
-assert result.returncode == 0
-result = run("git add .", stdout=PIPE, stderr=PIPE, universal_newlines=True,
-             shell=True, cwd=openshift_release)
-print(result.stdout)
-print(result.stderr)
-assert result.returncode == 0
-result = run("git commit -m 'Sync Serverless CI'", stdout=PIPE, stderr=PIPE, universal_newlines=True,
-             shell=True, cwd=openshift_release)
-print(result.stdout)
-print(result.stderr)
-assert result.returncode == 0
-result = run(f"git remote add fork {openshift_release_remote}", stdout=PIPE, stderr=PIPE, universal_newlines=True,
-             shell=True, cwd=openshift_release)
-print(result.stdout)
-print(result.stderr)
-assert result.returncode == 0
-result = run(f"git push fork {branch} -f", stdout=PIPE, stderr=PIPE, universal_newlines=True,
-             shell=True, cwd=openshift_release)
-print(result.stdout)
-print(result.stderr)
-assert result.returncode == 0
+run(f"git checkout -b {branch}", stdout=PIPE, stderr=PIPE, universal_newlines=True,
+    shell=True, cwd=openshift_release)
+run("git add .", stdout=PIPE, stderr=PIPE, universal_newlines=True,
+    shell=True, cwd=openshift_release)
+run("git commit -m 'Sync Serverless CI'", stdout=PIPE, stderr=PIPE, universal_newlines=True,
+    shell=True, cwd=openshift_release)
+run(f"git remote add fork {openshift_release_remote}", stdout=PIPE, stderr=PIPE, universal_newlines=True,
+    shell=True, cwd=openshift_release)
+run(f"git push fork {branch} -f", stdout=PIPE, stderr=PIPE, universal_newlines=True,
+    shell=True, cwd=openshift_release)
 
 # gh pr create --fill --no-maintainer-edit --base master
