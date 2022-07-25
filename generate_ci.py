@@ -240,13 +240,14 @@ for name, r in repos.items():
     if r.get("branch") is not None and r["branch"].get("additional") is not None:
         branches = supported_branches + r["branch"]["additional"]
 
+    # TODO: for now we're reconciling only supported branches, eventually we need to reconcile the entire
+    #  directory to make sure that we delete periodic jobs from unsupported branches
+    for supported_branch in branches:
+        run(f"rm -rf {openshift_release_ci_config}/{name}/*{supported_branch}*.yaml", stdout=PIPE, stderr=PIPE,
+            universal_newlines=True, shell=True)
+
     for ov in openshift_versions:
         for supported_branch in branches:
-
-            # TODO: for now we're reconciling only supported branches, eventually we need to reconcile the entire
-            #  directory to make sure that we delete periodic jobs from unsupported branches
-            run(f"rm -rf {openshift_release_ci_config}/{name}/*{supported_branch}*.yaml", stdout=PIPE, stderr=PIPE,
-                universal_newlines=True, shell=True)
 
             if supported_branch == "release-next":
                 promotion_name = "knative-nightly"
