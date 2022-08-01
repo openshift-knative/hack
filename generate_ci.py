@@ -270,7 +270,7 @@ for name, r in repos.items():
             print("---> Test images", test_images)
 
             mirroring_lines = []
-            for img in test_images:
+            for img in images + test_images:
                 frm = f"{openshift_release_registry}/{promotion_name}:{img.name}"
                 to = f"{quay_registry}/{img.name}:{promotion_name}"
                 mirroring_lines.append(f"{frm} {to}\n")
