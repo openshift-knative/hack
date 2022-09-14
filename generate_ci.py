@@ -56,7 +56,6 @@ repos = {
         "branch": {
             # Additional supported branches
             "additional": [
-                "release-v1.5",
                 "release-v1.6",
             ]
         }
@@ -109,7 +108,7 @@ repos = {
 #  not do this until we are sure about getting cluster pools and supported versions.
 openshift_versions = [
     "4.6",  # min version
-    "4.10"  # max version
+    "4.11"  # max version
 ]
 
 supported_branches = [
@@ -117,6 +116,7 @@ supported_branches = [
     #  Eventually, we will generate all supported branches, this means that for now, we need to manually
     #  delete periodic jobs from unsupported branches.
     "release-v1.4",
+    "release-v1.5",
     "release-next"
 ]
 
