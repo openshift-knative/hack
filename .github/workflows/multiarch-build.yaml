@@ -1,0 +1,48 @@
+name: Multiarch builds
+
+on:
+  workflow_call: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  multiarch-build:
+    name: Build test images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Golang
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17.x
+
+      - name: Setup ko
+        uses: imjasonh/setup-ko@v0.6
+        with:
+          version: v0.12.0
+
+      - name: Setup make
+        run: |
+          sudo apt-get update
+          sudo apt-get install make
+
+      - name: Login to quay.io
+        env:
+          quay_user: ${{ secrets.QUAY_USER }}
+          quay_password: ${{ secrets.QUAY_PASSWORD }}
+        run: |
+          ko login -u="${quay_user}" -p="${quay_password}" quay.io
+
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Build and push multiarch test images
+        env:
+          ref: ${{ github.ref_name }}
+        run: |
+          echo "Building images from ${GITHUB_REF}@${GITHUB_SHA}"
+          # Remove release-v prefix and parse major and minor version
+          major_minor=$(echo ${ref#release-v} | awk -F \. '{printf "%d.%d", $1, $2}')
+          make test-images DOCKER_REPO_OVERRIDE=quay.io/${{ github.repository }}/ \
+            KO_FLAGS="--platform=all --sbom=none" TEST_IMAGE_TAG=v${major_minor}
