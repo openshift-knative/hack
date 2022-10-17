@@ -42,7 +42,7 @@ jobs:
           ref: ${{ github.ref_name }}
         run: |
           echo "Building images from ${GITHUB_REF}@${GITHUB_SHA}"
-          # Remove release-v prefix and parse major and minor version
-          major_minor=$(echo ${ref#release-v} | awk -F \. '{printf "%d.%d", $1, $2}')
+          # Ref: https://regex101.com/r/Po1HA3/1
+          major_minor=$(echo ${ref#release-} | sed 's/^v\?\([[:digit:]]\+\)\.\([[:digit:]]\+\).*/\1.\2/')
           make test-images DOCKER_REPO_OVERRIDE=quay.io/${{ github.repository }}/ \
             KO_FLAGS="--platform=all --sbom=none" TEST_IMAGE_TAG=v${major_minor}
