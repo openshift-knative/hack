@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import copy
 import dataclasses
 import os
 import re
@@ -32,6 +33,9 @@ args = parser.parse_args()
 
 openshift_release_remote = args.openshift_release_remote
 
+ocp_min_version_key = "ocp_min_version"
+ocp_max_version_key = "ocp_max_version"
+
 repos = {
     "openshift/knative-eventing": {
         # Every test target contains `test` in the name and matches
@@ -55,9 +59,12 @@ repos = {
         },
         "branch": {
             # Additional supported branches
-            "additional": [
-                "release-v1.6",
-            ]
+            "additional": {
+                "release-v1.6": {
+                    ocp_min_version_key: "4.8",
+                    ocp_max_version_key: "4.11",
+                },
+            }
         }
     },
     # TODO serving version branches, they have minor versions should we align those to be floating?
@@ -103,22 +110,20 @@ repos = {
     },
 }
 
-# TODO take them from SO main?
-#  There might be a delay between having CI cluster pools for a max version and our support version for OCP, so let's
-#  not do this until we are sure about getting cluster pools and supported versions.
-openshift_versions = [
-    "4.6",  # min version
-    "4.11"  # max version
-]
-
-supported_branches = [
-    # TODO for now we're reconciling only branches that come next to avoid changing existing working branches.
-    #  Eventually, we will generate all supported branches, this means that for now, we need to manually
-    #  delete periodic jobs from unsupported branches.
-    "release-v1.4",
-    "release-v1.5",
-    "release-next"
-]
+supported_branches = {
+    "release-v1.4": {
+        ocp_min_version_key: "4.6",
+        ocp_max_version_key: "4.11",
+    },
+    "release-v1.5": {
+        ocp_min_version_key: "4.8",
+        ocp_max_version_key: "4.11",
+    },
+    "release-next": {
+        ocp_min_version_key: "4.8",
+        ocp_max_version_key: "4.11",
+    }
+}
 
 openshift_release = "openshift/release"
 openshift_release_ci_config = openshift_release + "/ci-operator/config"
@@ -236,9 +241,10 @@ for name, r in repos.items():
     org = name[:name.index('/')]
     repo_name = name[name.index('/') + 1:]
 
-    branches = supported_branches
+    branches = copy.deepcopy(supported_branches)
     if r.get("branch") is not None and r["branch"].get("additional") is not None:
-        branches = supported_branches + r["branch"]["additional"]
+        for b, v in r["branch"]["additional"].items():
+            branches[b] = v
 
     # TODO: for now we're reconciling only supported branches, eventually we need to reconcile the entire
     #  directory to make sure that we delete periodic jobs from unsupported branches
@@ -246,8 +252,9 @@ for name, r in repos.items():
         run(f"rm -rf {openshift_release_ci_config}/{name}/*{supported_branch}*.yaml", stdout=PIPE, stderr=PIPE,
             universal_newlines=True, shell=True)
 
-    for ov in openshift_versions:
-        for supported_branch in branches:
+    for supported_branch, openshift_versions in branches.items():
+
+        for _, ov in openshift_versions.items():
 
             if supported_branch == "release-next":
                 promotion_name = "knative-nightly"
@@ -335,7 +342,7 @@ images: {images_field}
 promotion:
   additional_images:
     {name[name.index("/") + 1:]}-src: src
-  disabled: {"true" if openshift_versions[-1] != ov else "false"}
+  disabled: {"true" if openshift_versions[ocp_max_version_key] != ov else "false"}
   name: {promotion_name}
   namespace: {openshift_release_registry_namespace}
 releases:
