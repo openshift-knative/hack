@@ -21,7 +21,7 @@ from subprocess import run as shrun, PIPE
 
 # Usage:
 # ./generate_ci.py \
-#   --openshift-release-remove git@github.com:pierDipi/release.git # Remote to your fork
+#   --openshift-release-remote git@github.com:pierDipi/release.git # Remote to your fork
 
 openshift_release_remote = "git@github.com:pierDipi/release.git"
 
