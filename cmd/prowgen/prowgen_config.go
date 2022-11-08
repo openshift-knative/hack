@@ -123,6 +123,8 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 			if isFirstVersion {
 				isFirstVersion = false
 				options = append(options, withNamePromotion(r, branchName))
+			} else {
+				options = append(options, withTagPromotion(r, branchName))
 			}
 
 			options = append(
@@ -161,6 +163,21 @@ func withNamePromotion(r Repository, branchName string) ReleaseBuildConfiguratio
 		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
 			Namespace: "openshift",
 			Name:      strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
+			AdditionalImages: map[string]string{
+				// Add source image
+				r.Repo + "-src": "src",
+			},
+		}
+		return nil
+	}
+}
+
+func withTagPromotion(r Repository, branchName string) ReleaseBuildConfigurationOption {
+	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
+		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
+			Namespace:   "openshift",
+			Tag:         strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
+			TagByCommit: true,
 			AdditionalImages: map[string]string{
 				// Add source image
 				r.Repo + "-src": "src",
