@@ -5,5 +5,5 @@ generate-ci:
 .PHONY: generate-ci
 
 unit-tests:
-	go test ./cmd/...
+	go test ./pkg/...
 .PHONY: unit-tests
