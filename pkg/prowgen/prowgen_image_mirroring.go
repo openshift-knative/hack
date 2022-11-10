@@ -2,12 +2,12 @@ package prowgen
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type ImageMirroringConfig struct {
@@ -30,30 +30,30 @@ func GenerateImageMirroringConfigs(openshiftRelease Repository, cfgs []ReleaseBu
 	mirroringConfigs := make([]ImageMirroringConfig, 0, 8)
 	for _, cfg := range cfgs {
 		if cfg.PromotionConfiguration != nil {
-			lines := make([]string, 0, 8)
+			lines := sets.NewString()
 			release := ""
 			for _, img := range cfg.Images {
 				if cfg.PromotionConfiguration.Name != "" {
-					from := fmt.Sprintf("%s/%s/%s:%s", CIRegistry, cfg.PromotionConfiguration.Namespace, cfg.PromotionConfiguration.Name, img.To)
-					to := fmt.Sprintf("%s/%s:%s", QuayRegistry, img.To, cfg.PromotionConfiguration.Name)
-					lines = append(lines, fmt.Sprintf("%s %s", from, to))
+					from := fmt.Sprintf("%s/%s/%s", CIRegistry, cfg.PromotionConfiguration.Namespace, cfg.PromotionConfiguration.Name)
+					to := fmt.Sprintf("%s/%s", QuayRegistry, img.To)
+					lines.Insert(fmt.Sprintf("%s %s", from, to))
 					release = cfg.PromotionConfiguration.Name
 				} else if cfg.PromotionConfiguration.Tag != "" {
-					from := fmt.Sprintf("%s/%s/%s:%s", CIRegistry, cfg.PromotionConfiguration.Namespace, img.To, cfg.PromotionConfiguration.Tag)
-					to := fmt.Sprintf("%s/%s:%s", QuayRegistry, img.To, cfg.PromotionConfiguration.Tag)
-					lines = append(lines, fmt.Sprintf("%s %s", from, to))
+					from := fmt.Sprintf("%s/%s/%s", CIRegistry, cfg.PromotionConfiguration.Namespace, img.To)
+					to := fmt.Sprintf("%s/%s", QuayRegistry, img.To)
+					lines.Insert(fmt.Sprintf("%s %s", from, to))
 					release = cfg.PromotionConfiguration.Tag
 				}
 			}
 
-			if len(lines) == 0 {
+			if lines.Len() == 0 {
 				continue
 			}
 
 			fileName := fmt.Sprintf("%s_%s_%s_quay", ImageMirroringConfigFilePrefix, release, cfg.Metadata.Repo)
 			mirroringConfigs = append(mirroringConfigs, ImageMirroringConfig{
 				Path:     filepath.Join(openshiftRelease.RepositoryDirectory(), ImageMirroringConfigPath, fileName),
-				Content:  strings.Join(lines, "\n") + "\n",
+				Content:  strings.Join(lines.List(), "\n") + "\n",
 				Release:  release,
 				Metadata: cfg.Metadata,
 			})
@@ -75,7 +75,7 @@ func ReconcileImageMirroringConfig(mirroring ImageMirroringConfig) error {
 		}
 	}
 
-	if err := ioutil.WriteFile(mirroring.Path, []byte(mirroring.Content), os.ModePerm); err != nil {
+	if err := os.WriteFile(mirroring.Path, []byte(mirroring.Content), os.ModePerm); err != nil {
 		return fmt.Errorf("failed to write file %s: %w", mirroring.Path, err)
 	}
 	return nil

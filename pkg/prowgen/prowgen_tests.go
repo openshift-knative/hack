@@ -4,8 +4,8 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -103,7 +103,7 @@ func (t *Test) HexSha() string {
 }
 
 func discoverE2ETests(r Repository) ([]Test, error) {
-	mc, err := ioutil.ReadFile(filepath.Join(r.RepositoryDirectory(), "Makefile"))
+	mc, err := os.ReadFile(filepath.Join(r.RepositoryDirectory(), "Makefile"))
 	if err != nil {
 		return nil, fmt.Errorf("[%s] failed to read file %s: %w", r.RepositoryDirectory(), "Makefile", err)
 	}

@@ -15,7 +15,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -51,7 +50,7 @@ func Main() {
 
 	log.Println(*inputConfig, *outConfig)
 
-	in, err := ioutil.ReadFile(*inputConfig)
+	in, err := os.ReadFile(*inputConfig)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -193,7 +192,7 @@ func saveReleaseBuildConfiguration(outConfig *string, cfg ReleaseBuildConfigurat
 	if err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(filepath.Join(*outConfig, cfg.Path), out, os.ModePerm); err != nil {
+	if err := os.WriteFile(filepath.Join(*outConfig, cfg.Path), out, os.ModePerm); err != nil {
 		return err
 	}
 	return nil
@@ -222,7 +221,7 @@ func injectSlackReporterConfig(inConfig *Config, openShiftRelease Repository) er
 			for _, match := range matches {
 				// Going directly from YAML raw input produces unexpected configs (due to missing YAML tags),
 				// so we convert YAML to JSON and unmarshal the struct from the JSON object.
-				y, err := ioutil.ReadFile(match)
+				y, err := os.ReadFile(match)
 				if err != nil {
 					return err
 				}
@@ -260,7 +259,7 @@ func injectSlackReporterConfig(inConfig *Config, openShiftRelease Repository) er
 				if err != nil {
 					return err
 				}
-				if err := ioutil.WriteFile(match, y, os.ModePerm); err != nil {
+				if err := os.WriteFile(match, y, os.ModePerm); err != nil {
 					return err
 				}
 			}
