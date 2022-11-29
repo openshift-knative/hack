@@ -1,0 +1,69 @@
+name: Multiarch Buildah builds
+
+on:
+  workflow_call:
+    inputs:
+      image:
+        description: 'An image name to build'
+        required: true
+        type: string
+      containerfile:
+        description: 'A container file to build'
+        required: true
+        type: string
+      platforms:
+        default: linux/amd64, linux/ppc64le, linux/s390x
+        description: A list of platforms to build the images for
+        required: false
+        type: string
+      registry:
+        default: quay.io
+        description: A registry to push image to
+        required: false
+        type: string
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  multiarch-build:
+    name: Build images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Calculate tags
+        id: calc-tag
+        env:
+          ref: ${{ github.ref_name }}
+        run: |
+          echo "Building images from ${GITHUB_REF}@${GITHUB_SHA}"
+          # Ref: https://regex101.com/r/gcxd4h/1
+          major_minor="$(echo "$ref" | sed -E 's/^.*?v?([[:digit:]]+)\.([[:digit:]]+).*/\1.\2/')"
+          echo "container_version=v${major_minor}" >> $GITHUB_OUTPUT
+          echo "Container version: v${major_minor}"
+
+      - name: Install qemu dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-user-static
+
+      - name: Buildah Action
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: ${{ inputs.image }}
+          tags: ${{ steps.calc-tag.outputs.container_version }}
+          platforms: ${{ inputs.platforms }}
+          containerfiles: ${{ inputs.containerfile }}
+
+      - name: Push To ${{ inputs.registry }}
+        id: push-to-quay
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+          registry: ${{ inputs.registry }}/${{ github.repository }}
+          username: ${{ secrets.QUAY_USER }}
+          password: ${{ secrets.QUAY_PASSWORD }}
