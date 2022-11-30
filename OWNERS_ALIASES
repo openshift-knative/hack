@@ -1,0 +1,25 @@
+aliases:
+  serverless-approvers:
+  - alanfx
+  - aliok
+  - jcrossley3
+  - lberk
+  - matzew
+  - mgencur
+  - nak3
+  - openshift-cherrypick-robot
+  - pierDipi
+  - rhuss
+  - skonto
+  serverless-reviewers:
+  - alanfx
+  - aliok
+  - dsimansk
+  - jcrossley3
+  - lberk
+  - matzew
+  - mgencur
+  - nak3
+  - pierDipi
+  - rhuss
+  - skonto
