@@ -1,4 +1,4 @@
-name: Multiarch builds
+name: Multiarch KO builds
 
 on:
   workflow_call: {}
@@ -9,7 +9,7 @@ defaults:
 
 jobs:
   multiarch-build:
-    name: Build test images
+    name: Build images
     runs-on: ubuntu-latest
     steps:
       - name: Setup Golang
