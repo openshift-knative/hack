@@ -1,7 +1,28 @@
 name: Multiarch KO builds
 
 on:
-  workflow_call: {}
+  workflow_call:
+    inputs:
+      goversion:
+        description: A version of Go
+        default: 1.18.x
+        required: false
+        type: string
+      koversion:
+        description: A KO version
+        default: v0.12.0
+        required: false
+        type: string
+      platforms:
+        default: all
+        description: A list of platforms to build the images for
+        required: false
+        type: string
+      registry:
+        default: quay.io
+        description: A registry to push image to
+        required: false
+        type: string
 
 defaults:
   run:
@@ -15,17 +36,17 @@ jobs:
       - name: Setup Golang
         uses: actions/setup-go@v2
         with:
-          go-version: 1.18.x
+          go-version: ${{ inputs.goversion }}
 
       - name: Setup ko
         uses: imjasonh/setup-ko@v0.6
         with:
-          version: v0.12.0
+          version: ${{ inputs.koversion }}
 
       - name: Setup make
         run: |
           sudo apt-get update
-          sudo apt-get install make
+          sudo apt-get install -y make
 
       - name: Login to quay.io
         env:
@@ -42,7 +63,7 @@ jobs:
           ref: ${{ github.ref_name }}
         run: |
           echo "Building images from ${GITHUB_REF}@${GITHUB_SHA}"
-          # Ref: https://regex101.com/r/Po1HA3/1
-          major_minor=$(echo ${ref#release-} | sed 's/^v\?\([[:digit:]]\+\)\.\([[:digit:]]\+\).*/\1.\2/')
-          make test-images DOCKER_REPO_OVERRIDE=quay.io/${{ github.repository }}/ \
-            KO_FLAGS="--platform=all --sbom=none" TEST_IMAGE_TAG=v${major_minor}
+          # Ref: https://regex101.com/r/gcxd4h/1
+          major_minor="$(echo "$ref" | sed -E 's/^.*?v?([[:digit:]]+)\.([[:digit:]]+).*/\1.\2/')"
+          make test-images DOCKER_REPO_OVERRIDE=${{ inputs.registry }}/${{ github.repository }}/ \
+            KO_FLAGS="--platform=${{ inputs.platforms }} --sbom=none" TEST_IMAGE_TAG=v${major_minor}
