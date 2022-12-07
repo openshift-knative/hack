@@ -60,6 +60,7 @@ jobs:
 
       - name: Push To ${{ inputs.registry }}
         id: push-to-quay
+        if: secrets.QUAY_USER && secrets.QUAY_PASSWORD
         uses: redhat-actions/push-to-registry@v2
         with:
           image: ${{ steps.build-image.outputs.image }}
