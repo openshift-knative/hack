@@ -30,6 +30,8 @@ jobs:
   multiarch-build:
     name: Build images
     runs-on: ubuntu-22.04
+    env:
+      PRINCIPAL: '${{ secrets.QUAY_USER }}:${{ secrets.QUAY_PASSWORD }}'
     steps:
       - uses: actions/checkout@v2
 
@@ -41,8 +43,12 @@ jobs:
           echo "Building images from ${GITHUB_REF}@${GITHUB_SHA}"
           # Ref: https://regex101.com/r/gcxd4h/1
           major_minor="$(echo "$ref" | sed -E 's/^.*?v?([[:digit:]]+)\.([[:digit:]]+).*/\1.\2/')"
-          echo "container_version=v${major_minor}" >> $GITHUB_OUTPUT
-          echo "Container version: v${major_minor}"
+          container_version="${GITHUB_SHA}"
+          if [[ "$major_minor" != "$ref" ]]; then
+            container_version="v${major_minor}"
+          fi
+          echo "container_version=${container_version}" >> $GITHUB_OUTPUT
+          echo "Container version: ${container_version}"
 
       - name: Install qemu dependency
         run: |
@@ -60,7 +66,7 @@ jobs:
 
       - name: Push To ${{ inputs.registry }}
         id: push-to-quay
-        if: secrets.QUAY_USER && secrets.QUAY_PASSWORD
+        if: env.PRINCIPAL != ':'
         uses: redhat-actions/push-to-registry@v2
         with:
           image: ${{ steps.build-image.outputs.image }}
