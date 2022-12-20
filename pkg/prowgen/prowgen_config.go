@@ -158,6 +158,18 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 	return cfgs, nil
 }
 
+// TODO: In 2023 we need to move forward to use the new `eventing`, for _new_ repos,
+// The tool should only generate desired updates, always all
+func transformLegacyKnativeEventingSourceImageName(r Repository) string {
+	// The old repository is called knative-eventing, and we need to keep this coordinate on the build
+	// For now: we can not use the new `eventing` name
+	srcImage := r.Repo + "-src"
+	if r.Repo == "eventing" {
+		srcImage = "knative-" + r.Repo + "-src"
+	}
+	return srcImage
+}
+
 func withNamePromotion(r Repository, branchName string) ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
 		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
@@ -165,7 +177,7 @@ func withNamePromotion(r Repository, branchName string) ReleaseBuildConfiguratio
 			Name:      strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
 			AdditionalImages: map[string]string{
 				// Add source image
-				r.Repo + "-src": "src",
+				transformLegacyKnativeEventingSourceImageName(r): "src",
 			},
 		}
 		return nil
@@ -180,7 +192,7 @@ func withTagPromotion(r Repository, branchName string) ReleaseBuildConfiguration
 			TagByCommit: true,
 			AdditionalImages: map[string]string{
 				// Add source image
-				r.Repo + "-src": "src",
+				transformLegacyKnativeEventingSourceImageName(r): "src",
 			},
 		}
 		return nil
