@@ -18,10 +18,6 @@ config:
       openShiftVersions:
         - 4.11
         - 4.8
-    "release-v1.8":
-      openShiftVersions:
-        - 4.11
-        - 4.8
     "release-next":
       openShiftVersions:
         - 4.11
@@ -29,8 +25,8 @@ config:
 
 repositories:
   - org: openshift-knative
-    repo: eventing
-    imagePrefix: knative-eventing
+    repo: eventing-kafka-broker
+    imagePrefix: knative-eventing-kafka-broker
     slackChannel: "#knative-eventing-ci"
     e2e:
       matches:
