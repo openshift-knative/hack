@@ -25,8 +25,8 @@ config:
 
 repositories:
   - org: openshift-knative
-    repo: eventing
-    imagePrefix: knative-eventing
+    repo: eventing-kafka-broker
+    imagePrefix: knative-eventing-kafka-broker
     slackChannel: "#knative-eventing-ci"
     e2e:
       matches:
