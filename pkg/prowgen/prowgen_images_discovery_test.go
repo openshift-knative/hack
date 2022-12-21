@@ -5,6 +5,7 @@ import (
 
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
 	"k8s.io/utils/pointer"
+	"k8s.io/utils/strings/slices"
 )
 
 func TestDiscoverImages(t *testing.T) {
@@ -23,6 +24,13 @@ func TestDiscoverImages(t *testing.T) {
 			To: "knative-eventing-dispatcher",
 			ProjectDirectoryImageBuildInputs: cioperatorapi.ProjectDirectoryImageBuildInputs{
 				DockerfilePath: "openshift/ci-operator/knative-images/dispatcher/Dockerfile",
+				Inputs: map[string]cioperatorapi.ImageBuildInputs{
+					"openshift_release_golang-1.18": {
+						As: []string{
+							"registry.ci.openshift.org/openshift/release:golang-1.18",
+						},
+					},
+				},
 			},
 		},
 		{
@@ -30,6 +38,14 @@ func TestDiscoverImages(t *testing.T) {
 			ProjectDirectoryImageBuildInputs: cioperatorapi.ProjectDirectoryImageBuildInputs{
 				DockerfilePath: "openshift/ci-operator/knative-test-images/webhook/Dockerfile",
 			},
+		},
+	}
+
+	expectedBaseImages := map[string]cioperatorapi.ImageStreamTagReference{
+		"openshift_release_golang-1.18": {
+			Namespace: "openshift",
+			Name:      "release",
+			Tag:       "golang-1.18",
 		},
 	}
 
@@ -50,6 +66,30 @@ func TestDiscoverImages(t *testing.T) {
 		}
 		if got.DockerfilePath != expectedImage.DockerfilePath {
 			t.Errorf("Want dockerfile_path %s, got %s", expectedImage.DockerfilePath, got.DockerfilePath)
+		}
+
+		for key := range expectedImage.Inputs {
+			if _, found := got.Inputs[key]; !found {
+				t.Errorf("Key %s doesn't exist in got.Inputs", key)
+			} else {
+				if !slices.Equal(got.Inputs[key].As, expectedImage.Inputs[key].As) {
+					t.Errorf("Want inputs[%s].As %v, got %v", key, expectedImage.Inputs[key].As, got.Inputs[key].As)
+				}
+			}
+
+			if len(expectedImage.Inputs[key].As) != len(got.Inputs[key].As) {
+				t.Errorf("expected %d image inputs.As for 'to' %s, got %d", len(expectedImage.Inputs[key].As), expectedImage.To, len(got.Inputs[key].As))
+			}
+		}
+	}
+
+	for name, imgref := range expectedBaseImages {
+		if _, found := cfg.BaseImages[name]; !found {
+			t.Errorf("%s doesn't exist in got.BaseImages", name)
+		} else {
+			if cfg.BaseImages[name] != imgref {
+				t.Errorf("Want base image %v, got %v", expectedBaseImages[name], cfg.BaseImages[name])
+			}
 		}
 	}
 }

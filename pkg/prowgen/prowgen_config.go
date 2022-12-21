@@ -99,13 +99,6 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 					Variant: variant,
 				},
 				InputConfiguration: cioperatorapi.InputConfiguration{
-					BaseImages: map[string]cioperatorapi.ImageStreamTagReference{
-						"base": {
-							Namespace: "ocp",
-							Name:      ov,
-							Tag:       "base",
-						},
-					},
 					BuildRootImage: &cioperatorapi.BuildRootImageConfiguration{
 						ProjectImageBuild: &cioperatorapi.ProjectDirectoryImageBuildInputs{
 							DockerfilePath: "openshift/ci-operator/build-image/Dockerfile",
