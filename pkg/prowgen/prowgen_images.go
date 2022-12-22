@@ -17,6 +17,7 @@ var (
 type ImageInput struct {
 	Context        imageContext
 	DockerfilePath string
+	Inputs         map[string]cioperatorapi.ImageBuildInputs
 }
 
 func ProjectDirectoryImageBuildStepConfigurationFuncFromImageInput(r Repository, input ImageInput) ProjectDirectoryImageBuildStepConfigurationFunc {
@@ -34,6 +35,7 @@ func ProjectDirectoryImageBuildStepConfigurationFuncFromImageInput(r Repository,
 			To: cioperatorapi.PipelineImageStreamTagReference(to),
 			ProjectDirectoryImageBuildInputs: cioperatorapi.ProjectDirectoryImageBuildInputs{
 				DockerfilePath: input.DockerfilePath,
+				Inputs:         input.Inputs,
 			},
 		}, nil
 	}
@@ -47,6 +49,20 @@ func WithImage(ibcFunc ProjectDirectoryImageBuildStepConfigurationFunc) ReleaseB
 		}
 
 		cfg.Images = append(cfg.Images, ibc)
+		return nil
+	}
+}
+
+func WithBaseImages(baseImages map[string]cioperatorapi.ImageStreamTagReference) ReleaseBuildConfigurationOption {
+	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
+		if cfg.InputConfiguration.BaseImages == nil {
+			cfg.InputConfiguration.BaseImages = make(map[string]cioperatorapi.ImageStreamTagReference)
+		}
+
+		for key, img := range baseImages {
+			cfg.InputConfiguration.BaseImages[key] = img
+		}
+
 		return nil
 	}
 }
