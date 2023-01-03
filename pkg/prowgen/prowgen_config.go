@@ -115,9 +115,9 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 			copy(options, opts)
 			if isFirstVersion {
 				isFirstVersion = false
-				options = append(options, withNamePromotion(r, branchName))
+				options = append(options, withTagPromotion(r, branchName, true))
 			} else {
-				options = append(options, withTagPromotion(r, branchName))
+				options = append(options, withTagPromotion(r, branchName, false))
 			}
 
 			options = append(
@@ -163,26 +163,13 @@ func transformLegacyKnativeEventingSourceImageName(r Repository) string {
 	return srcImage
 }
 
-func withNamePromotion(r Repository, branchName string) ReleaseBuildConfigurationOption {
-	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
-		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
-			Namespace: "openshift",
-			Name:      strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
-			AdditionalImages: map[string]string{
-				// Add source image
-				transformLegacyKnativeEventingSourceImageName(r): "src",
-			},
-		}
-		return nil
-	}
-}
-
-func withTagPromotion(r Repository, branchName string) ReleaseBuildConfigurationOption {
+func withTagPromotion(r Repository, branchName string, disabledReleasePromotion bool) ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
 		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
 			Namespace:   "openshift",
 			Tag:         strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
 			TagByCommit: true,
+			Disabled:    disabledReleasePromotion,
 			AdditionalImages: map[string]string{
 				// Add source image
 				transformLegacyKnativeEventingSourceImageName(r): "src",
