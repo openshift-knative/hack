@@ -130,12 +130,12 @@ func Main() {
 	if err := runOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
 		log.Fatalln("Failed to run openshift/release generator after injecting Slack reporter", err)
 	}
-	if err := pushBranch(ctx, openShiftRelease, remote, "sync-serverless-ci"); err != nil {
+	if err := pushBranch(ctx, openShiftRelease, remote, "sync-serverless-ci", *inputConfig); err != nil {
 		log.Fatalln("Failed to push branch to openshift/release fork", *remote, err)
 	}
 }
 
-func pushBranch(ctx context.Context, release Repository, remote *string, branch string) error {
+func pushBranch(ctx context.Context, release Repository, remote *string, branch string, config string) error {
 	if remote == nil || *remote == "" {
 		return nil
 	}
@@ -144,13 +144,15 @@ func pushBranch(ctx context.Context, release Repository, remote *string, branch 
 
 	// Ignore error since remote and branch might be already there
 	_ = run(ctx, release, "git", "checkout", "-b", branch)
+	_ = run(ctx, release, "git", "checkout", branch)
 	_ = run(ctx, release, "git", "remote", "add", "fork", *remote)
 
 	if err := run(ctx, release, "git", "add", "."); err != nil {
 		return err
 	}
-	if err := run(ctx, release, "git", "commit", "-s", "-S", "-m", "Sync Serverless CI"); err != nil {
-		return err
+	if err := run(ctx, release, "git", "commit", "-s", "-S", "-m", "Sync Serverless CI "+config); err != nil {
+		// Ignore error since we could have nothing to commit
+		log.Println("Ignored error", err)
 	}
 	if err := run(ctx, release, "git", "push", "fork", branch, "-f"); err != nil {
 		return err
