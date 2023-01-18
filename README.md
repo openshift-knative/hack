@@ -17,3 +17,10 @@ CI tooling and hacks to improve CI
 ```shell
 make unit-tests
 ```
+
+## Updating OpenShift versions
+
+CI configs use specific OpenShift versions. To change the version, you need to update the YAML files in the `config/` directory.
+
+When a new OpenShift version is released, wait until the cluster pool for OpenShift CI is available in 
+[https://docs.ci.openshift.org/docs/how-tos/cluster-claim/#existing-cluster-pools](https://docs.ci.openshift.org/docs/how-tos/cluster-claim/#existing-cluster-pools).
