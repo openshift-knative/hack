@@ -12,19 +12,19 @@ config:
         - 4.8
     "release-v1.6":
       openShiftVersions:
-        - 4.11
+        - 4.12
         - 4.8
     "release-v1.7":
       openShiftVersions:
-        - 4.11
+        - 4.12
         - 4.8
     "release-v1.8":
       openShiftVersions:
-        - 4.11
+        - 4.12
         - 4.8
     "release-next":
       openShiftVersions:
-        - 4.11
+        - 4.12
         - 4.8
 
 repositories:
