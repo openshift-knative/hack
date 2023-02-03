@@ -22,6 +22,8 @@ const (
 	CIRegistry   = "registry.ci.openshift.org"
 	QuayRegistry = "quay.io/openshift-knative"
 
+	QuayMirroringSuffix = "_quay"
+
 	ImageMirroringConfigPath       = "core-services/image-mirroring/knative"
 	ImageMirroringConfigFilePrefix = "mapping_knative"
 )
@@ -50,7 +52,7 @@ func GenerateImageMirroringConfigs(openshiftRelease Repository, cfgs []ReleaseBu
 				continue
 			}
 
-			fileName := fmt.Sprintf("%s_%s_%s_quay", ImageMirroringConfigFilePrefix, release, cfg.Metadata.Repo)
+			fileName := fmt.Sprintf("%s_%s_%s%s", ImageMirroringConfigFilePrefix, release, cfg.Metadata.Repo, QuayMirroringSuffix)
 			mirroringConfigs = append(mirroringConfigs, ImageMirroringConfig{
 				Path:     filepath.Join(openshiftRelease.RepositoryDirectory(), ImageMirroringConfigPath, fileName),
 				Content:  strings.Join(lines.List(), "\n") + "\n",
@@ -63,7 +65,7 @@ func GenerateImageMirroringConfigs(openshiftRelease Repository, cfgs []ReleaseBu
 }
 
 func ReconcileImageMirroringConfig(mirroring ImageMirroringConfig) error {
-	matching := filepath.Join(filepath.Dir(mirroring.Path), "*"+mirroring.Release+"_"+mirroring.Metadata.Repo+"*")
+	matching := filepath.Join(filepath.Dir(mirroring.Path), "*"+mirroring.Release+"_"+mirroring.Metadata.Repo+QuayMirroringSuffix)
 	existing, err := filepath.Glob(matching)
 	if err != nil {
 		return fmt.Errorf("failed to find files matching %s: %w", matching, err)
