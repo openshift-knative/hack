@@ -62,7 +62,7 @@ func TestToName(t *testing.T) {
 				Command: "test-kafka-broker-upstream-nightly",
 			},
 			openShiftVersion: openshiftVersion,
-			want:             fmt.Sprintf("%s%s", "test-kafka--7465737", suffix),
+			want:             fmt.Sprintf("%s%s", "test-kafka-7465737", suffix),
 		},
 	}
 	for _, tt := range tests {
