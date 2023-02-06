@@ -319,6 +319,21 @@ func TestDiscoverTests(t *testing.T) {
 					Cli:        "latest",
 				},
 			},
+			cioperatorapi.TestStep{
+				LiteralTestStep: &cioperatorapi.LiteralTestStep{
+					As:       "openshift-must-gather",
+					From:     "src",
+					Commands: `oc adm must-gather --dest-dir "${ARTIFACT_DIR}/gather-openshift"`,
+					Resources: cioperatorapi.ResourceRequirements{
+						Requests: cioperatorapi.ResourceList{
+							"cpu": "100m",
+						},
+					},
+					Timeout:    &prowapi.Duration{Duration: 20 * time.Minute},
+					BestEffort: pointer.Bool(true),
+					Cli:        "latest",
+				},
+			},
 		)
 	}
 
