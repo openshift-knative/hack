@@ -23,7 +23,8 @@ type Repository struct {
 }
 
 type E2ETests struct {
-	Matches []string `json:"matches" yaml:"matches"`
+	Matches         []string `json:"matches" yaml:"matches"`
+	OnDemandMatches []string `json:"onDemand" yaml:"onDemand"`
 }
 
 func (r Repository) RepositoryDirectory() string {
