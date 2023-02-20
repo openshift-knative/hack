@@ -110,7 +110,8 @@ const (
 )
 
 type Test struct {
-	Command string
+	Command  string
+	OnDemand bool
 }
 
 func (t *Test) HexSha() string {
@@ -130,7 +131,12 @@ func discoverE2ETests(r Repository) ([]Test, error) {
 	for _, l := range lines {
 		l := strings.TrimSpace(l)
 		for _, match := range r.E2ETests.Matches {
-			if err := createTest(r, l, match, &targets, commands); err != nil {
+			if err := createTest(r, l, match, &targets, false, commands); err != nil {
+				return nil, err
+			}
+		}
+		for _, match := range r.E2ETests.OnDemandMatches {
+			if err := createTest(r, l, match, &targets, true, commands); err != nil {
 				return nil, err
 			}
 		}
@@ -143,7 +149,7 @@ func discoverE2ETests(r Repository) ([]Test, error) {
 	return targets, nil
 }
 
-func createTest(r Repository, line string, shouldMatch string, tests *[]Test, commands sets.String) error {
+func createTest(r Repository, line string, shouldMatch string, tests *[]Test, onDemand bool, commands sets.String) error {
 	if strings.HasSuffix(line, ":") {
 		line := strings.TrimSuffix(line, ":")
 
@@ -154,7 +160,7 @@ func createTest(r Repository, line string, shouldMatch string, tests *[]Test, co
 			return fmt.Errorf("[%s] failed to match test %s: %w", r.RepositoryDirectory(), shouldMatch, err)
 		}
 		if matches && !commands.Has(line) {
-			*tests = append(*tests, Test{Command: line})
+			*tests = append(*tests, Test{Command: line, OnDemand: onDemand})
 			commands.Insert(line)
 		}
 	}
