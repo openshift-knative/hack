@@ -11,11 +11,14 @@
 package testselect
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 
+	"github.com/openshift-knative/hack/pkg/prowgen"
 	"gopkg.in/yaml.v2"
 	"k8s.io/test-infra/prow/clonerefs"
 )
@@ -38,6 +41,8 @@ type Test struct {
 }
 
 func Main() {
+	ctx := context.Background()
+
 	ts := flag.String("testsuites", "testsuites.yaml", "Specify yaml file with path-to-testsuite mapping")
 	// Clonerefs options as defined in https://github.com/kubernetes/test-infra/blob/master/prow/clonerefs/options.go
 	refs := flag.String("clonerefs", "clonerefs.json", "Specify json file with clonerefs")
@@ -65,5 +70,18 @@ func Main() {
 		log.Fatalln("Unmarshal test suite mappings", err)
 	}
 
-	log.Printf("Clonerefs:\n %+v\n TestSuites:\n%+v \n", cloneRefs, testSuites)
+	//log.Printf("Clonerefs:\n %+v\n TestSuites:\n%+v \n", cloneRefs, testSuites)
+
+	if len(cloneRefs.GitRefs) == 0 || len(cloneRefs.GitRefs[0].Pulls) == 0 {
+		log.Fatal("Clone refs do not include required SHAs")
+	}
+	// Fetch base SHA
+	prowgen.GitFetch(ctx, cloneRefs.GitRefs[0].RepoLink, cloneRefs.GitRefs[0].BaseSHA)
+	// Fetch SHA of pull request commit
+	prowgen.GitFetch(ctx, cloneRefs.GitRefs[0].RepoLink, cloneRefs.GitRefs[0].Pulls[0].SHA)
+	paths, err := prowgen.GitDiffNameOnly(ctx, cloneRefs.GitRefs[0].BaseSHA, cloneRefs.GitRefs[0].Pulls[0].SHA)
+	if err != nil {
+		log.Fatalln("Error reading diff", err)
+	}
+	fmt.Printf("Files changed: %d", len(paths))
 }

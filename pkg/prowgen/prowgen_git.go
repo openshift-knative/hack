@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func GitCheckout(ctx context.Context, r Repository, branch string) error {
@@ -36,7 +37,7 @@ func GitClone(ctx context.Context, r Repository) error {
 		return fmt.Errorf("[%s] failed to create directory: %w", r.RepositoryDirectory(), err)
 	}
 
-	if err := runNoRepo(ctx, "git", "clone", "--mirror", remoteRepo, localRepo); err != nil {
+	if _, err := runNoRepo(ctx, "git", "clone", "--mirror", remoteRepo, localRepo); err != nil {
 		return fmt.Errorf("[%s] failed to clone repository: %w", r.RepositoryDirectory(), err)
 	}
 
@@ -45,4 +46,17 @@ func GitClone(ctx context.Context, r Repository) error {
 	}
 
 	return nil
+}
+
+func GitFetch(ctx context.Context, remoteRepo, sha string) error {
+	_, err := runNoRepo(ctx, "git", "fetch", remoteRepo, sha)
+	return err
+}
+
+func GitDiffNameOnly(ctx context.Context, baseSha, sha string) ([]string, error) {
+	out, err := runNoRepo(ctx, "git", "diff", "--name-only", fmt.Sprintf("%s..%s", baseSha, sha))
+	if err != nil {
+		return nil, err
+	}
+	return strings.Split(strings.TrimSpace(string(out)), "\n"), nil
 }
