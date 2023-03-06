@@ -32,18 +32,18 @@ const (
 // TestSuites holds mapping between file path regular expressions and
 // test suites that cover the paths.
 type TestSuites struct {
-	List []TestSuite `json:"testsuites" yaml:"testsuites"`
+	List []TestSuite `yaml:"testsuites"`
 }
 
 type TestSuite struct {
-	Name 		 string   `json:"name" yaml:"name"`
-	RunIfChanged []string `json:"run_if_changed" yaml:"run_if_changed"`
-	Tests 		 []Test   `json:"tests" yaml:"tests"`
+	Name 		 string   `yaml:"name"`
+	RunIfChanged []string `yaml:"run_if_changed"`
+	Tests 		 []Test   `yaml:"tests"`
 }
 
 type Test struct {
-	Name 	 string `json:"name" yaml:"name"`
-	Upstream bool   `json:"upstream" yaml:"upstream"`
+	Name 	 string `yaml:"name"`
+	Upstream bool   `yaml:"upstream"`
 }
 
 func Main() {
@@ -77,10 +77,6 @@ func Main() {
 		log.Fatalln("Unmarshal test suite mappings", err)
 	}
 
-	//fmt.Printf("%+v", testSuites)
-
-	//log.Printf("Clonerefs:\n %+v\n TestSuites:\n%+v \n", cloneRefs, testSuites)
-
 	if len(cloneRefs.GitRefs) == 0 || len(cloneRefs.GitRefs[0].Pulls) == 0 {
 		log.Fatal("Clone refs do not include required SHAs")
 	}
@@ -88,13 +84,12 @@ func Main() {
 	prowgen.GitFetch(ctx, cloneRefs.GitRefs[0].RepoLink, cloneRefs.GitRefs[0].BaseSHA)
 	// Fetch SHA of pull request commit
 	prowgen.GitFetch(ctx, cloneRefs.GitRefs[0].RepoLink, cloneRefs.GitRefs[0].Pulls[0].SHA)
+
 	paths, err := prowgen.GitDiffNameOnly(ctx, cloneRefs.GitRefs[0].BaseSHA, cloneRefs.GitRefs[0].Pulls[0].SHA)
 	if err != nil {
 		log.Fatalln("Error reading diff", err)
 	}
-	// "hack/generate/csv.sh", "docs/mesh.md", "hack/lib/serverless.bash"
-	paths = []string{ "knative-operator/pkg/webhook/knativeeventing/webhook_mutating.go",
-		"openshift-knative-operator/cmd/operator/kodata/monitoring/rbac-proxy.yaml", }
+
 	tests, err := filterTests(*testSuites, paths)
 	if err != nil {
 		log.Fatal(err)
@@ -104,6 +99,7 @@ func Main() {
 	for _, tst := range tests {
 		sb.WriteString(tst + "\n")
 	}
+
 	if err := os.WriteFile(*outFile, []byte(sb.String()), os.ModePerm); err != nil {
 		log.Fatal(err)
 	}
