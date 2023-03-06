@@ -77,22 +77,25 @@ func Main() {
 		log.Fatalln("Unmarshal test suite mappings", err)
 	}
 
+	var tests, paths []string
+
 	if len(cloneRefs.GitRefs) == 0 || len(cloneRefs.GitRefs[0].Pulls) == 0 {
-		log.Fatal("Clone refs do not include required SHAs")
-	}
-	// Fetch base SHA
-	prowgen.GitFetch(ctx, cloneRefs.GitRefs[0].RepoLink, cloneRefs.GitRefs[0].BaseSHA)
-	// Fetch SHA of pull request commit
-	prowgen.GitFetch(ctx, cloneRefs.GitRefs[0].RepoLink, cloneRefs.GitRefs[0].Pulls[0].SHA)
+		log.Println(`Clone refs do not include required SHAs. Returning "All".`)
+		tests = []string{ all }
+	} else {
+		// Fetch base SHA
+		prowgen.GitFetch(ctx, cloneRefs.GitRefs[0].RepoLink, cloneRefs.GitRefs[0].BaseSHA)
+		// Fetch SHA of pull request commit
+		prowgen.GitFetch(ctx, cloneRefs.GitRefs[0].RepoLink, cloneRefs.GitRefs[0].Pulls[0].SHA)
 
-	paths, err := prowgen.GitDiffNameOnly(ctx, cloneRefs.GitRefs[0].BaseSHA, cloneRefs.GitRefs[0].Pulls[0].SHA)
-	if err != nil {
-		log.Fatalln("Error reading diff", err)
-	}
-
-	tests, err := filterTests(*testSuites, paths)
-	if err != nil {
-		log.Fatal(err)
+		paths, err = prowgen.GitDiffNameOnly(ctx, cloneRefs.GitRefs[0].BaseSHA, cloneRefs.GitRefs[0].Pulls[0].SHA)
+		if err != nil {
+			log.Fatalln("Error reading diff", err)
+		}
+		tests, err = filterTests(*testSuites, paths)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	var sb strings.Builder
