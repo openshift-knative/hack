@@ -11,5 +11,5 @@ unit-tests:
 
 # TESTSUITES=/home/mgencur/go/src/github.com/openshift-knative/hack/config/testsuites.yaml CLONEREFS=/home/mgencur/go/src/github.com/openshift-knative/hack/config/clonerefs.json make test-select
 test-select:
-	go run github.com/openshift-knative/hack/cmd/testselect --testsuites $(TESTSUITES) --clonerefs $(CLONEREFS)
+	go run github.com/openshift-knative/hack/cmd/testselect --testsuites $(TESTSUITES) --clonerefs $(CLONEREFS) --output=tests.txt
 .PHONY: test-select
