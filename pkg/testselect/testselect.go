@@ -17,6 +17,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/openshift-knative/hack/pkg/prowgen"
@@ -51,7 +52,6 @@ func Main() {
 	ts := flag.String("testsuites", "testsuites.yaml", "Specify yaml file with path-to-testsuite mapping")
 	// Clonerefs options as defined in https://github.com/kubernetes/test-infra/blob/master/prow/clonerefs/options.go
 	refs := flag.String("clonerefs", "clonerefs.json", "Specify json file with clonerefs")
-	upstream := flag.Bool("upstream", false, "Specify whether upstream test suites should be selected")
 	outFile := flag.String("output", "tests.txt", "Specify name of output file")
 	flag.Parse()
 
@@ -95,7 +95,7 @@ func Main() {
 	// "hack/generate/csv.sh", "docs/mesh.md", "hack/lib/serverless.bash"
 	paths = []string{ "knative-operator/pkg/webhook/knativeeventing/webhook_mutating.go",
 		"openshift-knative-operator/cmd/operator/kodata/monitoring/rbac-proxy.yaml", }
-	tests, err := filterTests(*testSuites, paths, *upstream)
+	tests, err := filterTests(*testSuites, paths)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -109,7 +109,7 @@ func Main() {
 	}
 }
 
-func filterTests(testSuites TestSuites, paths []string, upstream bool) ([]string, error) {
+func filterTests(testSuites TestSuites, paths []string) ([]string, error) {
 	testsToRun := make(map[string]bool)
 	for _, path := range paths {
 		matchAny := false
@@ -122,10 +122,7 @@ func filterTests(testSuites TestSuites, paths []string, upstream bool) ([]string
 				if matched {
 					matchAny = true
 					for _, test := range suite.Tests {
-						// Choose either upstream or downstream tests only.
-						if test.Upstream == upstream {
-							testsToRun[test.Name] = true
-						}
+						testsToRun[test.Name] = true
 					}
 				}
 			}
@@ -150,20 +147,14 @@ func filterTests(testSuites TestSuites, paths []string, upstream bool) ([]string
 		}
 	}
 
-	return keys(testsToRun), nil
+	return sortedKeys(testsToRun), nil
 }
 
-func keys(stringMap map[string]bool) []string {
+func sortedKeys(stringMap map[string]bool) []string {
 	keys := make([]string, 0, len(stringMap))
 	for k := range stringMap {
 		keys = append(keys, k)
 	}
+	sort.Strings(keys)
 	return keys
-}
-
-func saveTests(filePath *string, tests []byte) error {
-	if err := os.WriteFile(*filePath, tests, os.ModePerm); err != nil {
-		return err
-	}
-	return nil
 }
