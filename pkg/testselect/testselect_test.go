@@ -7,14 +7,14 @@ import (
 )
 
 type test struct {
-	name string
-	paths []string
+	name          string
+	paths         []string
 	selectedTests []string
 }
 
 func TestSelectTestsuites(t *testing.T) {
 	ts := TestSuites{
-		List: []TestSuite {
+		List: []TestSuite{
 			{
 				Name: "Run Always",
 				// RunIfChanged: not defined
@@ -93,7 +93,7 @@ func TestSelectTestsuites(t *testing.T) {
 			},
 		},
 		{
-			name: "Choose always-run tests #2",
+			name:  "Choose always-run tests #2",
 			paths: []string{},
 			selectedTests: []string{
 				"serverless_operator_e2e_tests",
