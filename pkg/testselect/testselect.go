@@ -26,9 +26,9 @@ type TestSuites struct {
 }
 
 type TestSuite struct {
-	Name 		 string   `yaml:"name"`
+	Name         string   `yaml:"name"`
 	RunIfChanged []string `yaml:"run_if_changed"`
-	Tests 		 []string   `yaml:"tests"`
+	Tests        []string `yaml:"tests"`
 }
 
 func Main() {
@@ -66,7 +66,7 @@ func Main() {
 
 	if len(cloneRefs.GitRefs) == 0 || len(cloneRefs.GitRefs[0].Pulls) == 0 {
 		log.Println(`Clone refs do not include required SHAs. Returning "All".`)
-		tests = []string{ all }
+		tests = []string{all}
 	} else {
 		repo := prowgen.Repository{
 			Org:  cloneRefs.GitRefs[0].Org,
@@ -129,7 +129,7 @@ func filterTests(testSuites TestSuites, paths []string) ([]string, error) {
 		// If the path doesn't match any path expressions then it is unknown
 		// path and all test suites should be run.
 		if !matchAny {
-			return []string{ all }, nil
+			return []string{all}, nil
 		}
 	}
 
