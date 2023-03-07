@@ -143,18 +143,18 @@ func pushBranch(ctx context.Context, release Repository, remote *string, branch 
 	log.Println("Pushing branch", branch, "to", *remote)
 
 	// Ignore error since remote and branch might be already there
-	_ = run(ctx, release, "git", "checkout", "-b", branch)
-	_ = run(ctx, release, "git", "checkout", branch)
-	_ = run(ctx, release, "git", "remote", "add", "fork", *remote)
+	_, _ = run(ctx, release, "git", "checkout", "-b", branch)
+	_, _ = run(ctx, release, "git", "checkout", branch)
+	_, _ = run(ctx, release, "git", "remote", "add", "fork", *remote)
 
-	if err := run(ctx, release, "git", "add", "."); err != nil {
+	if _, err := run(ctx, release, "git", "add", "."); err != nil {
 		return err
 	}
-	if err := run(ctx, release, "git", "commit", "-s", "-S", "-m", "Sync Serverless CI "+config); err != nil {
+	if _, err := run(ctx, release, "git", "commit", "-s", "-S", "-m", "Sync Serverless CI "+config); err != nil {
 		// Ignore error since we could have nothing to commit
 		log.Println("Ignored error", err)
 	}
-	if err := run(ctx, release, "git", "push", "fork", branch, "-f"); err != nil {
+	if _, err := run(ctx, release, "git", "push", "fork", branch, "-f"); err != nil {
 		return err
 	}
 
@@ -201,7 +201,7 @@ func saveReleaseBuildConfiguration(outConfig *string, cfg ReleaseBuildConfigurat
 }
 
 func runOpenShiftReleaseGenerator(ctx context.Context, openShiftRelease Repository) error {
-	if err := run(ctx, openShiftRelease, "make", "ci-operator-config", "jobs"); err != nil {
+	if _, err := run(ctx, openShiftRelease, "make", "ci-operator-config", "jobs"); err != nil {
 		return err
 	}
 	return nil

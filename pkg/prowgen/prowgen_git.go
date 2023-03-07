@@ -11,7 +11,8 @@ import (
 )
 
 func GitCheckout(ctx context.Context, r Repository, branch string) error {
-	return run(ctx, r, "git", "checkout", branch)
+	_, err := run(ctx, r, "git", "checkout", branch)
+	return err
 }
 
 func GitClone(ctx context.Context, r Repository) error {
@@ -41,20 +42,26 @@ func GitClone(ctx context.Context, r Repository) error {
 		return fmt.Errorf("[%s] failed to clone repository: %w", r.RepositoryDirectory(), err)
 	}
 
-	if err := run(ctx, r, "git", "config", "--bool", "core.bare", "false"); err != nil {
+	if _, err := run(ctx, r, "git", "config", "--bool", "core.bare", "false"); err != nil {
 		return fmt.Errorf("[%s] failed to set config for repository: %w", r.RepositoryDirectory(), err)
 	}
 
 	return nil
 }
 
-func GitFetch(ctx context.Context, remoteRepo, sha string) error {
+func GitMerge(ctx context.Context, r Repository, sha string) error {
+	_, err := run(ctx, r, "git", "merge", sha, "--no-ff", "-m", "Merge " + sha)
+	return err
+}
+
+func GitFetch(ctx context.Context, r Repository, sha string) error {
+	remoteRepo := fmt.Sprintf("https://github.com/%s/%s.git", r.Org, r.Repo)
 	_, err := runNoRepo(ctx, "git", "fetch", remoteRepo, sha)
 	return err
 }
 
-func GitDiffNameOnly(ctx context.Context, baseSha, sha string) ([]string, error) {
-	out, err := runNoRepo(ctx, "git", "diff", "--name-only", fmt.Sprintf("%s..%s", baseSha, sha))
+func GitDiffNameOnly(ctx context.Context, r Repository, sha string) ([]string, error) {
+	out, err := run(ctx, r, "git", "diff", "--name-only", sha)
 	if err != nil {
 		return nil, err
 	}

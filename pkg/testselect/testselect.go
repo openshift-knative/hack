@@ -83,12 +83,11 @@ func Main() {
 		log.Println(`Clone refs do not include required SHAs. Returning "All".`)
 		tests = []string{ all }
 	} else {
-		// Fetch base SHA
-		prowgen.GitFetch(ctx, cloneRefs.GitRefs[0].RepoLink, cloneRefs.GitRefs[0].BaseSHA)
-		// Fetch SHA of pull request commit
-		prowgen.GitFetch(ctx, cloneRefs.GitRefs[0].RepoLink, cloneRefs.GitRefs[0].Pulls[0].SHA)
-
-		paths, err = prowgen.GitDiffNameOnly(ctx, cloneRefs.GitRefs[0].BaseSHA, cloneRefs.GitRefs[0].Pulls[0].SHA)
+		repo := prowgen.Repository{
+			Org:  cloneRefs.GitRefs[0].Org,
+			Repo: cloneRefs.GitRefs[0].Repo,
+		}
+		paths, err = Diff(ctx, repo, cloneRefs.GitRefs[0].BaseSHA, cloneRefs.GitRefs[0].Pulls[0].SHA)
 		if err != nil {
 			log.Fatalln("Error reading diff", err)
 		}
@@ -106,6 +105,22 @@ func Main() {
 	if err := os.WriteFile(*outFile, []byte(sb.String()), os.ModePerm); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func Diff(ctx context.Context, repo prowgen.Repository, baseSha, sha string) ([]string, error) {
+	if err := prowgen.GitClone(ctx, repo); err != nil {
+		return nil, err
+	}
+	if err := prowgen.GitCheckout(ctx, repo, baseSha); err != nil {
+		return nil, err
+	}
+	if err := prowgen.GitFetch(ctx, repo, sha); err != nil {
+		return nil, err
+	}
+	if err := prowgen.GitMerge(ctx, repo, sha); err != nil {
+		return nil, err
+	}
+	return prowgen.GitDiffNameOnly(ctx, repo, baseSha)
 }
 
 func filterTests(testSuites TestSuites, paths []string) ([]string, error) {
