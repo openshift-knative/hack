@@ -133,15 +133,11 @@ func filterTests(testSuites TestSuites, paths []string) ([]string, error) {
 		}
 	}
 
-	// If no tests were chosen at this point then the changes don't require any tests.
-	// If a "reduced" but non-empty test suite is generated we also want to add tests
-	// that don't have any path expression (run_if_changed) and thus should always be added.
-	if len(testsToRun) != 0 {
-		for _, suite := range testSuites.List {
-			if len(suite.RunIfChanged) == 0 {
-				for _, test := range suite.Tests {
-					testsToRun[test] = true
-				}
+	// Add tests that should always run.
+	for _, suite := range testSuites.List {
+		if len(suite.RunIfChanged) == 0 {
+			for _, test := range suite.Tests {
+				testsToRun[test] = true
 			}
 		}
 	}

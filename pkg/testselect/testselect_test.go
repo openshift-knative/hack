@@ -83,12 +83,21 @@ func TestSelectTestsuites(t *testing.T) {
 			},
 		},
 		{
-			name: "Choose None",
+			name: "Choose always-run tests #1",
 			paths: []string{
 				"hack/generate/csv.sh",
 				"docs/mesh.md",
 			},
-			selectedTests: []string{},
+			selectedTests: []string{
+				"serverless_operator_e2e_tests",
+			},
+		},
+		{
+			name: "Choose always-run tests #2",
+			paths: []string{},
+			selectedTests: []string{
+				"serverless_operator_e2e_tests",
+			},
 		},
 	}
 
