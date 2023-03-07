@@ -18,10 +18,8 @@ func TestSelectTestsuites(t *testing.T) {
 			{
 				Name: "Run Always",
 				// RunIfChanged: not defined
-				Tests: []Test{
-					{
-						Name: "serverless_operator_e2e_tests",
-					},
+				Tests: []string{
+					"serverless_operator_e2e_tests",
 				},
 			},
 			{
@@ -30,13 +28,9 @@ func TestSelectTestsuites(t *testing.T) {
 					"^knative-operator/pkg/controller/knativekafka/",
 					"^knative-operator/pkg/webhook/knativekafka/",
 				},
-				Tests: []Test{
-					{
-						Name: "serverless_operator_kafka_e2e_tests",
-					},
-					{
-						Name: "downstream_knative_kafka_e2e_tests",
-					},
+				Tests: []string{
+					"serverless_operator_kafka_e2e_tests",
+					"downstream_knative_kafka_e2e_tests",
 				},
 			},
 			{
@@ -45,13 +39,9 @@ func TestSelectTestsuites(t *testing.T) {
 					"^knative-operator/pkg/controller/knativeeventing/",
 					"^knative-operator/pkg/webhook/knativeeventing/",
 				},
-				Tests: []Test{
-					{
-						Name: "downstream_eventing_e2e_tests",
-					},
-					{
-						Name: "upstream_knative_eventing_e2e",
-					},
+				Tests: []string{
+					"downstream_eventing_e2e_tests",
+					"upstream_knative_eventing_e2e",
 				},
 			},
 			{

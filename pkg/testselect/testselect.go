@@ -38,12 +38,7 @@ type TestSuites struct {
 type TestSuite struct {
 	Name 		 string   `yaml:"name"`
 	RunIfChanged []string `yaml:"run_if_changed"`
-	Tests 		 []Test   `yaml:"tests"`
-}
-
-type Test struct {
-	Name 	 string `yaml:"name"`
-	Upstream bool   `yaml:"upstream"`
+	Tests 		 []string   `yaml:"tests"`
 }
 
 func Main() {
@@ -136,7 +131,7 @@ func filterTests(testSuites TestSuites, paths []string) ([]string, error) {
 				if matched {
 					matchAny = true
 					for _, test := range suite.Tests {
-						testsToRun[test.Name] = true
+						testsToRun[test] = true
 					}
 				}
 			}
@@ -155,7 +150,7 @@ func filterTests(testSuites TestSuites, paths []string) ([]string, error) {
 		for _, suite := range testSuites.List {
 			if len(suite.RunIfChanged) == 0 {
 				for _, test := range suite.Tests {
-					testsToRun[test.Name] = true
+					testsToRun[test] = true
 				}
 			}
 		}
