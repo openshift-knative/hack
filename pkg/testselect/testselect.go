@@ -1,13 +1,3 @@
-// prowgen generates openshift/release configurations based on the OpenShift serverless
-// teams conventions.
-//
-// For example, it extracts image builds Dockerfile from the common
-// directory `openshift/ci-operator/**/Dockerfile.
-//
-// To onboard a new repository, update the configuration in config/repositories.yaml
-// and run the program, or alternatively, you can provide your own configuration file
-// using the -config <path> argument.
-
 package testselect
 
 import (

@@ -98,8 +98,6 @@ func TestSelectTestsuites(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
-			t.Logf("Expected: %+v", tt.selectedTests)
-			t.Logf("Result: %+v", result)
 			diff := cmp.Diff(tt.selectedTests, result)
 			if diff != "" {
 				t.Errorf("Unexpected tests (-want, +got): \n%s", diff)
