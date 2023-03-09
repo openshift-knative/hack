@@ -21,15 +21,15 @@ config:
     "release-v1.8":
       openShiftVersions:
         - 4.12
-        - 4.8
+        - 4.10
     "release-v1.9":
       openShiftVersions:
         - 4.12
-        - 4.8
+        - 4.10
     "release-next":
       openShiftVersions:
         - 4.12
-        - 4.8
+        - 4.10
 
 repositories:
   - org: openshift-knative
