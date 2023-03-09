@@ -80,6 +80,9 @@ func TestSelectTestsuites(t *testing.T) {
 			},
 			selectedTests: []string{
 				"All",
+				"downstream_knative_kafka_e2e_tests",
+				"serverless_operator_e2e_tests",
+				"serverless_operator_kafka_e2e_tests",
 			},
 		},
 		{

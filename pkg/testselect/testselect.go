@@ -129,7 +129,7 @@ func filterTests(testSuites TestSuites, paths []string) ([]string, error) {
 		// If the path doesn't match any path expressions then it is unknown
 		// path and all test suites should be run.
 		if !matchAny {
-			return []string{all}, nil
+			testsToRun[all] = true
 		}
 	}
 
