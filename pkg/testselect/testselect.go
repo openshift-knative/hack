@@ -28,7 +28,9 @@ type TestSuites struct {
 type TestSuite struct {
 	Name         string   `yaml:"name"`
 	RunIfChanged []string `yaml:"run_if_changed"`
-	Tests        []string `yaml:"tests"`
+	// Tests are arbitrary strings. It is up to the caller to check the strings and decide whether
+	// some code should be run. For example, they can match specific Bash function names or Make targets.
+	Tests []string `yaml:"tests"`
 }
 
 func Main() {
