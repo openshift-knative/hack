@@ -8,3 +8,7 @@ generate-ci:
 unit-tests:
 	go test ./pkg/...
 .PHONY: unit-tests
+
+test-select:
+	go run github.com/openshift-knative/hack/cmd/testselect --testsuites $(TESTSUITES) --clonerefs $(CLONEREFS) --output=tests.txt
+.PHONY: test-select
