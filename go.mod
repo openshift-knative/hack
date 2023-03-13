@@ -11,6 +11,9 @@ require (
 	github.com/openshift/ci-tools v0.0.0-20221026095412-03adfdde63aa
 	github.com/openshift/origin v4.1.0+incompatible
 	github.com/openshift/release v0.0.0-20221026112940-9a113497a40b
+	github.com/spf13/pflag v1.0.5
+	go.uber.org/zap v1.19.1
+	golang.org/x/mod v0.9.0
 	golang.org/x/sync v0.1.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/apimachinery v0.24.2
@@ -103,17 +106,14 @@ require (
 	github.com/shurcooL/githubv4 v0.0.0-20210725200734-83ba7b4c9228 // indirect
 	github.com/shurcooL/graphql v0.0.0-20181231061246-d48a9a75455f // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/tektoncd/pipeline v0.36.0 // indirect
 	github.com/trivago/tgo v1.0.7 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
-	go.uber.org/zap v1.19.1 // indirect
 	go4.org v0.0.0-20201209231011-d4a079459e60 // indirect
 	gocloud.dev v0.19.0 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
-	golang.org/x/mod v0.6.0 // indirect
 	golang.org/x/net v0.1.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220608161450-d0670ef3b1eb // indirect
 	golang.org/x/sys v0.1.0 // indirect

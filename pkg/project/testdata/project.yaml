@@ -1,0 +1,3 @@
+project:
+  tag: knative-v1.8
+  imagePrefix: knative
