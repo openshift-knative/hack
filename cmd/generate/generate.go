@@ -250,6 +250,10 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		// Write the mapping file between Go packages to resolved images.
+		// For example:
+		// github.com/openshift-knative/hack/cmd/prowgen: registry.ci.openshift.org/openshift/knative-prowgen:knative-v1.8
+		// github.com/openshift-knative/hack/cmd/testselect: registry.ci.openshift.org/openshift/knative-test-testselect:knative-v1.8
 		if err := os.WriteFile(filepath.Join(output, "images.yaml"), mapping, fs.ModePerm); err != nil {
 			log.Fatal("Write images mapping file ", err)
 		}

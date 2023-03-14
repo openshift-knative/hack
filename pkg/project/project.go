@@ -7,6 +7,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
+// Metadata is the structure for project metadata
+// Every project should have a file, usually called
+// project.yaml that contains such metadata.
 type Metadata struct {
 	Project Project `json:"project" yaml:"project"`
 }
