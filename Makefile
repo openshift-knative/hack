@@ -17,7 +17,7 @@ unit-tests:
 		--project-file pkg/project/testdata/project.yaml \
 		--excludes ".*vendor.*" \
 		--excludes "openshift.*" \
-		--output "openshift/project/testoutput"
+		--output "openshift/project/testoutput/openshift"
 	diff -r "pkg/project/testoutput" "openshift/project/testoutput"
 
 .PHONY: unit-tests
