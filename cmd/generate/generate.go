@@ -79,7 +79,7 @@ func main() {
 	pflag.StringVar(&projectFilePath, "project-file", filepath.Join(wd, "openshift", "project.yaml"), "Project metadata file path")
 	pflag.StringVar(&dockerfileImageBuilderFmt, "dockerfile-image-builder-fmt", "registry.ci.openshift.org/openshift/release:golang-%s", "Dockerfile image builder format")
 	pflag.StringVar(&registryImageFmt, "registry-image-fmt", "registry.ci.openshift.org/openshift/%s:%s", "Container registry image format")
-	pflag.StringArrayVar(&imagesFromRepositories, "images-from", nil, "Additional images to be pulled from other midstream repositories matching the tag in project.yaml")
+	pflag.StringArrayVar(&imagesFromRepositories, "images-from", nil, "Additional image references to be pulled from other midstream repositories matching the tag in project.yaml")
 	pflag.StringVar(&imagesFromRepositoriesURLFmt, "images-from-url-format", "https://raw.githubusercontent.com/openshift-knative/%s/%s/openshift/images.yaml", "Additional images to be pulled from other midstream repositories matching the tag in project.yaml")
 	pflag.Parse()
 
