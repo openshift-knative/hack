@@ -2,5 +2,5 @@
 #
 # See comment on Metadata in pkg/project/project.yaml
 project:
-  tag: knative-v1.8
+  tag: main
   imagePrefix: knative

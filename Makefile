@@ -19,7 +19,7 @@ unit-tests:
 		--excludes ".*vendor.*" \
 		--excludes "openshift.*" \
 		--images-from "hack" \
-		--images-from-url-format "https://raw.githubusercontent.com/pierDipi/openshift-knative-hack/additional-images/pkg/project/testdata/additional-images.yaml?x=%s&y=%s" \
+		--images-from-url-format "https://raw.githubusercontent.com/openshift-knative/%s/%s/pkg/project/testdata/additional-images.yaml" \
 		--output "openshift/project/testoutput/openshift"
 	diff -r "pkg/project/testoutput" "openshift/project/testoutput"
 
