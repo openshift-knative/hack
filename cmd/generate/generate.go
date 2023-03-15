@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"go/parser"
 	"go/token"
+	"io"
 	"io/fs"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -18,7 +20,7 @@ import (
 	"github.com/spf13/pflag"
 	"go.uber.org/zap/buffer"
 	"golang.org/x/mod/modfile"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/openshift-knative/hack/pkg/project"
@@ -42,17 +44,19 @@ func main() {
 	}
 
 	var (
-		rootDir                   string
-		includes                  []string
-		excludes                  []string
-		generators                string
-		output                    string
-		dockerfilesDir            string
-		dockerfilesTestDir        string
-		dockerfilesBuildDir       string
-		projectFilePath           string
-		dockerfileImageBuilderFmt string
-		registryImageFmt          string
+		rootDir                      string
+		includes                     []string
+		excludes                     []string
+		generators                   string
+		output                       string
+		dockerfilesDir               string
+		dockerfilesTestDir           string
+		dockerfilesBuildDir          string
+		projectFilePath              string
+		dockerfileImageBuilderFmt    string
+		registryImageFmt             string
+		imagesFromRepositories       []string
+		imagesFromRepositoriesURLFmt string
 	)
 
 	defaultIncludes := []string{
@@ -75,6 +79,8 @@ func main() {
 	pflag.StringVar(&projectFilePath, "project-file", filepath.Join(wd, "openshift", "project.yaml"), "Project metadata file path")
 	pflag.StringVar(&dockerfileImageBuilderFmt, "dockerfile-image-builder-fmt", "registry.ci.openshift.org/openshift/release:golang-%s", "Dockerfile image builder format")
 	pflag.StringVar(&registryImageFmt, "registry-image-fmt", "registry.ci.openshift.org/openshift/%s:%s", "Container registry image format")
+	pflag.StringArrayVar(&imagesFromRepositories, "images-from", nil, "Additional images to be pulled from other midstream repositories matching the tag in project.yaml")
+	pflag.StringVar(&imagesFromRepositoriesURLFmt, "images-from-url-format", "https://raw.githubusercontent.com/openshift-knative/%s/%s/openshift/images.yaml", "Additional images to be pulled from other midstream repositories matching the tag in project.yaml")
 	pflag.Parse()
 
 	if rootDir == "" {
@@ -246,6 +252,10 @@ func main() {
 			}
 		}
 
+		if err := getAdditionalImagesFromMatchingRepositories(imagesFromRepositories, metadata, imagesFromRepositoriesURLFmt, goPackageToImageMapping); err != nil {
+			log.Fatal(err)
+		}
+
 		mapping, err := yaml.Marshal(goPackageToImageMapping)
 		if err != nil {
 			log.Fatal(err)
@@ -258,6 +268,50 @@ func main() {
 			log.Fatal("Write images mapping file ", err)
 		}
 	}
+}
+
+func getAdditionalImagesFromMatchingRepositories(repositories []string, metadata *project.Metadata, urlFmt string, mapping map[string]string) error {
+	branch := strings.Replace(metadata.Project.Tag, "knative", "release", 1)
+	branch = strings.Replace(branch, "nightly", "next", 1)
+	for _, r := range repositories {
+		images, err := downloadImagesFrom(r, branch, urlFmt)
+		if err != nil {
+			return err
+		}
+
+		for k, v := range images {
+			// Only add images that are not present
+			if _, ok := mapping[k]; !ok {
+				log.Println("Additional image from", r, k, v)
+				mapping[k] = v
+			}
+		}
+	}
+
+	return nil
+}
+
+func downloadImagesFrom(r string, branch string, urlFmt string) (map[string]string, error) {
+	url := fmt.Sprintf(urlFmt, r, branch)
+	response, err := http.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get images for repository %s from %s: %w", r, url, err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode > 400 {
+		return nil, fmt.Errorf("failed to get images for repository %s from %s: status code %d", r, url, response.StatusCode)
+	}
+
+	content, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+	images := make(map[string]string, 8)
+	if err := yaml.Unmarshal(content, images); err != nil {
+		return nil, fmt.Errorf("failed to get images for repository %s from %s: %w", r, url, err)
+	}
+	return images, nil
 }
 
 func getGoMod(rootDir string) *modfile.File {
