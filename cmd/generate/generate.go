@@ -37,6 +37,9 @@ var DockerfileTemplate embed.FS
 //go:embed BuildImageDockerfile.template
 var DockerfileBuildImageTemplate embed.FS
 
+//go:embed SourceImageDockerfile.template
+var DockerfileSourceImageTemplate embed.FS
+
 func main() {
 	wd, err := os.Getwd()
 	if err != nil {
@@ -52,6 +55,7 @@ func main() {
 		dockerfilesDir               string
 		dockerfilesTestDir           string
 		dockerfilesBuildDir          string
+		dockerfilesSourceDir         string
 		projectFilePath              string
 		dockerfileImageBuilderFmt    string
 		registryImageFmt             string
@@ -74,6 +78,7 @@ func main() {
 	pflag.StringVar(&generators, "generators", "", "Generate something supported: [dockerfile]")
 	pflag.StringVar(&dockerfilesDir, "dockerfile-dir", "ci-operator/knative-images", "Dockerfiles output directory for project images relative to output flag")
 	pflag.StringVar(&dockerfilesBuildDir, "dockerfile-build-dir", "ci-operator/build-image", "Dockerfiles output directory for build image relative to output flag")
+	pflag.StringVar(&dockerfilesSourceDir, "dockerfile-source-dir", "ci-operator/source-image", "Dockerfiles output directory for source image relative to output flag")
 	pflag.StringVar(&dockerfilesTestDir, "dockerfile-test-dir", "ci-operator/knative-test-images", "Dockerfiles output directory for test images relative to output flag")
 	pflag.StringVar(&output, "output", filepath.Join(wd, "openshift"), "Output directory")
 	pflag.StringVar(&projectFilePath, "project-file", filepath.Join(wd, "openshift", "project.yaml"), "Project metadata file path")
@@ -169,29 +174,11 @@ func main() {
 			metadata = nil
 		}
 
-		bt, err := template.ParseFS(DockerfileBuildImageTemplate, "*.template")
-		if err != nil {
-			log.Fatal("Failed creating template ", err)
-		}
 		d := map[string]interface{}{
 			"builder": builderImage,
 		}
-		bf := &buffer.Buffer{}
-		if err := bt.Execute(bf, d); err != nil {
-			log.Fatal("Failed to execute template", err)
-		}
-
-		out := filepath.Join(output, dockerfilesBuildDir)
-		if err := os.RemoveAll(out); err != nil && !errors.Is(err, os.ErrNotExist) {
-			log.Fatal(err)
-		}
-		if err := os.MkdirAll(out, fs.ModePerm); err != nil && !errors.Is(err, fs.ErrExist) {
-			log.Fatal(err)
-		}
-		dockerfilePath := filepath.Join(out, "Dockerfile")
-		if err := os.WriteFile(dockerfilePath, bf.Bytes(), fs.ModePerm); err != nil {
-			log.Fatal("Failed writing file", err)
-		}
+		saveDockerfile(d, DockerfileBuildImageTemplate, output, dockerfilesBuildDir)
+		saveDockerfile(d, DockerfileSourceImageTemplate, output, dockerfilesSourceDir)
 
 		for _, p := range mainPackagesPaths.List() {
 			d := map[string]interface{}{
@@ -216,16 +203,7 @@ func main() {
 				out = filepath.Join(output, dockerfilesTestDir, filepath.Base(p))
 			}
 
-			if err := os.RemoveAll(out); err != nil && !errors.Is(err, os.ErrNotExist) {
-				log.Fatal(err)
-			}
-			if err := os.MkdirAll(out, fs.ModePerm); err != nil && !errors.Is(err, fs.ErrExist) {
-				log.Fatal(err)
-			}
-			dockerfilePath := filepath.Join(out, "Dockerfile")
-			if err := os.WriteFile(dockerfilePath, bf.Bytes(), fs.ModePerm); err != nil {
-				log.Fatal("Failed writing file", err)
-			}
+			dockerfilePath := saveDockerfile(d, DockerfileTemplate, out, "")
 
 			if metadata != nil {
 				v, err := prowgen.ProjectDirectoryImageBuildStepConfigurationFuncFromImageInput(
@@ -312,6 +290,31 @@ func downloadImagesFrom(r string, branch string, urlFmt string) (map[string]stri
 		return nil, fmt.Errorf("failed to get images for repository %s from %s: %w", r, url, err)
 	}
 	return images, nil
+}
+
+func saveDockerfile(d map[string]interface{}, imageTemplate embed.FS, output string, dir string) string {
+	bt, err := template.ParseFS(imageTemplate, "*.template")
+	if err != nil {
+		log.Fatal("Failed creating template ", err)
+	}
+	bf := &buffer.Buffer{}
+	if err := bt.Execute(bf, d); err != nil {
+		log.Fatal("Failed to execute template", err)
+	}
+
+	out := filepath.Join(output, dir)
+	if err := os.RemoveAll(out); err != nil && !errors.Is(err, os.ErrNotExist) {
+		log.Fatal(err)
+	}
+	if err := os.MkdirAll(out, fs.ModePerm); err != nil && !errors.Is(err, fs.ErrExist) {
+		log.Fatal(err)
+	}
+	dockerfilePath := filepath.Join(out, "Dockerfile")
+	if err := os.WriteFile(dockerfilePath, bf.Bytes(), fs.ModePerm); err != nil {
+		log.Fatal("Failed writing file", err)
+	}
+
+	return dockerfilePath
 }
 
 func getGoMod(rootDir string) *modfile.File {
