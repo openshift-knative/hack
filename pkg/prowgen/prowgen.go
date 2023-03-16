@@ -274,7 +274,7 @@ func injectSlackReporterConfig(inConfig *Config, openShiftRelease Repository) er
 // initializeOpenShiftReleaseRepository clones openshift/release and clean up existing jobs
 // for the configured branches
 func initializeOpenShiftReleaseRepository(ctx context.Context, openShiftRelease Repository, inConfig *Config, outputConfig *string) error {
-	if err := GitClone(ctx, openShiftRelease); err != nil {
+	if err := GitMirror(ctx, openShiftRelease); err != nil {
 		return err
 	}
 	if err := GitCheckout(ctx, openShiftRelease, "master"); err != nil {
