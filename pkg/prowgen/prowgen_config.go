@@ -182,7 +182,7 @@ func withTagPromotion(r Repository, branchName string) ReleaseBuildConfiguration
 		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
 			Namespace:   "openshift",
 			Tag:         strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
-			TagByCommit: true,
+			TagByCommit: false, // TODO: revisit this later
 			AdditionalImages: map[string]string{
 				// Add source image
 				transformLegacyKnativeEventingSourceImageName(r): "src",
