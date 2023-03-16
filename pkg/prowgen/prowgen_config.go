@@ -53,7 +53,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 
 	cfgs := make([]ReleaseBuildConfiguration, 0, len(cc.Branches)*2)
 
-	if err := GitClone(ctx, r); err != nil {
+	if err := GitMirror(ctx, r); err != nil {
 		return nil, err
 	}
 
