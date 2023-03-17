@@ -14,6 +14,10 @@ config:
       openShiftVersions:
         - 4.12
         - 4.8
+    "release-v1.8":
+      openShiftVersions:
+        - 4.12
+        - 4.10
     "release-next":
       openShiftVersions:
         - 4.12
