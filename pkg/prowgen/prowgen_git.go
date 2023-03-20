@@ -45,7 +45,7 @@ func gitClone(ctx context.Context, r Repository, mirror bool) error {
 
 	remoteRepo := fmt.Sprintf("https://github.com/%s/%s.git", r.Org, r.Repo)
 	if mirror {
-		if _, err := runNoRepo(ctx, "git", "clone", "--mirror", remoteRepo, r.RepositoryDirectory()); err != nil {
+		if _, err := runNoRepo(ctx, "git", "clone", "--mirror", remoteRepo, filepath.Join(r.RepositoryDirectory(), ".git")); err != nil {
 			return fmt.Errorf("[%s] failed to clone repository: %w", r.RepositoryDirectory(), err)
 		}
 		if _, err := run(ctx, r, "git", "config", "--bool", "core.bare", "false"); err != nil {
