@@ -114,7 +114,9 @@ type Test struct {
 }
 
 func (t *Test) HexSha() string {
-	return hex.EncodeToString(sha1.New().Sum([]byte(t.Command)))[:shaLength]
+	h := sha1.New()
+	h.Write([]byte(t.Command))
+	return hex.EncodeToString(h.Sum(nil))[:shaLength]
 }
 
 func discoverE2ETests(r Repository) ([]Test, error) {

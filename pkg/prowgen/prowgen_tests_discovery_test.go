@@ -109,7 +109,7 @@ func TestDiscoverTests(t *testing.T) {
 			},
 		},
 		{
-			As: "test-confor-7465737-aws-ocp-412",
+			As: "test-confor-2627121-aws-ocp-412",
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
 				Version:      "4.12",
@@ -140,7 +140,7 @@ func TestDiscoverTests(t *testing.T) {
 			},
 		},
 		{
-			As:   "test-confor-7465737-aws-ocp-412-continuous",
+			As:   "test-confor-2627121-aws-ocp-412-continuous",
 			Cron: pointer.String("0 5 * * 2,6"),
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
