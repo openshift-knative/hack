@@ -1,8 +1,6 @@
 package prowgen
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
@@ -112,12 +110,6 @@ const (
 type Test struct {
 	Command  string
 	OnDemand bool
-}
-
-func (t *Test) HexSha() string {
-	h := sha1.New()
-	h.Write([]byte(t.Command))
-	return hex.EncodeToString(h.Sum(nil))[:shaLength]
 }
 
 func discoverE2ETests(r Repository) ([]Test, error) {
