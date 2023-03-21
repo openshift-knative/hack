@@ -14,3 +14,5 @@ repositories:
     e2e:
       matches:
         - ".*test-kafka-broker-upstream-.*"
+      onDemand:
+        - ".*test-kafka-broker-namespaced-midstream-.*"
