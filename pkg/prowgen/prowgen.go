@@ -258,7 +258,7 @@ func alwaysRunInjector() JobConfigInjector {
 
 					for _, t := range tests {
 						name := ToName(*r, &t, ocpVersion)
-						if t.OnDemand && name == jobConfig.PresubmitsStatic[k][i].Name {
+						if t.OnDemand && strings.Contains(jobConfig.PresubmitsStatic[k][i].Name, name) {
 							jobConfig.PresubmitsStatic[k][i].AlwaysRun = false
 						}
 					}
