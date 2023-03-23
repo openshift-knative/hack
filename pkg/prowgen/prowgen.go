@@ -19,6 +19,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/coreos/go-semver/semver"
 	gyaml "github.com/ghodss/yaml"
@@ -124,7 +125,7 @@ func Main() {
 	if err := runOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
 		log.Fatalln("Failed to run openshift/release generator:", err)
 	}
-	if err := injectSlackReporterConfig(inConfig, openShiftRelease); err != nil {
+	if err := runJobConfigInjectors(inConfig, openShiftRelease); err != nil {
 		log.Fatalln("Failed to inject Slack reporter", err)
 	}
 	if err := runOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
@@ -207,61 +208,113 @@ func runOpenShiftReleaseGenerator(ctx context.Context, openShiftRelease Reposito
 	return nil
 }
 
-func injectSlackReporterConfig(inConfig *Config, openShiftRelease Repository) error {
-	// Inject Slack reporter for each repository and branch
+func runJobConfigInjectors(inConfig *Config, openShiftRelease Repository) error {
+	injectors := JobConfigInjectors{
+		alwaysRunInjector(),
+		slackInjector(),
+	}
+	return injectors.Inject(inConfig, openShiftRelease)
+}
 
-	log.Println("Injecting Slack reporter configs")
+func slackInjector() JobConfigInjector {
+	return JobConfigInjector{
+		Type: Periodic,
+		Update: func(r *Repository, jobConfig *prowconfig.JobConfig) error {
+			for i := range jobConfig.Periodics {
+				jobConfig.Periodics[i].ReporterConfig = &prowapi.ReporterConfig{
+					Slack: &prowapi.SlackReporterConfig{
+						Channel: r.SlackChannel,
+						JobStatesToReport: []prowapi.ProwJobState{
+							prowapi.SuccessState,
+							prowapi.FailureState,
+							prowapi.ErrorState,
+						},
+						ReportTemplate: `{{if eq .Status.State "success"}} :rainbow: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :rainbow: {{else}} :volcano: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :volcano: {{end}}`,
+					},
+				}
+			}
+			return nil
+		},
+	}
+}
 
+func alwaysRunInjector() JobConfigInjector {
+	return JobConfigInjector{
+		Type: PreSubmit,
+		Update: func(r *Repository, jobConfig *prowconfig.JobConfig) error {
+			tests, err := discoverE2ETests(*r)
+			if err != nil {
+				return fmt.Errorf("failed to discover tests: %w", err)
+			}
+
+			for k := range jobConfig.PresubmitsStatic {
+				for i := range jobConfig.PresubmitsStatic[k] {
+					if err != nil {
+						return err
+					}
+
+					variant := jobConfig.PresubmitsStatic[k][i].Labels["ci-operator.openshift.io/variant"]
+					ocpVersion := strings.SplitN(variant, "-", 2)[0]
+
+					for _, t := range tests {
+						name := ToName(*r, &t, ocpVersion)
+						if t.OnDemand && strings.Contains(jobConfig.PresubmitsStatic[k][i].Name, name) {
+							jobConfig.PresubmitsStatic[k][i].AlwaysRun = false
+						}
+					}
+				}
+			}
+
+			return nil
+		},
+	}
+}
+
+type JobConfigType string
+
+const (
+	Periodic   JobConfigType = "periodics"
+	PreSubmit  JobConfigType = "presubmits"
+	PostSubmit JobConfigType = "postsubmits"
+)
+
+type JobConfigInjectors []JobConfigInjector
+
+func (jcis JobConfigInjectors) Inject(inConfig *Config, openShiftRelease Repository) error {
+	for _, jci := range jcis {
+		if err := jci.Inject(inConfig, openShiftRelease); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+type JobConfigInjector struct {
+	Type   JobConfigType
+	Update func(r *Repository, jobConfig *prowconfig.JobConfig) error
+}
+
+func (jci *JobConfigInjector) Inject(inConfig *Config, openShiftRelease Repository) error {
 	for branch := range inConfig.Config.Branches {
 		for _, r := range inConfig.Repositories {
+
 			generatedOutputDir := "ci-operator/jobs"
-			glob := filepath.Join(openShiftRelease.RepositoryDirectory(), generatedOutputDir, r.RepositoryDirectory(), "*"+branch+"*periodics*")
+			glob := filepath.Join(openShiftRelease.RepositoryDirectory(), generatedOutputDir, r.RepositoryDirectory(), "*"+branch+"*"+string(jci.Type)+"*")
 			matches, err := filepath.Glob(glob)
 			if err != nil {
 				return err
 			}
 			for _, match := range matches {
-				// Going directly from YAML raw input produces unexpected configs (due to missing YAML tags),
-				// so we convert YAML to JSON and unmarshal the struct from the JSON object.
-				y, err := os.ReadFile(match)
-				if err != nil {
-					return err
-				}
-				j, err := gyaml.YAMLToJSON(y)
+				jobConfig, err := getJobConfig(match)
 				if err != nil {
 					return err
 				}
 
-				jobConfig := &prowconfig.JobConfig{}
-				if err := json.Unmarshal(j, jobConfig); err != nil {
+				if err := jci.Update(&r, jobConfig); err != nil {
 					return err
 				}
 
-				for i := range jobConfig.Periodics {
-					jobConfig.Periodics[i].ReporterConfig = &prowapi.ReporterConfig{
-						Slack: &prowapi.SlackReporterConfig{
-							Channel: r.SlackChannel,
-							JobStatesToReport: []prowapi.ProwJobState{
-								prowapi.SuccessState,
-								prowapi.FailureState,
-								prowapi.ErrorState,
-							},
-							ReportTemplate: `{{if eq .Status.State "success"}} :rainbow: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :rainbow: {{else}} :volcano: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :volcano: {{end}}`,
-						},
-					}
-				}
-
-				// Going directly from struct to YAML produces unexpected configs (due to missing YAML tags),
-				// so we produce JSON and then convert it to YAML.
-				out, err := json.Marshal(jobConfig)
-				if err != nil {
-					return err
-				}
-				y, err = gyaml.JSONToYAML(out)
-				if err != nil {
-					return err
-				}
-				if err := os.WriteFile(match, y, os.ModePerm); err != nil {
+				if err := saveJobConfig(match, jobConfig); err != nil {
 					return err
 				}
 			}
@@ -269,6 +322,43 @@ func injectSlackReporterConfig(inConfig *Config, openShiftRelease Repository) er
 	}
 
 	return nil
+}
+
+func saveJobConfig(match string, jobConfig *prowconfig.JobConfig) error {
+	// Going directly from struct to YAML produces unexpected configs (due to missing YAML tags),
+	// so we produce JSON and then convert it to YAML.
+	out, err := json.Marshal(jobConfig)
+	if err != nil {
+		return err
+	}
+	y, err := gyaml.JSONToYAML(out)
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(match, y, os.ModePerm); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getJobConfig(match string) (*prowconfig.JobConfig, error) {
+	// Going directly from YAML raw input produces unexpected configs (due to missing YAML tags),
+	// so we convert YAML to JSON and unmarshal the struct from the JSON object.
+	y, err := os.ReadFile(match)
+	if err != nil {
+		return nil, err
+	}
+	j, err := gyaml.YAMLToJSON(y)
+	if err != nil {
+		return nil, err
+	}
+
+	jobConfig := &prowconfig.JobConfig{}
+	if err := json.Unmarshal(j, jobConfig); err != nil {
+		return nil, err
+	}
+	return jobConfig, nil
 }
 
 // initializeOpenShiftReleaseRepository clones openshift/release and clean up existing jobs

@@ -12,6 +12,27 @@ CI tooling and hacks to improve CI
 - Create a PR to [https://github.com/openshift/release](https://github.com/openshift/release) (to be
   automated)
 
+To generate openshift/release config for a single repository, run individual commands in the `Makefile`, such as:
+
+```shell
+go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-hyperfoil-benchmark.yaml --remote <your_remote>
+# go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-hyperfoil-benchmark.yaml --remote git@github.com:aliok/release.git 
+```
+
+This generation works this way:
+- `openshift/relase` is cloned
+- The target repository is cloned
+- The makefile of the target repository is parsed to find the make targets that match the regex in the `config/<file.yaml>` files
+- For any matches, 2 `test`s are generated.
+  - One for the presubmit (that runs on PRs on the target repository)
+  - One for the periodics (that runs regularly)
+- There are also CI job config generated, which use the tests above.
+- If the matching regex is specified in `onDemand` field, then the presubmit is marked as optional (`always_run: false`).
+
+Limitations:
+- It is not currently possible to change the cron expression per job
+- It is not currently possible to disable periodics per job
+
 ## Run unit tests
 
 ```shell
