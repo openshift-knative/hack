@@ -9,10 +9,11 @@ CI tooling and hacks to improve CI
       command
 - Run `make generate-ci REMOTE=<your_remote>`
     - For example, `make generate-ci REMOTE=git@github.com:pierDipi/release.git`
+    - If you are using `podman`, make sure to have `export CONTAINER_ENGINE=podman` set
 - Create a PR to [https://github.com/openshift/release](https://github.com/openshift/release) (to be
   automated)
 
-To generate openshift/release config for a single repository, run individual commands in the `Makefile`, such as:
+To generate openshift/release config for a single repository, run the specific task in the `Makefile` or run individual commands in the `Makefile`, such as:
 
 ```shell
 go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-hyperfoil-benchmark.yaml --remote <your_remote>
@@ -30,7 +31,6 @@ This generation works this way:
 - If the matching regex is specified in `onDemand` field, then the presubmit is marked as optional (`always_run: false`).
 
 Limitations:
-- It is not currently possible to change the cron expression per job
 - It is not currently possible to disable periodics per job
 
 ## Run unit tests

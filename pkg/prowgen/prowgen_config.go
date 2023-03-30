@@ -14,6 +14,7 @@ type Repository struct {
 	Org                   string                                                      `json:"org" yaml:"org"`
 	Repo                  string                                                      `json:"repo" yaml:"repo"`
 	ImagePrefix           string                                                      `json:"imagePrefix" yaml:"imagePrefix"`
+	ImageNameOverrides    map[string]string                                           `json:"imageNameOverrides" yaml:"imageNameOverrides"`
 	SlackChannel          string                                                      `json:"slackChannel" yaml:"slackChannel"`
 	CanonicalGoRepository *string                                                     `json:"canonicalGoRepository" yaml:"canonicalGoRepository"`
 	E2ETests              E2ETests                                                    `json:"e2e" yaml:"e2e"`
@@ -33,6 +34,7 @@ func (r Repository) RepositoryDirectory() string {
 
 type Branch struct {
 	OpenShiftVersions []string `json:"openShiftVersions" yaml:"openShiftVersions"`
+	Cron              string   `json:"cron" yaml:"cron"`
 }
 
 type CommonConfig struct {
@@ -124,7 +126,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 			options = append(
 				options,
 				DiscoverImages(r),
-				DiscoverTests(r, ov),
+				DiscoverTests(r, ov, &branch.Cron),
 			)
 
 			log.Println(r.RepositoryDirectory(), "Apply input options", len(options))
@@ -152,13 +154,14 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 	return cfgs, nil
 }
 
-// TODO: In 2023 we need to move forward to use the new `eventing`, for _new_ repos,
+// TODO: In 2023 we need to move forward to use the new `eventing` or `serving`, for _new_ repos,
 // The tool should only generate desired updates, always all
-func transformLegacyKnativeEventingSourceImageName(r Repository) string {
-	// The old repository is called knative-eventing, and we need to keep this coordinate on the build
-	// For now: we can not use the new `eventing` name
+func transformLegacyKnativeSourceImageName(r Repository) string {
+	// The old repository is called knative-eventing or knative-serving,
+	// and we need to keep this coordinate on the build
+	// For now: we can not use the new `eventing` or `serving` name
 	srcImage := r.Repo + "-src"
-	if r.Repo == "eventing" {
+	if r.Repo == "eventing" || r.Repo == "serving" {
 		srcImage = "knative-" + r.Repo + "-src"
 	}
 	return srcImage
@@ -171,7 +174,7 @@ func withNamePromotion(r Repository, branchName string) ReleaseBuildConfiguratio
 			Name:      strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
 			AdditionalImages: map[string]string{
 				// Add source image
-				transformLegacyKnativeEventingSourceImageName(r): "src",
+				transformLegacyKnativeSourceImageName(r): "src",
 			},
 		}
 		return nil
@@ -186,7 +189,7 @@ func withTagPromotion(r Repository, branchName string) ReleaseBuildConfiguration
 			TagByCommit: false, // TODO: revisit this later
 			AdditionalImages: map[string]string{
 				// Add source image
-				transformLegacyKnativeEventingSourceImageName(r): "src",
+				transformLegacyKnativeSourceImageName(r): "src",
 			},
 		}
 		return nil
