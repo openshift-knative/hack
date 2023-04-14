@@ -28,7 +28,12 @@ func ProjectDirectoryImageBuildStepConfigurationFuncFromImageInput(r Repository,
 			context = "-" + string(input.Context)
 		}
 
-		to := r.ImagePrefix + context + "-" + filepath.Base(filepath.Dir(input.DockerfilePath))
+		folderName := filepath.Base(filepath.Dir(input.DockerfilePath))
+		if override, ok := r.ImageNameOverrides[folderName]; ok {
+			folderName = override
+		}
+
+		to := r.ImagePrefix + context + "-" + folderName
 		to = strings.ReplaceAll(to, "_", "-")
 
 		return cioperatorapi.ProjectDirectoryImageBuildStepConfiguration{

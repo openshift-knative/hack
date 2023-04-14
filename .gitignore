@@ -16,3 +16,6 @@
 
 /openshift
 /openshift-knative
+
+# MacOS
+.DS_Store

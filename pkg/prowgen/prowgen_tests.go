@@ -18,7 +18,9 @@ import (
 	"k8s.io/utils/pointer"
 )
 
-func DiscoverTests(r Repository, openShiftVersion string) ReleaseBuildConfigurationOption {
+const defaultCron = "0 5 * * 2,6"
+
+func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string) ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
 		tests, err := discoverE2ETests(r)
 		if err != nil {
@@ -96,7 +98,11 @@ func DiscoverTests(r Repository, openShiftVersion string) ReleaseBuildConfigurat
 
 			cronTestConfiguration := testConfiguration.DeepCopy()
 			cronTestConfiguration.As += "-continuous"
-			cronTestConfiguration.Cron = pointer.String("0 5 * * 2,6")
+			if cronOverride == nil || *cronOverride == "" {
+				cronTestConfiguration.Cron = pointer.String(defaultCron)
+			} else {
+				cronTestConfiguration.Cron = cronOverride
+			}
 
 			cfg.Tests = append(cfg.Tests, *cronTestConfiguration)
 		}

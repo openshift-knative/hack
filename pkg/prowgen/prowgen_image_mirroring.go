@@ -36,12 +36,12 @@ func GenerateImageMirroringConfigs(openshiftRelease Repository, cfgs []ReleaseBu
 			release := ""
 			for _, img := range cfg.Images {
 				if cfg.PromotionConfiguration.Name != "" {
-					from := fmt.Sprintf("%s/%s/%s", CIRegistry, cfg.PromotionConfiguration.Namespace, cfg.PromotionConfiguration.Name)
+					from := fmt.Sprintf("%s/%s/%s:%s", CIRegistry, cfg.PromotionConfiguration.Namespace, cfg.PromotionConfiguration.Name, img.To)
 					to := fmt.Sprintf("%s/%s", QuayRegistry, img.To)
 					lines.Insert(fmt.Sprintf("%s %s", from, to))
 					release = cfg.PromotionConfiguration.Name
 				} else if cfg.PromotionConfiguration.Tag != "" {
-					from := fmt.Sprintf("%s/%s/%s", CIRegistry, cfg.PromotionConfiguration.Namespace, img.To)
+					from := fmt.Sprintf("%s/%s/%s:%s", CIRegistry, cfg.PromotionConfiguration.Namespace, img.To, cfg.PromotionConfiguration.Tag)
 					to := fmt.Sprintf("%s/%s", QuayRegistry, img.To)
 					lines.Insert(fmt.Sprintf("%s %s", from, to))
 					release = cfg.PromotionConfiguration.Tag
