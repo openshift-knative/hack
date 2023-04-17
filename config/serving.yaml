@@ -2,11 +2,6 @@
 
 config:
   branches:
-    "release-v1.7":
-      cron: "0 17 * * 1-5"
-      openShiftVersions:
-        - 4.12
-        - 4.8
     "release-v1.8":
       cron: "0 19 * * 1-5"
       openShiftVersions:
