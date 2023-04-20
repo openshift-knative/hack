@@ -15,5 +15,9 @@ RUN yum install -y kubectl httpd-tools
 
 RUN GOFLAGS='' go install github.com/mikefarah/yq/v3@latest
 
+# go install creates $GOPATH/.cache with root permissions, we delete it here
+# to avoid permission issues with the runtime users
+RUN rm -rf $GOPATH/.cache
+
 # Allow runtime users to add entries to /etc/passwd
 RUN chmod g+rw /etc/passwd
