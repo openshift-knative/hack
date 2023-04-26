@@ -2,10 +2,6 @@
 
 config:
   branches:
-    "release-v1.5":
-      openShiftVersions:
-        - 4.11
-        - 4.8
     "release-v1.6":
       openShiftVersions:
         - 4.12
