@@ -9,6 +9,10 @@ RUN mkdir -p /var/run/ko && \
     cp -r cmd/testselect/kodata /var/run/ko
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal
+
+# install the missing zoneinfo to ubi-minimal
+RUN microdnf install tzdata
+
 USER 65532
 
 COPY --from=builder /usr/bin/main /usr/bin/main
