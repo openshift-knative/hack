@@ -12,6 +12,11 @@ config:
       openShiftVersions:
         - 4.12
         - 4.10
+    "release-v1.10":
+      cron: "0 23 * * 1-5"
+      openShiftVersions:
+        - 4.12
+        - 4.10
     "release-next":
       cron: "0 8 * * 1-5"
       openShiftVersions:
