@@ -1,0 +1,18 @@
+# Full struct in cmd/prowgen/prowgen.go#Config
+
+config:
+  branches:
+    "release-v1.9":
+      openShiftVersions:
+        - 4.12
+        - 4.10
+    "release-v1.10":
+      openShiftVersions:
+        - 4.12
+        - 4.10
+
+repositories:
+  - org: openshift-knative
+    repo: net-istio
+    imagePrefix: net-istio
+    slackChannel: "#knative-serving-ci"

@@ -9,11 +9,15 @@ generate-ci:
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-kafka-broker.yaml --remote $(REMOTE)
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-hyperfoil-benchmark.yaml --remote $(REMOTE)
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/serving.yaml --remote $(REMOTE)
+	go run github.com/openshift-knative/hack/cmd/prowgen --config config/serving-net-istio.yaml --remote $(REMOTE)
+	go run github.com/openshift-knative/hack/cmd/prowgen --config config/serving-net-kourier.yaml --remote $(REMOTE)
 .PHONY: generate-ci
 
 generate-serving-ci:
 	rm -rf openshift openshift-knative
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/serving.yaml --remote $(REMOTE)
+	go run github.com/openshift-knative/hack/cmd/prowgen --config config/serving-net-istio.yaml --remote $(REMOTE)
+	go run github.com/openshift-knative/hack/cmd/prowgen --config config/serving-net-kourier.yaml --remote $(REMOTE)
 .PHONY: generate-ci
 
 generate-eventing-ci:

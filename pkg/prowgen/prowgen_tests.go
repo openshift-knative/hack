@@ -127,7 +127,12 @@ func (t *Test) HexSha() string {
 }
 
 func discoverE2ETests(r Repository) ([]Test, error) {
-	mc, err := os.ReadFile(filepath.Join(r.RepositoryDirectory(), "Makefile"))
+	makefilePath := filepath.Join(r.RepositoryDirectory(), "Makefile")
+	if _, err := os.Stat(makefilePath); err != nil && os.IsNotExist(err) {
+		return nil, nil
+	}
+
+	mc, err := os.ReadFile(makefilePath)
 	if err != nil {
 		return nil, fmt.Errorf("[%s] failed to read file %s: %w", r.RepositoryDirectory(), "Makefile", err)
 	}
