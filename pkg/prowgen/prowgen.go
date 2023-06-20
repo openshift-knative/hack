@@ -145,7 +145,7 @@ func PushBranch(ctx context.Context, release Repository, remote *string, branch 
 	if _, err := run(ctx, release, "git", "add", "."); err != nil {
 		return err
 	}
-	if _, err := run(ctx, release, "git", "commit", "-s", "-S", "-m", "Sync Serverless CI "+config); err != nil {
+	if _, err := run(ctx, release, "git", "commit", "-m", "Sync Serverless CI "+config); err != nil {
 		// Ignore error since we could have nothing to commit
 		log.Println("Ignored error", err)
 	}
