@@ -76,10 +76,6 @@ func Main() error {
 		log.Fatalln("Failed to run openshift/release generator:", err)
 	}
 
-	if err := prowgen.PushBranch(ctx, openShiftRelease, &c.Remote, fmt.Sprintf("generate-%s-%s-%s-ci-config", c.Org, c.Repo, c.Branch), ""); err != nil {
-		log.Fatalln("Failed to run openshift/release generator:", err)
-	}
-
 	return nil
 }
 
