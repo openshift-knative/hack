@@ -24,6 +24,7 @@ type Config struct {
 	Branch         string
 	Tag            string
 	RemovePeriodic bool
+	Remote         string
 }
 
 func Main() error {
@@ -37,6 +38,7 @@ func Main() error {
 	flag.StringVar(&c.Branch, "branch", "", "Target branch name")
 	flag.StringVar(&c.Tag, "tag", "", "Target promotion name or tag")
 	flag.BoolVar(&c.RemovePeriodic, "remove-periodic-tests", true, "Remove periodic tests")
+	flag.StringVar(&c.Remote, "remote", "", "Git remote URL")
 	flag.Parse()
 
 	// Clone openshift/release and clean up existing jobs for the configured branches
@@ -74,7 +76,7 @@ func Main() error {
 		log.Fatalln("Failed to run openshift/release generator:", err)
 	}
 
-	if err := prowgen.PushBranch(ctx, openShiftRelease, nil, fmt.Sprintf("generate-%s-%s-%s-ci-config", c.Org, c.Repo, c.Branch), ""); err != nil {
+	if err := prowgen.PushBranch(ctx, openShiftRelease, &c.Remote, fmt.Sprintf("generate-%s-%s-%s-ci-config", c.Org, c.Repo, c.Branch), ""); err != nil {
 		log.Fatalln("Failed to run openshift/release generator:", err)
 	}
 
