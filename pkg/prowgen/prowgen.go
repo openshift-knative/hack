@@ -70,7 +70,7 @@ func Main() {
 	// Clone openshift/release and clean up existing jobs for the configured branches
 	openshiftReleaseInitialization, openshiftReleaseInitCtx := errgroup.WithContext(ctx)
 	openshiftReleaseInitialization.Go(func() error {
-		return initializeOpenShiftReleaseRepository(openshiftReleaseInitCtx, openShiftRelease, inConfig, outConfig)
+		return InitializeOpenShiftReleaseRepository(openshiftReleaseInitCtx, openShiftRelease, inConfig, outConfig)
 	})
 
 	// For each repository and branch generate openshift/release configuration, and write it to the output file.
@@ -92,14 +92,14 @@ func Main() {
 
 			// Delete existing configuration for each configured branch.
 			for branch := range inConfig.Config.Branches {
-				if err := deleteExistingReleaseBuildConfigurationForBranch(outConfig, repository, branch); err != nil {
+				if err := DeleteExistingReleaseBuildConfigurationForBranch(outConfig, repository, branch); err != nil {
 					return err
 				}
 			}
 
 			// Write generated configurations.
 			for _, cfg := range cfgs {
-				if err := saveReleaseBuildConfiguration(outConfig, cfg); err != nil {
+				if err := SaveReleaseBuildConfiguration(outConfig, cfg); err != nil {
 					return err
 				}
 			}
@@ -122,39 +122,41 @@ func Main() {
 		log.Fatalln("Failed waiting for repositories generator", err)
 	}
 
-	if err := runOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
+	if err := RunOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
 		log.Fatalln("Failed to run openshift/release generator:", err)
 	}
 	if err := runJobConfigInjectors(inConfig, openShiftRelease); err != nil {
 		log.Fatalln("Failed to inject Slack reporter", err)
 	}
-	if err := runOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
+	if err := RunOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
 		log.Fatalln("Failed to run openshift/release generator after injecting Slack reporter", err)
 	}
-	if err := pushBranch(ctx, openShiftRelease, remote, "sync-serverless-ci", *inputConfig); err != nil {
+	if err := PushBranch(ctx, openShiftRelease, remote, "sync-serverless-ci", *inputConfig); err != nil {
 		log.Fatalln("Failed to push branch to openshift/release fork", *remote, err)
 	}
 }
 
-func pushBranch(ctx context.Context, release Repository, remote *string, branch string, config string) error {
+func PushBranch(ctx context.Context, release Repository, remote *string, branch string, config string) error {
+
+	// Ignore error since remote and branch might be already there
+	_, _ = run(ctx, release, "git", "checkout", "-b", branch)
+	_, _ = run(ctx, release, "git", "checkout", branch)
+
+	if _, err := run(ctx, release, "git", "add", "."); err != nil {
+		return err
+	}
+	if _, err := run(ctx, release, "git", "commit", "-m", "Sync Serverless CI "+config); err != nil {
+		// Ignore error since we could have nothing to commit
+		log.Println("Ignored error", err)
+	}
+
 	if remote == nil || *remote == "" {
 		return nil
 	}
 
 	log.Println("Pushing branch", branch, "to", *remote)
 
-	// Ignore error since remote and branch might be already there
-	_, _ = run(ctx, release, "git", "checkout", "-b", branch)
-	_, _ = run(ctx, release, "git", "checkout", branch)
 	_, _ = run(ctx, release, "git", "remote", "add", "fork", *remote)
-
-	if _, err := run(ctx, release, "git", "add", "."); err != nil {
-		return err
-	}
-	if _, err := run(ctx, release, "git", "commit", "-s", "-S", "-m", "Sync Serverless CI "+config); err != nil {
-		// Ignore error since we could have nothing to commit
-		log.Println("Ignored error", err)
-	}
 	if _, err := run(ctx, release, "git", "push", "fork", branch, "-f"); err != nil {
 		return err
 	}
@@ -162,7 +164,7 @@ func pushBranch(ctx context.Context, release Repository, remote *string, branch 
 	return nil
 }
 
-func deleteExistingReleaseBuildConfigurationForBranch(outConfig *string, r Repository, branch string) error {
+func DeleteExistingReleaseBuildConfigurationForBranch(outConfig *string, r Repository, branch string) error {
 	dir := filepath.Join(*outConfig, r.RepositoryDirectory())
 	matches, err := filepath.Glob(filepath.Join(dir, "*"+branch+"*"))
 	if err != nil {
@@ -179,7 +181,7 @@ func deleteExistingReleaseBuildConfigurationForBranch(outConfig *string, r Repos
 	return nil
 }
 
-func saveReleaseBuildConfiguration(outConfig *string, cfg ReleaseBuildConfiguration) error {
+func SaveReleaseBuildConfiguration(outConfig *string, cfg ReleaseBuildConfiguration) error {
 	dir := filepath.Join(*outConfig, filepath.Dir(cfg.Path))
 
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
@@ -201,7 +203,7 @@ func saveReleaseBuildConfiguration(outConfig *string, cfg ReleaseBuildConfigurat
 	return nil
 }
 
-func runOpenShiftReleaseGenerator(ctx context.Context, openShiftRelease Repository) error {
+func RunOpenShiftReleaseGenerator(ctx context.Context, openShiftRelease Repository) error {
 	if _, err := run(ctx, openShiftRelease, "make", "ci-operator-config", "jobs"); err != nil {
 		return err
 	}
@@ -361,9 +363,9 @@ func getJobConfig(match string) (*prowconfig.JobConfig, error) {
 	return jobConfig, nil
 }
 
-// initializeOpenShiftReleaseRepository clones openshift/release and clean up existing jobs
+// InitializeOpenShiftReleaseRepository clones openshift/release and clean up existing jobs
 // for the configured branches
-func initializeOpenShiftReleaseRepository(ctx context.Context, openShiftRelease Repository, inConfig *Config, outputConfig *string) error {
+func InitializeOpenShiftReleaseRepository(ctx context.Context, openShiftRelease Repository, inConfig *Config, outputConfig *string) error {
 	if err := GitMirror(ctx, openShiftRelease); err != nil {
 		return err
 	}
