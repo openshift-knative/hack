@@ -27,6 +27,11 @@ type Config struct {
 	Remote         string
 }
 
+// Main is the main function for prowcopy.
+//
+// prowcopy allows to create Prow configuration in openshift/release starting from the configuration
+// of another branch. For example, if you have configuration for CI of the main branch, and then you
+// cut a new branch, the main branch configuration can be used to define CI of the new branch.
 func Main() error {
 	ctx := context.Background()
 
