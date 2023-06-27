@@ -5,6 +5,9 @@ include pkg/project/testdata/env
 generate-ci: clean generate-eventing-ci generate-serving-ci
 .PHONY: generate-ci
 
+generate-ci-no-clean: generate-eventing-ci generate-serving-ci
+.PHONY: generate-ci-no-clean
+
 generate-eventing-ci: clean
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing.yaml --remote $(REMOTE)
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-istio.yaml --remote $(REMOTE)
