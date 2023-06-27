@@ -1,4 +1,5 @@
 github.com/openshift-knative/hack/cmd/generate: hello
+github.com/openshift-knative/hack/cmd/prowcopy: registry.ci.openshift.org/openshift/knative-prowcopy:main
 github.com/openshift-knative/hack/cmd/prowgen: registry.ci.openshift.org/openshift/knative-prowgen:main
 github.com/openshift-knative/hack/cmd/testselect: registry.ci.openshift.org/openshift/knative-test-testselect:main
 knative.dev/eventing/cmd/foo: bar
