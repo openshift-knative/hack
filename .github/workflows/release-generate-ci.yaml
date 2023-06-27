@@ -8,6 +8,8 @@ on:
   push:
     branches:
       - 'main'
+  schedule:
+    - cron: "0 6 * * *" # Daily at 06:00.
   workflow_dispatch: # Manual workflow trigger
 
 jobs:
@@ -47,7 +49,7 @@ jobs:
           git config --global user.email "serverless-support@redhat.com"
           git config --global user.name "OpenShift Serverless"
 
-      - name: Generate CI (on workflow dispatch)
+      - name: Generate CI
         working-directory: ./src/github.com/openshift-knative/hack
         run: make generate-ci-no-clean
 
