@@ -5,17 +5,20 @@ include pkg/project/testdata/env
 generate-ci: clean generate-eventing-ci generate-serving-ci
 .PHONY: generate-ci
 
+generate-ci-no-clean: generate-eventing-ci generate-serving-ci
+.PHONY: generate-ci-no-clean
+
 generate-eventing-ci: clean
-	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing.yaml --remote $(REMOTE)
-	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-istio.yaml --remote $(REMOTE)
-	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-kafka-broker.yaml --remote $(REMOTE)
-	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-hyperfoil-benchmark.yaml --remote $(REMOTE)
+	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing.yaml $(REMOTE)
+	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-istio.yaml $(REMOTE)
+	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-kafka-broker.yaml $(REMOTE)
+	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-hyperfoil-benchmark.yaml $(REMOTE)
 .PHONY: generate-eventing-ci
 
 generate-serving-ci: clean
-	go run github.com/openshift-knative/hack/cmd/prowgen --config config/serving.yaml --remote $(REMOTE)
-	go run github.com/openshift-knative/hack/cmd/prowgen --config config/serving-net-istio.yaml --remote $(REMOTE)
-	go run github.com/openshift-knative/hack/cmd/prowgen --config config/serving-net-kourier.yaml --remote $(REMOTE)
+	go run github.com/openshift-knative/hack/cmd/prowgen --config config/serving.yaml $(REMOTE)
+	go run github.com/openshift-knative/hack/cmd/prowgen --config config/serving-net-istio.yaml $(REMOTE)
+	go run github.com/openshift-knative/hack/cmd/prowgen --config config/serving-net-kourier.yaml $(REMOTE)
 .PHONY: generate-serving-ci
 
 unit-tests:
