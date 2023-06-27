@@ -5,22 +5,22 @@ config:
     "release-v1.8":
       cron: "0 19 * * 1-5"
       openShiftVersions:
-        - 4.12
+        - 4.13
         - 4.10
     "release-v1.9":
       cron: "0 21 * * 1-5"
       openShiftVersions:
-        - 4.12
+        - 4.13
         - 4.10
     "release-v1.10":
       cron: "0 23 * * 1-5"
       openShiftVersions:
-        - 4.12
+        - 4.13
         - 4.10
     "release-next":
       cron: "0 8 * * 1-5"
       openShiftVersions:
-        - 4.12
+        - 4.13
         - 4.10
 
 repositories:
