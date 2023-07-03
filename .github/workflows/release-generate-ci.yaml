@@ -51,7 +51,8 @@ jobs:
 
       - name: Generate CI
         working-directory: ./src/github.com/openshift-knative/hack
-        run: make generate-ci-no-clean
+        # Use master, see https://github.com/peter-evans/create-pull-request/issues/2108
+        run: make generate-ci-no-clean ARGS=--branch=master
 
       - name: Create Pull Request
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main'

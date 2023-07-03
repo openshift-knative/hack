@@ -47,6 +47,7 @@ func Main() {
 	inputConfig := flag.String("config", filepath.Join("config", "repositories.yaml"), "Specify repositories config")
 	outConfig := flag.String("output", filepath.Join(openShiftRelease.Org, openShiftRelease.Repo, "ci-operator", "config"), "Specify repositories config")
 	remote := flag.String("remote", "", "openshift/release remote fork (example: git@github.com:pierDipi/release.git)")
+	branch := flag.String("branch", "sync-serverless-ci", "Branch for remote fork")
 	flag.Parse()
 
 	log.Println(*inputConfig, *outConfig)
@@ -131,7 +132,7 @@ func Main() {
 	if err := RunOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
 		log.Fatalln("Failed to run openshift/release generator after injecting Slack reporter", err)
 	}
-	if err := PushBranch(ctx, openShiftRelease, remote, "sync-serverless-ci", *inputConfig); err != nil {
+	if err := PushBranch(ctx, openShiftRelease, remote, *branch, *inputConfig); err != nil {
 		log.Fatalln("Failed to push branch to openshift/release fork", *remote, err)
 	}
 }
