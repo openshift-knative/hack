@@ -7,8 +7,8 @@ CI tooling and hacks to improve CI
 - Add configuration for your repository in `config/<file.yaml>`
     - If you're adding a new file in `config/` directory, add the new file to the `make generate-ci`
       command
-- Run `make generate-ci REMOTE=--remote=<your_remote>`
-    - For example, `make generate-ci REMOTE=--remote=git@github.com:pierDipi/release.git`
+- Run `make generate-ci ARGS=--remote=<your_remote>`
+    - For example, `make generate-ci ARGS=--remote=git@github.com:pierDipi/release.git`
     - If you are using `podman`, make sure to have `export CONTAINER_ENGINE=podman` set
 - Create a PR to [https://github.com/openshift/release](https://github.com/openshift/release) (to be
   automated)
