@@ -59,6 +59,7 @@ jobs:
         with:
           token: ${{ secrets.SERVERLESS_QE_ROBOT }}
           path: ./src/github.com/openshift-knative/hack/openshift/release
+          base: master
           branch: sync-serverless-ci
           title: "Sync Serverless CI"
           commit-message: "Sync Serverless CI"
