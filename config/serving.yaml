@@ -21,7 +21,7 @@ config:
     "release-next":
       openShiftVersions:
         - 4.13
-        - 4.10
+        - 4.11
 
 repositories:
   - org: openshift-knative
