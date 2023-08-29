@@ -42,6 +42,7 @@ jobs:
         with:
           repository: '${{ inputs.repository }}'
           path: "./src/github.com/${{ inputs.repository }}"
+          ref: "${{ inputs.branch }}"
 
       - name: Configure Git user
         run: |
