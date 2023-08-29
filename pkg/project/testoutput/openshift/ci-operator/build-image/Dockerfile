@@ -11,7 +11,7 @@ RUN echo "[kubernetes]" >> /etc/yum.repos.d/kubernetes.repo && \
     echo "repo_gpgcheck=0" >> /etc/yum.repos.d/kubernetes.repo && \
     echo "gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg" >> /etc/yum.repos.d/kubernetes.repo
 
-RUN yum install -y kubectl httpd-tools
+RUN yum install -y kubectl httpd-tools helm
 
 RUN GOFLAGS='' go install github.com/mikefarah/yq/v3@latest
 
