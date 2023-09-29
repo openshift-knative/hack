@@ -1,6 +1,7 @@
 package prowgen
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -65,7 +66,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     "src",
-							Commands: "make test-e2e",
+							Commands: formatCommand("make test-e2e"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -97,7 +98,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     "src",
-							Commands: "make test-e2e",
+							Commands: formatCommand("make test-e2e"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -128,7 +129,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     "src",
-							Commands: "make test-e2e-tls",
+							Commands: formatCommand("make test-e2e-tls"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -160,7 +161,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     "src",
-							Commands: "make test-e2e-tls",
+							Commands: formatCommand("make test-e2e-tls"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -277,7 +278,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     "src",
-							Commands: "make test-conformance",
+							Commands: formatCommand("make test-conformance"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -309,7 +310,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     "src",
-							Commands: "make test-conformance",
+							Commands: formatCommand("make test-conformance"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -340,7 +341,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     "src",
-							Commands: "make test-conformance-long-command",
+							Commands: formatCommand("make test-conformance-long-command"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -372,7 +373,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     "src",
-							Commands: "make test-conformance-long-command",
+							Commands: formatCommand("make test-conformance-long-command"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -403,7 +404,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     "src",
-							Commands: "make test-e2e",
+							Commands: formatCommand("make test-e2e"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -435,7 +436,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     "src",
-							Commands: "make test-e2e",
+							Commands: formatCommand("make test-e2e"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -466,7 +467,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     "src",
-							Commands: "make test-reconciler",
+							Commands: formatCommand("make test-reconciler"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -498,7 +499,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     "src",
-							Commands: "make test-reconciler",
+							Commands: formatCommand("make test-reconciler"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -563,4 +564,8 @@ func TestDiscoverTestsEventing(t *testing.T) {
 		diff := cmp.Diff(expectedTests, cfg.Tests)
 		t.Errorf("Unexpected tests (-want, +got): \n%s", diff)
 	}
+}
+
+func formatCommand(cmd string) string {
+	return fmt.Sprintf("SKIP_MESH_AUTH_POLICY_GENERATION=true %s", cmd)
 }
