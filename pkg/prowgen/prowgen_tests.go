@@ -47,7 +47,7 @@ func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string) 
 							LiteralTestStep: &cioperatorapi.LiteralTestStep{
 								As:       "test",
 								From:     "src",
-								Commands: fmt.Sprintf("make %s", test.Command),
+								Commands: fmt.Sprintf("${SKIP_MESH_AUTH_POLICY_GENERATION}=true make %s", test.Command),
 								Resources: cioperatorapi.ResourceRequirements{
 									Requests: cioperatorapi.ResourceList{
 										"cpu": "100m",
