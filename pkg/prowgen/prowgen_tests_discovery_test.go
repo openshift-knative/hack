@@ -567,5 +567,5 @@ func TestDiscoverTestsEventing(t *testing.T) {
 }
 
 func formatCommand(cmd string) string {
-	return fmt.Sprintf("${SKIP_MESH_AUTH_POLICY_GENERATION}=true %s", cmd)
+	return fmt.Sprintf("SKIP_MESH_AUTH_POLICY_GENERATION=true %s", cmd)
 }
