@@ -94,6 +94,7 @@ func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string) 
 					Workflow: pointer.String("generic-claim"),
 				},
 			}
+
 			cfg.Tests = append(cfg.Tests, testConfiguration)
 
 			cronTestConfiguration := testConfiguration.DeepCopy()
@@ -106,6 +107,20 @@ func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string) 
 
 			cfg.Tests = append(cfg.Tests, *cronTestConfiguration)
 		}
+
+		securityTestConfiguration := cioperatorapi.TestStepConfiguration{
+			As:       "security",
+			Optional: true,
+			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
+				Environment: cioperatorapi.TestEnvironment{
+					"PROJECT_NAME": r.Repo,
+					"ORG_NAME":     r.Org,
+				},
+				Workflow: pointer.String("openshift-ci-security"),
+			},
+		}
+
+		cfg.Tests = append(cfg.Tests, securityTestConfiguration)
 
 		return nil
 	}
