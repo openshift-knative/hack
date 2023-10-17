@@ -215,20 +215,6 @@ func TestDiscoverTestsServing(t *testing.T) {
 		)
 	}
 
-	securityTest := cioperatorapi.TestStepConfiguration{
-		As:       "security",
-		Optional: true,
-		MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
-			Environment: cioperatorapi.TestEnvironment{
-				"PROJECT_NAME": r.Repo,
-				"ORG_NAME":     r.Org,
-			},
-			Workflow: pointer.String("openshift-ci-security"),
-		},
-	}
-
-	expectedTests = append(expectedTests, securityTest)
-
 	cfg := cioperatorapi.ReleaseBuildConfiguration{}
 
 	if err := applyOptions(&cfg, options...); err != nil {
@@ -566,20 +552,6 @@ func TestDiscoverTestsEventing(t *testing.T) {
 			},
 		)
 	}
-
-	securityTest := cioperatorapi.TestStepConfiguration{
-		As:       "security",
-		Optional: true,
-		MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
-			Environment: cioperatorapi.TestEnvironment{
-				"PROJECT_NAME": r.Repo,
-				"ORG_NAME":     r.Org,
-			},
-			Workflow: pointer.String("openshift-ci-security"),
-		},
-	}
-
-	expectedTests = append(expectedTests, securityTest)
 
 	cfg := cioperatorapi.ReleaseBuildConfiguration{}
 
