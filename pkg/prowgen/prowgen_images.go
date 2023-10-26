@@ -71,17 +71,3 @@ func WithBaseImages(baseImages map[string]cioperatorapi.ImageStreamTagReference)
 		return nil
 	}
 }
-
-func WithSourceImage(r Repository) ReleaseBuildConfigurationOption {
-	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
-		srcImage := cioperatorapi.ProjectDirectoryImageBuildStepConfiguration{
-			ProjectDirectoryImageBuildInputs: cioperatorapi.ProjectDirectoryImageBuildInputs{
-				ContextDir: "openshift/ci-operator/source-image",
-			},
-			From: cioperatorapi.PipelineImageStreamTagReference("src"),
-			To:   cioperatorapi.PipelineImageStreamTagReference(r.SourceImageName()),
-		}
-		cfg.Images = append(cfg.Images, srcImage)
-		return nil
-	}
-}

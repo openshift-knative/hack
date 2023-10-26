@@ -33,7 +33,7 @@ func (r Repository) RepositoryDirectory() string {
 }
 
 func (r Repository) SourceImageName() string {
-	return r.Repo + "-src"
+	return r.ImagePrefix + "-source-image"
 }
 
 type Branch struct {
@@ -129,7 +129,6 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 
 			options = append(
 				options,
-				WithSourceImage(r),
 				DiscoverImages(r),
 				DiscoverTests(r, ov, &branch.Cron),
 			)

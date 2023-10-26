@@ -82,6 +82,7 @@ func discoverDockerfiles(r Repository) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed while discovering container images in %s: %w", dir, err)
 	}
+	dockerfiles = append(dockerfiles, filepath.Join(dir, "source-image", "Dockerfile"))
 	return dockerfiles, nil
 }
 

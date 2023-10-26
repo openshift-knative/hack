@@ -47,6 +47,10 @@ func TestDiscoverTestsServing(t *testing.T) {
 			Name: "knative-serving-test-webhook",
 			Env:  "KNATIVE_SERVING_TEST_WEBHOOK",
 		},
+		{
+			Name: "knative-serving-source-image",
+			Env:  "KNATIVE_SERVING_SOURCE_IMAGE",
+		},
 	}
 
 	expectedTests := []cioperatorapi.TestStepConfiguration{
@@ -65,7 +69,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "serving-src",
+							From:     "knative-serving-source-image",
 							Commands: formatCommand("make test-e2e"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -97,7 +101,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "serving-src",
+							From:     "knative-serving-source-image",
 							Commands: formatCommand("make test-e2e"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -128,7 +132,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "serving-src",
+							From:     "knative-serving-source-image",
 							Commands: formatCommand("make test-e2e-tls"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -160,7 +164,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "serving-src",
+							From:     "knative-serving-source-image",
 							Commands: formatCommand("make test-e2e-tls"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -186,7 +190,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 			cioperatorapi.TestStep{
 				LiteralTestStep: &cioperatorapi.LiteralTestStep{
 					As:       "knative-must-gather",
-					From:     "serving-src",
+					From:     "knative-serving-source-image",
 					Commands: `oc adm must-gather --image=quay.io/openshift-knative/must-gather --dest-dir "${ARTIFACT_DIR}/gather-knative"`,
 					Resources: cioperatorapi.ResourceRequirements{
 						Requests: cioperatorapi.ResourceList{
@@ -201,7 +205,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 			cioperatorapi.TestStep{
 				LiteralTestStep: &cioperatorapi.LiteralTestStep{
 					As:       "openshift-must-gather",
-					From:     "serving-src",
+					From:     "knative-serving-source-image",
 					Commands: `oc adm must-gather --dest-dir "${ARTIFACT_DIR}/gather-openshift"`,
 					Resources: cioperatorapi.ResourceRequirements{
 						Requests: cioperatorapi.ResourceList{
@@ -259,6 +263,10 @@ func TestDiscoverTestsEventing(t *testing.T) {
 			Name: "knative-eventing-test-webhook",
 			Env:  "KNATIVE_EVENTING_TEST_WEBHOOK",
 		},
+		{
+			Name: "knative-eventing-source-image",
+			Env:  "KNATIVE_EVENTING_SOURCE_IMAGE",
+		},
 	}
 
 	expectedTests := []cioperatorapi.TestStepConfiguration{
@@ -277,7 +285,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "eventing-src",
+							From:     "knative-eventing-source-image",
 							Commands: formatCommand("make test-conformance"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -309,7 +317,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "eventing-src",
+							From:     "knative-eventing-source-image",
 							Commands: formatCommand("make test-conformance"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -340,7 +348,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "eventing-src",
+							From:     "knative-eventing-source-image",
 							Commands: formatCommand("make test-conformance-long-command"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -372,7 +380,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "eventing-src",
+							From:     "knative-eventing-source-image",
 							Commands: formatCommand("make test-conformance-long-command"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -403,7 +411,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "eventing-src",
+							From:     "knative-eventing-source-image",
 							Commands: formatCommand("make test-e2e"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -435,7 +443,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "eventing-src",
+							From:     "knative-eventing-source-image",
 							Commands: formatCommand("make test-e2e"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -466,7 +474,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "eventing-src",
+							From:     "knative-eventing-source-image",
 							Commands: formatCommand("make test-reconciler"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -498,7 +506,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "eventing-src",
+							From:     "knative-eventing-source-image",
 							Commands: formatCommand("make test-reconciler"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -524,7 +532,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 			cioperatorapi.TestStep{
 				LiteralTestStep: &cioperatorapi.LiteralTestStep{
 					As:       "knative-must-gather",
-					From:     "eventing-src",
+					From:     "knative-eventing-source-image",
 					Commands: `oc adm must-gather --image=quay.io/openshift-knative/must-gather --dest-dir "${ARTIFACT_DIR}/gather-knative"`,
 					Resources: cioperatorapi.ResourceRequirements{
 						Requests: cioperatorapi.ResourceList{
@@ -539,7 +547,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 			cioperatorapi.TestStep{
 				LiteralTestStep: &cioperatorapi.LiteralTestStep{
 					As:       "openshift-must-gather",
-					From:     "eventing-src",
+					From:     "knative-eventing-source-image",
 					Commands: `oc adm must-gather --dest-dir "${ARTIFACT_DIR}/gather-openshift"`,
 					Resources: cioperatorapi.ResourceRequirements{
 						Requests: cioperatorapi.ResourceList{
