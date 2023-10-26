@@ -15,6 +15,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
+const (
+	srcImage = "src"
+)
+
 var registryRegex = regexp.MustCompile(`registry\.(|svc\.)ci\.openshift\.org/\S+`)
 
 type orgRepoTag struct {
@@ -115,20 +119,24 @@ func discoverInputImages(dockerfile string) (map[string]cioperatorapi.ImageStrea
 	inputImages := make(map[string]cioperatorapi.ImageBuildInputs)
 
 	for _, imagePath := range imagePaths {
-		orgRepoTag, err := orgRepoTagFromPullString(imagePath)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to parse string %s as pullspec: %w", imagePath, err)
-		}
+		if imagePath == srcImage {
+			inputImages[srcImage] = cioperatorapi.ImageBuildInputs{As: []string{srcImage}}
+		} else {
+			orgRepoTag, err := orgRepoTagFromPullString(imagePath)
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to parse string %s as pullspec: %w", imagePath, err)
+			}
 
-		requiredBaseImages[orgRepoTag.String()] = cioperatorapi.ImageStreamTagReference{
-			Namespace: orgRepoTag.Org,
-			Name:      orgRepoTag.Repo,
-			Tag:       orgRepoTag.Tag,
-		}
+			requiredBaseImages[orgRepoTag.String()] = cioperatorapi.ImageStreamTagReference{
+				Namespace: orgRepoTag.Org,
+				Name:      orgRepoTag.Repo,
+				Tag:       orgRepoTag.Tag,
+			}
 
-		inputs := inputImages[orgRepoTag.String()]
-		inputs.As = sets.NewString(inputs.As...).Insert(imagePath).List() //different registries can resolve to the same orgRepoTag
-		inputImages[orgRepoTag.String()] = inputs
+			inputs := inputImages[orgRepoTag.String()]
+			inputs.As = sets.NewString(inputs.As...).Insert(imagePath).List() //different registries can resolve to the same orgRepoTag
+			inputImages[orgRepoTag.String()] = inputs
+		}
 	}
 
 	return requiredBaseImages, inputImages, nil
@@ -152,6 +160,9 @@ func getPullStringsFromDockerfile(filename string) ([]string, error) {
 		match := registryRegex.FindString(line)
 		if match != "" {
 			images = append(images, match)
+		}
+		if line == "FROM src" {
+			images = append(images, srcImage)
 		}
 	}
 
