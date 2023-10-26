@@ -65,7 +65,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "src",
+							From:     "serving-src",
 							Commands: formatCommand("make test-e2e"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -97,7 +97,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "src",
+							From:     "serving-src",
 							Commands: formatCommand("make test-e2e"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -128,7 +128,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "src",
+							From:     "serving-src",
 							Commands: formatCommand("make test-e2e-tls"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -160,7 +160,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "src",
+							From:     "serving-src",
 							Commands: formatCommand("make test-e2e-tls"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -186,7 +186,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 			cioperatorapi.TestStep{
 				LiteralTestStep: &cioperatorapi.LiteralTestStep{
 					As:       "knative-must-gather",
-					From:     "src",
+					From:     "serving-src",
 					Commands: `oc adm must-gather --image=quay.io/openshift-knative/must-gather --dest-dir "${ARTIFACT_DIR}/gather-knative"`,
 					Resources: cioperatorapi.ResourceRequirements{
 						Requests: cioperatorapi.ResourceList{
@@ -201,7 +201,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 			cioperatorapi.TestStep{
 				LiteralTestStep: &cioperatorapi.LiteralTestStep{
 					As:       "openshift-must-gather",
-					From:     "src",
+					From:     "serving-src",
 					Commands: `oc adm must-gather --dest-dir "${ARTIFACT_DIR}/gather-openshift"`,
 					Resources: cioperatorapi.ResourceRequirements{
 						Requests: cioperatorapi.ResourceList{
@@ -277,7 +277,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "src",
+							From:     "eventing-src",
 							Commands: formatCommand("make test-conformance"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -309,7 +309,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "src",
+							From:     "eventing-src",
 							Commands: formatCommand("make test-conformance"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -340,7 +340,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "src",
+							From:     "eventing-src",
 							Commands: formatCommand("make test-conformance-long-command"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -372,7 +372,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "src",
+							From:     "eventing-src",
 							Commands: formatCommand("make test-conformance-long-command"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -403,7 +403,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "src",
+							From:     "eventing-src",
 							Commands: formatCommand("make test-e2e"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -435,7 +435,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "src",
+							From:     "eventing-src",
 							Commands: formatCommand("make test-e2e"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -466,7 +466,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "src",
+							From:     "eventing-src",
 							Commands: formatCommand("make test-reconciler"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -498,7 +498,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 					{
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
-							From:     "src",
+							From:     "eventing-src",
 							Commands: formatCommand("make test-reconciler"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
@@ -524,7 +524,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 			cioperatorapi.TestStep{
 				LiteralTestStep: &cioperatorapi.LiteralTestStep{
 					As:       "knative-must-gather",
-					From:     "src",
+					From:     "eventing-src",
 					Commands: `oc adm must-gather --image=quay.io/openshift-knative/must-gather --dest-dir "${ARTIFACT_DIR}/gather-knative"`,
 					Resources: cioperatorapi.ResourceRequirements{
 						Requests: cioperatorapi.ResourceList{
@@ -539,7 +539,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 			cioperatorapi.TestStep{
 				LiteralTestStep: &cioperatorapi.LiteralTestStep{
 					As:       "openshift-must-gather",
-					From:     "src",
+					From:     "eventing-src",
 					Commands: `oc adm must-gather --dest-dir "${ARTIFACT_DIR}/gather-openshift"`,
 					Resources: cioperatorapi.ResourceRequirements{
 						Requests: cioperatorapi.ResourceList{
