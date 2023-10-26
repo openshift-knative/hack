@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -127,10 +128,22 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				options = append(options, withTagPromotion(r, branchName))
 			}
 
+			srcImageDockerfile, err := discoverSourceImageDockerfile(r)
+			if err != nil {
+				return nil, err
+			}
+			fromImage := "src"
+			if srcImageDockerfile != "" {
+				fromImage = toImage(r, ImageInput{
+					Context:        discoverImageContext(srcImageDockerfile),
+					DockerfilePath: strings.Join(strings.Split(srcImageDockerfile, string(os.PathSeparator))[2:], string(os.PathSeparator)),
+				})
+			}
+
 			options = append(
 				options,
 				DiscoverImages(r),
-				DiscoverTests(r, ov, &branch.Cron),
+				DiscoverTests(r, ov, &branch.Cron, fromImage),
 			)
 
 			log.Println(r.RepositoryDirectory(), "Apply input options", len(options))

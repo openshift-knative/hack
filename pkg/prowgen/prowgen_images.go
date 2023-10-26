@@ -22,22 +22,8 @@ type ImageInput struct {
 
 func ProjectDirectoryImageBuildStepConfigurationFuncFromImageInput(r Repository, input ImageInput) ProjectDirectoryImageBuildStepConfigurationFunc {
 	return func() (cioperatorapi.ProjectDirectoryImageBuildStepConfiguration, error) {
-
-		context := ""
-		if input.Context != "" {
-			context = "-" + string(input.Context)
-		}
-
-		folderName := filepath.Base(filepath.Dir(input.DockerfilePath))
-		if override, ok := r.ImageNameOverrides[folderName]; ok {
-			folderName = override
-		}
-
-		to := r.ImagePrefix + context + "-" + folderName
-		to = strings.ReplaceAll(to, "_", "-")
-
 		return cioperatorapi.ProjectDirectoryImageBuildStepConfiguration{
-			To: cioperatorapi.PipelineImageStreamTagReference(to),
+			To: cioperatorapi.PipelineImageStreamTagReference(toImage(r, input)),
 			ProjectDirectoryImageBuildInputs: cioperatorapi.ProjectDirectoryImageBuildInputs{
 				DockerfilePath: input.DockerfilePath,
 				Inputs:         input.Inputs,
@@ -46,13 +32,27 @@ func ProjectDirectoryImageBuildStepConfigurationFuncFromImageInput(r Repository,
 	}
 }
 
+func toImage(r Repository, input ImageInput) string {
+	context := ""
+	if input.Context != "" {
+		context = "-" + string(input.Context)
+	}
+
+	folderName := filepath.Base(filepath.Dir(input.DockerfilePath))
+	if override, ok := r.ImageNameOverrides[folderName]; ok {
+		folderName = override
+	}
+
+	to := r.ImagePrefix + context + "-" + folderName
+	return strings.ReplaceAll(to, "_", "-")
+}
+
 func WithImage(ibcFunc ProjectDirectoryImageBuildStepConfigurationFunc) ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
 		ibc, err := ibcFunc()
 		if err != nil {
 			return err
 		}
-
 		cfg.Images = append(cfg.Images, ibc)
 		return nil
 	}

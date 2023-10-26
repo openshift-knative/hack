@@ -2,6 +2,7 @@ package prowgen
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -82,8 +83,26 @@ func discoverDockerfiles(r Repository) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed while discovering container images in %s: %w", dir, err)
 	}
-	dockerfiles = append(dockerfiles, filepath.Join(dir, "source-image", "Dockerfile"))
+	srcImageDockerfile, err := discoverSourceImageDockerfile(r)
+	if err != nil {
+		return nil, err
+	}
+	if srcImageDockerfile != "" {
+		dockerfiles = append(dockerfiles, srcImageDockerfile)
+	}
+
 	return dockerfiles, nil
+}
+
+func discoverSourceImageDockerfile(r Repository) (string, error) {
+	srcImageDockerfile := filepath.Join(r.RepositoryDirectory(), "openshift", "ci-operator", "source-image", "Dockerfile")
+	if _, err := os.Stat(srcImageDockerfile); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return "", nil
+		}
+		return "", err
+	}
+	return srcImageDockerfile, nil
 }
 
 func discoverInputImages(dockerfile string) (map[string]cioperatorapi.ImageStreamTagReference, map[string]cioperatorapi.ImageBuildInputs, error) {
