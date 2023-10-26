@@ -128,11 +128,11 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				options = append(options, withTagPromotion(r, branchName))
 			}
 
+			fromImage := "src"
 			srcImageDockerfile, err := discoverSourceImageDockerfile(r)
 			if err != nil {
 				return nil, err
 			}
-			fromImage := "src"
 			if srcImageDockerfile != "" {
 				fromImage = toImage(r, ImageInput{
 					Context:        discoverImageContext(srcImageDockerfile),
