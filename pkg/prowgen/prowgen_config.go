@@ -32,6 +32,10 @@ func (r Repository) RepositoryDirectory() string {
 	return filepath.Join(r.Org, r.Repo)
 }
 
+func (r Repository) SourceImageName() string {
+	return r.Repo + "-src"
+}
+
 type Branch struct {
 	OpenShiftVersions []string `json:"openShiftVersions" yaml:"openShiftVersions"`
 	Cron              string   `json:"cron" yaml:"cron"`
@@ -125,6 +129,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 
 			options = append(
 				options,
+				WithSourceImage(r),
 				DiscoverImages(r),
 				DiscoverTests(r, ov, &branch.Cron),
 			)
