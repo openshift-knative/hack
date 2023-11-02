@@ -20,7 +20,7 @@ import (
 
 const defaultCron = "0 5 * * 2,6"
 
-func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string) ReleaseBuildConfigurationOption {
+func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string, sourceImageName string) ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
 		tests, err := discoverE2ETests(r)
 		if err != nil {
@@ -46,7 +46,7 @@ func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string) 
 						{
 							LiteralTestStep: &cioperatorapi.LiteralTestStep{
 								As:       "test",
-								From:     "src",
+								From:     sourceImageName,
 								Commands: fmt.Sprintf("SKIP_MESH_AUTH_POLICY_GENERATION=true make %s", test.Command),
 								Resources: cioperatorapi.ResourceRequirements{
 									Requests: cioperatorapi.ResourceList{
@@ -63,7 +63,7 @@ func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string) 
 						{
 							LiteralTestStep: &cioperatorapi.LiteralTestStep{
 								As:       "knative-must-gather",
-								From:     "src",
+								From:     sourceImageName,
 								Commands: `oc adm must-gather --image=quay.io/openshift-knative/must-gather --dest-dir "${ARTIFACT_DIR}/gather-knative"`,
 								Resources: cioperatorapi.ResourceRequirements{
 									Requests: cioperatorapi.ResourceList{
@@ -78,7 +78,7 @@ func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string) 
 						{
 							LiteralTestStep: &cioperatorapi.LiteralTestStep{
 								As:       "openshift-must-gather",
-								From:     "src",
+								From:     sourceImageName,
 								Commands: `oc adm must-gather --dest-dir "${ARTIFACT_DIR}/gather-openshift"`,
 								Resources: cioperatorapi.ResourceRequirements{
 									Requests: cioperatorapi.ResourceList{

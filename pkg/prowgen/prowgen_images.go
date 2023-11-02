@@ -22,28 +22,38 @@ type ImageInput struct {
 
 func ProjectDirectoryImageBuildStepConfigurationFuncFromImageInput(r Repository, input ImageInput) ProjectDirectoryImageBuildStepConfigurationFunc {
 	return func() (cioperatorapi.ProjectDirectoryImageBuildStepConfiguration, error) {
-
-		context := ""
-		if input.Context != "" {
-			context = "-" + string(input.Context)
-		}
-
-		folderName := filepath.Base(filepath.Dir(input.DockerfilePath))
-		if override, ok := r.ImageNameOverrides[folderName]; ok {
-			folderName = override
-		}
-
-		to := r.ImagePrefix + context + "-" + folderName
-		to = strings.ReplaceAll(to, "_", "-")
-
-		return cioperatorapi.ProjectDirectoryImageBuildStepConfiguration{
-			To: cioperatorapi.PipelineImageStreamTagReference(to),
+		imageBuildStepConfig := cioperatorapi.ProjectDirectoryImageBuildStepConfiguration{
+			To: cioperatorapi.PipelineImageStreamTagReference(toImage(r, input)),
 			ProjectDirectoryImageBuildInputs: cioperatorapi.ProjectDirectoryImageBuildInputs{
 				DockerfilePath: input.DockerfilePath,
 				Inputs:         input.Inputs,
 			},
-		}, nil
+		}
+		// Handle "FROM src" specifically. Use "from: src" instead of images.inputs as pipeline:src is
+		// added by default by CI operator to the resulting OpenShift Build. Using the src image in
+		// inputs explicitly overrides the defaults but in a wrong way.
+		if _, ok := input.Inputs[srcImage]; ok {
+			imageBuildStepConfig.From = srcImage
+			delete(imageBuildStepConfig.ProjectDirectoryImageBuildInputs.Inputs, srcImage)
+		}
+
+		return imageBuildStepConfig, nil
 	}
+}
+
+func toImage(r Repository, input ImageInput) string {
+	context := ""
+	if input.Context != "" {
+		context = "-" + string(input.Context)
+	}
+
+	folderName := filepath.Base(filepath.Dir(input.DockerfilePath))
+	if override, ok := r.ImageNameOverrides[folderName]; ok {
+		folderName = override
+	}
+
+	to := r.ImagePrefix + context + "-" + folderName
+	return strings.ReplaceAll(to, "_", "-")
 }
 
 func WithImage(ibcFunc ProjectDirectoryImageBuildStepConfigurationFunc) ReleaseBuildConfigurationOption {
@@ -52,7 +62,6 @@ func WithImage(ibcFunc ProjectDirectoryImageBuildStepConfigurationFunc) ReleaseB
 		if err != nil {
 			return err
 		}
-
 		cfg.Images = append(cfg.Images, ibc)
 		return nil
 	}

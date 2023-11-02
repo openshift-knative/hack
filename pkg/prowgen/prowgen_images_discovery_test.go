@@ -39,6 +39,12 @@ func TestDiscoverImages(t *testing.T) {
 				DockerfilePath: "openshift/ci-operator/knative-test-images/webhook/Dockerfile",
 			},
 		},
+		{
+			To: "knative-eventing-source-image",
+			ProjectDirectoryImageBuildInputs: cioperatorapi.ProjectDirectoryImageBuildInputs{
+				DockerfilePath: "openshift/ci-operator/source-image/Dockerfile",
+			},
+		},
 	}
 
 	expectedBaseImages := map[string]cioperatorapi.ImageStreamTagReference{
