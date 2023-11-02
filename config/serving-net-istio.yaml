@@ -8,11 +8,15 @@ config:
         - 4.10
     "release-v1.10":
       openShiftVersions:
-        - 4.13
+        - 4.14
         - 4.11
     "release-v1.11":
       openShiftVersions:
-        - 4.13
+        - 4.14
+        - 4.11
+    "release-v1.12":
+      openShiftVersions:
+        - 4.14
         - 4.11
 
 repositories:
