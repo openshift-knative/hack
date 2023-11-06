@@ -10,3 +10,6 @@ test-install:
 
 test-e2e-local:
 	echo "Ignore me"
+
+perf-tests:
+	echo "Perf"
