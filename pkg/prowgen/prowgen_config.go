@@ -14,6 +14,7 @@ import (
 type Repository struct {
 	Org                   string                                                      `json:"org" yaml:"org"`
 	Repo                  string                                                      `json:"repo" yaml:"repo"`
+	Promotion             Promotion                                                   `json:"promotion" yaml:"promotion"`
 	ImagePrefix           string                                                      `json:"imagePrefix" yaml:"imagePrefix"`
 	ImageNameOverrides    map[string]string                                           `json:"imageNameOverrides" yaml:"imageNameOverrides"`
 	SlackChannel          string                                                      `json:"slackChannel" yaml:"slackChannel"`
@@ -32,6 +33,12 @@ type E2ETests struct {
 
 type Dockerfiles struct {
 	Matches []string `json:"matches" yaml:"matches"`
+}
+
+type Promotion struct {
+	Namespace string
+	Name      string
+	Tag       string
 }
 
 func (r Repository) RepositoryDirectory() string {
@@ -187,9 +194,17 @@ func transformLegacyKnativeSourceImageName(r Repository) string {
 
 func withNamePromotion(r Repository, branchName string) ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
+		ns := "openshift"
+		if r.Promotion.Namespace != "" {
+			ns = r.Promotion.Namespace
+		}
+		name := strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
+		if r.Promotion.Name != "" {
+			name = r.Promotion.Name
+		}
 		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
-			Namespace: "openshift",
-			Name:      strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
+			Namespace: ns,
+			Name:      name,
 			AdditionalImages: map[string]string{
 				// Add source image
 				transformLegacyKnativeSourceImageName(r): "src",
@@ -201,9 +216,17 @@ func withNamePromotion(r Repository, branchName string) ReleaseBuildConfiguratio
 
 func withTagPromotion(r Repository, branchName string) ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
+		ns := "openshift"
+		if r.Promotion.Namespace != "" {
+			ns = r.Promotion.Namespace
+		}
+		tag := strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly")
+		if r.Promotion.Name != "" {
+			tag = r.Promotion.Name
+		}
 		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
-			Namespace:   "openshift",
-			Tag:         strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
+			Namespace:   ns,
+			Tag:         tag,
 			TagByCommit: false, // TODO: revisit this later
 			AdditionalImages: map[string]string{
 				// Add source image

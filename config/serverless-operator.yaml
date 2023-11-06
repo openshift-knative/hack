@@ -1,0 +1,36 @@
+# Full struct in cmd/prowgen/prowgen.go#Config
+
+config:
+  branches:
+    "main":
+      openShiftVersions:
+        - 4.13
+        - 4.11
+
+repositories:
+  - org: openshift-knative
+    repo: serverless-operator
+    promotion:
+      namespace: knative
+    imagePrefix: serverless
+    imageNameOverrides:
+      serverless-operator: bundle
+    slackChannel: "#serverless-ci"
+    dockerfiles:
+      matches:
+        - "knative-operator.*"
+        - "openshift-knative-operator.*"
+        - "serving/metadata-webhook.*"
+        - "serving/ingress.*"
+        - "olm-catalog/serverless-operator/Dockerfile"
+        - "olm-catalog/serverless-operator/index/Dockerfile"
+    e2e:
+      matches:
+        - ".*test-upgrade$"
+    resources:
+      '*':
+        limits:
+          memory: 6Gi
+        requests:
+          cpu: 100m
+          memory: 200Mi
