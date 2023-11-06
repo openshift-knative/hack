@@ -4,10 +4,12 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime/debug"
 	"sort"
 	"strings"
 
@@ -19,7 +21,13 @@ const (
 	srcImage = "src"
 )
 
-var registryRegex = regexp.MustCompile(`registry\.(|svc\.)ci\.openshift\.org/\S+`)
+var (
+	registryRegex             = regexp.MustCompile(`registry\.(|svc\.)ci\.openshift\.org/\S+`)
+	defaultDockerfileIncludes = []string{
+		"openshift/ci-operator/knative-images.*",
+		"openshift/ci-operator/knative-test-images.*",
+	}
+)
 
 type orgRepoTag struct {
 	Org  string
@@ -82,20 +90,50 @@ func discoverImageContext(dockerfile string) imageContext {
 }
 
 func discoverDockerfiles(r Repository) ([]string, error) {
-	dir := filepath.Join(r.RepositoryDirectory(), "openshift", "ci-operator")
-	dockerfiles, err := filepath.Glob(filepath.Join(dir, "**", "**", "Dockerfile"))
-	if err != nil {
-		return nil, fmt.Errorf("failed while discovering container images in %s: %w", dir, err)
+	includePathRegex := ToRegexp(defaultDockerfileIncludes)
+	if len(r.Dockerfiles.Matches) != 0 {
+		includePathRegex = ToRegexp(r.Dockerfiles.Matches)
 	}
+	dockerfiles := sets.NewString()
+	rootDir := r.RepositoryDirectory()
+	err := filepath.Walk(rootDir, func(path string, info fs.FileInfo, err error) error {
+		if info.IsDir() || !strings.HasSuffix(info.Name(), "Dockerfile") {
+			return nil
+		}
+		path = filepath.Join(".", strings.TrimPrefix(path, rootDir))
+
+		include := true
+		if len(includePathRegex) > 0 {
+			include = false
+			for _, r := range includePathRegex {
+				if r.MatchString(path) {
+					include = true
+					break
+				}
+			}
+		}
+		if !include {
+			return nil
+		}
+		dockerfiles.Insert(filepath.Join(rootDir, path))
+		return nil
+	})
+	if err != nil {
+		log.Fatal(err, "\n", string(debug.Stack()))
+	}
+	for _, p := range dockerfiles.List() {
+		log.Println("Dockerfile path", p)
+	}
+
 	srcImageDockerfile, err := discoverSourceImageDockerfile(r)
 	if err != nil {
 		return nil, err
 	}
 	if srcImageDockerfile != "" {
-		dockerfiles = append(dockerfiles, srcImageDockerfile)
+		dockerfiles.Insert(srcImageDockerfile)
 	}
 
-	return dockerfiles, nil
+	return dockerfiles.List(), nil
 }
 
 func discoverSourceImageDockerfile(r Repository) (string, error) {
@@ -153,13 +191,14 @@ func getPullStringsFromDockerfile(filename string) ([]string, error) {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
-		if !strings.Contains(line, "FROM ") {
+		if !(strings.Contains(line, "FROM ") || strings.Contains(line, "--from=")) {
 			continue
 		}
 
 		match := registryRegex.FindString(line)
 		if match != "" {
 			images = append(images, match)
+			log.Println("Added match:", match)
 		}
 		if line == "FROM src" {
 			images = append(images, srcImage)
@@ -195,4 +234,16 @@ func orgRepoTagFromPullString(pullString string) (orgRepoTag, error) {
 	}
 
 	return res, nil
+}
+
+func ToRegexp(s []string) []*regexp.Regexp {
+	includesRegex := make([]*regexp.Regexp, 0, len(s))
+	for _, i := range s {
+		r, err := regexp.Compile(i)
+		if err != nil {
+			log.Fatal("Regex", i, "doesn't compile", err)
+		}
+		includesRegex = append(includesRegex, r)
+	}
+	return includesRegex
 }

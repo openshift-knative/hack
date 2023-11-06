@@ -19,6 +19,7 @@ type Repository struct {
 	SlackChannel          string                                                      `json:"slackChannel" yaml:"slackChannel"`
 	CanonicalGoRepository *string                                                     `json:"canonicalGoRepository" yaml:"canonicalGoRepository"`
 	E2ETests              E2ETests                                                    `json:"e2e" yaml:"e2e"`
+	Dockerfiles           Dockerfiles                                                 `json:"dockerfiles" yaml:"dockerfiles"`
 	Images                []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration `json:"images" yaml:"images"`
 	Tests                 []cioperatorapi.TestStepConfiguration                       `json:"tests" yaml:"tests"`
 	Resources             cioperatorapi.ResourceConfiguration                         `json:"resources" yaml:"resources"`
@@ -27,6 +28,10 @@ type Repository struct {
 type E2ETests struct {
 	Matches         []string `json:"matches" yaml:"matches"`
 	OnDemandMatches []string `json:"onDemand" yaml:"onDemand"`
+}
+
+type Dockerfiles struct {
+	Matches []string `json:"matches" yaml:"matches"`
 }
 
 func (r Repository) RepositoryDirectory() string {

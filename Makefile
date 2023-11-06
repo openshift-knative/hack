@@ -21,6 +21,10 @@ generate-serving-ci:
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/serving-net-kourier.yaml $(ARGS)
 .PHONY: generate-serving-ci
 
+generate-serverless-operator-ci:
+	go run github.com/openshift-knative/hack/cmd/prowgen --config config/serverless-operator.yaml $(ARGS)
+.PHONY: generate-serving-ci
+
 unit-tests:
 	go test ./pkg/...
 

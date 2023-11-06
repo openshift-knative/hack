@@ -92,6 +92,7 @@ func Main() {
 			}
 
 			// Delete existing configuration for each configured branch.
+			// TODO. Have this optional?
 			for branch := range inConfig.Config.Branches {
 				if err := DeleteExistingReleaseBuildConfigurationForBranch(outConfig, repository, branch); err != nil {
 					return err
