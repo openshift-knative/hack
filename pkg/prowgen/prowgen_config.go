@@ -37,8 +37,6 @@ type Dockerfiles struct {
 
 type Promotion struct {
 	Namespace string
-	Name      string
-	Tag       string
 }
 
 func (r Repository) RepositoryDirectory() string {
@@ -198,13 +196,9 @@ func withNamePromotion(r Repository, branchName string) ReleaseBuildConfiguratio
 		if r.Promotion.Namespace != "" {
 			ns = r.Promotion.Namespace
 		}
-		name := strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
-		if r.Promotion.Name != "" {
-			name = r.Promotion.Name
-		}
 		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
 			Namespace: ns,
-			Name:      name,
+			Name:      strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
 			AdditionalImages: map[string]string{
 				// Add source image
 				transformLegacyKnativeSourceImageName(r): "src",
@@ -220,13 +214,9 @@ func withTagPromotion(r Repository, branchName string) ReleaseBuildConfiguration
 		if r.Promotion.Namespace != "" {
 			ns = r.Promotion.Namespace
 		}
-		tag := strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly")
-		if r.Promotion.Name != "" {
-			tag = r.Promotion.Name
-		}
 		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
 			Namespace:   ns,
-			Tag:         tag,
+			Tag:         strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
 			TagByCommit: false, // TODO: revisit this later
 			AdditionalImages: map[string]string{
 				// Add source image
