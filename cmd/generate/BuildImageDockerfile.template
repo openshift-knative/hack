@@ -11,7 +11,19 @@ RUN echo "[kubernetes]" >> /etc/yum.repos.d/kubernetes.repo && \
     echo "repo_gpgcheck=0" >> /etc/yum.repos.d/kubernetes.repo && \
     echo "gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg" >> /etc/yum.repos.d/kubernetes.repo
 
-RUN yum install -y kubectl httpd-tools
+RUN yum install -y kubectl httpd-tools \
+    https://rpm.nodesource.com/pub_16.x/el/7/x86_64/nodesource-release-el7-1.noarch.rpm \
+    gcc-c++ \
+    make \
+    nodejs \
+    xorg-x11-server-Xvfb \
+    gtk2-devel \
+    gtk3-devel \
+    libnotify-devel \
+    GConf2 \
+    nss \
+    libXScrnSaver \
+    alsa-lib
 
 RUN wget https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && \
     chmod 700 ./get-helm-3
@@ -19,6 +31,7 @@ RUN wget https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && 
 RUN ./get-helm-3 --version v3.11.3 --no-sudo && helm version
 
 RUN GOFLAGS='' go install github.com/mikefarah/yq/v3@latest
+RUN GOFLAGS='' go install knative.dev/test-infra/tools/kntest/cmd/kntest@latest
 
 # go install creates $GOPATH/.cache with root permissions, we delete it here
 # to avoid permission issues with the runtime users
