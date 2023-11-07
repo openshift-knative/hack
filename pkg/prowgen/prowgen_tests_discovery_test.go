@@ -23,6 +23,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 			Matches: []string{
 				"test-e2e$",
 				"test-e2e-tls$",
+				"perf-tests$",
 			},
 		},
 	}
@@ -55,6 +56,69 @@ func TestDiscoverTestsServing(t *testing.T) {
 	}
 
 	expectedTests := []cioperatorapi.TestStepConfiguration{
+		{
+			As: "perf-tests-aws-ocp-412",
+			ClusterClaim: &cioperatorapi.ClusterClaim{
+				Product:      cioperatorapi.ReleaseProductOCP,
+				Version:      "4.12",
+				Architecture: cioperatorapi.ReleaseArchitectureAMD64,
+				Cloud:        cioperatorapi.CloudAWS,
+				Owner:        "openshift-ci",
+				Timeout:      &prowapi.Duration{Duration: time.Hour},
+			},
+			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
+				Test: []cioperatorapi.TestStep{
+					{
+						LiteralTestStep: &cioperatorapi.LiteralTestStep{
+							As:       "test",
+							From:     servingSourceImage,
+							Commands: formatCommand("make perf-tests"),
+							Resources: cioperatorapi.ResourceRequirements{
+								Requests: cioperatorapi.ResourceList{
+									"cpu": "100m",
+								},
+							},
+							Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
+							Dependencies: dependencies,
+							Cli:          "latest",
+						},
+					},
+				},
+				Workflow: pointer.String("generic-claim"),
+			},
+		},
+		{
+			As:   "perf-tests-aws-ocp-412-continuous",
+			Cron: cron,
+			ClusterClaim: &cioperatorapi.ClusterClaim{
+				Product:      cioperatorapi.ReleaseProductOCP,
+				Version:      "4.12",
+				Architecture: cioperatorapi.ReleaseArchitectureAMD64,
+				Cloud:        cioperatorapi.CloudAWS,
+				Owner:        "openshift-ci",
+				Timeout:      &prowapi.Duration{Duration: time.Hour},
+			},
+			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
+				Test: []cioperatorapi.TestStep{
+					{
+						LiteralTestStep: &cioperatorapi.LiteralTestStep{
+							As:       "test",
+							From:     servingSourceImage,
+							Commands: formatCommand("make perf-tests"),
+							Resources: cioperatorapi.ResourceRequirements{
+								Requests: cioperatorapi.ResourceList{
+									"cpu": "100m",
+								},
+							},
+							Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
+							Dependencies: dependencies,
+							Cli:          "latest",
+						},
+					},
+				},
+				Workflow: pointer.String("generic-claim"),
+			},
+		},
 		{
 			As: "test-e2e-aws-ocp-412",
 			ClusterClaim: &cioperatorapi.ClusterClaim{
