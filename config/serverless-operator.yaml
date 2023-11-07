@@ -2,13 +2,13 @@
 
 config:
   branches:
-    "main":
+    "source_image_cli":
       openShiftVersions:
         - 4.13
-        - 4.11
+        #- 4.11
 
 repositories:
-  - org: openshift-knative
+  - org: mgencur
     repo: serverless-operator
     promotion:
       namespace: knative
@@ -18,15 +18,23 @@ repositories:
     slackChannel: "#serverless-ci"
     dockerfiles:
       matches:
-        - "knative-operator.*"
-        - "openshift-knative-operator.*"
-        - "serving/metadata-webhook.*"
-        - "serving/ingress.*"
+        - "knative-operator/.*"
+        - "openshift-knative-operator/.*"
+        - "serving/metadata-webhook/.*"
+        - "serving/ingress/.*"
         - "olm-catalog/serverless-operator/Dockerfile"
         - "olm-catalog/serverless-operator/index/Dockerfile"
     e2e:
       matches:
-        - ".*test-upgrade$"
+        - "^operator-e2e$"
+        - "^upstream-e2e$"
+        - "^upstream-e2e-kafka$"
+        - "^test-upgrade$"
+        - "^mesh-e2e$"
+        - "^mesh-upgrade$"
+        - "^ui-e2e$"
+        - "^kitchensink-e2e$"
+        - "^kitchensink-upgrade$"
     resources:
       '*':
         limits:
