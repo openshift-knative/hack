@@ -15,13 +15,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"go/parser"
-	"go/token"
-	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
-	"runtime/debug"
 	"sort"
 	"strings"
 
@@ -29,7 +25,6 @@ import (
 	gyaml "github.com/ghodss/yaml"
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v2"
-	"k8s.io/apimachinery/pkg/util/sets"
 	prowapi "k8s.io/test-infra/prow/apis/prowjobs/v1"
 	prowconfig "k8s.io/test-infra/prow/config"
 )
