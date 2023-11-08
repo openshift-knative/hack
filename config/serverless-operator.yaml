@@ -2,7 +2,7 @@
 
 config:
   branches:
-    "source_image_cli_2":
+    main:
       openShiftVersions:
         - version: 4.13
           cron: "0 4,16 * * *"
@@ -11,7 +11,7 @@ config:
           onDemand: true
 
 repositories:
-  - org: mgencur
+  - org: openshift-knative
     repo: serverless-operator
     promotion:
       namespace: knative
