@@ -46,8 +46,12 @@ func (r Repository) RepositoryDirectory() string {
 }
 
 type Branch struct {
-	OpenShiftVersions []string `json:"openShiftVersions" yaml:"openShiftVersions"`
-	Cron              string   `json:"cron" yaml:"cron"`
+	OpenShiftVersions []OpenShift `json:"openShiftVersions" yaml:"openShiftVersions"`
+}
+
+type OpenShift struct {
+	Version string `json:"version" yaml:"version"`
+	Cron    string `json:"cron" yaml:"cron"`
 }
 
 type CommonConfig struct {
@@ -84,7 +88,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 
 			log.Println(r.RepositoryDirectory(), "Generating config", branchName, "OpenShiftVersion", ov)
 
-			variant := strings.ReplaceAll(ov, ".", "")
+			variant := strings.ReplaceAll(ov.Version, ".", "")
 
 			images := make([]cioperatorapi.ProjectDirectoryImageBuildStepConfiguration, 0, len(r.Images))
 			for _, img := range r.Images {
@@ -151,7 +155,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 			options = append(
 				options,
 				DiscoverImages(r),
-				DiscoverTests(r, ov, &branch.Cron, fromImage),
+				DiscoverTests(r, ov, fromImage),
 			)
 
 			log.Println(r.RepositoryDirectory(), "Apply input options", len(options))

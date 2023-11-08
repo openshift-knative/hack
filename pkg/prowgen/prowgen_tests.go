@@ -20,7 +20,7 @@ import (
 
 const defaultCron = "0 5 * * 2,6"
 
-func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string, sourceImageName string) ReleaseBuildConfigurationOption {
+func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string) ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
 		tests, err := discoverE2ETests(r)
 		if err != nil {
@@ -29,12 +29,12 @@ func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string, 
 
 		for i := range tests {
 			test := &tests[i]
-			as := ToName(r, test, openShiftVersion)
+			as := ToName(r, test, openShift.Version)
 			testConfiguration := cioperatorapi.TestStepConfiguration{
 				As: as,
 				ClusterClaim: &cioperatorapi.ClusterClaim{
 					Product:      cioperatorapi.ReleaseProductOCP,
-					Version:      openShiftVersion,
+					Version:      openShift.Version,
 					Architecture: cioperatorapi.ReleaseArchitectureAMD64,
 					Cloud:        cioperatorapi.CloudAWS,
 					Owner:        "openshift-ci",
@@ -123,10 +123,10 @@ func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string, 
 
 			cronTestConfiguration := testConfiguration.DeepCopy()
 			cronTestConfiguration.As += "-continuous"
-			if cronOverride == nil || *cronOverride == "" {
+			if openShift.Cron == "" {
 				cronTestConfiguration.Cron = pointer.String(defaultCron)
 			} else {
-				cronTestConfiguration.Cron = cronOverride
+				cronTestConfiguration.Cron = &openShift.Cron
 			}
 			// Periodic jobs gather artifacts on both failure/success.
 			for _, postStep := range cronTestConfiguration.MultiStageTestConfiguration.Post {

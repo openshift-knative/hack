@@ -4,8 +4,8 @@ config:
   branches:
     "source_image_cli_2":
       openShiftVersions:
-        - 4.13
-        #- 4.11
+        - version: 4.13
+        #- version: 4.11
 
 repositories:
   - org: mgencur

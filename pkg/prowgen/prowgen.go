@@ -64,7 +64,7 @@ func Main() {
 
 	for _, v := range inConfig.Config.Branches {
 		sort.Slice(v.OpenShiftVersions, func(i, j int) bool {
-			return semver.New(v.OpenShiftVersions[i] + ".0").LessThan(*semver.New(v.OpenShiftVersions[j] + ".0"))
+			return semver.New(v.OpenShiftVersions[i].Version + ".0").LessThan(*semver.New(v.OpenShiftVersions[j].Version + ".0"))
 		})
 	}
 

@@ -37,7 +37,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 	servingSourceImage := "knative-serving-source-image"
 	options := []ReleaseBuildConfigurationOption{
 		DiscoverImages(r),
-		DiscoverTests(r, "4.12", cron, servingSourceImage),
+		DiscoverTests(r, OpenShift{Version: "4.12", Cron: *cron}, servingSourceImage),
 	}
 
 	dependencies := []cioperatorapi.StepDependency{
@@ -352,7 +352,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 	eventingSourceImage := "knative-eventing-source-image"
 	options := []ReleaseBuildConfigurationOption{
 		DiscoverImages(r),
-		DiscoverTests(r, "4.12", nil, eventingSourceImage),
+		DiscoverTests(r, OpenShift{Version: "4.12"}, eventingSourceImage),
 	}
 
 	dependencies := []cioperatorapi.StepDependency{
