@@ -31,6 +31,7 @@ type E2ETest struct {
 	OnDemand     bool   `json:"onDemand" yaml:"onDemand"`
 	IgnoreError  bool   `json:"ignoreError" yaml:"ignoreError"`
 	RunIfChanged string `json:"runIfChanged" yaml:"runIfChanged"`
+	SkipCron     bool   `json:"skipCron" yaml:"skipCron"`
 }
 
 type Dockerfiles struct {

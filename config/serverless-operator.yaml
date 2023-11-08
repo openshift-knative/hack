@@ -29,6 +29,7 @@ repositories:
       - regexp: "^test-upgrade$"
       - regexp: "^upstream-e2e$"
         ignoreError: true
+        skipCron: true
       - regexp: "^upstream-e2e-kafka$"
         ignoreError: true
       - regexp: "^mesh-e2e$"
@@ -37,6 +38,7 @@ repositories:
       - regexp: "^mesh-upgrade$"
         onDemand: true
         ignoreError: true
+        skipCron: true
       - regexp: "^ui-e2e$"
         onDemand: true
         runIfChanged: "test/ui"

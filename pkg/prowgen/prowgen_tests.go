@@ -121,19 +121,20 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string) Re
 			preSubmitConfiguration.RunIfChanged = test.RunIfChanged
 			cfg.Tests = append(cfg.Tests, *preSubmitConfiguration)
 
-			cronTestConfiguration := testConfiguration.DeepCopy()
-			cronTestConfiguration.As += "-continuous"
-			if openShift.Cron == "" {
-				cronTestConfiguration.Cron = pointer.String(defaultCron)
-			} else {
-				cronTestConfiguration.Cron = &openShift.Cron
+			if !test.SkipCron {
+				cronTestConfiguration := testConfiguration.DeepCopy()
+				cronTestConfiguration.As += "-continuous"
+				if openShift.Cron == "" {
+					cronTestConfiguration.Cron = pointer.String(defaultCron)
+				} else {
+					cronTestConfiguration.Cron = &openShift.Cron
+				}
+				// Periodic jobs gather artifacts on both failure/success.
+				for _, postStep := range cronTestConfiguration.MultiStageTestConfiguration.Post {
+					postStep.OptionalOnSuccess = pointer.Bool(false)
+				}
+				cfg.Tests = append(cfg.Tests, *cronTestConfiguration)
 			}
-			// Periodic jobs gather artifacts on both failure/success.
-			for _, postStep := range cronTestConfiguration.MultiStageTestConfiguration.Post {
-				postStep.OptionalOnSuccess = pointer.Bool(false)
-			}
-
-			cfg.Tests = append(cfg.Tests, *cronTestConfiguration)
 		}
 
 		return nil
@@ -149,6 +150,7 @@ type Test struct {
 	OnDemand     bool
 	IgnoreError  bool
 	RunIfChanged string
+	SkipCron     bool
 }
 
 func (t *Test) HexSha() string {
@@ -199,7 +201,7 @@ func createTest(r Repository, line string, e2e E2ETest, tests *[]Test, commands 
 			return fmt.Errorf("[%s] failed to match test %s: %w", r.RepositoryDirectory(), e2e.Regexp, err)
 		}
 		if matches && !commands.Has(line) {
-			*tests = append(*tests, Test{Command: line, OnDemand: e2e.OnDemand, IgnoreError: e2e.IgnoreError, RunIfChanged: e2e.RunIfChanged})
+			*tests = append(*tests, Test{Command: line, OnDemand: e2e.OnDemand, IgnoreError: e2e.IgnoreError, RunIfChanged: e2e.RunIfChanged, SkipCron: e2e.SkipCron})
 			commands.Insert(line)
 		}
 	}
