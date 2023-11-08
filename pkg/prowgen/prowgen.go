@@ -223,7 +223,7 @@ func runJobConfigInjectors(inConfig *Config, openShiftRelease Repository) error 
 func slackInjector() JobConfigInjector {
 	return JobConfigInjector{
 		Type: Periodic,
-		Update: func(r *Repository, jobConfig *prowconfig.JobConfig, _ string) error {
+		Update: func(r *Repository, _ *Branch, _ string, jobConfig *prowconfig.JobConfig) error {
 			for i := range jobConfig.Periodics {
 				jobConfig.Periodics[i].ReporterConfig = &prowapi.ReporterConfig{
 					Slack: &prowapi.SlackReporterConfig{
@@ -245,10 +245,7 @@ func slackInjector() JobConfigInjector {
 func alwaysRunInjector() JobConfigInjector {
 	return JobConfigInjector{
 		Type: PreSubmit,
-		Update: func(r *Repository, jobConfig *prowconfig.JobConfig, branchName string) error {
-			if err := GitCheckout(context.TODO(), *r, branchName); err != nil {
-				return fmt.Errorf("[%s] failed to checkout branch %s", r.RepositoryDirectory(), branchName)
-			}
+		Update: func(r *Repository, b *Branch, branchName string, jobConfig *prowconfig.JobConfig) error {
 			tests, err := discoverE2ETests(*r)
 			if err != nil {
 				return fmt.Errorf("failed to discover tests: %w", err)
@@ -263,9 +260,17 @@ func alwaysRunInjector() JobConfigInjector {
 					variant := jobConfig.PresubmitsStatic[k][i].Labels["ci-operator.openshift.io/variant"]
 					ocpVersion := strings.SplitN(variant, "-", 2)[0]
 
+					// Individual OpenShift versions can enforce all their jobs to be on demand.
+					var onDemandForOpenShift bool
+					for _, v := range b.OpenShiftVersions {
+						if v.Version == ocpVersion {
+							onDemandForOpenShift = v.OnDemand
+						}
+					}
+
 					for _, t := range tests {
 						name := ToName(*r, &t, ocpVersion)
-						if (t.OnDemand || t.RunIfChanged != "") && strings.Contains(jobConfig.PresubmitsStatic[k][i].Name, name) {
+						if (t.OnDemand || t.RunIfChanged != "" || onDemandForOpenShift) && strings.Contains(jobConfig.PresubmitsStatic[k][i].Name, name) {
 							jobConfig.PresubmitsStatic[k][i].AlwaysRun = false
 						}
 					}
@@ -298,15 +303,15 @@ func (jcis JobConfigInjectors) Inject(inConfig *Config, openShiftRelease Reposit
 
 type JobConfigInjector struct {
 	Type   JobConfigType
-	Update func(r *Repository, jobConfig *prowconfig.JobConfig, branchName string) error
+	Update func(r *Repository, b *Branch, branchName string, jobConfig *prowconfig.JobConfig) error
 }
 
 func (jci *JobConfigInjector) Inject(inConfig *Config, openShiftRelease Repository) error {
-	for branch := range inConfig.Config.Branches {
+	for branchName, branch := range inConfig.Config.Branches {
 		for _, r := range inConfig.Repositories {
 
 			generatedOutputDir := "ci-operator/jobs"
-			glob := filepath.Join(openShiftRelease.RepositoryDirectory(), generatedOutputDir, r.RepositoryDirectory(), "*"+branch+"*"+string(jci.Type)+"*")
+			glob := filepath.Join(openShiftRelease.RepositoryDirectory(), generatedOutputDir, r.RepositoryDirectory(), "*"+branchName+"*"+string(jci.Type)+"*")
 			matches, err := filepath.Glob(glob)
 			if err != nil {
 				return err
@@ -317,7 +322,7 @@ func (jci *JobConfigInjector) Inject(inConfig *Config, openShiftRelease Reposito
 					return err
 				}
 
-				if err := jci.Update(&r, jobConfig, branch); err != nil {
+				if err := jci.Update(&r, &branch, branchName, jobConfig); err != nil {
 					return err
 				}
 

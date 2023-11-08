@@ -5,7 +5,8 @@ config:
     "source_image_cli_2":
       openShiftVersions:
         - version: 4.13
-        #- version: 4.11
+        - version: 4.11
+          onDemand: true
 
 repositories:
   - org: mgencur

@@ -51,8 +51,9 @@ type Branch struct {
 }
 
 type OpenShift struct {
-	Version string `json:"version" yaml:"version"`
-	Cron    string `json:"cron" yaml:"cron"`
+	Version  string `json:"version" yaml:"version"`
+	Cron     string `json:"cron" yaml:"cron"`
+	OnDemand bool   `json:"onDemand" yaml:"onDemand"`
 }
 
 type CommonConfig struct {
