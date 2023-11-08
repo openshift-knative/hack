@@ -21,6 +21,7 @@ repositories:
     slackChannel: "#serverless-ci"
     ignoreConfigs:
       matches:
+        - ".*main.yaml$"
         - ".*aws-ovn.*"
         - ".*azure.*"
         - ".*gcp.*"
