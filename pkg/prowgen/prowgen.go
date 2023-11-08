@@ -172,9 +172,15 @@ func DeleteExistingReleaseBuildConfigurationForBranch(outConfig *string, r Repos
 	if err != nil {
 		return err
 	}
+	if err := deleteConfigsIfNeeded(r, configPaths, branch); err != nil {
+		return err
+	}
+	return nil
+}
 
+func deleteConfigsIfNeeded(r Repository, paths []string, branch string) error {
 	excludeFilePattern := ToRegexp(r.IgnoreConfigs.Matches)
-	for _, path := range configPaths {
+	for _, path := range paths {
 		include := true
 		for _, r := range excludeFilePattern {
 			if r.MatchString(path) {
@@ -183,13 +189,12 @@ func DeleteExistingReleaseBuildConfigurationForBranch(outConfig *string, r Repos
 			}
 		}
 		if include {
-			log.Println("Detected a new config for branch", branch, "removing file", path)
+			log.Println("Detected a config for branch", branch, "removing file", path)
 			if err := os.Remove(path); err != nil {
 				return err
 			}
 		}
 	}
-
 	return nil
 }
 
@@ -398,10 +403,8 @@ func InitializeOpenShiftReleaseRepository(ctx context.Context, openShiftRelease 
 			if err != nil {
 				return err
 			}
-			for _, match := range matches {
-				if err := os.Remove(match); err != nil {
-					return err
-				}
+			if err := deleteConfigsIfNeeded(r, matches, branch); err != nil {
+				return err
 			}
 		}
 	}
