@@ -30,6 +30,7 @@ repositories:
         - "^upstream-e2e$"
         - "^upstream-e2e-kafka$"
         - "^test-upgrade$"
+      onDemand:
         - "^mesh-e2e$"
         - "^mesh-upgrade$"
         - "^ui-e2e$"
