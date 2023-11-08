@@ -28,7 +28,7 @@ type Repository struct {
 }
 
 type E2ETest struct {
-	Regexp       string `json:"regexp" yaml:"regexp"`
+	Match        string `json:"match" yaml:"match"`
 	OnDemand     bool   `json:"onDemand" yaml:"onDemand"`
 	IgnoreError  bool   `json:"ignoreError" yaml:"ignoreError"`
 	RunIfChanged string `json:"runIfChanged" yaml:"runIfChanged"`

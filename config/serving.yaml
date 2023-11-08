@@ -35,9 +35,9 @@ repositories:
       migrate: storage-version-migration
     slackChannel: "#knative-serving-ci"
     e2e:
-      - regexp: ".*e2e$"
-      - regexp: ".*e2e-tls$"
-      - regexp: "perf-tests$"
+      - match: ".*e2e$"
+      - match: ".*e2e-tls$"
+      - match: "perf-tests$"
     resources:
       '*':
         requests:

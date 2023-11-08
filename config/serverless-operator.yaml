@@ -40,28 +40,28 @@ repositories:
         - "olm-catalog/serverless-operator/Dockerfile"
         - "olm-catalog/serverless-operator/index/Dockerfile"
     e2e:
-      - regexp: "^operator-e2e$"
-      - regexp: "^test-upgrade$"
-      - regexp: "^upstream-e2e$"
+      - match: "^operator-e2e$"
+      - match: "^test-upgrade$"
+      - match: "^upstream-e2e$"
         ignoreError: true
         skipCron: true
-      - regexp: "^upstream-e2e-kafka$"
+      - match: "^upstream-e2e-kafka$"
         ignoreError: true
-      - regexp: "^mesh-e2e$"
+      - match: "^mesh-e2e$"
         onDemand: true
         ignoreError: true
-      - regexp: "^mesh-upgrade$"
+      - match: "^mesh-upgrade$"
         onDemand: true
         ignoreError: true
         skipCron: true
-      - regexp: "^ui-e2e$"
+      - match: "^ui-e2e$"
         onDemand: true
         runIfChanged: "test/ui"
         ignoreError: true
-      - regexp: "^kitchensink-e2e$"
+      - match: "^kitchensink-e2e$"
         onDemand: true
         ignoreError: true
-      - regexp: "^kitchensink-upgrade$"
+      - match: "^kitchensink-upgrade$"
         onDemand: true
         ignoreError: true
     resources:

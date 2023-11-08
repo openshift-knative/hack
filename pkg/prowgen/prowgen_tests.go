@@ -194,11 +194,11 @@ func createTest(r Repository, line string, e2e E2ETest, tests *[]Test, commands 
 	if strings.HasSuffix(line, ":") {
 		line := strings.TrimSuffix(line, ":")
 
-		log.Println(r.RepositoryDirectory(), "Comparing", line, "to match", e2e.Regexp)
+		log.Println(r.RepositoryDirectory(), "Comparing", line, "to match", e2e.Match)
 
-		matches, err := regexp.Match(e2e.Regexp, []byte(line))
+		matches, err := regexp.Match(e2e.Match, []byte(line))
 		if err != nil {
-			return fmt.Errorf("[%s] failed to match test %s: %w", r.RepositoryDirectory(), e2e.Regexp, err)
+			return fmt.Errorf("[%s] failed to match test %s: %w", r.RepositoryDirectory(), e2e.Match, err)
 		}
 		if matches && !commands.Has(line) {
 			*tests = append(*tests, Test{Command: line, OnDemand: e2e.OnDemand, IgnoreError: e2e.IgnoreError, RunIfChanged: e2e.RunIfChanged, SkipCron: e2e.SkipCron})
