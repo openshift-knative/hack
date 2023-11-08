@@ -21,6 +21,7 @@ type Repository struct {
 	CanonicalGoRepository *string                                                     `json:"canonicalGoRepository" yaml:"canonicalGoRepository"`
 	E2ETests              []E2ETest                                                   `json:"e2e" yaml:"e2e"`
 	Dockerfiles           Dockerfiles                                                 `json:"dockerfiles" yaml:"dockerfiles"`
+	IgnoreConfigs         IgnoreConfigs                                               `json:"ignoreConfigs" yaml:"ignoreConfigs"`
 	Images                []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration `json:"images" yaml:"images"`
 	Tests                 []cioperatorapi.TestStepConfiguration                       `json:"tests" yaml:"tests"`
 	Resources             cioperatorapi.ResourceConfiguration                         `json:"resources" yaml:"resources"`
@@ -35,6 +36,10 @@ type E2ETest struct {
 }
 
 type Dockerfiles struct {
+	Matches []string `json:"matches" yaml:"matches"`
+}
+
+type IgnoreConfigs struct {
 	Matches []string `json:"matches" yaml:"matches"`
 }
 

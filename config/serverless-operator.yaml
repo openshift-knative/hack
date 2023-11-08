@@ -5,7 +5,9 @@ config:
     "source_image_cli_2":
       openShiftVersions:
         - version: 4.13
+          cron: "0 4,16 * * *"
         - version: 4.11
+          cron: "0 6,18 * * *"
           onDemand: true
 
 repositories:
@@ -17,6 +19,17 @@ repositories:
     imageNameOverrides:
       serverless-operator: bundle
     slackChannel: "#serverless-ci"
+    ignoreConfigs:
+      matches:
+        - ".*aws-ovn.*"
+        - ".*azure.*"
+        - ".*gcp.*"
+        - ".*hypershift.*"
+        - ".*osd.*"
+        - ".*single-node.*"
+        - ".*vsphere.*"
+        - ".*lp-interop.*"
+        - ".*lp-interop.*"
     dockerfiles:
       matches:
         - "knative-operator/.*"

@@ -15,9 +15,13 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"go/parser"
+	"go/token"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"sort"
 	"strings"
 
@@ -25,6 +29,7 @@ import (
 	gyaml "github.com/ghodss/yaml"
 	"golang.org/x/sync/errgroup"
 	"gopkg.in/yaml.v2"
+	"k8s.io/apimachinery/pkg/util/sets"
 	prowapi "k8s.io/test-infra/prow/apis/prowjobs/v1"
 	prowconfig "k8s.io/test-infra/prow/config"
 )
@@ -168,15 +173,25 @@ func PushBranch(ctx context.Context, release Repository, remote *string, branch 
 
 func DeleteExistingReleaseBuildConfigurationForBranch(outConfig *string, r Repository, branch string) error {
 	dir := filepath.Join(*outConfig, r.RepositoryDirectory())
-	matches, err := filepath.Glob(filepath.Join(dir, "*"+branch+"*"))
+	configPaths, err := filepath.Glob(filepath.Join(dir, "*"+branch+"*"))
 	if err != nil {
 		return err
 	}
 
-	for _, match := range matches {
-		log.Println("Detected a new config for branch", branch, "removing file", match)
-		if err := os.Remove(match); err != nil {
-			return err
+	excludeFilePattern := ToRegexp(r.IgnoreConfigs.Matches)
+	for _, path := range configPaths {
+		include := true
+		for _, r := range excludeFilePattern {
+			if r.MatchString(path) {
+				include = false
+				break
+			}
+		}
+		if include {
+			log.Println("Detected a new config for branch", branch, "removing file", path)
+			if err := os.Remove(path); err != nil {
+				return err
+			}
 		}
 	}
 
