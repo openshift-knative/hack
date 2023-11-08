@@ -37,7 +37,6 @@ repositories:
     imagePrefix: knative-eventing-kafka-broker
     slackChannel: "#knative-eventing-ci"
     e2e:
-      matches:
-        - ".*e2e$"
-        - ".*reconciler.*"
-        - ".*conformance.*"
+      - regexp: ".*e2e$"
+      - regexp: ".*reconciler.*"
+      - regexp: ".*conformance.*"

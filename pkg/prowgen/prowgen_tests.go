@@ -117,6 +117,8 @@ func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string, 
 			}
 
 			preSubmitConfiguration := testConfiguration.DeepCopy()
+			preSubmitConfiguration.Optional = test.IgnoreError
+			preSubmitConfiguration.RunIfChanged = test.RunIfChanged
 			cfg.Tests = append(cfg.Tests, *preSubmitConfiguration)
 
 			cronTestConfiguration := testConfiguration.DeepCopy()
@@ -143,8 +145,10 @@ const (
 )
 
 type Test struct {
-	Command  string
-	OnDemand bool
+	Command      string
+	OnDemand     bool
+	IgnoreError  bool
+	RunIfChanged string
 }
 
 func (t *Test) HexSha() string {
@@ -170,13 +174,8 @@ func discoverE2ETests(r Repository) ([]Test, error) {
 	commands := sets.NewString()
 	for _, l := range lines {
 		l := strings.TrimSpace(l)
-		for _, match := range r.E2ETests.Matches {
-			if err := createTest(r, l, match, &targets, false, commands); err != nil {
-				return nil, err
-			}
-		}
-		for _, match := range r.E2ETests.OnDemandMatches {
-			if err := createTest(r, l, match, &targets, true, commands); err != nil {
+		for _, e2e := range r.E2ETests {
+			if err := createTest(r, l, e2e, &targets, commands); err != nil {
 				return nil, err
 			}
 		}
@@ -189,18 +188,18 @@ func discoverE2ETests(r Repository) ([]Test, error) {
 	return targets, nil
 }
 
-func createTest(r Repository, line string, shouldMatch string, tests *[]Test, onDemand bool, commands sets.String) error {
+func createTest(r Repository, line string, e2e E2ETest, tests *[]Test, commands sets.String) error {
 	if strings.HasSuffix(line, ":") {
 		line := strings.TrimSuffix(line, ":")
 
-		log.Println(r.RepositoryDirectory(), "Comparing", line, "to match", shouldMatch)
+		log.Println(r.RepositoryDirectory(), "Comparing", line, "to match", e2e.Regexp)
 
-		matches, err := regexp.Match(shouldMatch, []byte(line))
+		matches, err := regexp.Match(e2e.Regexp, []byte(line))
 		if err != nil {
-			return fmt.Errorf("[%s] failed to match test %s: %w", r.RepositoryDirectory(), shouldMatch, err)
+			return fmt.Errorf("[%s] failed to match test %s: %w", r.RepositoryDirectory(), e2e.Regexp, err)
 		}
 		if matches && !commands.Has(line) {
-			*tests = append(*tests, Test{Command: line, OnDemand: onDemand})
+			*tests = append(*tests, Test{Command: line, OnDemand: e2e.OnDemand, IgnoreError: e2e.IgnoreError, RunIfChanged: e2e.RunIfChanged})
 			commands.Insert(line)
 		}
 	}

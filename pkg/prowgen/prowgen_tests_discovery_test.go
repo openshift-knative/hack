@@ -19,11 +19,15 @@ func TestDiscoverTestsServing(t *testing.T) {
 		ImagePrefix:           "knative-serving",
 		ImageNameOverrides:    map[string]string{"migrate": "storage-version-migration"},
 		CanonicalGoRepository: pointer.String("knative.dev/serving"),
-		E2ETests: E2ETests{
-			Matches: []string{
-				"test-e2e$",
-				"test-e2e-tls$",
-				"perf-tests$",
+		E2ETests: []E2ETest{
+			{
+				Regexp: "test-e2e$",
+			},
+			{
+				Regexp: "test-e2e-tls$",
+			},
+			{
+				Regexp: "perf-tests$",
 			},
 		},
 	}
@@ -329,12 +333,18 @@ func TestDiscoverTestsEventing(t *testing.T) {
 		Repo:                  "eventing",
 		ImagePrefix:           "knative-eventing",
 		CanonicalGoRepository: pointer.String("knative.dev/eventing"),
-		E2ETests: E2ETests{
-			Matches: []string{
-				".*-conformance$",
-				"test-e2e$",
-				"test-reconcile.*",
-				"test-conformance.*",
+		E2ETests: []E2ETest{
+			{
+				Regexp: ".*-conformance$",
+			},
+			{
+				Regexp: "test-e2e$",
+			},
+			{
+				Regexp: "test-reconcile.*",
+			},
+			{
+				Regexp: "test-conformance.*",
 			},
 		},
 	}

@@ -19,16 +19,18 @@ type Repository struct {
 	ImageNameOverrides    map[string]string                                           `json:"imageNameOverrides" yaml:"imageNameOverrides"`
 	SlackChannel          string                                                      `json:"slackChannel" yaml:"slackChannel"`
 	CanonicalGoRepository *string                                                     `json:"canonicalGoRepository" yaml:"canonicalGoRepository"`
-	E2ETests              E2ETests                                                    `json:"e2e" yaml:"e2e"`
+	E2ETests              []E2ETest                                                   `json:"e2e" yaml:"e2e"`
 	Dockerfiles           Dockerfiles                                                 `json:"dockerfiles" yaml:"dockerfiles"`
 	Images                []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration `json:"images" yaml:"images"`
 	Tests                 []cioperatorapi.TestStepConfiguration                       `json:"tests" yaml:"tests"`
 	Resources             cioperatorapi.ResourceConfiguration                         `json:"resources" yaml:"resources"`
 }
 
-type E2ETests struct {
-	Matches         []string `json:"matches" yaml:"matches"`
-	OnDemandMatches []string `json:"onDemand" yaml:"onDemand"`
+type E2ETest struct {
+	Regexp       string `json:"regexp" yaml:"regexp"`
+	OnDemand     bool   `json:"onDemand" yaml:"onDemand"`
+	IgnoreError  bool   `json:"ignoreError" yaml:"ignoreError"`
+	RunIfChanged string `json:"runIfChanged" yaml:"runIfChanged"`
 }
 
 type Dockerfiles struct {

@@ -2,7 +2,7 @@
 
 config:
   branches:
-    "source_image_cli":
+    "source_image_cli_2":
       openShiftVersions:
         - 4.13
         #- 4.11
@@ -25,17 +25,28 @@ repositories:
         - "olm-catalog/serverless-operator/Dockerfile"
         - "olm-catalog/serverless-operator/index/Dockerfile"
     e2e:
-      matches:
-        - "^operator-e2e$"
-        - "^upstream-e2e$"
-        - "^upstream-e2e-kafka$"
-        - "^test-upgrade$"
-      onDemand:
-        - "^mesh-e2e$"
-        - "^mesh-upgrade$"
-        - "^ui-e2e$"
-        - "^kitchensink-e2e$"
-        - "^kitchensink-upgrade$"
+      - regexp: "^operator-e2e$"
+      - regexp: "^test-upgrade$"
+      - regexp: "^upstream-e2e$"
+        ignoreError: true
+      - regexp: "^upstream-e2e-kafka$"
+        ignoreError: true
+      - regexp: "^mesh-e2e$"
+        onDemand: true
+        ignoreError: true
+      - regexp: "^mesh-upgrade$"
+        onDemand: true
+        ignoreError: true
+      - regexp: "^ui-e2e$"
+        onDemand: true
+        runIfChanged: "test/ui"
+        ignoreError: true
+      - regexp: "^kitchensink-e2e$"
+        onDemand: true
+        ignoreError: true
+      - regexp: "^kitchensink-upgrade$"
+        onDemand: true
+        ignoreError: true
     resources:
       '*':
         limits:

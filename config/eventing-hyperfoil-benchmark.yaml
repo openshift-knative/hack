@@ -12,7 +12,7 @@ repositories:
     imagePrefix: knative-eventing-hyperfoil-benchmark
     slackChannel: "#knative-eventing-ci"
     e2e:
-      matches:
-        - ".*test-kafka-broker-upstream-.*"
-      onDemand:
-        - ".*test-kafka-broker-namespaced-midstream-.*"
+      - regexp: ".*test-kafka-broker-upstream-.*"
+      - regexp: ".*test-kafka-broker-namespaced-midstream-.*"
+        onDemand: true
+

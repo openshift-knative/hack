@@ -29,5 +29,4 @@ repositories:
     imagePrefix: knative-eventing-istio
     slackChannel: "#knative-eventing-ci"
     e2e:
-      matches:
-        - ".*e2e-tests$"
+      - regexp: ".*e2e-tests$"
