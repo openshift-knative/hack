@@ -4,32 +4,32 @@ config:
   branches:
     "release-v1.6":
       openShiftVersions:
-        - 4.12
-        - 4.8
+        - version: 4.12
+        - version: 4.8
     "release-v1.7":
       openShiftVersions:
-        - 4.12
-        - 4.8
+        - version: 4.12
+        - version: 4.8
     "release-v1.8":
       openShiftVersions:
-        - 4.13
-        - 4.10
+        - version: 4.13
+        - version: 4.10
     "release-v1.9":
       openShiftVersions:
-        - 4.13
-        - 4.10
+        - version: 4.13
+        - version: 4.10
     "release-v1.10":
       openShiftVersions:
-        - 4.13
-        - 4.11
+        - version: 4.13
+        - version: 4.11
     "release-v1.11":
       openShiftVersions:
-        - 4.13
-        - 4.11
+        - version: 4.13
+        - version: 4.11
     "release-next":
       openShiftVersions:
-        - 4.13
-        - 4.11
+        - version: 4.13
+        - version: 4.11
 
 repositories:
   - org: openshift-knative
