@@ -13,3 +13,6 @@ test-e2e-local:
 
 perf-tests:
 	echo "Perf"
+
+ui-e2e:
+	echo "Ignore me"
