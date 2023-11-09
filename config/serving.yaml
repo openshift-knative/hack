@@ -38,6 +38,7 @@ repositories:
       matches:
         - ".*e2e$"
         - ".*e2e-tls$"
+      onDemand:
         - "perf-tests$"
     resources:
       '*':
