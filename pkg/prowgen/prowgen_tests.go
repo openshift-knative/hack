@@ -94,6 +94,7 @@ func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string, 
 					Workflow: pointer.String("generic-claim"),
 				},
 			}
+
 			cfg.Tests = append(cfg.Tests, testConfiguration)
 
 			cronTestConfiguration := testConfiguration.DeepCopy()

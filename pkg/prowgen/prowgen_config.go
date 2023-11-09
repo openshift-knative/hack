@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
+	"k8s.io/utils/pointer"
 )
 
 type Repository struct {
@@ -120,6 +121,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 			if isFirstVersion {
 				isFirstVersion = false
 				options = append(options, withNamePromotion(r, branchName))
+				options = append(options, withSnykScanning(r))
 			} else {
 				options = append(options, withTagPromotion(r, branchName))
 			}
@@ -205,6 +207,25 @@ func withTagPromotion(r Repository, branchName string) ReleaseBuildConfiguration
 				transformLegacyKnativeSourceImageName(r): "src",
 			},
 		}
+		return nil
+	}
+}
+
+func withSnykScanning(r Repository) ReleaseBuildConfigurationOption {
+	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
+		securityTestConfiguration := cioperatorapi.TestStepConfiguration{
+			As:       "security",
+			Optional: true,
+			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
+				Environment: cioperatorapi.TestEnvironment{
+					"PROJECT_NAME": fmt.Sprintf("%s-%s", r.Repo, r.Org),
+				},
+				Workflow: pointer.String("openshift-ci-security"),
+			},
+		}
+
+		cfg.Tests = append(cfg.Tests, securityTestConfiguration)
+
 		return nil
 	}
 }
