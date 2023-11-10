@@ -249,7 +249,12 @@ func TestDiscoverTestsServing(t *testing.T) {
 
 	// Add must-gather step to each test as post step
 	for i := range expectedTests {
+		optionalOnSuccess := true
+		if expectedTests[i].Cron != nil {
+			optionalOnSuccess = false
+		}
 		expectedTests[i].MultiStageTestConfiguration.AllowBestEffortPostSteps = pointer.Bool(true)
+		expectedTests[i].MultiStageTestConfiguration.AllowSkipOnSuccess = pointer.Bool(true)
 		expectedTests[i].MultiStageTestConfiguration.Post = append(
 			expectedTests[i].MultiStageTestConfiguration.Post,
 			cioperatorapi.TestStep{
@@ -262,9 +267,10 @@ func TestDiscoverTestsServing(t *testing.T) {
 							"cpu": "100m",
 						},
 					},
-					Timeout:    &prowapi.Duration{Duration: 20 * time.Minute},
-					BestEffort: pointer.Bool(true),
-					Cli:        "latest",
+					Timeout:           &prowapi.Duration{Duration: 20 * time.Minute},
+					BestEffort:        pointer.Bool(true),
+					OptionalOnSuccess: &optionalOnSuccess,
+					Cli:               "latest",
 				},
 			},
 			cioperatorapi.TestStep{
@@ -277,9 +283,28 @@ func TestDiscoverTestsServing(t *testing.T) {
 							"cpu": "100m",
 						},
 					},
-					Timeout:    &prowapi.Duration{Duration: 20 * time.Minute},
-					BestEffort: pointer.Bool(true),
-					Cli:        "latest",
+					Timeout:           &prowapi.Duration{Duration: 20 * time.Minute},
+					BestEffort:        pointer.Bool(true),
+					OptionalOnSuccess: &optionalOnSuccess,
+					Cli:               "latest",
+				},
+			},
+			cioperatorapi.TestStep{
+				LiteralTestStep: &cioperatorapi.LiteralTestStep{
+					As:          "gather-extra",
+					From:        servingSourceImage,
+					Commands:    `curl -skSL https://raw.githubusercontent.com/openshift/release/master/ci-operator/step-registry/gather/extra/gather-extra-commands.sh | /bin/bash -s`,
+					GracePeriod: &prowapi.Duration{Duration: 60 * time.Second},
+					Resources: cioperatorapi.ResourceRequirements{
+						Requests: cioperatorapi.ResourceList{
+							"cpu":    "300m",
+							"memory": "300Mi",
+						},
+					},
+					Timeout:           &prowapi.Duration{Duration: 20 * time.Minute},
+					BestEffort:        pointer.Bool(true),
+					OptionalOnSuccess: &optionalOnSuccess,
+					Cli:               "latest",
 				},
 			},
 		)
@@ -592,7 +617,12 @@ func TestDiscoverTestsEventing(t *testing.T) {
 
 	// Add must-gather step to each test as post step
 	for i := range expectedTests {
+		optionalOnSuccess := true
+		if expectedTests[i].Cron != nil {
+			optionalOnSuccess = false
+		}
 		expectedTests[i].MultiStageTestConfiguration.AllowBestEffortPostSteps = pointer.Bool(true)
+		expectedTests[i].MultiStageTestConfiguration.AllowSkipOnSuccess = pointer.Bool(true)
 		expectedTests[i].MultiStageTestConfiguration.Post = append(
 			expectedTests[i].MultiStageTestConfiguration.Post,
 			cioperatorapi.TestStep{
@@ -605,9 +635,10 @@ func TestDiscoverTestsEventing(t *testing.T) {
 							"cpu": "100m",
 						},
 					},
-					Timeout:    &prowapi.Duration{Duration: 20 * time.Minute},
-					BestEffort: pointer.Bool(true),
-					Cli:        "latest",
+					Timeout:           &prowapi.Duration{Duration: 20 * time.Minute},
+					BestEffort:        pointer.Bool(true),
+					OptionalOnSuccess: &optionalOnSuccess,
+					Cli:               "latest",
 				},
 			},
 			cioperatorapi.TestStep{
@@ -620,9 +651,28 @@ func TestDiscoverTestsEventing(t *testing.T) {
 							"cpu": "100m",
 						},
 					},
-					Timeout:    &prowapi.Duration{Duration: 20 * time.Minute},
-					BestEffort: pointer.Bool(true),
-					Cli:        "latest",
+					Timeout:           &prowapi.Duration{Duration: 20 * time.Minute},
+					BestEffort:        pointer.Bool(true),
+					OptionalOnSuccess: &optionalOnSuccess,
+					Cli:               "latest",
+				},
+			},
+			cioperatorapi.TestStep{
+				LiteralTestStep: &cioperatorapi.LiteralTestStep{
+					As:          "gather-extra",
+					From:        eventingSourceImage,
+					Commands:    `curl -skSL https://raw.githubusercontent.com/openshift/release/master/ci-operator/step-registry/gather/extra/gather-extra-commands.sh | /bin/bash -s`,
+					GracePeriod: &prowapi.Duration{Duration: 60 * time.Second},
+					Resources: cioperatorapi.ResourceRequirements{
+						Requests: cioperatorapi.ResourceList{
+							"cpu":    "300m",
+							"memory": "300Mi",
+						},
+					},
+					Timeout:           &prowapi.Duration{Duration: 20 * time.Minute},
+					BestEffort:        pointer.Bool(true),
+					OptionalOnSuccess: &optionalOnSuccess,
+					Cli:               "latest",
 				},
 			},
 		)
