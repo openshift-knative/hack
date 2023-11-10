@@ -260,6 +260,9 @@ func alwaysRunInjector() JobConfigInjector {
 	return JobConfigInjector{
 		Type: PreSubmit,
 		Update: func(r *Repository, b *Branch, branchName string, jobConfig *prowconfig.JobConfig) error {
+			if err := GitCheckout(context.TODO(), *r, branchName); err != nil {
+				return fmt.Errorf("[%s] failed to checkout branch %s", r.RepositoryDirectory(), branchName)
+			}
 			tests, err := discoverE2ETests(*r)
 			if err != nil {
 				return fmt.Errorf("failed to discover tests: %w", err)
