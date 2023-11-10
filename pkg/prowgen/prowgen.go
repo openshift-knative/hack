@@ -222,7 +222,7 @@ func runJobConfigInjectors(inConfig *Config, openShiftRelease Repository) error 
 func slackInjector() JobConfigInjector {
 	return JobConfigInjector{
 		Type: Periodic,
-		Update: func(r *Repository, jobConfig *prowconfig.JobConfig) error {
+		Update: func(r *Repository, jobConfig *prowconfig.JobConfig, _ string) error {
 			for i := range jobConfig.Periodics {
 				jobConfig.Periodics[i].ReporterConfig = &prowapi.ReporterConfig{
 					Slack: &prowapi.SlackReporterConfig{
@@ -244,7 +244,10 @@ func slackInjector() JobConfigInjector {
 func alwaysRunInjector() JobConfigInjector {
 	return JobConfigInjector{
 		Type: PreSubmit,
-		Update: func(r *Repository, jobConfig *prowconfig.JobConfig) error {
+		Update: func(r *Repository, jobConfig *prowconfig.JobConfig, branchName string) error {
+			if err := GitCheckout(context.TODO(), *r, branchName); err != nil {
+				return fmt.Errorf("[%s] failed to checkout branch %s", r.RepositoryDirectory(), branchName)
+			}
 			tests, err := discoverE2ETests(*r)
 			if err != nil {
 				return fmt.Errorf("failed to discover tests: %w", err)
@@ -294,7 +297,7 @@ func (jcis JobConfigInjectors) Inject(inConfig *Config, openShiftRelease Reposit
 
 type JobConfigInjector struct {
 	Type   JobConfigType
-	Update func(r *Repository, jobConfig *prowconfig.JobConfig) error
+	Update func(r *Repository, jobConfig *prowconfig.JobConfig, branchName string) error
 }
 
 func (jci *JobConfigInjector) Inject(inConfig *Config, openShiftRelease Repository) error {
@@ -313,7 +316,7 @@ func (jci *JobConfigInjector) Inject(inConfig *Config, openShiftRelease Reposito
 					return err
 				}
 
-				if err := jci.Update(&r, jobConfig); err != nil {
+				if err := jci.Update(&r, jobConfig, branch); err != nil {
 					return err
 				}
 
