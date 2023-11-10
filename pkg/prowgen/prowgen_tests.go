@@ -16,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	prowapi "k8s.io/test-infra/prow/apis/prowjobs/v1"
 	"k8s.io/utils/pointer"
+	"k8s.io/utils/strings/slices"
 )
 
 const defaultCron = "0 5 * * 2,6"
@@ -55,7 +56,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string) Re
 									},
 								},
 								Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
-								Dependencies: dependenciesFromImages(cfg.Images),
+								Dependencies: dependenciesFromImages(r, cfg.Images, as, test.FilterImages),
 								Cli:          "latest",
 							},
 						},
@@ -151,6 +152,7 @@ type Test struct {
 	IgnoreError  bool
 	RunIfChanged string
 	SkipCron     bool
+	FilterImages map[string][]string
 }
 
 func (t *Test) HexSha() string {
@@ -201,7 +203,7 @@ func createTest(r Repository, line string, e2e E2ETest, tests *[]Test, commands 
 			return fmt.Errorf("[%s] failed to match test %s: %w", r.RepositoryDirectory(), e2e.Match, err)
 		}
 		if matches && !commands.Has(line) {
-			*tests = append(*tests, Test{Command: line, OnDemand: e2e.OnDemand, IgnoreError: e2e.IgnoreError, RunIfChanged: e2e.RunIfChanged, SkipCron: e2e.SkipCron})
+			*tests = append(*tests, Test{Command: line, OnDemand: e2e.OnDemand, IgnoreError: e2e.IgnoreError, RunIfChanged: e2e.RunIfChanged, SkipCron: e2e.SkipCron, FilterImages: e2e.FilterImages})
 			commands.Insert(line)
 		}
 	}
@@ -209,14 +211,31 @@ func createTest(r Repository, line string, e2e E2ETest, tests *[]Test, commands 
 	return nil
 }
 
-func dependenciesFromImages(images []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) []cioperatorapi.StepDependency {
+func dependenciesFromImages(r Repository, images []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration, testName string, filterImages map[string][]string) []cioperatorapi.StepDependency {
 	deps := make([]cioperatorapi.StepDependency, 0, len(images))
 	for _, image := range images {
-		dep := cioperatorapi.StepDependency{
-			Name: strings.ReplaceAll(string(image.To), "_", "-"),
-			Env:  strings.ToUpper(strings.ReplaceAll(string(image.To), "-", "_")),
+		imageFinal := strings.ReplaceAll(string(image.To), "_", "-")
+		if shouldAcceptImage(testName, filterImages, imageFinal) {
+			dep := cioperatorapi.StepDependency{
+				Name: imageFinal,
+				Env:  strings.ToUpper(strings.ReplaceAll(string(image.To), "-", "_")),
+			}
+			deps = append(deps, dep)
 		}
-		deps = append(deps, dep)
 	}
 	return deps
+}
+
+// If an image is found to be part of a filtering rule and the test name does not satisfy the prefix condition
+// the image is rejected. In any other case it is accepted.
+func shouldAcceptImage(testName string, filters map[string][]string, image string) bool {
+	for testPrefix, imageNames := range filters {
+		idx := slices.Index(imageNames, image)
+		if idx >= 0 {
+			if !strings.HasPrefix(testName, testPrefix) {
+				return false
+			}
+		}
+	}
+	return true
 }
