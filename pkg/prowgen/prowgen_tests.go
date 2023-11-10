@@ -90,6 +90,23 @@ func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string, 
 								Cli:        "latest",
 							},
 						},
+						{
+							LiteralTestStep: &cioperatorapi.LiteralTestStep{
+								As:          "gather-extra",
+								From:        sourceImageName,
+								Commands:    `curl -skSL https://raw.githubusercontent.com/openshift/release/master/ci-operator/step-registry/gather/extra/gather-extra-commands.sh | /bin/bash -s`,
+								GracePeriod: &prowapi.Duration{Duration: 60 * time.Second},
+								Resources: cioperatorapi.ResourceRequirements{
+									Requests: cioperatorapi.ResourceList{
+										"cpu":    "300m",
+										"memory": "300Mi",
+									},
+								},
+								Timeout:    &prowapi.Duration{Duration: 20 * time.Minute},
+								BestEffort: pointer.Bool(true),
+								Cli:        "latest",
+							},
+						},
 					},
 					Workflow: pointer.String("generic-claim"),
 				},
