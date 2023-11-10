@@ -95,7 +95,7 @@ func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string, 
 						},
 						{
 							LiteralTestStep: &cioperatorapi.LiteralTestStep{
-								As:          "gather-extra",
+								As:          "openshift-gather-extra",
 								From:        sourceImageName,
 								Commands:    `curl -skSL https://raw.githubusercontent.com/openshift/release/master/ci-operator/step-registry/gather/extra/gather-extra-commands.sh | /bin/bash -s`,
 								GracePeriod: &prowapi.Duration{Duration: 60 * time.Second},

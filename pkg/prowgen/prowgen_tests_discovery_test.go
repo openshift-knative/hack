@@ -291,7 +291,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 			},
 			cioperatorapi.TestStep{
 				LiteralTestStep: &cioperatorapi.LiteralTestStep{
-					As:          "gather-extra",
+					As:          "openshift-gather-extra",
 					From:        servingSourceImage,
 					Commands:    `curl -skSL https://raw.githubusercontent.com/openshift/release/master/ci-operator/step-registry/gather/extra/gather-extra-commands.sh | /bin/bash -s`,
 					GracePeriod: &prowapi.Duration{Duration: 60 * time.Second},
@@ -659,7 +659,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 			},
 			cioperatorapi.TestStep{
 				LiteralTestStep: &cioperatorapi.LiteralTestStep{
-					As:          "gather-extra",
+					As:          "openshift-gather-extra",
 					From:        eventingSourceImage,
 					Commands:    `curl -skSL https://raw.githubusercontent.com/openshift/release/master/ci-operator/step-registry/gather/extra/gather-extra-commands.sh | /bin/bash -s`,
 					GracePeriod: &prowapi.Duration{Duration: 60 * time.Second},
