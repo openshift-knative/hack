@@ -42,6 +42,7 @@ func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string, 
 				},
 				MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 					AllowBestEffortPostSteps: pointer.Bool(true),
+					AllowSkipOnSuccess:       pointer.Bool(true),
 					Test: []cioperatorapi.TestStep{
 						{
 							LiteralTestStep: &cioperatorapi.LiteralTestStep{
@@ -70,9 +71,10 @@ func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string, 
 										"cpu": "100m",
 									},
 								},
-								Timeout:    &prowapi.Duration{Duration: 20 * time.Minute},
-								BestEffort: pointer.Bool(true),
-								Cli:        "latest",
+								Timeout:           &prowapi.Duration{Duration: 20 * time.Minute},
+								BestEffort:        pointer.Bool(true),
+								OptionalOnSuccess: pointer.Bool(true),
+								Cli:               "latest",
 							},
 						},
 						{
@@ -85,16 +87,37 @@ func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string, 
 										"cpu": "100m",
 									},
 								},
-								Timeout:    &prowapi.Duration{Duration: 20 * time.Minute},
-								BestEffort: pointer.Bool(true),
-								Cli:        "latest",
+								Timeout:           &prowapi.Duration{Duration: 20 * time.Minute},
+								BestEffort:        pointer.Bool(true),
+								OptionalOnSuccess: pointer.Bool(true),
+								Cli:               "latest",
+							},
+						},
+						{
+							LiteralTestStep: &cioperatorapi.LiteralTestStep{
+								As:          "openshift-gather-extra",
+								From:        sourceImageName,
+								Commands:    `curl -skSL https://raw.githubusercontent.com/openshift/release/master/ci-operator/step-registry/gather/extra/gather-extra-commands.sh | /bin/bash -s`,
+								GracePeriod: &prowapi.Duration{Duration: 60 * time.Second},
+								Resources: cioperatorapi.ResourceRequirements{
+									Requests: cioperatorapi.ResourceList{
+										"cpu":    "300m",
+										"memory": "300Mi",
+									},
+								},
+								Timeout:           &prowapi.Duration{Duration: 20 * time.Minute},
+								BestEffort:        pointer.Bool(true),
+								OptionalOnSuccess: pointer.Bool(true),
+								Cli:               "latest",
 							},
 						},
 					},
 					Workflow: pointer.String("generic-claim"),
 				},
 			}
-			cfg.Tests = append(cfg.Tests, testConfiguration)
+
+			preSubmitConfiguration := testConfiguration.DeepCopy()
+			cfg.Tests = append(cfg.Tests, *preSubmitConfiguration)
 
 			cronTestConfiguration := testConfiguration.DeepCopy()
 			cronTestConfiguration.As += "-continuous"
@@ -102,6 +125,10 @@ func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string, 
 				cronTestConfiguration.Cron = pointer.String(defaultCron)
 			} else {
 				cronTestConfiguration.Cron = cronOverride
+			}
+			// Periodic jobs gather artifacts on both failure/success.
+			for _, postStep := range cronTestConfiguration.MultiStageTestConfiguration.Post {
+				postStep.OptionalOnSuccess = pointer.Bool(false)
 			}
 
 			cfg.Tests = append(cfg.Tests, *cronTestConfiguration)
