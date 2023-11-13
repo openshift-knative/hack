@@ -119,10 +119,7 @@ func discoverDockerfiles(r Repository) ([]string, error) {
 		return nil
 	})
 	if err != nil {
-		log.Fatal(err, "\n", string(debug.Stack()))
-	}
-	for _, p := range dockerfiles.List() {
-		log.Println("Dockerfile path", p)
+		return nil, fmt.Errorf("failed while discovering container images: %w", err)
 	}
 
 	srcImageDockerfile, err := discoverSourceImageDockerfile(r)
@@ -198,7 +195,6 @@ func getPullStringsFromDockerfile(filename string) ([]string, error) {
 		match := registryRegex.FindString(line)
 		if match != "" {
 			images = append(images, match)
-			log.Println("Added match:", match)
 		}
 		if line == "FROM src" {
 			images = append(images, srcImage)
