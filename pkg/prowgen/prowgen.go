@@ -64,7 +64,7 @@ func Main() {
 
 	for _, v := range inConfig.Config.Branches {
 		sort.Slice(v.OpenShiftVersions, func(i, j int) bool {
-			return semver.New(v.OpenShiftVersions[i] + ".0").LessThan(*semver.New(v.OpenShiftVersions[j] + ".0"))
+			return semver.New(v.OpenShiftVersions[i].Version + ".0").LessThan(*semver.New(v.OpenShiftVersions[j].Version + ".0"))
 		})
 	}
 
@@ -167,18 +167,33 @@ func PushBranch(ctx context.Context, release Repository, remote *string, branch 
 
 func DeleteExistingReleaseBuildConfigurationForBranch(outConfig *string, r Repository, branch string) error {
 	dir := filepath.Join(*outConfig, r.RepositoryDirectory())
-	matches, err := filepath.Glob(filepath.Join(dir, "*"+branch+"*"))
+	configPaths, err := filepath.Glob(filepath.Join(dir, "*"+branch+"*"))
 	if err != nil {
 		return err
 	}
+	if err := deleteConfigsIfNeeded(r, configPaths, branch); err != nil {
+		return err
+	}
+	return nil
+}
 
-	for _, match := range matches {
-		log.Println("Detected a new config for branch", branch, "removing file", match)
-		if err := os.Remove(match); err != nil {
-			return err
+func deleteConfigsIfNeeded(r Repository, paths []string, branch string) error {
+	excludeFilePattern := ToRegexp(r.IgnoreConfigs.Matches)
+	for _, path := range paths {
+		include := true
+		for _, r := range excludeFilePattern {
+			if r.MatchString(path) {
+				include = false
+				break
+			}
+		}
+		if include {
+			log.Println("Detected a config for branch", branch, "removing file", path)
+			if err := os.Remove(path); err != nil {
+				return err
+			}
 		}
 	}
-
 	return nil
 }
 
@@ -222,7 +237,7 @@ func runJobConfigInjectors(inConfig *Config, openShiftRelease Repository) error 
 func slackInjector() JobConfigInjector {
 	return JobConfigInjector{
 		Type: Periodic,
-		Update: func(r *Repository, jobConfig *prowconfig.JobConfig, _ string) error {
+		Update: func(r *Repository, _ *Branch, _ string, jobConfig *prowconfig.JobConfig) error {
 			for i := range jobConfig.Periodics {
 				jobConfig.Periodics[i].ReporterConfig = &prowapi.ReporterConfig{
 					Slack: &prowapi.SlackReporterConfig{
@@ -244,7 +259,7 @@ func slackInjector() JobConfigInjector {
 func alwaysRunInjector() JobConfigInjector {
 	return JobConfigInjector{
 		Type: PreSubmit,
-		Update: func(r *Repository, jobConfig *prowconfig.JobConfig, branchName string) error {
+		Update: func(r *Repository, b *Branch, branchName string, jobConfig *prowconfig.JobConfig) error {
 			if err := GitCheckout(context.TODO(), *r, branchName); err != nil {
 				return fmt.Errorf("[%s] failed to checkout branch %s", r.RepositoryDirectory(), branchName)
 			}
@@ -262,9 +277,17 @@ func alwaysRunInjector() JobConfigInjector {
 					variant := jobConfig.PresubmitsStatic[k][i].Labels["ci-operator.openshift.io/variant"]
 					ocpVersion := strings.SplitN(variant, "-", 2)[0]
 
+					// Individual OpenShift versions can enforce all their jobs to be on demand.
+					var onDemandForOpenShift bool
+					for _, v := range b.OpenShiftVersions {
+						if v.Version == ocpVersion {
+							onDemandForOpenShift = v.OnDemand
+						}
+					}
+
 					for _, t := range tests {
 						name := ToName(*r, &t, ocpVersion)
-						if t.OnDemand && strings.Contains(jobConfig.PresubmitsStatic[k][i].Name, name) {
+						if (t.OnDemand || t.RunIfChanged != "" || onDemandForOpenShift) && strings.Contains(jobConfig.PresubmitsStatic[k][i].Name, name) {
 							jobConfig.PresubmitsStatic[k][i].AlwaysRun = false
 						}
 					}
@@ -297,15 +320,15 @@ func (jcis JobConfigInjectors) Inject(inConfig *Config, openShiftRelease Reposit
 
 type JobConfigInjector struct {
 	Type   JobConfigType
-	Update func(r *Repository, jobConfig *prowconfig.JobConfig, branchName string) error
+	Update func(r *Repository, b *Branch, branchName string, jobConfig *prowconfig.JobConfig) error
 }
 
 func (jci *JobConfigInjector) Inject(inConfig *Config, openShiftRelease Repository) error {
-	for branch := range inConfig.Config.Branches {
+	for branchName, branch := range inConfig.Config.Branches {
 		for _, r := range inConfig.Repositories {
 
 			generatedOutputDir := "ci-operator/jobs"
-			glob := filepath.Join(openShiftRelease.RepositoryDirectory(), generatedOutputDir, r.RepositoryDirectory(), "*"+branch+"*"+string(jci.Type)+"*")
+			glob := filepath.Join(openShiftRelease.RepositoryDirectory(), generatedOutputDir, r.RepositoryDirectory(), "*"+branchName+"*"+string(jci.Type)+"*")
 			matches, err := filepath.Glob(glob)
 			if err != nil {
 				return err
@@ -316,7 +339,7 @@ func (jci *JobConfigInjector) Inject(inConfig *Config, openShiftRelease Reposito
 					return err
 				}
 
-				if err := jci.Update(&r, jobConfig, branch); err != nil {
+				if err := jci.Update(&r, &branch, branchName, jobConfig); err != nil {
 					return err
 				}
 
@@ -382,10 +405,8 @@ func InitializeOpenShiftReleaseRepository(ctx context.Context, openShiftRelease 
 			if err != nil {
 				return err
 			}
-			for _, match := range matches {
-				if err := os.Remove(match); err != nil {
-					return err
-				}
+			if err := deleteConfigsIfNeeded(r, matches, branch); err != nil {
+				return err
 			}
 		}
 	}

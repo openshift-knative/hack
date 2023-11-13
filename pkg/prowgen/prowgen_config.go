@@ -14,19 +14,37 @@ import (
 type Repository struct {
 	Org                   string                                                      `json:"org" yaml:"org"`
 	Repo                  string                                                      `json:"repo" yaml:"repo"`
+	Promotion             Promotion                                                   `json:"promotion" yaml:"promotion"`
 	ImagePrefix           string                                                      `json:"imagePrefix" yaml:"imagePrefix"`
 	ImageNameOverrides    map[string]string                                           `json:"imageNameOverrides" yaml:"imageNameOverrides"`
 	SlackChannel          string                                                      `json:"slackChannel" yaml:"slackChannel"`
 	CanonicalGoRepository *string                                                     `json:"canonicalGoRepository" yaml:"canonicalGoRepository"`
-	E2ETests              E2ETests                                                    `json:"e2e" yaml:"e2e"`
+	E2ETests              []E2ETest                                                   `json:"e2e" yaml:"e2e"`
+	Dockerfiles           Dockerfiles                                                 `json:"dockerfiles" yaml:"dockerfiles"`
+	IgnoreConfigs         IgnoreConfigs                                               `json:"ignoreConfigs" yaml:"ignoreConfigs"`
 	Images                []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration `json:"images" yaml:"images"`
 	Tests                 []cioperatorapi.TestStepConfiguration                       `json:"tests" yaml:"tests"`
 	Resources             cioperatorapi.ResourceConfiguration                         `json:"resources" yaml:"resources"`
 }
 
-type E2ETests struct {
-	Matches         []string `json:"matches" yaml:"matches"`
-	OnDemandMatches []string `json:"onDemand" yaml:"onDemand"`
+type E2ETest struct {
+	Match        string `json:"match" yaml:"match"`
+	OnDemand     bool   `json:"onDemand" yaml:"onDemand"`
+	IgnoreError  bool   `json:"ignoreError" yaml:"ignoreError"`
+	RunIfChanged string `json:"runIfChanged" yaml:"runIfChanged"`
+	SkipCron     bool   `json:"skipCron" yaml:"skipCron"`
+}
+
+type Dockerfiles struct {
+	Matches []string `json:"matches" yaml:"matches"`
+}
+
+type IgnoreConfigs struct {
+	Matches []string `json:"matches" yaml:"matches"`
+}
+
+type Promotion struct {
+	Namespace string
 }
 
 func (r Repository) RepositoryDirectory() string {
@@ -34,8 +52,13 @@ func (r Repository) RepositoryDirectory() string {
 }
 
 type Branch struct {
-	OpenShiftVersions []string `json:"openShiftVersions" yaml:"openShiftVersions"`
-	Cron              string   `json:"cron" yaml:"cron"`
+	OpenShiftVersions []OpenShift `json:"openShiftVersions" yaml:"openShiftVersions"`
+}
+
+type OpenShift struct {
+	Version  string `json:"version" yaml:"version"`
+	Cron     string `json:"cron" yaml:"cron"`
+	OnDemand bool   `json:"onDemand" yaml:"onDemand"`
 }
 
 type CommonConfig struct {
@@ -72,7 +95,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 
 			log.Println(r.RepositoryDirectory(), "Generating config", branchName, "OpenShiftVersion", ov)
 
-			variant := strings.ReplaceAll(ov, ".", "")
+			variant := strings.ReplaceAll(ov.Version, ".", "")
 
 			images := make([]cioperatorapi.ProjectDirectoryImageBuildStepConfiguration, 0, len(r.Images))
 			for _, img := range r.Images {
@@ -139,7 +162,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 			options = append(
 				options,
 				DiscoverImages(r),
-				DiscoverTests(r, ov, &branch.Cron, fromImage),
+				DiscoverTests(r, ov, fromImage),
 			)
 
 			log.Println(r.RepositoryDirectory(), "Apply input options", len(options))
@@ -182,8 +205,12 @@ func transformLegacyKnativeSourceImageName(r Repository) string {
 
 func withNamePromotion(r Repository, branchName string) ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
+		ns := "openshift"
+		if r.Promotion.Namespace != "" {
+			ns = r.Promotion.Namespace
+		}
 		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
-			Namespace: "openshift",
+			Namespace: ns,
 			Name:      strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
 			AdditionalImages: map[string]string{
 				// Add source image
@@ -196,8 +223,12 @@ func withNamePromotion(r Repository, branchName string) ReleaseBuildConfiguratio
 
 func withTagPromotion(r Repository, branchName string) ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
+		ns := "openshift"
+		if r.Promotion.Namespace != "" {
+			ns = r.Promotion.Namespace
+		}
 		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
-			Namespace:   "openshift",
+			Namespace:   ns,
 			Tag:         strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
 			TagByCommit: false, // TODO: revisit this later
 			AdditionalImages: map[string]string{

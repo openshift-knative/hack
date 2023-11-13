@@ -5,7 +5,7 @@ include pkg/project/testdata/env
 generate-ci: clean generate-eventing-ci generate-serving-ci
 .PHONY: generate-ci
 
-generate-ci-no-clean: generate-eventing-ci generate-serving-ci
+generate-ci-no-clean: generate-eventing-ci generate-serving-ci generate-serverless-operator-ci
 .PHONY: generate-ci-no-clean
 
 generate-eventing-ci:
@@ -20,6 +20,10 @@ generate-serving-ci:
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/serving-net-istio.yaml $(ARGS)
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/serving-net-kourier.yaml $(ARGS)
 .PHONY: generate-serving-ci
+
+generate-serverless-operator-ci:
+	go run github.com/openshift-knative/hack/cmd/prowgen --config config/serverless-operator.yaml $(ARGS)
+.PHONY: generate-serverless-operator-ci
 
 unit-tests:
 	go test ./pkg/...

@@ -1,0 +1,73 @@
+# Full struct in cmd/prowgen/prowgen.go#Config
+
+config:
+  branches:
+    main:
+      openShiftVersions:
+        - version: 4.13
+          cron: "0 4 * * *"
+        - version: 4.11
+          cron: "0 6 * * *"
+          onDemand: true
+
+repositories:
+  - org: openshift-knative
+    repo: serverless-operator
+    promotion:
+      namespace: knative
+    imagePrefix: serverless
+    imageNameOverrides:
+      serverless-operator: bundle
+    slackChannel: "#serverless-ci"
+    ignoreConfigs:
+      matches:
+        - ".*main.yaml$"
+        - ".*aws-ovn.*"
+        - ".*azure.*"
+        - ".*gcp.*"
+        - ".*hypershift.*"
+        - ".*osd.*"
+        - ".*single-node.*"
+        - ".*vsphere.*"
+        - ".*lp-interop.*"
+        - ".*lp-interop.*"
+    dockerfiles:
+      matches:
+        - "knative-operator/.*"
+        - "openshift-knative-operator/.*"
+        - "serving/metadata-webhook/.*"
+        - "serving/ingress/.*"
+        - "olm-catalog/serverless-operator/Dockerfile"
+        - "olm-catalog/serverless-operator/index/Dockerfile"
+    e2e:
+      - match: "^operator-e2e$"
+      - match: "^test-upgrade$"
+      - match: "^upstream-e2e$"
+        ignoreError: true
+        skipCron: true
+      - match: "^upstream-e2e-kafka$"
+        ignoreError: true
+      - match: "^mesh-e2e$"
+        onDemand: true
+        ignoreError: true
+      - match: "^mesh-upgrade$"
+        onDemand: true
+        ignoreError: true
+        skipCron: true
+      - match: "^ui-e2e$"
+        onDemand: true
+        runIfChanged: "test/ui"
+        ignoreError: true
+      - match: "^kitchensink-e2e$"
+        onDemand: true
+        ignoreError: true
+      - match: "^kitchensink-upgrade$"
+        onDemand: true
+        ignoreError: true
+    resources:
+      '*':
+        limits:
+          memory: 6Gi
+        requests:
+          cpu: 100m
+          memory: 200Mi

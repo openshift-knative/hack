@@ -4,28 +4,28 @@ config:
   branches:
     "release-v1.8":
       openShiftVersions:
-        - 4.13
-        - 4.10
+        - version: 4.13
+        - version: 4.10
     "release-v1.9":
       openShiftVersions:
-        - 4.13
-        - 4.10
+        - version: 4.13
+        - version: 4.10
     "release-v1.10":
       openShiftVersions:
-        - 4.14
-        - 4.11
+        - version: 4.14
+        - version: 4.11
     "release-v1.11":
       openShiftVersions:
-        - 4.14
-        - 4.11
+        - version: 4.14
+        - version: 4.11
     "release-v1.12":
       openShiftVersions:
-        - 4.14
-        - 4.11
+        - version: 4.14
+        - version: 4.11
     "release-next":
       openShiftVersions:
-        - 4.14
-        - 4.11
+        - version: 4.14
+        - version: 4.11
 
 repositories:
   - org: openshift-knative
@@ -35,11 +35,10 @@ repositories:
       migrate: storage-version-migration
     slackChannel: "#knative-serving-ci"
     e2e:
-      matches:
-        - ".*e2e$"
-        - ".*e2e-tls$"
-      onDemand:
-        - "perf-tests$"
+      - match: ".*e2e$"
+      - match: ".*e2e-tls$"
+      - match: "perf-tests$"
+        onDemand: true
     resources:
       '*':
         requests:

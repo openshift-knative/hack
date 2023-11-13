@@ -20,7 +20,7 @@ import (
 
 const defaultCron = "0 5 * * 2,6"
 
-func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string, sourceImageName string) ReleaseBuildConfigurationOption {
+func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string) ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
 		tests, err := discoverE2ETests(r)
 		if err != nil {
@@ -29,12 +29,12 @@ func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string, 
 
 		for i := range tests {
 			test := &tests[i]
-			as := ToName(r, test, openShiftVersion)
+			as := ToName(r, test, openShift.Version)
 			testConfiguration := cioperatorapi.TestStepConfiguration{
 				As: as,
 				ClusterClaim: &cioperatorapi.ClusterClaim{
 					Product:      cioperatorapi.ReleaseProductOCP,
-					Version:      openShiftVersion,
+					Version:      openShift.Version,
 					Architecture: cioperatorapi.ReleaseArchitectureAMD64,
 					Cloud:        cioperatorapi.CloudAWS,
 					Owner:        "openshift-ci",
@@ -117,21 +117,24 @@ func DiscoverTests(r Repository, openShiftVersion string, cronOverride *string, 
 			}
 
 			preSubmitConfiguration := testConfiguration.DeepCopy()
+			preSubmitConfiguration.Optional = test.IgnoreError
+			preSubmitConfiguration.RunIfChanged = test.RunIfChanged
 			cfg.Tests = append(cfg.Tests, *preSubmitConfiguration)
 
-			cronTestConfiguration := testConfiguration.DeepCopy()
-			cronTestConfiguration.As += "-continuous"
-			if cronOverride == nil || *cronOverride == "" {
-				cronTestConfiguration.Cron = pointer.String(defaultCron)
-			} else {
-				cronTestConfiguration.Cron = cronOverride
+			if !test.SkipCron {
+				cronTestConfiguration := testConfiguration.DeepCopy()
+				cronTestConfiguration.As += "-continuous"
+				if openShift.Cron == "" {
+					cronTestConfiguration.Cron = pointer.String(defaultCron)
+				} else {
+					cronTestConfiguration.Cron = &openShift.Cron
+				}
+				// Periodic jobs gather artifacts on both failure/success.
+				for _, postStep := range cronTestConfiguration.MultiStageTestConfiguration.Post {
+					postStep.OptionalOnSuccess = pointer.Bool(false)
+				}
+				cfg.Tests = append(cfg.Tests, *cronTestConfiguration)
 			}
-			// Periodic jobs gather artifacts on both failure/success.
-			for _, postStep := range cronTestConfiguration.MultiStageTestConfiguration.Post {
-				postStep.OptionalOnSuccess = pointer.Bool(false)
-			}
-
-			cfg.Tests = append(cfg.Tests, *cronTestConfiguration)
 		}
 
 		return nil
@@ -143,8 +146,11 @@ const (
 )
 
 type Test struct {
-	Command  string
-	OnDemand bool
+	Command      string
+	OnDemand     bool
+	IgnoreError  bool
+	RunIfChanged string
+	SkipCron     bool
 }
 
 func (t *Test) HexSha() string {
@@ -170,13 +176,8 @@ func discoverE2ETests(r Repository) ([]Test, error) {
 	commands := sets.NewString()
 	for _, l := range lines {
 		l := strings.TrimSpace(l)
-		for _, match := range r.E2ETests.Matches {
-			if err := createTest(r, l, match, &targets, false, commands); err != nil {
-				return nil, err
-			}
-		}
-		for _, match := range r.E2ETests.OnDemandMatches {
-			if err := createTest(r, l, match, &targets, true, commands); err != nil {
+		for _, e2e := range r.E2ETests {
+			if err := createTest(r, l, e2e, &targets, commands); err != nil {
 				return nil, err
 			}
 		}
@@ -189,18 +190,18 @@ func discoverE2ETests(r Repository) ([]Test, error) {
 	return targets, nil
 }
 
-func createTest(r Repository, line string, shouldMatch string, tests *[]Test, onDemand bool, commands sets.String) error {
+func createTest(r Repository, line string, e2e E2ETest, tests *[]Test, commands sets.String) error {
 	if strings.HasSuffix(line, ":") {
 		line := strings.TrimSuffix(line, ":")
 
-		log.Println(r.RepositoryDirectory(), "Comparing", line, "to match", shouldMatch)
+		log.Println(r.RepositoryDirectory(), "Comparing", line, "to match", e2e.Match)
 
-		matches, err := regexp.Match(shouldMatch, []byte(line))
+		matches, err := regexp.Match(e2e.Match, []byte(line))
 		if err != nil {
-			return fmt.Errorf("[%s] failed to match test %s: %w", r.RepositoryDirectory(), shouldMatch, err)
+			return fmt.Errorf("[%s] failed to match test %s: %w", r.RepositoryDirectory(), e2e.Match, err)
 		}
 		if matches && !commands.Has(line) {
-			*tests = append(*tests, Test{Command: line, OnDemand: onDemand})
+			*tests = append(*tests, Test{Command: line, OnDemand: e2e.OnDemand, IgnoreError: e2e.IgnoreError, RunIfChanged: e2e.RunIfChanged, SkipCron: e2e.SkipCron})
 			commands.Insert(line)
 		}
 	}

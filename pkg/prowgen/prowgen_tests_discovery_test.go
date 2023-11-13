@@ -19,11 +19,22 @@ func TestDiscoverTestsServing(t *testing.T) {
 		ImagePrefix:           "knative-serving",
 		ImageNameOverrides:    map[string]string{"migrate": "storage-version-migration"},
 		CanonicalGoRepository: pointer.String("knative.dev/serving"),
-		E2ETests: E2ETests{
-			Matches: []string{
-				"test-e2e$",
-				"test-e2e-tls$",
-				"perf-tests$",
+		E2ETests: []E2ETest{
+			{
+				Match:       "test-e2e$",
+				IgnoreError: true,
+			},
+			{
+				Match: "test-e2e-tls$",
+			},
+			{
+				Match:    "perf-tests$",
+				SkipCron: true, // The "-continuous" variant should not be generated.
+			},
+			{
+				Match:        "ui-e2e$",
+				RunIfChanged: "test/ui",
+				SkipCron:     true,
 			},
 		},
 	}
@@ -33,7 +44,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 	servingSourceImage := "knative-serving-source-image"
 	options := []ReleaseBuildConfigurationOption{
 		DiscoverImages(r),
-		DiscoverTests(r, "4.12", cron, servingSourceImage),
+		DiscoverTests(r, OpenShift{Version: "4.12", Cron: *cron}, servingSourceImage),
 	}
 
 	dependencies := []cioperatorapi.StepDependency{
@@ -88,38 +99,6 @@ func TestDiscoverTestsServing(t *testing.T) {
 			},
 		},
 		{
-			As:   "perf-tests-aws-ocp-412-continuous",
-			Cron: cron,
-			ClusterClaim: &cioperatorapi.ClusterClaim{
-				Product:      cioperatorapi.ReleaseProductOCP,
-				Version:      "4.12",
-				Architecture: cioperatorapi.ReleaseArchitectureAMD64,
-				Cloud:        cioperatorapi.CloudAWS,
-				Owner:        "openshift-ci",
-				Timeout:      &prowapi.Duration{Duration: time.Hour},
-			},
-			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
-				Test: []cioperatorapi.TestStep{
-					{
-						LiteralTestStep: &cioperatorapi.LiteralTestStep{
-							As:       "test",
-							From:     servingSourceImage,
-							Commands: formatCommand("make perf-tests"),
-							Resources: cioperatorapi.ResourceRequirements{
-								Requests: cioperatorapi.ResourceList{
-									"cpu": "100m",
-								},
-							},
-							Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
-							Dependencies: dependencies,
-							Cli:          "latest",
-						},
-					},
-				},
-				Workflow: pointer.String("generic-claim"),
-			},
-		},
-		{
 			As: "test-e2e-aws-ocp-412",
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
@@ -129,6 +108,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 				Owner:        "openshift-ci",
 				Timeout:      &prowapi.Duration{Duration: time.Hour},
 			},
+			Optional: true,
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				Test: []cioperatorapi.TestStep{
 					{
@@ -245,6 +225,38 @@ func TestDiscoverTestsServing(t *testing.T) {
 				Workflow: pointer.String("generic-claim"),
 			},
 		},
+		{
+			As: "ui-e2e-aws-ocp-412",
+			ClusterClaim: &cioperatorapi.ClusterClaim{
+				Product:      cioperatorapi.ReleaseProductOCP,
+				Version:      "4.12",
+				Architecture: cioperatorapi.ReleaseArchitectureAMD64,
+				Cloud:        cioperatorapi.CloudAWS,
+				Owner:        "openshift-ci",
+				Timeout:      &prowapi.Duration{Duration: time.Hour},
+			},
+			RunIfChanged: "test/ui",
+			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
+				Test: []cioperatorapi.TestStep{
+					{
+						LiteralTestStep: &cioperatorapi.LiteralTestStep{
+							As:       "test",
+							From:     servingSourceImage,
+							Commands: formatCommand("make ui-e2e"),
+							Resources: cioperatorapi.ResourceRequirements{
+								Requests: cioperatorapi.ResourceList{
+									"cpu": "100m",
+								},
+							},
+							Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
+							Dependencies: dependencies,
+							Cli:          "latest",
+						},
+					},
+				},
+				Workflow: pointer.String("generic-claim"),
+			},
+		},
 	}
 
 	// Add must-gather step to each test as post step
@@ -329,12 +341,18 @@ func TestDiscoverTestsEventing(t *testing.T) {
 		Repo:                  "eventing",
 		ImagePrefix:           "knative-eventing",
 		CanonicalGoRepository: pointer.String("knative.dev/eventing"),
-		E2ETests: E2ETests{
-			Matches: []string{
-				".*-conformance$",
-				"test-e2e$",
-				"test-reconcile.*",
-				"test-conformance.*",
+		E2ETests: []E2ETest{
+			{
+				Match: ".*-conformance$",
+			},
+			{
+				Match: "test-e2e$",
+			},
+			{
+				Match: "test-reconcile.*",
+			},
+			{
+				Match: "test-conformance.*",
 			},
 		},
 	}
@@ -342,7 +360,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 	eventingSourceImage := "knative-eventing-source-image"
 	options := []ReleaseBuildConfigurationOption{
 		DiscoverImages(r),
-		DiscoverTests(r, "4.12", nil, eventingSourceImage),
+		DiscoverTests(r, OpenShift{Version: "4.12"}, eventingSourceImage),
 	}
 
 	dependencies := []cioperatorapi.StepDependency{

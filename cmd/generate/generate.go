@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime/debug"
 	"strings"
 	"text/template"
@@ -101,8 +100,8 @@ func main() {
 		log.Fatal("Getwd", err, string(debug.Stack()))
 	}
 
-	includesRegex := toRegexp(includes)
-	excludesRegex := toRegexp(excludes)
+	includesRegex := prowgen.ToRegexp(includes)
+	excludesRegex := prowgen.ToRegexp(excludes)
 
 	mainPackagesPaths := sets.NewString()
 
@@ -331,16 +330,4 @@ func getGoMod(rootDir string) *modfile.File {
 		log.Fatal(err)
 	}
 	return gm
-}
-
-func toRegexp(s []string) []*regexp.Regexp {
-	includesRegex := make([]*regexp.Regexp, 0, len(s))
-	for _, i := range s {
-		r, err := regexp.Compile(i)
-		if err != nil {
-			log.Fatal("Regex", i, "doesn't compile", err)
-		}
-		includesRegex = append(includesRegex, r)
-	}
-	return includesRegex
 }
