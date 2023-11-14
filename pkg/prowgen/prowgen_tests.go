@@ -215,7 +215,7 @@ func dependenciesFromImages(r Repository, images []cioperatorapi.ProjectDirector
 	deps := make([]cioperatorapi.StepDependency, 0, len(images))
 	for _, image := range images {
 		imageFinal := strings.ReplaceAll(string(image.To), "_", "-")
-		if shouldSkipImage(testName, skipImages, imageFinal) {
+		if shouldAcceptImage(testName, skipImages, imageFinal) {
 			dep := cioperatorapi.StepDependency{
 				Name: imageFinal,
 				Env:  strings.ToUpper(strings.ReplaceAll(string(image.To), "-", "_")),
@@ -227,6 +227,6 @@ func dependenciesFromImages(r Repository, images []cioperatorapi.ProjectDirector
 }
 
 // Skip an image if it is in the skip image list
-func shouldSkipImage(testName string, skipImages []string, image string) bool {
+func shouldAcceptImage(testName string, skipImages []string, image string) bool {
 	return slices.Index(skipImages, image) < 0
 }
