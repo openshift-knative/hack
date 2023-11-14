@@ -36,22 +36,28 @@ repositories:
     slackChannel: "#knative-serving-ci"
     e2e:
       - match: ".*e2e$"
-      - match: ".*e2e-tls$"
-      - match: "perf-tests$"
-        onDemand: true
-        filterImages:
-          "perf-test":
+        skipImages:
             - "knative-serving-load-test"
             - "knative-serving-dataplane-probe"
             - "knative-serving-real-traffic-test"
             - "knative-serving-reconciliation-delay"
             - "knative-serving-rollout-probe"
             - "knative-serving-scale-from-zero"
+      - match: ".*e2e-tls$"
+        skipImages:
+            - "knative-serving-load-test"
+            - "knative-serving-dataplane-probe"
+            - "knative-serving-real-traffic-test"
+            - "knative-serving-reconciliation-delay"
+            - "knative-serving-rollout-probe"
+            - "knative-serving-scale-from-zero"
+      - match: "perf-tests$"
+        onDemand: true
     dockerfiles:
       matches:
-        - "openshift/ci-operator/knative-images.*",
-        - "openshift/ci-operator/knative-test-images.*",
-        - "openshift/ci-operator/knative-perf-images.*",
+        - "openshift/ci-operator/knative-images.*"
+        - "openshift/ci-operator/knative-test-images.*"
+        - "openshift/ci-operator/knative-perf-images.*"
     resources:
       '*':
         requests:

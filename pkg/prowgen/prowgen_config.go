@@ -28,12 +28,12 @@ type Repository struct {
 }
 
 type E2ETest struct {
-	Match        string              `json:"match" yaml:"match"`
-	OnDemand     bool                `json:"onDemand" yaml:"onDemand"`
-	IgnoreError  bool                `json:"ignoreError" yaml:"ignoreError"`
-	RunIfChanged string              `json:"runIfChanged" yaml:"runIfChanged"`
-	SkipCron     bool                `json:"skipCron" yaml:"skipCron"`
-	FilterImages map[string][]string `json:"filterImages" yaml:"filterImages"`
+	Match        string   `json:"match" yaml:"match"`
+	OnDemand     bool     `json:"onDemand" yaml:"onDemand"`
+	IgnoreError  bool     `json:"ignoreError" yaml:"ignoreError"`
+	RunIfChanged string   `json:"runIfChanged" yaml:"runIfChanged"`
+	SkipCron     bool     `json:"skipCron" yaml:"skipCron"`
+	SkipImages   []string `json:"skipImages" yaml:"skipImages"`
 }
 
 type Dockerfiles struct {

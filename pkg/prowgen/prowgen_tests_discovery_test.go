@@ -32,27 +32,24 @@ func TestDiscoverTestsServing(t *testing.T) {
 			{
 				Match:       "test-e2e$",
 				IgnoreError: true,
-				FilterImages: map[string][]string{
-					"perf-test": {"knative-serving-scale-from-zero"},
+				SkipImages: []string{
+					"knative-serving-scale-from-zero",
 				},
 			},
 			{
 				Match: "test-e2e-tls$",
-				FilterImages: map[string][]string{
-					"perf-test": {"knative-serving-scale-from-zero"},
+				SkipImages: []string{
+					"knative-serving-scale-from-zero",
 				},
 			},
 			{
-				Match: "perf-tests$",
-				FilterImages: map[string][]string{
-					"perf-test": {"knative-serving-scale-from-zero"},
-				},
+				Match:    "perf-tests$",
 				SkipCron: true, // The "-continuous" variant should not be generated.
 			},
 			{
 				Match: "ui-e2e$",
-				FilterImages: map[string][]string{
-					"perf-test": {"knative-serving-scale-from-zero"},
+				SkipImages: []string{
+					"knative-serving-scale-from-zero",
 				},
 				RunIfChanged: "test/ui",
 				SkipCron:     true,
