@@ -226,7 +226,7 @@ func dependenciesFromImages(r Repository, images []cioperatorapi.ProjectDirector
 	return deps
 }
 
-// Skip an image if it is in the skip image list
+// Accept an image if it is not the skip image list
 func shouldAcceptImage(testName string, skipImages []string, image string) bool {
 	return slices.Index(skipImages, image) < 0
 }
