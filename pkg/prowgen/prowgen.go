@@ -188,7 +188,7 @@ func deleteConfigsIfNeeded(r Repository, paths []string, branch string) error {
 			}
 		}
 		if include {
-			log.Println("Detected a config for branch", branch, "removing file", path)
+			log.Println("Detected a config for branch or branch prefix", branch, "removing file", path)
 			if err := os.Remove(path); err != nil {
 				return err
 			}
@@ -399,6 +399,39 @@ func InitializeOpenShiftReleaseRepository(ctx context.Context, openShiftRelease 
 	if err := GitCheckout(ctx, openShiftRelease, "master"); err != nil {
 		return err
 	}
+
+	// Remove yaml files for old branches by generating old branch candidates that have a smaler version compared to the minimum
+	// version in the repo branch config. The assumption is that branches are of the form release-vX.Y.
+	for _, branchPrefix := range getOldBranchCandidatePrefixes(inConfig.Config.Branches, "release-v") {
+		for _, r := range inConfig.Repositories {
+			branchExactMatch := ""
+			// Check if prefix contains a minor version, if so we need to match against the exact version.
+			// For example if we get a minor version such as v1.1 we need to avoid looking for a yaml with v1.11 in its name.
+			// Thus, we terminate the prefix with "_". The latter is part of the convention used in our file names.
+			if strings.Contains(branchPrefix, ".") {
+				branchExactMatch = "_"
+			}
+			matches, err := filepath.Glob(filepath.Join(*outputConfig, r.RepositoryDirectory(), "*"+branchPrefix+branchExactMatch+"*"))
+			if err != nil {
+				return err
+			}
+			if err := deleteConfigsIfNeeded(r, matches, branchPrefix); err != nil {
+				return err
+			}
+			// remove any mirroring images for the branch prefix
+			path := filepath.Join(openShiftRelease.RepositoryDirectory(), ImageMirroringConfigPath, ImageMirroringConfigFilePrefix+"*"+strings.TrimPrefix(branchPrefix+branchExactMatch, "release-")+"*"+r.Repo+"*")
+
+			matches, err = filepath.Glob(path)
+			if err != nil {
+				return err
+			}
+			if err := deleteConfigsIfNeeded(r, matches, branchPrefix); err != nil {
+				return err
+			}
+		}
+	}
+
+	// We remove all existing yaml files for branches in the repo config
 	for branch := range inConfig.Config.Branches {
 		for _, r := range inConfig.Repositories {
 			matches, err := filepath.Glob(filepath.Join(*outputConfig, r.RepositoryDirectory(), "*"+branch+"*"))
@@ -411,4 +444,30 @@ func InitializeOpenShiftReleaseRepository(ctx context.Context, openShiftRelease 
 		}
 	}
 	return nil
+}
+
+func getOldBranchCandidatePrefixes(branches map[string]Branch, prefix string) (oldBranchPrefixes []string) {
+	var versions []string
+	for branch := range branches {
+		if strings.HasPrefix(branch, prefix) {
+			versions = append(versions, strings.TrimPrefix(branch, prefix))
+		}
+	}
+
+	if len(versions) > 0 {
+		sort.Slice(versions, func(i, j int) bool {
+			return semver.New(versions[i] + ".0").LessThan(*semver.New(versions[j] + ".0"))
+		})
+		ver := semver.New(versions[0] + ".0")
+		major := ver.Major
+		minor := ver.Minor
+
+		for i := major - 1; i >= 0; i-- {
+			oldBranchPrefixes = append(oldBranchPrefixes, fmt.Sprintf("%s%d", prefix, i))
+		}
+		for i := minor - 1; i >= 0; i-- {
+			oldBranchPrefixes = append(oldBranchPrefixes, fmt.Sprintf("%s%d.%d", prefix, major, i))
+		}
+	}
+	return oldBranchPrefixes
 }
