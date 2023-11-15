@@ -25,6 +25,7 @@ var (
 	defaultDockerfileIncludes = []string{
 		"openshift/ci-operator/knative-images.*",
 		"openshift/ci-operator/knative-test-images.*",
+		"openshift/ci-operator/static-images.*",
 	}
 )
 
