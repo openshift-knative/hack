@@ -19,24 +19,41 @@ func TestDiscoverTestsServing(t *testing.T) {
 		ImagePrefix:           "knative-serving",
 		ImageNameOverrides:    map[string]string{"migrate": "storage-version-migration"},
 		CanonicalGoRepository: pointer.String("knative.dev/serving"),
+
+		Dockerfiles: Dockerfiles{
+			Matches: []string{
+				"knative-perf-images/.*",
+				"knative-images/.*",
+				"knative-test-images/.*",
+			},
+		},
+
 		E2ETests: []E2ETest{
 			{
 				Match:       "test-e2e$",
 				IgnoreError: true,
+				SkipImages: []string{
+					"knative-serving-scale-from-zero",
+				},
 			},
 			{
 				Match: "test-e2e-tls$",
+				SkipImages: []string{
+					"knative-serving-scale-from-zero",
+				},
 			},
 			{
 				Match:    "perf-tests$",
 				SkipCron: true, // The "-continuous" variant should not be generated.
 			},
 			{
-				Match:        "ui-e2e$",
+				Match: "ui-e2e$",
+				SkipImages: []string{
+					"knative-serving-scale-from-zero",
+				},
 				RunIfChanged: "test/ui",
 				SkipCron:     true,
-			},
-		},
+			}},
 	}
 
 	cron := pointer.String("0 8 * * 1-5")
@@ -66,6 +83,13 @@ func TestDiscoverTestsServing(t *testing.T) {
 		},
 	}
 
+	perfDependencies := append(dependencies, cioperatorapi.StepDependency{})
+	copy(perfDependencies[3:], perfDependencies[2:])
+	perfDependencies[2] = cioperatorapi.StepDependency{
+		Name: "knative-serving-scale-from-zero",
+		Env:  "KNATIVE_SERVING_SCALE_FROM_ZERO",
+	}
+
 	expectedTests := []cioperatorapi.TestStepConfiguration{
 		{
 			As: "perf-tests-aws-ocp-412",
@@ -90,7 +114,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 								},
 							},
 							Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
-							Dependencies: dependencies,
+							Dependencies: perfDependencies,
 							Cli:          "latest",
 						},
 					},
