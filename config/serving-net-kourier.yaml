@@ -22,5 +22,7 @@ config:
 repositories:
   - org: openshift-knative
     repo: net-kourier
+    promotion:
+      namespace: openshift
     imagePrefix: net-kourier
     slackChannel: "#knative-serving-ci"

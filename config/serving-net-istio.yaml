@@ -22,5 +22,7 @@ config:
 repositories:
   - org: openshift-knative
     repo: net-istio
+    promotion:
+      namespace: openshift
     imagePrefix: net-istio
     slackChannel: "#knative-serving-ci"

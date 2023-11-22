@@ -2,10 +2,6 @@
 
 config:
   branches:
-    "release-v1.8":
-      openShiftVersions:
-        - version: 4.13
-        - version: 4.10
     "release-v1.9":
       openShiftVersions:
         - version: 4.13
@@ -30,6 +26,8 @@ config:
 repositories:
   - org: openshift-knative
     repo: serving
+    promotion:
+      namespace: openshift
     imagePrefix: knative-serving
     imageNameOverrides:
       migrate: storage-version-migration

@@ -171,14 +171,14 @@ func DeleteExistingReleaseBuildConfigurationForBranch(outConfig *string, r Repos
 	if err != nil {
 		return err
 	}
-	if err := deleteConfigsIfNeeded(r, configPaths, branch); err != nil {
+	if err := deleteConfigsIfNeeded(r.IgnoreConfigs.Matches, configPaths, branch); err != nil {
 		return err
 	}
 	return nil
 }
 
-func deleteConfigsIfNeeded(r Repository, paths []string, branch string) error {
-	excludeFilePattern := ToRegexp(r.IgnoreConfigs.Matches)
+func deleteConfigsIfNeeded(ignoreConfigs []string, paths []string, branch string) error {
+	excludeFilePattern := ToRegexp(ignoreConfigs)
 	for _, path := range paths {
 		include := true
 		for _, r := range excludeFilePattern {
@@ -188,7 +188,12 @@ func deleteConfigsIfNeeded(r Repository, paths []string, branch string) error {
 			}
 		}
 		if include {
-			log.Println("Detected a config for branch", branch, "removing file", path)
+			if branch != "" {
+				log.Println("Detected a config for branch", branch, "removing file", path)
+			} else {
+				log.Println("Detected a config, removing file", path)
+			}
+
 			if err := os.Remove(path); err != nil {
 				return err
 			}
@@ -399,15 +404,38 @@ func InitializeOpenShiftReleaseRepository(ctx context.Context, openShiftRelease 
 	if err := GitCheckout(ctx, openShiftRelease, "master"); err != nil {
 		return err
 	}
-	for branch := range inConfig.Config.Branches {
-		for _, r := range inConfig.Repositories {
-			matches, err := filepath.Glob(filepath.Join(*outputConfig, r.RepositoryDirectory(), "*"+branch+"*"))
-			if err != nil {
-				return err
+
+	// Remove all config files except the ones explicitly excluded
+	for _, r := range inConfig.Repositories {
+		// TODO: skip automatic deletion for S-O for now
+		if strings.Contains(r.RepositoryDirectory(), "serverless-operator") {
+			for branch := range inConfig.Config.Branches {
+				matches, err := filepath.Glob(filepath.Join(*outputConfig, r.RepositoryDirectory(), "*"+branch+"*"))
+				if err != nil {
+					return err
+				}
+				if err := deleteConfigsIfNeeded(r.IgnoreConfigs.Matches, matches, branch); err != nil {
+					return err
+				}
 			}
-			if err := deleteConfigsIfNeeded(r, matches, branch); err != nil {
-				return err
-			}
+			continue
+		}
+		// Remove all config files except the ones explicitly excluded
+		matchesForDeletion, err := filepath.Glob(filepath.Join(*outputConfig, r.RepositoryDirectory(), "*.*"))
+		if err != nil {
+			return err
+		}
+		if err := deleteConfigsIfNeeded(r.IgnoreConfigs.Matches, matchesForDeletion, ""); err != nil {
+			return err
+		}
+		mirrorPath := filepath.Join(openShiftRelease.RepositoryDirectory(), ImageMirroringConfigPath, ImageMirroringConfigFilePrefix+"*"+r.Repo+"*")
+		matchesForDeletion, err = filepath.Glob(mirrorPath)
+		if err != nil {
+			return err
+		}
+
+		if err := deleteConfigsIfNeeded([]string{"serverless-operator", "client", "nightly"}, matchesForDeletion, ""); err != nil {
+			return err
 		}
 	}
 	return nil
