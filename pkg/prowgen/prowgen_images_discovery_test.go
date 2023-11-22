@@ -17,7 +17,7 @@ func TestDiscoverImages(t *testing.T) {
 		CanonicalGoRepository: pointer.String("knative.dev/eventing"),
 	}
 
-	options := DiscoverImages(r)
+	options := DiscoverImages(r, nil)
 
 	expectedImages := []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration{
 		{

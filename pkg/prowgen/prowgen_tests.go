@@ -21,9 +21,9 @@ import (
 
 const defaultCron = "0 5 * * 2,6"
 
-func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string) ReleaseBuildConfigurationOption {
+func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, skipE2ETestMatch []string) ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
-		tests, err := discoverE2ETests(r)
+		tests, err := discoverE2ETests(r, skipE2ETestMatch)
 		if err != nil {
 			return err
 		}
@@ -161,7 +161,7 @@ func (t *Test) HexSha() string {
 	return hex.EncodeToString(h.Sum(nil))[:shaLength]
 }
 
-func discoverE2ETests(r Repository) ([]Test, error) {
+func discoverE2ETests(r Repository, skipE2ETestMatch []string) ([]Test, error) {
 	makefilePath := filepath.Join(r.RepositoryDirectory(), "Makefile")
 	if _, err := os.Stat(makefilePath); err != nil && os.IsNotExist(err) {
 		return nil, nil
@@ -176,9 +176,13 @@ func discoverE2ETests(r Repository) ([]Test, error) {
 	lines := strings.Split(mcStr, "\n")
 	targets := make([]Test, 0, len(lines)/2)
 	commands := sets.NewString()
+
 	for _, l := range lines {
 		l := strings.TrimSpace(l)
 		for _, e2e := range r.E2ETests {
+			if slices.Contains(skipE2ETestMatch, e2e.Match) {
+				continue
+			}
 			if err := createTest(r, l, e2e, &targets, commands); err != nil {
 				return nil, err
 			}

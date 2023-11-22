@@ -268,7 +268,7 @@ func alwaysRunInjector() JobConfigInjector {
 			if err := GitCheckout(context.TODO(), *r, branchName); err != nil {
 				return fmt.Errorf("[%s] failed to checkout branch %s", r.RepositoryDirectory(), branchName)
 			}
-			tests, err := discoverE2ETests(*r)
+			tests, err := discoverE2ETests(*r, b.SkipE2EMatches)
 			if err != nil {
 				return fmt.Errorf("failed to discover tests: %w", err)
 			}

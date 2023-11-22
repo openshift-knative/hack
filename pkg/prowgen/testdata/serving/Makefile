@@ -16,3 +16,6 @@ perf-tests:
 
 ui-e2e:
 	echo "Ignore me"
+
+skip-e2e:
+	echo "Ignore me"
