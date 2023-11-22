@@ -14,6 +14,7 @@ import (
 
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/strings/slices"
 )
 
 const (
@@ -39,10 +40,10 @@ func (ort orgRepoTag) String() string {
 	return ort.Org + "_" + ort.Repo + "_" + ort.Tag
 }
 
-func DiscoverImages(r Repository) ReleaseBuildConfigurationOption {
+func DiscoverImages(r Repository, skipDockerFiles []string) ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
 		log.Println(r.RepositoryDirectory(), "Discovering images")
-		opts, err := discoverImages(r)
+		opts, err := discoverImages(r, skipDockerFiles)
 		if err != nil {
 			return err
 		}
@@ -51,8 +52,8 @@ func DiscoverImages(r Repository) ReleaseBuildConfigurationOption {
 	}
 }
 
-func discoverImages(r Repository) ([]ReleaseBuildConfigurationOption, error) {
-	dockerfiles, err := discoverDockerfiles(r)
+func discoverImages(r Repository, skipDockerFiles []string) ([]ReleaseBuildConfigurationOption, error) {
+	dockerfiles, err := discoverDockerfiles(r, skipDockerFiles)
 	if err != nil {
 		return nil, err
 	}
@@ -89,11 +90,15 @@ func discoverImageContext(dockerfile string) imageContext {
 	return context
 }
 
-func discoverDockerfiles(r Repository) ([]string, error) {
-	includePathRegex := ToRegexp(defaultDockerfileIncludes)
+func discoverDockerfiles(r Repository, skipDockerFiles []string) ([]string, error) {
+	dockerFilesToInclude := defaultDockerfileIncludes
 	if len(r.Dockerfiles.Matches) != 0 {
-		includePathRegex = ToRegexp(r.Dockerfiles.Matches)
+		dockerFilesToInclude = r.Dockerfiles.Matches
 	}
+	filteredDockerFiles := slices.Filter(nil, dockerFilesToInclude, func(s string) bool {
+		return !slices.Contains(skipDockerFiles, s)
+	})
+	includePathRegex := ToRegexp(filteredDockerFiles)
 	dockerfiles := sets.NewString()
 	rootDir := r.RepositoryDirectory()
 	err := filepath.Walk(rootDir, func(path string, info fs.FileInfo, err error) error {

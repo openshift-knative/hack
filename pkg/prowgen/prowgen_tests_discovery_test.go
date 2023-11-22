@@ -25,6 +25,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 				"knative-perf-images/.*",
 				"knative-images/.*",
 				"knative-test-images/.*",
+				"skip-images/.*",
 			},
 		},
 
@@ -47,6 +48,9 @@ func TestDiscoverTestsServing(t *testing.T) {
 				SkipCron: true, // The "-continuous" variant should not be generated.
 			},
 			{
+				Match: "skip-e2e$",
+			},
+			{
 				Match: "ui-e2e$",
 				SkipImages: []string{
 					"knative-serving-scale-from-zero",
@@ -60,8 +64,8 @@ func TestDiscoverTestsServing(t *testing.T) {
 
 	servingSourceImage := "knative-serving-source-image"
 	options := []ReleaseBuildConfigurationOption{
-		DiscoverImages(r),
-		DiscoverTests(r, OpenShift{Version: "4.12", Cron: *cron}, servingSourceImage),
+		DiscoverImages(r, []string{"skip-images/.*"}),
+		DiscoverTests(r, OpenShift{Version: "4.12", Cron: *cron}, servingSourceImage, []string{"skip-e2e$"}),
 	}
 
 	dependencies := []cioperatorapi.StepDependency{
@@ -383,8 +387,8 @@ func TestDiscoverTestsEventing(t *testing.T) {
 
 	eventingSourceImage := "knative-eventing-source-image"
 	options := []ReleaseBuildConfigurationOption{
-		DiscoverImages(r),
-		DiscoverTests(r, OpenShift{Version: "4.12"}, eventingSourceImage),
+		DiscoverImages(r, nil),
+		DiscoverTests(r, OpenShift{Version: "4.12"}, eventingSourceImage, nil),
 	}
 
 	dependencies := []cioperatorapi.StepDependency{

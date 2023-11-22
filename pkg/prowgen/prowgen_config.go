@@ -53,7 +53,9 @@ func (r Repository) RepositoryDirectory() string {
 }
 
 type Branch struct {
-	OpenShiftVersions []OpenShift `json:"openShiftVersions" yaml:"openShiftVersions"`
+	OpenShiftVersions      []OpenShift `json:"openShiftVersions" yaml:"openShiftVersions"`
+	SkipE2EMatches         []string    `json:"skipE2EMatches" yaml:"skipE2EMatches"`
+	SkipDockerFilesMatches []string    `json:"skipDockerFilesMatches" yaml:"skipDockerFilesMatches"`
 }
 
 type OpenShift struct {
@@ -162,8 +164,8 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 
 			options = append(
 				options,
-				DiscoverImages(r),
-				DiscoverTests(r, ov, fromImage),
+				DiscoverImages(r, branch.SkipDockerFilesMatches),
+				DiscoverTests(r, ov, fromImage, branch.SkipE2EMatches),
 			)
 
 			log.Println(r.RepositoryDirectory(), "Apply input options", len(options))
