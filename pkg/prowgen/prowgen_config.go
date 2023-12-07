@@ -2,13 +2,16 @@ package prowgen
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
+	gyaml "github.com/ghodss/yaml"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
+	prowconfig "k8s.io/test-infra/prow/config"
 )
 
 type Repository struct {
@@ -22,6 +25,7 @@ type Repository struct {
 	E2ETests              []E2ETest                                                   `json:"e2e" yaml:"e2e"`
 	Dockerfiles           Dockerfiles                                                 `json:"dockerfiles" yaml:"dockerfiles"`
 	IgnoreConfigs         IgnoreConfigs                                               `json:"ignoreConfigs" yaml:"ignoreConfigs"`
+	ManualConfigs         []ManualConfigs                                             `json:"manualConfigs" yaml:"manualConfigs"`
 	Images                []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration `json:"images" yaml:"images"`
 	Tests                 []cioperatorapi.TestStepConfiguration                       `json:"tests" yaml:"tests"`
 	Resources             cioperatorapi.ResourceConfiguration                         `json:"resources" yaml:"resources"`
@@ -48,6 +52,13 @@ type Promotion struct {
 	Namespace string
 }
 
+type ManualConfigs struct {
+	// Name will be used together with OpenShift version to generate a specific variant.
+	Name string `json:"name" yaml:"name"`
+	// Path to a file with test definitions in the target repository.
+	TestConfigFile string `json:"testConfigFile" yaml:"testConfigFile"`
+}
+
 func (r Repository) RepositoryDirectory() string {
 	return filepath.Join(r.Org, r.Repo)
 }
@@ -59,9 +70,10 @@ type Branch struct {
 }
 
 type OpenShift struct {
-	Version  string `json:"version" yaml:"version"`
-	Cron     string `json:"cron" yaml:"cron"`
-	OnDemand bool   `json:"onDemand" yaml:"onDemand"`
+	Version        string `json:"version" yaml:"version"`
+	Cron           string `json:"cron" yaml:"cron"`
+	OnDemand       bool   `json:"onDemand" yaml:"onDemand"`
+	GenerateManual bool   `json:"generateManual" yaml:"generateManual"`
 }
 
 type CommonConfig struct {
@@ -121,7 +133,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				resources[k] = v
 			}
 
-			cfg := cioperatorapi.ReleaseBuildConfiguration{
+			commonCfg := cioperatorapi.ReleaseBuildConfiguration{
 				Metadata: cioperatorapi.Metadata{
 					Org:     r.Org,
 					Repo:    r.Repo,
@@ -141,13 +153,13 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				Resources:             resources,
 			}
 
-			options := make([]ReleaseBuildConfigurationOption, 0, len(opts))
-			copy(options, opts)
+			commonOpts := make([]ReleaseBuildConfigurationOption, 0, len(opts))
+			copy(commonOpts, opts)
 			if isFirstVersion {
 				isFirstVersion = false
-				options = append(options, withNamePromotion(r, branchName))
+				commonOpts = append(commonOpts, withNamePromotion(r, branchName))
 			} else {
-				options = append(options, withTagPromotion(r, branchName))
+				commonOpts = append(commonOpts, withTagPromotion(r, branchName))
 			}
 
 			fromImage := srcImage
@@ -162,14 +174,15 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				})
 			}
 
-			options = append(
-				options,
+			options := append(
+				commonOpts,
 				DiscoverImages(r, branch.SkipDockerFilesMatches),
 				DiscoverTests(r, ov, fromImage, branch.SkipE2EMatches),
 			)
 
-			log.Println(r.RepositoryDirectory(), "Apply input options", len(options))
+			log.Println(r.RepositoryDirectory(), "Apply input commonOpts", len(options))
 
+			cfg := *commonCfg.DeepCopy()
 			if err := applyOptions(&cfg, options...); err != nil {
 				return nil, fmt.Errorf("[%s] failed to apply option: %w", r.RepositoryDirectory(), err)
 			}
@@ -187,6 +200,39 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				Path:                      buildConfigPath,
 				Branch:                    branchName,
 			})
+
+			if !ov.GenerateManual {
+				continue
+			}
+
+			// Generate manual configs where tests are read from file directly.
+			for _, manualCfg := range r.ManualConfigs {
+				manualJobOptions := append(
+					commonOpts,
+					DiscoverImages(r, branch.SkipDockerFilesMatches),
+					ReadTestsFromFile(filepath.Join(r.RepositoryDirectory(), manualCfg.TestConfigFile)),
+				)
+
+				log.Println(r.RepositoryDirectory(), "Apply input commonOpts", len(manualJobOptions))
+
+				manualJobCfg := *commonCfg.DeepCopy()
+				if err := applyOptions(&manualJobCfg, manualJobOptions...); err != nil {
+					return nil, fmt.Errorf("[%s] failed to apply option: %w", r.RepositoryDirectory(), err)
+				}
+
+				log.Println("numTests", len(manualJobCfg.Tests), "numImages", len(manualJobCfg.Images))
+
+				buildConfigPath = filepath.Join(
+					r.RepositoryDirectory(),
+					r.Org+"-"+r.Repo+"-"+branchName+"__"+variant+"-"+manualCfg.Name+".yaml",
+				)
+
+				cfgs = append(cfgs, ReleaseBuildConfiguration{
+					ReleaseBuildConfiguration: cfg,
+					Path:                      buildConfigPath,
+					Branch:                    branchName,
+				})
+			}
 		}
 	}
 
@@ -250,4 +296,23 @@ func applyOptions(cfg *cioperatorapi.ReleaseBuildConfiguration, opts ...ReleaseB
 		}
 	}
 	return nil
+}
+
+func getTestsFromFile(match string) ([]cioperatorapi.TestStepConfiguration, error) {
+	// Going directly from YAML raw input produces unexpected configs (due to missing YAML tags),
+	// so we convert YAML to JSON and unmarshal the struct from the JSON object.
+	y, err := os.ReadFile(match)
+	if err != nil {
+		return nil, err
+	}
+	j, err := gyaml.YAMLToJSON(y)
+	if err != nil {
+		return nil, err
+	}
+
+	tests := make([]cioperatorapi.TestStepConfiguration, 0)
+	if err := json.Unmarshal(j, &tests); err != nil {
+		return nil, err
+	}
+	return tests, nil
 }

@@ -6,6 +6,7 @@ config:
       openShiftVersions:
         - version: 4.13
           cron: "0 4 * * *"
+          generateManual: true
         - version: 4.11
           cron: "0 6 * * *"
           onDemand: true
@@ -22,7 +23,7 @@ repositories:
     ignoreConfigs:
       matches:
         - ".*main.yaml$"
-        - ".*aws-ovn.*"
+        # - ".*aws-ovn.*" # To be generated.
         - ".*azure.*"
         - ".*gcp.*"
         - ".*hypershift.*"
@@ -31,6 +32,9 @@ repositories:
         - ".*vsphere.*"
         - ".*lp-interop.*"
         - ".*lp-interop.*"
+    manualConfigs:
+      - name: "aws-own"
+        testConfigFile: openshift/ci-operator/job-configs/aws-own.yaml
     dockerfiles:
       matches:
         - "knative-operator/.*"

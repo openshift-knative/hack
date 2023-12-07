@@ -142,6 +142,17 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 	}
 }
 
+func ReadTestsFromFile(f string) ReleaseBuildConfigurationOption {
+	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
+		tests, err := getTestsFromFile(f)
+		if err != nil {
+			return fmt.Errorf("failed to read config file with test definitions: %w", err)
+		}
+		cfg.Tests = tests
+		return nil
+	}
+}
+
 const (
 	shaLength = 7
 )
