@@ -209,7 +209,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				manualJobOptions := append(
 					commonOpts,
 					DiscoverImages(r, branch.SkipDockerFilesMatches),
-					ReadTestsFromFile(filepath.Join(r.RepositoryDirectory(), manualCfg.TestConfigFile)),
+					ReadTestsFromFile(r, manualCfg.TestConfigFile),
 				)
 
 				log.Println(r.RepositoryDirectory(), "Apply input commonOpts", len(manualJobOptions))
