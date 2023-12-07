@@ -310,9 +310,12 @@ func getTestsFromFile(match string) ([]cioperatorapi.TestStepConfiguration, erro
 		return nil, err
 	}
 
-	tests := make([]cioperatorapi.TestStepConfiguration, 0)
-	if err := json.Unmarshal(j, &tests); err != nil {
+	// Possibly define on s-o side complete config and read it directly to cioperatorapi.ReleaseBuildConfiguration
+	// then take just the tests and return from this function
+	//tests := make([]cioperatorapi.TestStepConfiguration, 0)
+	cfg := &cioperatorapi.ReleaseBuildConfiguration{}
+	if err := json.Unmarshal(j, cfg); err != nil {
 		return nil, err
 	}
-	return tests, nil
+	return cfg.Tests, nil
 }
