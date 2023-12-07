@@ -11,7 +11,6 @@ import (
 
 	gyaml "github.com/ghodss/yaml"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
-	prowconfig "k8s.io/test-infra/prow/config"
 )
 
 type Repository struct {
@@ -310,9 +309,6 @@ func getTestsFromFile(match string) ([]cioperatorapi.TestStepConfiguration, erro
 		return nil, err
 	}
 
-	// Possibly define on s-o side complete config and read it directly to cioperatorapi.ReleaseBuildConfiguration
-	// then take just the tests and return from this function
-	//tests := make([]cioperatorapi.TestStepConfiguration, 0)
 	cfg := &cioperatorapi.ReleaseBuildConfiguration{}
 	if err := json.Unmarshal(j, cfg); err != nil {
 		return nil, err
