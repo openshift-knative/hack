@@ -6,7 +6,7 @@ config:
       openShiftVersions:
         - version: 4.13
           cron: "0 4 * * *"
-          generateManual: true
+          generateCustomConfigs: true
         - version: 4.11
           cron: "0 6 * * *"
           onDemand: true
@@ -32,7 +32,7 @@ repositories:
         - ".*vsphere.*"
         - ".*lp-interop.*"
         - ".*lp-interop.*"
-    manualConfigs:
+    customConfigs:
       - name: "aws-own"
         testConfigFile: openshift/ci-operator/job-configs/aws-own.yaml
     dockerfiles:

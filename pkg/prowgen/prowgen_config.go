@@ -24,7 +24,7 @@ type Repository struct {
 	E2ETests              []E2ETest                                                   `json:"e2e" yaml:"e2e"`
 	Dockerfiles           Dockerfiles                                                 `json:"dockerfiles" yaml:"dockerfiles"`
 	IgnoreConfigs         IgnoreConfigs                                               `json:"ignoreConfigs" yaml:"ignoreConfigs"`
-	ManualConfigs         []ManualConfigs                                             `json:"manualConfigs" yaml:"manualConfigs"`
+	CustomConfigs         []CustomConfigs                                             `json:"customConfigs" yaml:"customConfigs"`
 	Images                []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration `json:"images" yaml:"images"`
 	Tests                 []cioperatorapi.TestStepConfiguration                       `json:"tests" yaml:"tests"`
 	Resources             cioperatorapi.ResourceConfiguration                         `json:"resources" yaml:"resources"`
@@ -51,7 +51,7 @@ type Promotion struct {
 	Namespace string
 }
 
-type ManualConfigs struct {
+type CustomConfigs struct {
 	// Name will be used together with OpenShift version to generate a specific variant.
 	Name string `json:"name" yaml:"name"`
 	// Path to a file with test definitions in the target repository.
@@ -69,10 +69,10 @@ type Branch struct {
 }
 
 type OpenShift struct {
-	Version        string `json:"version" yaml:"version"`
-	Cron           string `json:"cron" yaml:"cron"`
-	OnDemand       bool   `json:"onDemand" yaml:"onDemand"`
-	GenerateManual bool   `json:"generateManual" yaml:"generateManual"`
+	Version               string `json:"version" yaml:"version"`
+	Cron                  string `json:"cron" yaml:"cron"`
+	OnDemand              bool   `json:"onDemand" yaml:"onDemand"`
+	GenerateCustomConfigs bool   `json:"generateCustomConfigs" yaml:"generateCustomConfigs"`
 }
 
 type CommonConfig struct {
@@ -200,12 +200,12 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				Branch:                    branchName,
 			})
 
-			if !ov.GenerateManual {
+			if !ov.GenerateCustomConfigs {
 				continue
 			}
 
 			// Generate manual configs where test configurations are read from file.
-			for _, manualCfg := range r.ManualConfigs {
+			for _, manualCfg := range r.CustomConfigs {
 				manualJobOptions := append(
 					commonOpts,
 					DiscoverImages(r, branch.SkipDockerFilesMatches),
