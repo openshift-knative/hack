@@ -142,22 +142,13 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 	}
 }
 
-func TestConfigurationsFromFile(r Repository, testConfigFile string) ReleaseBuildConfigurationOption {
-	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
-		tests, err := getTestsFromFile(filepath.Join(r.RepositoryDirectory(), testConfigFile))
-		if err != nil {
-			return fmt.Errorf("failed to read config file with test definitions: %w", err)
-		}
-		cfg.Tests = tests
-		return nil
-	}
-}
-
-func DependenciesToTestSteps() ReleaseBuildConfigurationOption {
+func DependenciesForTestSteps() ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
 		for _, testConfig := range cfg.Tests {
-			for _, testStep := range testConfig.MultiStageTestConfiguration.Test {
-				testStep.Dependencies = dependenciesFromImages(cfg.Images, nil)
+			if testConfig.MultiStageTestConfiguration != nil {
+				for _, testStep := range testConfig.MultiStageTestConfiguration.Test {
+					testStep.Dependencies = dependenciesFromImages(cfg.Images, nil)
+				}
 			}
 		}
 		return nil

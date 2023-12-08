@@ -24,7 +24,6 @@ import (
 	"github.com/coreos/go-semver/semver"
 	gyaml "github.com/ghodss/yaml"
 	"golang.org/x/sync/errgroup"
-	"gopkg.in/yaml.v2"
 	prowapi "k8s.io/test-infra/prow/apis/prowjobs/v1"
 	prowconfig "k8s.io/test-infra/prow/config"
 )
@@ -52,13 +51,19 @@ func Main() {
 
 	log.Println(*inputConfig, *outConfig)
 
-	in, err := os.ReadFile(*inputConfig)
+	// Going directly from YAML raw input produces unexpected configs (due to missing YAML tags),
+	// so we convert YAML to JSON and unmarshal the struct from the JSON object.
+	y, err := os.ReadFile(*inputConfig)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	j, err := gyaml.YAMLToJSON(y)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	inConfig := &Config{}
-	if err := yaml.UnmarshalStrict(in, inConfig); err != nil {
+	if err := json.Unmarshal(j, inConfig); err != nil {
 		log.Fatalln("Unmarshal input config", err)
 	}
 

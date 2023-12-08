@@ -2,17 +2,17 @@
 
 config:
   branches:
-    main:
+    generate_weekly_jobs:
       openShiftVersions:
-        - version: 4.13
+        - version: "4.13"
           cron: "0 4 * * *"
           generateCustomConfigs: true
-        - version: 4.11
+        - version: "4.11"
           cron: "0 6 * * *"
           onDemand: true
 
 repositories:
-  - org: openshift-knative
+  - org: mgencur
     repo: serverless-operator
     promotion:
       namespace: knative
@@ -32,9 +32,6 @@ repositories:
         - ".*vsphere.*"
         - ".*lp-interop.*"
         - ".*lp-interop.*"
-    customConfigs:
-      - name: "aws-own"
-        testConfigFile: openshift/ci-operator/job-configs/aws-own.yaml
     dockerfiles:
       matches:
         - "knative-operator/.*"
@@ -75,3 +72,28 @@ repositories:
         requests:
           cpu: 100m
           memory: 200Mi
+    customConfigs:
+      - name: "aws-own"
+        #          releases:
+        #            latest:
+        #              release:
+        #                channel: fast
+        #                version: "4.14"
+        releaseBuildConfiguration:
+          tests:
+            - as: e2e-aws-ovn-continuous
+              cron: 0 0 * * 0
+              steps:
+                cluster_profile: aws
+                test:
+                  - as: serverless-e2e
+                    commands: make install-mesh test-e2e-with-kafka
+                    # dependencies: TO BE GENERATED
+                    from: serverless-source-image
+                    resources:
+                      limits:
+                        memory: 6Gi
+                      requests:
+                        cpu: 100m
+                        memory: 200Mi
+                workflow: openshift-e2e-aws-ovn

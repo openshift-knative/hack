@@ -2,14 +2,12 @@ package prowgen
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
-	gyaml "github.com/ghodss/yaml"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
 )
 
@@ -54,8 +52,9 @@ type Promotion struct {
 type CustomConfigs struct {
 	// Name will be used together with OpenShift version to generate a specific variant.
 	Name string `json:"name" yaml:"name"`
-	// Path to a file with test definitions in the target repository.
-	TestConfigFile string `json:"testConfigFile" yaml:"testConfigFile"`
+	// ReleaseBuildConfiguration allows defining configuration manually. The final configuration
+	// is extended with images and test steps with dependencies.
+	ReleaseBuildConfiguration cioperatorapi.ReleaseBuildConfiguration `json:"releaseBuildConfiguration" yaml:"releaseBuildConfiguration"`
 }
 
 func (r Repository) RepositoryDirectory() string {
@@ -132,19 +131,21 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				resources[k] = v
 			}
 
-			commonCfg := cioperatorapi.ReleaseBuildConfiguration{
-				Metadata: cioperatorapi.Metadata{
-					Org:     r.Org,
-					Repo:    r.Repo,
-					Branch:  branchName,
-					Variant: variant,
+			metadata := cioperatorapi.Metadata{
+				Org:     r.Org,
+				Repo:    r.Repo,
+				Branch:  branchName,
+				Variant: variant,
+			}
+			buildRootImage := &cioperatorapi.BuildRootImageConfiguration{
+				ProjectImageBuild: &cioperatorapi.ProjectDirectoryImageBuildInputs{
+					DockerfilePath: "openshift/ci-operator/build-image/Dockerfile",
 				},
+			}
+			commonCfg := cioperatorapi.ReleaseBuildConfiguration{
+				Metadata: metadata,
 				InputConfiguration: cioperatorapi.InputConfiguration{
-					BuildRootImage: &cioperatorapi.BuildRootImageConfiguration{
-						ProjectImageBuild: &cioperatorapi.ProjectDirectoryImageBuildInputs{
-							DockerfilePath: "openshift/ci-operator/build-image/Dockerfile",
-						},
-					},
+					BuildRootImage: buildRootImage,
 				},
 				CanonicalGoRepository: r.CanonicalGoRepository,
 				Images:                images,
@@ -152,13 +153,13 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				Resources:             resources,
 			}
 
-			commonOpts := make([]ReleaseBuildConfigurationOption, 0, len(opts))
-			copy(commonOpts, opts)
+			options := make([]ReleaseBuildConfigurationOption, 0, len(opts))
+			copy(options, opts)
 			if isFirstVersion {
 				isFirstVersion = false
-				commonOpts = append(commonOpts, withNamePromotion(r, branchName))
+				options = append(options, withNamePromotion(r, branchName))
 			} else {
-				commonOpts = append(commonOpts, withTagPromotion(r, branchName))
+				options = append(options, withTagPromotion(r, branchName))
 			}
 
 			fromImage := srcImage
@@ -173,13 +174,13 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				})
 			}
 
-			options := append(
-				commonOpts,
+			options = append(
+				options,
 				DiscoverImages(r, branch.SkipDockerFilesMatches),
 				DiscoverTests(r, ov, fromImage, branch.SkipE2EMatches),
 			)
 
-			log.Println(r.RepositoryDirectory(), "Apply input commonOpts", len(options))
+			log.Println(r.RepositoryDirectory(), "Apply input options", len(options))
 
 			cfg := *commonCfg.DeepCopy()
 			if err := applyOptions(&cfg, options...); err != nil {
@@ -204,31 +205,41 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				continue
 			}
 
-			// Generate manual configs where test configurations are read from file.
-			for _, manualCfg := range r.CustomConfigs {
-				manualJobOptions := append(
-					commonOpts,
+			// Generate custom configs.
+			for _, customCfg := range r.CustomConfigs {
+				customBuildCfg := customCfg.ReleaseBuildConfiguration.DeepCopy()
+				customBuildCfg.Metadata = metadata
+				if customBuildCfg.BuildRootImage == nil {
+					customBuildCfg.BuildRootImage = buildRootImage
+				}
+				if customBuildCfg.CanonicalGoRepository == nil {
+					customBuildCfg.CanonicalGoRepository = r.CanonicalGoRepository
+				}
+				if len(customBuildCfg.Resources) == 0 {
+					customBuildCfg.Resources = resources
+				}
+
+				customBuildOptions := append(
+					opts,
 					DiscoverImages(r, branch.SkipDockerFilesMatches),
-					TestConfigurationsFromFile(r, manualCfg.TestConfigFile),
-					DependenciesToTestSteps(),
+					DependenciesForTestSteps(),
 				)
 
-				log.Println(r.RepositoryDirectory(), "Apply input commonOpts", len(manualJobOptions))
+				log.Println(r.RepositoryDirectory(), "Apply input options", len(customBuildOptions))
 
-				manualJobCfg := *commonCfg.DeepCopy()
-				if err := applyOptions(&manualJobCfg, manualJobOptions...); err != nil {
+				if err := applyOptions(customBuildCfg, customBuildOptions...); err != nil {
 					return nil, fmt.Errorf("[%s] failed to apply option: %w", r.RepositoryDirectory(), err)
 				}
 
-				log.Println("numTests", len(manualJobCfg.Tests), "numImages", len(manualJobCfg.Images))
+				log.Println("numTests", len(customBuildCfg.Tests), "numImages", len(customBuildCfg.Images))
 
 				buildConfigPath = filepath.Join(
 					r.RepositoryDirectory(),
-					r.Org+"-"+r.Repo+"-"+branchName+"__"+variant+"-"+manualCfg.Name+".yaml",
+					r.Org+"-"+r.Repo+"-"+branchName+"__"+variant+"-"+customCfg.Name+".yaml",
 				)
 
 				cfgs = append(cfgs, ReleaseBuildConfiguration{
-					ReleaseBuildConfiguration: cfg,
+					ReleaseBuildConfiguration: *customBuildCfg,
 					Path:                      buildConfigPath,
 					Branch:                    branchName,
 				})
@@ -296,24 +307,4 @@ func applyOptions(cfg *cioperatorapi.ReleaseBuildConfiguration, opts ...ReleaseB
 		}
 	}
 	return nil
-}
-
-func getTestsFromFile(match string) ([]cioperatorapi.TestStepConfiguration, error) {
-	// Going directly from YAML raw input produces unexpected configs (due to missing YAML tags),
-	// so we convert YAML to JSON and unmarshal the struct from the JSON object.
-	y, err := os.ReadFile(match)
-	if err != nil {
-		return nil, err
-	}
-	j, err := gyaml.YAMLToJSON(y)
-	if err != nil {
-		return nil, err
-	}
-
-	cfg := &cioperatorapi.ReleaseBuildConfiguration{}
-	if err := json.Unmarshal(j, cfg); err != nil {
-		return nil, err
-	}
-
-	return cfg.Tests, nil
 }
