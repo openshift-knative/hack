@@ -233,10 +233,11 @@ repositories:
               timeout: 8h0m0s
       - name: "vsphere" # Results in openshift-knative-serverless-operator-<BRANCH>__<OCP_VERSION>-vsphere.yaml
         releaseBuildConfiguration:
-          upi-installer:
-            name: "4.13"
-            namespace: ocp
-            tag: upi-installer
+          base_images:
+            upi-installer:
+              name: "4.13"
+              namespace: ocp
+              tag: upi-installer
           tests:
             - as: e2e-vsphere-continuous
               cron: 0 0 * * 0
