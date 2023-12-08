@@ -142,10 +142,18 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 					DockerfilePath: "openshift/ci-operator/build-image/Dockerfile",
 				},
 			}
+			// Include releases as it's required by clusters that start from scratch (vs. cluster-pools).
+			releases := map[string]cioperatorapi.UnresolvedRelease{
+				"latest": {Release: &cioperatorapi.Release{
+					Version: ov.Version,
+					Channel: cioperatorapi.ReleaseChannelFast},
+				},
+			}
 			commonCfg := cioperatorapi.ReleaseBuildConfiguration{
 				Metadata: metadata,
 				InputConfiguration: cioperatorapi.InputConfiguration{
 					BuildRootImage: buildRootImage,
+					Releases:       releases,
 				},
 				CanonicalGoRepository: r.CanonicalGoRepository,
 				Images:                images,
@@ -217,6 +225,9 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				}
 				if len(customBuildCfg.Resources) == 0 {
 					customBuildCfg.Resources = resources
+				}
+				if len(customBuildCfg.Releases) == 0 {
+					customBuildCfg.Releases = releases
 				}
 
 				customBuildOptions := append(
