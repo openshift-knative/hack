@@ -149,7 +149,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 					Channel: cioperatorapi.ReleaseChannelFast},
 				},
 			}
-			commonCfg := cioperatorapi.ReleaseBuildConfiguration{
+			cfg := cioperatorapi.ReleaseBuildConfiguration{
 				Metadata: metadata,
 				InputConfiguration: cioperatorapi.InputConfiguration{
 					BuildRootImage: buildRootImage,
@@ -190,7 +190,6 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 
 			log.Println(r.RepositoryDirectory(), "Apply input options", len(options))
 
-			cfg := *commonCfg.DeepCopy()
 			if err := applyOptions(&cfg, options...); err != nil {
 				return nil, fmt.Errorf("[%s] failed to apply option: %w", r.RepositoryDirectory(), err)
 			}
