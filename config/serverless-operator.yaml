@@ -191,7 +191,7 @@ repositories:
                 cluster_profile: osd-ephemeral
                 env:
                   CLUSTER_DURATION: "10800"
-                  CLUSTER_VERSION: "4.14"
+                  CLUSTER_VERSION: "4.13"
                   COMPUTE_NODES: "4"
                 post:
                   - chain: gather
