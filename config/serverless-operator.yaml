@@ -12,7 +12,7 @@ config:
           onDemand: true
 
 repositories:
-  - org: mgencur
+  - org: openshift-knative
     repo: serverless-operator
     promotion:
       namespace: knative
