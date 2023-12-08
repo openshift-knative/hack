@@ -6,6 +6,7 @@ config:
       openShiftVersions:
         - version: "4.13"
           cron: "0 4 * * *"
+          # Note: customConfigs section below hardcodes OCP versions in a few places. They must be updated.
           generateCustomConfigs: true
         - version: "4.11"
           cron: "0 6 * * *"
