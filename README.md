@@ -29,6 +29,11 @@ This generation works this way:
   - One for the periodics (that runs regularly)
 - There are also CI job config generated, which use the tests above.
 - If the matching regex is specified in `onDemand` field, then the presubmit is marked as optional (`always_run: false`).
+- Individual OpenShift versions can specify `generateCustomConfigs: true`.
+  The repository configuration should then list custom configurations under `customConfigs`. The `releaseBuildConfiguration` key should include at least `tests` key
+  with the list of tests to be run. For custom configurations, tests are not generated from Makefile
+  targets but rather taken directly from the configuration. The resulting build configuration is then
+  enriched with images, base images, and dependencies for test steps.
 
 Limitations:
 - It is not currently possible to disable periodics per job
