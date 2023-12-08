@@ -204,12 +204,13 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				continue
 			}
 
-			// Generate manual configs where tests are read from file directly.
+			// Generate manual configs where test configurations are read from file.
 			for _, manualCfg := range r.ManualConfigs {
 				manualJobOptions := append(
 					commonOpts,
 					DiscoverImages(r, branch.SkipDockerFilesMatches),
-					ReadTestsFromFile(r, manualCfg.TestConfigFile),
+					TestConfigurationsFromFile(r, manualCfg.TestConfigFile),
+					DependenciesToTestSteps(),
 				)
 
 				log.Println(r.RepositoryDirectory(), "Apply input commonOpts", len(manualJobOptions))
@@ -313,5 +314,6 @@ func getTestsFromFile(match string) ([]cioperatorapi.TestStepConfiguration, erro
 	if err := json.Unmarshal(j, cfg); err != nil {
 		return nil, err
 	}
+
 	return cfg.Tests, nil
 }
