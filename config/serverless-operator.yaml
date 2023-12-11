@@ -185,6 +185,11 @@ repositories:
               timeout: 8h0m0s
       - name: "osd" # Results in openshift-knative-serverless-operator-<BRANCH>__<OCP_VERSION>-osd.yaml
         releaseBuildConfiguration:
+          base_images:
+            cli-ocm:
+              name: cli-ocm
+              namespace: ci
+              tag: latest
           tests:
             - as: e2e-osd-continuous
               cron: 0 0 * * 0
