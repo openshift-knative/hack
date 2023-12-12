@@ -56,7 +56,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 									},
 								},
 								Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
-								Dependencies: dependenciesFromImages(r, cfg.Images, as, test.SkipImages),
+								Dependencies: dependenciesFromImages(cfg.Images, test.SkipImages),
 								Cli:          "latest",
 							},
 						},
@@ -142,6 +142,19 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 	}
 }
 
+func DependenciesForTestSteps() ReleaseBuildConfigurationOption {
+	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
+		for _, testConfig := range cfg.Tests {
+			if testConfig.MultiStageTestConfiguration != nil {
+				for _, testStep := range testConfig.MultiStageTestConfiguration.Test {
+					testStep.Dependencies = dependenciesFromImages(cfg.Images, nil)
+				}
+			}
+		}
+		return nil
+	}
+}
+
 const (
 	shaLength = 7
 )
@@ -215,11 +228,11 @@ func createTest(r Repository, line string, e2e E2ETest, tests *[]Test, commands 
 	return nil
 }
 
-func dependenciesFromImages(r Repository, images []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration, testName string, skipImages []string) []cioperatorapi.StepDependency {
+func dependenciesFromImages(images []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration, skipImages []string) []cioperatorapi.StepDependency {
 	deps := make([]cioperatorapi.StepDependency, 0, len(images))
 	for _, image := range images {
 		imageFinal := strings.ReplaceAll(string(image.To), "_", "-")
-		if shouldAcceptImage(testName, skipImages, imageFinal) {
+		if shouldAcceptImage(skipImages, imageFinal) {
 			dep := cioperatorapi.StepDependency{
 				Name: imageFinal,
 				Env:  strings.ToUpper(strings.ReplaceAll(string(image.To), "-", "_")),
@@ -231,6 +244,6 @@ func dependenciesFromImages(r Repository, images []cioperatorapi.ProjectDirector
 }
 
 // Accept an image if it is not the skip image list
-func shouldAcceptImage(testName string, skipImages []string, image string) bool {
+func shouldAcceptImage(skipImages []string, image string) bool {
 	return slices.Index(skipImages, image) < 0
 }

@@ -22,6 +22,7 @@ type Repository struct {
 	E2ETests              []E2ETest                                                   `json:"e2e" yaml:"e2e"`
 	Dockerfiles           Dockerfiles                                                 `json:"dockerfiles" yaml:"dockerfiles"`
 	IgnoreConfigs         IgnoreConfigs                                               `json:"ignoreConfigs" yaml:"ignoreConfigs"`
+	CustomConfigs         []CustomConfigs                                             `json:"customConfigs" yaml:"customConfigs"`
 	Images                []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration `json:"images" yaml:"images"`
 	Tests                 []cioperatorapi.TestStepConfiguration                       `json:"tests" yaml:"tests"`
 	Resources             cioperatorapi.ResourceConfiguration                         `json:"resources" yaml:"resources"`
@@ -48,6 +49,14 @@ type Promotion struct {
 	Namespace string
 }
 
+type CustomConfigs struct {
+	// Name will be used together with OpenShift version to generate a specific variant.
+	Name string `json:"name" yaml:"name"`
+	// ReleaseBuildConfiguration allows defining configuration manually. The final configuration
+	// is extended with images and test steps with dependencies.
+	ReleaseBuildConfiguration cioperatorapi.ReleaseBuildConfiguration `json:"releaseBuildConfiguration" yaml:"releaseBuildConfiguration"`
+}
+
 func (r Repository) RepositoryDirectory() string {
 	return filepath.Join(r.Org, r.Repo)
 }
@@ -59,9 +68,10 @@ type Branch struct {
 }
 
 type OpenShift struct {
-	Version  string `json:"version" yaml:"version"`
-	Cron     string `json:"cron" yaml:"cron"`
-	OnDemand bool   `json:"onDemand" yaml:"onDemand"`
+	Version               string `json:"version" yaml:"version"`
+	Cron                  string `json:"cron" yaml:"cron"`
+	OnDemand              bool   `json:"onDemand" yaml:"onDemand"`
+	GenerateCustomConfigs bool   `json:"generateCustomConfigs" yaml:"generateCustomConfigs"`
 }
 
 type CommonConfig struct {
@@ -121,19 +131,29 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				resources[k] = v
 			}
 
-			cfg := cioperatorapi.ReleaseBuildConfiguration{
-				Metadata: cioperatorapi.Metadata{
-					Org:     r.Org,
-					Repo:    r.Repo,
-					Branch:  branchName,
-					Variant: variant,
+			metadata := cioperatorapi.Metadata{
+				Org:     r.Org,
+				Repo:    r.Repo,
+				Branch:  branchName,
+				Variant: variant,
+			}
+			buildRootImage := &cioperatorapi.BuildRootImageConfiguration{
+				ProjectImageBuild: &cioperatorapi.ProjectDirectoryImageBuildInputs{
+					DockerfilePath: "openshift/ci-operator/build-image/Dockerfile",
 				},
+			}
+			// Include releases as it's required by clusters that start from scratch (vs. cluster-pools).
+			releases := map[string]cioperatorapi.UnresolvedRelease{
+				"latest": {Release: &cioperatorapi.Release{
+					Version: ov.Version,
+					Channel: cioperatorapi.ReleaseChannelFast},
+				},
+			}
+			cfg := cioperatorapi.ReleaseBuildConfiguration{
+				Metadata: metadata,
 				InputConfiguration: cioperatorapi.InputConfiguration{
-					BuildRootImage: &cioperatorapi.BuildRootImageConfiguration{
-						ProjectImageBuild: &cioperatorapi.ProjectDirectoryImageBuildInputs{
-							DockerfilePath: "openshift/ci-operator/build-image/Dockerfile",
-						},
-					},
+					BuildRootImage: buildRootImage,
+					Releases:       releases,
 				},
 				CanonicalGoRepository: r.CanonicalGoRepository,
 				Images:                images,
@@ -187,6 +207,53 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				Path:                      buildConfigPath,
 				Branch:                    branchName,
 			})
+
+			if !ov.GenerateCustomConfigs {
+				continue
+			}
+
+			// Generate custom configs.
+			for _, customCfg := range r.CustomConfigs {
+				customBuildCfg := customCfg.ReleaseBuildConfiguration.DeepCopy()
+				customBuildCfg.Metadata = metadata
+				if customBuildCfg.BuildRootImage == nil {
+					customBuildCfg.BuildRootImage = buildRootImage
+				}
+				if customBuildCfg.CanonicalGoRepository == nil {
+					customBuildCfg.CanonicalGoRepository = r.CanonicalGoRepository
+				}
+				if len(customBuildCfg.Resources) == 0 {
+					customBuildCfg.Resources = resources
+				}
+				if len(customBuildCfg.Releases) == 0 {
+					customBuildCfg.Releases = releases
+				}
+
+				customBuildOptions := append(
+					opts,
+					DiscoverImages(r, branch.SkipDockerFilesMatches),
+					DependenciesForTestSteps(),
+				)
+
+				log.Println(r.RepositoryDirectory(), "Apply input options", len(customBuildOptions))
+
+				if err := applyOptions(customBuildCfg, customBuildOptions...); err != nil {
+					return nil, fmt.Errorf("[%s] failed to apply option: %w", r.RepositoryDirectory(), err)
+				}
+
+				log.Println("numTests", len(customBuildCfg.Tests), "numImages", len(customBuildCfg.Images))
+
+				buildConfigPath = filepath.Join(
+					r.RepositoryDirectory(),
+					r.Org+"-"+r.Repo+"-"+branchName+"__"+variant+"-"+customCfg.Name+".yaml",
+				)
+
+				cfgs = append(cfgs, ReleaseBuildConfiguration{
+					ReleaseBuildConfiguration: *customBuildCfg,
+					Path:                      buildConfigPath,
+					Branch:                    branchName,
+				})
+			}
 		}
 	}
 

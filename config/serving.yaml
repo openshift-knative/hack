@@ -4,28 +4,28 @@ config:
   branches:
     "release-v1.9":
       openShiftVersions:
-        - version: 4.13
-        - version: 4.10
+        - version: "4.13"
+        - version: "4.10"
     "release-v1.10":
       openShiftVersions:
-        - version: 4.14
-        - version: 4.11
+        - version: "4.14"
+        - version: "4.11"
     "release-v1.11":
       openShiftVersions:
-        - version: 4.14
-        - version: 4.11
+        - version: "4.14"
+        - version: "4.11"
     "release-v1.12":
       openShiftVersions:
-        - version: 4.14
-        - version: 4.11
+        - version: "4.14"
+        - version: "4.11"
     "release-next":
       skipE2EMatches:
         - "perf-tests$"
       skipDockerFilesMatches:
         - "openshift/ci-operator/knative-perf-images.*"
       openShiftVersions:
-        - version: 4.14
-        - version: 4.11
+        - version: "4.14"
+        - version: "4.11"
 
 repositories:
   - org: openshift-knative
