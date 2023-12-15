@@ -31,6 +31,18 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 		for i := range tests {
 			test := &tests[i]
 			as := ToName(r, test, openShift.Version)
+
+			var testTimeout *prowapi.Duration
+			var jobTimeout *prowapi.Duration
+
+			if test.Timeout != nil {
+				testTimeout = test.Timeout
+				jobTimeout = &prowapi.Duration{Duration: test.Timeout.Duration + time.Hour} // test time + 3 * 20m must-gathers
+			} else {
+				// Use 4h test timeout by default
+				testTimeout = &prowapi.Duration{Duration: 4 * time.Hour}
+			}
+
 			testConfiguration := cioperatorapi.TestStepConfiguration{
 				As: as,
 				ClusterClaim: &cioperatorapi.ClusterClaim{
@@ -41,6 +53,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 					Owner:        "openshift-ci",
 					Timeout:      &prowapi.Duration{Duration: time.Hour},
 				},
+				Timeout: jobTimeout,
 				MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 					AllowBestEffortPostSteps: pointer.Bool(true),
 					AllowSkipOnSuccess:       pointer.Bool(true),
@@ -55,7 +68,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 										"cpu": "100m",
 									},
 								},
-								Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
+								Timeout:      testTimeout,
 								Dependencies: dependenciesFromImages(cfg.Images, test.SkipImages),
 								Cli:          "latest",
 							},
@@ -166,6 +179,7 @@ type Test struct {
 	RunIfChanged string
 	SkipCron     bool
 	SkipImages   []string
+	Timeout      *prowapi.Duration
 }
 
 func (t *Test) HexSha() string {
@@ -220,7 +234,7 @@ func createTest(r Repository, line string, e2e E2ETest, tests *[]Test, commands 
 			return fmt.Errorf("[%s] failed to match test %s: %w", r.RepositoryDirectory(), e2e.Match, err)
 		}
 		if matches && !commands.Has(line) {
-			*tests = append(*tests, Test{Command: line, OnDemand: e2e.OnDemand, IgnoreError: e2e.IgnoreError, RunIfChanged: e2e.RunIfChanged, SkipCron: e2e.SkipCron, SkipImages: e2e.SkipImages})
+			*tests = append(*tests, Test{Command: line, OnDemand: e2e.OnDemand, IgnoreError: e2e.IgnoreError, RunIfChanged: e2e.RunIfChanged, SkipCron: e2e.SkipCron, SkipImages: e2e.SkipImages, Timeout: e2e.Timeout})
 			commands.Insert(line)
 		}
 	}
