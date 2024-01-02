@@ -45,6 +45,7 @@ repositories:
       - match: "^mesh-e2e$"
         onDemand: true
         ignoreError: true
+        timeout: 4h0m0s
       - match: "^mesh-upgrade$"
         onDemand: true
         ignoreError: true

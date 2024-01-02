@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
+	prowapi "k8s.io/test-infra/prow/apis/prowjobs/v1"
 )
 
 type Repository struct {
@@ -29,12 +30,13 @@ type Repository struct {
 }
 
 type E2ETest struct {
-	Match        string   `json:"match" yaml:"match"`
-	OnDemand     bool     `json:"onDemand" yaml:"onDemand"`
-	IgnoreError  bool     `json:"ignoreError" yaml:"ignoreError"`
-	RunIfChanged string   `json:"runIfChanged" yaml:"runIfChanged"`
-	SkipCron     bool     `json:"skipCron" yaml:"skipCron"`
-	SkipImages   []string `json:"skipImages" yaml:"skipImages"`
+	Match        string            `json:"match" yaml:"match"`
+	OnDemand     bool              `json:"onDemand" yaml:"onDemand"`
+	IgnoreError  bool              `json:"ignoreError" yaml:"ignoreError"`
+	RunIfChanged string            `json:"runIfChanged" yaml:"runIfChanged"`
+	SkipCron     bool              `json:"skipCron" yaml:"skipCron"`
+	SkipImages   []string          `json:"skipImages" yaml:"skipImages"`
+	Timeout      *prowapi.Duration `json:"timeout" yaml:"timeout"`
 }
 
 type Dockerfiles struct {
