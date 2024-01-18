@@ -5,7 +5,7 @@ on:
     inputs:
       goversion:
         description: A version of Go
-        default: 1.18.x
+        default: 1.21.x
         required: false
         type: string
       koversion:
