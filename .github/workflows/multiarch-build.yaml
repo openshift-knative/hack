@@ -3,6 +3,7 @@ name: Multiarch KO builds
 on:
   workflow_call:
     inputs:
+      # Deprecated, left for backward compatibility but it is unused
       goversion:
         description: A version of Go
         default: 1.21.x
@@ -36,7 +37,7 @@ jobs:
       - name: Setup Golang
         uses: actions/setup-go@v2
         with:
-          go-version: ${{ inputs.goversion }}
+          go-version-file: go.mod
 
       - name: Setup ko
         uses: imjasonh/setup-ko@v0.6
