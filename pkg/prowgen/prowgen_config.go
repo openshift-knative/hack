@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/coreos/go-semver/semver"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
 	prowapi "k8s.io/test-infra/prow/apis/prowjobs/v1"
 )
@@ -74,6 +75,7 @@ type OpenShift struct {
 	Cron                  string `json:"cron" yaml:"cron"`
 	OnDemand              bool   `json:"onDemand" yaml:"onDemand"`
 	GenerateCustomConfigs bool   `json:"generateCustomConfigs" yaml:"generateCustomConfigs"`
+	CandidateRelease      bool   `json:"candidateRelease" yaml:"candidateRelease"`
 }
 
 type CommonConfig struct {
@@ -105,9 +107,12 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 			return nil, fmt.Errorf("[%s] failed to checkout branch %s", r.RepositoryDirectory(), branchName)
 		}
 
-		isFirstVersion := true
-		for _, ov := range branch.OpenShiftVersions {
+		openshiftVersions, err := addCandidateRelease(branch.OpenShiftVersions)
+		if err != nil {
+			return nil, err
+		}
 
+		for i, ov := range openshiftVersions {
 			log.Println(r.RepositoryDirectory(), "Generating config", branchName, "OpenShiftVersion", ov)
 
 			variant := strings.ReplaceAll(ov.Version, ".", "")
@@ -146,10 +151,21 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 			}
 			// Include releases as it's required by clusters that start from scratch (vs. cluster-pools).
 			releases := map[string]cioperatorapi.UnresolvedRelease{
-				"latest": {Release: &cioperatorapi.Release{
-					Version: ov.Version,
-					Channel: cioperatorapi.ReleaseChannelFast},
+				"latest": {
+					Release: &cioperatorapi.Release{
+						Version: ov.Version,
+						Channel: cioperatorapi.ReleaseChannelFast},
 				},
+			}
+			if ov.CandidateRelease {
+				releases = map[string]cioperatorapi.UnresolvedRelease{
+					"latest": {
+						Candidate: &cioperatorapi.Candidate{
+							Version: ov.Version,
+							Stream:  "nightly",
+							Product: "ocp",
+						}},
+				}
 			}
 			cfg := cioperatorapi.ReleaseBuildConfiguration{
 				Metadata: metadata,
@@ -165,10 +181,9 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 
 			options := make([]ReleaseBuildConfigurationOption, 0, len(opts))
 			copy(options, opts)
-			if isFirstVersion {
-				isFirstVersion = false
+			if i == 0 {
 				options = append(options, withNamePromotion(r, branchName))
-			} else {
+			} else if i == 1 {
 				options = append(options, withTagPromotion(r, branchName))
 			}
 
@@ -310,6 +325,34 @@ func withTagPromotion(r Repository, branchName string) ReleaseBuildConfiguration
 		}
 		return nil
 	}
+}
+
+func addCandidateRelease(openshiftVersions []OpenShift) ([]OpenShift, error) {
+	semVersions := make([]*semver.Version, 0, len(openshiftVersions))
+	for _, ov := range openshiftVersions {
+		v := ov.Version
+		// Make sure version strings are in the format MAJOR.MINOR.MICRO
+		if len(strings.SplitN(v, ".", 3)) != 3 {
+			v = v + ".0"
+		}
+		ovSemVer, err := semver.NewVersion(v)
+		if err != nil {
+			return nil, err
+		}
+		semVersions = append(semVersions, ovSemVer)
+	}
+	semver.Sort(semVersions)
+
+	latest := *semVersions[len(semVersions)-1]
+	latest.BumpMinor()
+
+	extendedVersions := append(openshiftVersions, OpenShift{
+		Version:          fmt.Sprintf("%d.%d", latest.Major, latest.Minor),
+		OnDemand:         true,
+		CandidateRelease: true},
+	)
+
+	return extendedVersions, nil
 }
 
 func applyOptions(cfg *cioperatorapi.ReleaseBuildConfiguration, opts ...ReleaseBuildConfigurationOption) error {
