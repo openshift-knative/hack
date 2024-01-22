@@ -107,9 +107,16 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 			return nil, fmt.Errorf("[%s] failed to checkout branch %s", r.RepositoryDirectory(), branchName)
 		}
 
-		openshiftVersions, err := addCandidateRelease(branch.OpenShiftVersions)
-		if err != nil {
-			return nil, err
+		var err error
+		openshiftVersions := branch.OpenShiftVersions
+		// Add candidate release only for serverless-operator as openshift
+		// cluster profiles allow only this repository.
+		// See https://issues.redhat.com/browse/SRVCOM-2903
+		if strings.Contains(r.RepositoryDirectory(), "serverless-operator") {
+			openshiftVersions, err = addCandidateRelease(branch.OpenShiftVersions)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		for i, ov := range openshiftVersions {
