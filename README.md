@@ -52,6 +52,20 @@ When a new OpenShift version is released, wait until the cluster pool for OpenSh
 [https://docs.ci.openshift.org/docs/how-tos/cluster-claim/#existing-cluster-pools](https://docs.ci.openshift.org/docs/how-tos/cluster-claim/#existing-cluster-pools).
 
 
+## Getting SO branch associated with upstream branch
+
+SO branch follows the product versioning, while midstream branches follows the upstream versioning.
+
+To make the "clone associated SO branch" easier, you can run the `sobranch` tool as follows:
+
+```shell
+GO111MODULE=off go get -u github.com/openshift-knative/hack/cmd/sobranch
+
+so_branch=$( $(go env GOPATH)/bin/sobranch --upstream-version "release-1.11") # or "release-v1.11" or "release-1.11" or "v1.11" or "1.11"
+
+git clone --branch $so_branch git@github.com:openshift-knative/serverless-operator.git
+```
+
 ## Troubleshooting
 
 #### Git not configured to use GPG signing
