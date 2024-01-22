@@ -43,18 +43,27 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				testTimeout = &prowapi.Duration{Duration: 4 * time.Hour}
 			}
 
+			clusterClaim := &cioperatorapi.ClusterClaim{
+				Product:      cioperatorapi.ReleaseProductOCP,
+				Version:      openShift.Version,
+				Architecture: cioperatorapi.ReleaseArchitectureAMD64,
+				Cloud:        cioperatorapi.CloudAWS,
+				Owner:        "openshift-ci",
+				Timeout:      &prowapi.Duration{Duration: time.Hour},
+			}
+			var clusterProfile cioperatorapi.ClusterProfile
+			workflow := pointer.String("generic-claim")
+			if openShift.CandidateRelease {
+				clusterClaim = nil
+				clusterProfile = "aws"
+				workflow = pointer.String("ipi-aws")
+			}
 			testConfiguration := cioperatorapi.TestStepConfiguration{
-				As: as,
-				ClusterClaim: &cioperatorapi.ClusterClaim{
-					Product:      cioperatorapi.ReleaseProductOCP,
-					Version:      openShift.Version,
-					Architecture: cioperatorapi.ReleaseArchitectureAMD64,
-					Cloud:        cioperatorapi.CloudAWS,
-					Owner:        "openshift-ci",
-					Timeout:      &prowapi.Duration{Duration: time.Hour},
-				},
-				Timeout: jobTimeout,
+				As:           as,
+				ClusterClaim: clusterClaim,
+				Timeout:      jobTimeout,
 				MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
+					ClusterProfile:           clusterProfile,
 					AllowBestEffortPostSteps: pointer.Bool(true),
 					AllowSkipOnSuccess:       pointer.Bool(true),
 					Test: []cioperatorapi.TestStep{
@@ -126,7 +135,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 							},
 						},
 					},
-					Workflow: pointer.String("generic-claim"),
+					Workflow: workflow,
 				},
 			}
 
@@ -135,7 +144,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 			preSubmitConfiguration.RunIfChanged = test.RunIfChanged
 			cfg.Tests = append(cfg.Tests, *preSubmitConfiguration)
 
-			if !test.SkipCron {
+			if !test.SkipCron && !openShift.CandidateRelease {
 				cronTestConfiguration := testConfiguration.DeepCopy()
 				cronTestConfiguration.As += "-continuous"
 				if openShift.Cron == "" {
