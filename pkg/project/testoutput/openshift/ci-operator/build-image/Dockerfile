@@ -1,7 +1,7 @@
 # DO NOT EDIT! Generated Dockerfile.
 
 # Dockerfile to bootstrap build and test in openshift-ci
-FROM registry.ci.openshift.org/openshift/release:golang-1.21 as builder
+FROM registry.ci.openshift.org/openshift/release:rhel-8-release-golang-1.21-openshift-4.16 as builder
 
 RUN echo "[kubernetes]" >> /etc/yum.repos.d/kubernetes.repo && \
     echo "name=Kubernetes" >> /etc/yum.repos.d/kubernetes.repo && \
