@@ -1,5 +1,5 @@
 # DO NOT EDIT! Generated Dockerfile for cmd/prowcopy.
-FROM registry.ci.openshift.org/openshift/release:golang-1.18 as builder
+FROM registry.ci.openshift.org/openshift/release:golang-1.21 as builder
 
 COPY . .
 
