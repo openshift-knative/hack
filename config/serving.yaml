@@ -21,6 +21,7 @@ config:
     "release-next":
       skipE2EMatches:
         - "perf-tests$"
+        - ".*e2e-tls$"
       skipDockerFilesMatches:
         - "openshift/ci-operator/knative-perf-images.*"
       openShiftVersions:
