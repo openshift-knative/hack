@@ -96,7 +96,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 
 	expectedTests := []cioperatorapi.TestStepConfiguration{
 		{
-			As: "perf-tests-aws-ocp-412",
+			As: "perf-tests-aws-412",
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
 				Version:      "4.12",
@@ -127,7 +127,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 			},
 		},
 		{
-			As: "test-e2e-aws-ocp-412",
+			As: "test-e2e-aws-412",
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
 				Version:      "4.12",
@@ -159,7 +159,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 			},
 		},
 		{
-			As:   "test-e2e-aws-ocp-412-continuous",
+			As:   "test-e2e-aws-412-c",
 			Cron: cron,
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
@@ -191,7 +191,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 			},
 		},
 		{
-			As: "test-e2e-tls-aws-ocp-412",
+			As: "test-e2e-tls-aws-412",
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
 				Version:      "4.12",
@@ -222,7 +222,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 			},
 		},
 		{
-			As:   "test-e2e-tls-aws-ocp-412-continuous",
+			As:   "test-e2e-tls-aws-412-c",
 			Cron: cron,
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
@@ -254,7 +254,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 			},
 		},
 		{
-			As: "ui-e2e-aws-ocp-412",
+			As: "ui-e2e-aws-412",
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
 				Version:      "4.12",
@@ -408,7 +408,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 
 	expectedTests := []cioperatorapi.TestStepConfiguration{
 		{
-			As: "test-conformance-aws-ocp-412",
+			As: "test-conformance-aws-412",
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
 				Version:      "4.12",
@@ -439,7 +439,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 			},
 		},
 		{
-			As:   "test-conformance-aws-ocp-412-continuous",
+			As:   "test-conformance-aws-412-c",
 			Cron: pointer.String("0 5 * * 2,6"),
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
@@ -471,7 +471,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 			},
 		},
 		{
-			As: "test-confor-2627121-aws-ocp-412",
+			As: "test-conformance-long-lo-510e96a-aws-412",
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
 				Version:      "4.12",
@@ -486,7 +486,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     eventingSourceImage,
-							Commands: formatCommand("make test-conformance-long-command"),
+							Commands: formatCommand("make test-conformance-long-long-long-command"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -502,7 +502,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 			},
 		},
 		{
-			As:   "test-confor-2627121-aws-ocp-412-continuous",
+			As:   "test-conformance-long-lo-510e96a-aws-412-c",
 			Cron: pointer.String("0 5 * * 2,6"),
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
@@ -518,7 +518,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     eventingSourceImage,
-							Commands: formatCommand("make test-conformance-long-command"),
+							Commands: formatCommand("make test-conformance-long-long-long-command"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -534,7 +534,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 			},
 		},
 		{
-			As: "test-e2e-aws-ocp-412",
+			As: "test-e2e-aws-412",
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
 				Version:      "4.12",
@@ -565,7 +565,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 			},
 		},
 		{
-			As:   "test-e2e-aws-ocp-412-continuous",
+			As:   "test-e2e-aws-412-c",
 			Cron: pointer.String("0 5 * * 2,6"),
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
@@ -597,7 +597,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 			},
 		},
 		{
-			As: "test-reconciler-aws-ocp-412",
+			As: "test-reconciler-aws-412",
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
 				Version:      "4.12",
@@ -628,7 +628,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 			},
 		},
 		{
-			As:   "test-reconciler-aws-ocp-412-continuous",
+			As:   "test-reconciler-aws-412-c",
 			Cron: pointer.String("0 5 * * 2,6"),
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,

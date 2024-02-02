@@ -146,7 +146,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 
 			if !test.SkipCron && !openShift.CandidateRelease {
 				cronTestConfiguration := testConfiguration.DeepCopy()
-				cronTestConfiguration.As += "-continuous"
+				cronTestConfiguration.As += "-c"
 				if openShift.Cron == "" {
 					cronTestConfiguration.Cron = pointer.String(defaultCron)
 				} else {

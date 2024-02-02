@@ -8,5 +8,5 @@ test-conformance:
 test-e2e:
 	echo "Hello"
 
-test-conformance-long-command:
+test-conformance-long-long-long-command:
 	echo "Hello"
