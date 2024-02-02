@@ -9,8 +9,8 @@ import (
 func TestToName(t *testing.T) {
 
 	openshiftVersion := "4.11"
-	suffix := "-aws-ocp-411"
-	continuousSuffix := "-continuous"
+	suffix := "-aws-411"
+	continuousSuffix := "-c"
 
 	tests := []struct {
 		name             string
@@ -35,7 +35,7 @@ func TestToName(t *testing.T) {
 				Command: strings.Repeat("a", maxNameLength-len(suffix)-len(continuousSuffix)+1),
 			},
 			openShiftVersion: openshiftVersion,
-			want:             fmt.Sprintf("%s-%s%s", strings.Repeat("a", maxNameLength-len(suffix)-len(continuousSuffix)-shaLength-1) /* hex sha1 */, "38666b8", suffix),
+			want:             fmt.Sprintf("%s-%s%s", strings.Repeat("a", maxNameLength-len(suffix)-len(continuousSuffix)-shaLength-1) /* hex sha1 */, "2368a1a", suffix),
 		},
 		{
 			name: fmt.Sprintf("%d length name", maxNameLength-len(suffix)-len(continuousSuffix)),
@@ -62,7 +62,7 @@ func TestToName(t *testing.T) {
 				Command: "test-kafka-broker-upstream-nightly",
 			},
 			openShiftVersion: openshiftVersion,
-			want:             fmt.Sprintf("%s%s", "test-kafka-fbbddbf", suffix),
+			want:             fmt.Sprintf("%s%s", "test-kafka-broker-upstre-fbbddbf", suffix),
 		},
 	}
 	for _, tt := range tests {
