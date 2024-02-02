@@ -16,8 +16,8 @@ const (
 func ToName(r Repository, test *Test, openShiftVersion string) string {
 
 	variant := strings.ReplaceAll(openShiftVersion, ".", "")
-	suffix := fmt.Sprintf("-aws-ocp-%s", variant)
-	continuousSuffix := "-continuous"
+	suffix := fmt.Sprintf("-aws-%s", variant)
+	continuousSuffix := "-c"
 
 	maxCommandLength := maxNameLength - len(suffix) - len(continuousSuffix)
 	if len(test.Command) > maxCommandLength {
