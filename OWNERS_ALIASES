@@ -7,11 +7,11 @@ aliases:
   - lberk
   - matzew
   - mgencur
-  - nak3
   - openshift-cherrypick-robot
   - pierDipi
   - rhuss
   - skonto
+  - ReToCode
   serverless-reviewers:
   - alanfx
   - aliok
@@ -21,7 +21,7 @@ aliases:
   - lberk
   - matzew
   - mgencur
-  - nak3
   - pierDipi
   - rhuss
   - skonto
+  - ReToCode
