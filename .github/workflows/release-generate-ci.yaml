@@ -33,7 +33,7 @@ jobs:
           path: ./src/github.com/openshift-knative/hack
 
       - name: Setup Golang
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
           go-version-file: ./src/github.com/openshift-knative/hack/go.mod
 
