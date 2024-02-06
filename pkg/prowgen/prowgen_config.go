@@ -14,50 +14,50 @@ import (
 )
 
 type Repository struct {
-	Org                   string                                                      `json:"org" yaml:"org"`
-	Repo                  string                                                      `json:"repo" yaml:"repo"`
-	Promotion             Promotion                                                   `json:"promotion" yaml:"promotion"`
-	ImagePrefix           string                                                      `json:"imagePrefix" yaml:"imagePrefix"`
-	ImageNameOverrides    map[string]string                                           `json:"imageNameOverrides" yaml:"imageNameOverrides"`
-	SlackChannel          string                                                      `json:"slackChannel" yaml:"slackChannel"`
-	CanonicalGoRepository *string                                                     `json:"canonicalGoRepository" yaml:"canonicalGoRepository"`
-	E2ETests              []E2ETest                                                   `json:"e2e" yaml:"e2e"`
-	Dockerfiles           Dockerfiles                                                 `json:"dockerfiles" yaml:"dockerfiles"`
-	IgnoreConfigs         IgnoreConfigs                                               `json:"ignoreConfigs" yaml:"ignoreConfigs"`
-	CustomConfigs         []CustomConfigs                                             `json:"customConfigs" yaml:"customConfigs"`
-	Images                []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration `json:"images" yaml:"images"`
-	Tests                 []cioperatorapi.TestStepConfiguration                       `json:"tests" yaml:"tests"`
-	Resources             cioperatorapi.ResourceConfiguration                         `json:"resources" yaml:"resources"`
+	Org                   string                                                      `json:"org,omitempty" yaml:"org,omitempty"`
+	Repo                  string                                                      `json:"repo,omitempty" yaml:"repo,omitempty"`
+	Promotion             Promotion                                                   `json:"promotion,omitempty" yaml:"promotion,omitempty"`
+	ImagePrefix           string                                                      `json:"imagePrefix,omitempty" yaml:"imagePrefix,omitempty"`
+	ImageNameOverrides    map[string]string                                           `json:"imageNameOverrides,omitempty" yaml:"imageNameOverrides,omitempty"`
+	SlackChannel          string                                                      `json:"slackChannel,omitempty" yaml:"slackChannel,omitempty"`
+	CanonicalGoRepository *string                                                     `json:"canonicalGoRepository,omitempty" yaml:"canonicalGoRepository,omitempty"`
+	E2ETests              []E2ETest                                                   `json:"e2e,omitempty" yaml:"e2e,omitempty"`
+	Dockerfiles           Dockerfiles                                                 `json:"dockerfiles,omitempty" yaml:"dockerfiles,omitempty"`
+	IgnoreConfigs         IgnoreConfigs                                               `json:"ignoreConfigs,omitempty" yaml:"ignoreConfigs,omitempty"`
+	CustomConfigs         []CustomConfigs                                             `json:"customConfigs,omitempty" yaml:"customConfigs,omitempty"`
+	Images                []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration `json:"images,omitempty" yaml:"images,omitempty"`
+	Tests                 []cioperatorapi.TestStepConfiguration                       `json:"tests,omitempty" yaml:"tests,omitempty"`
+	Resources             cioperatorapi.ResourceConfiguration                         `json:"resources,omitempty" yaml:"resources,omitempty"`
 }
 
 type E2ETest struct {
-	Match        string            `json:"match" yaml:"match"`
-	OnDemand     bool              `json:"onDemand" yaml:"onDemand"`
-	IgnoreError  bool              `json:"ignoreError" yaml:"ignoreError"`
-	RunIfChanged string            `json:"runIfChanged" yaml:"runIfChanged"`
-	SkipCron     bool              `json:"skipCron" yaml:"skipCron"`
-	SkipImages   []string          `json:"skipImages" yaml:"skipImages"`
-	Timeout      *prowapi.Duration `json:"timeout" yaml:"timeout"`
+	Match        string            `json:"match,omitempty" yaml:"match,omitempty"`
+	OnDemand     bool              `json:"onDemand,omitempty" yaml:"onDemand,omitempty"`
+	IgnoreError  bool              `json:"ignoreError,omitempty" yaml:"ignoreError,omitempty"`
+	RunIfChanged string            `json:"runIfChanged,omitempty" yaml:"runIfChanged,omitempty"`
+	SkipCron     bool              `json:"skipCron,omitempty" yaml:"skipCron,omitempty"`
+	SkipImages   []string          `json:"skipImages,omitempty" yaml:"skipImages,omitempty"`
+	Timeout      *prowapi.Duration `json:"timeout,omitempty" yaml:"timeout,omitempty"`
 }
 
 type Dockerfiles struct {
-	Matches []string `json:"matches" yaml:"matches"`
+	Matches []string `json:"matches,omitempty" yaml:"matches,omitempty"`
 }
 
 type IgnoreConfigs struct {
-	Matches []string `json:"matches" yaml:"matches"`
+	Matches []string `json:"matches,omitempty" yaml:"matches,omitempty"`
 }
 
 type Promotion struct {
-	Namespace string
+	Namespace string `json:"namespace,omitempty" yaml:"namespace,omitempty"`
 }
 
 type CustomConfigs struct {
 	// Name will be used together with OpenShift version to generate a specific variant.
-	Name string `json:"name" yaml:"name"`
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
 	// ReleaseBuildConfiguration allows defining configuration manually. The final configuration
 	// is extended with images and test steps with dependencies.
-	ReleaseBuildConfiguration cioperatorapi.ReleaseBuildConfiguration `json:"releaseBuildConfiguration" yaml:"releaseBuildConfiguration"`
+	ReleaseBuildConfiguration cioperatorapi.ReleaseBuildConfiguration `json:"releaseBuildConfiguration,omitempty" yaml:"releaseBuildConfiguration,omitempty"`
 }
 
 func (r Repository) RepositoryDirectory() string {
@@ -65,21 +65,21 @@ func (r Repository) RepositoryDirectory() string {
 }
 
 type Branch struct {
-	OpenShiftVersions      []OpenShift `json:"openShiftVersions" yaml:"openShiftVersions"`
-	SkipE2EMatches         []string    `json:"skipE2EMatches" yaml:"skipE2EMatches"`
-	SkipDockerFilesMatches []string    `json:"skipDockerFilesMatches" yaml:"skipDockerFilesMatches"`
+	OpenShiftVersions      []OpenShift `json:"openShiftVersions,omitempty" yaml:"openShiftVersions,omitempty"`
+	SkipE2EMatches         []string    `json:"skipE2EMatches,omitempty" yaml:"skipE2EMatches,omitempty"`
+	SkipDockerFilesMatches []string    `json:"skipDockerFilesMatches,omitempty" yaml:"skipDockerFilesMatches,omitempty"`
 }
 
 type OpenShift struct {
-	Version               string `json:"version" yaml:"version"`
-	Cron                  string `json:"cron" yaml:"cron"`
-	OnDemand              bool   `json:"onDemand" yaml:"onDemand"`
-	GenerateCustomConfigs bool   `json:"generateCustomConfigs" yaml:"generateCustomConfigs"`
-	CandidateRelease      bool   `json:"candidateRelease" yaml:"candidateRelease"`
+	Version               string `json:"version,omitempty" yaml:"version,omitempty"`
+	Cron                  string `json:"cron,omitempty" yaml:"cron,omitempty"`
+	OnDemand              bool   `json:"onDemand,omitempty" yaml:"onDemand,omitempty"`
+	GenerateCustomConfigs bool   `json:"generateCustomConfigs,omitempty" yaml:"generateCustomConfigs,omitempty"`
+	CandidateRelease      bool   `json:"candidateRelease,omitempty" yaml:"candidateRelease,omitempty"`
 }
 
 type CommonConfig struct {
-	Branches map[string]Branch `json:"branches" yaml:"branches"`
+	Branches map[string]Branch `json:"branches,omitempty" yaml:"branches,omitempty"`
 }
 
 type ReleaseBuildConfigurationOption func(cfg *cioperatorapi.ReleaseBuildConfiguration) error

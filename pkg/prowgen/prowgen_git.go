@@ -7,7 +7,10 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
+
+	"github.com/coreos/go-semver/semver"
 )
 
 func GitCheckout(ctx context.Context, r Repository, branch string) error {
@@ -21,6 +24,53 @@ func GitMirror(ctx context.Context, r Repository) error {
 
 func GitClone(ctx context.Context, r Repository) error {
 	return gitClone(ctx, r, false)
+}
+
+func Branches(ctx context.Context, r Repository) ([]string, error) {
+	if err := GitMirror(ctx, r); err != nil {
+		return nil, err
+	}
+
+	// git --no-pager branch --list "release-v*"
+	branchesBytes, err := run(ctx, r, "git", "--no-pager", "branch", "--list", "release-v*")
+	if err != nil {
+		return nil, err
+	}
+
+	branchesList := string(branchesBytes)
+
+	sortedBranches := strings.Split(branchesList, "\n")
+	for i, b := range sortedBranches {
+		b = strings.TrimSpace(b)
+		sortedBranches[i] = b
+	}
+	slices.SortFunc(sortedBranches, CmpBranches)
+
+	log.Println("Branches for", r.RepositoryDirectory(), sortedBranches)
+
+	return sortedBranches, nil
+}
+
+func CmpBranches(a string, b string) int {
+	a = strings.ReplaceAll(a, "release-v", "")
+	b = strings.ReplaceAll(b, "release-v", "")
+	if strings.Count(a, ".") == 1 {
+		a += ".0"
+	}
+	if strings.Count(b, ".") == 1 {
+		b += ".0"
+	}
+	log.Printf("%q %q\n", a, b)
+	av, err := semver.NewVersion(a)
+	if err != nil {
+		return -1 // this is equivalent to ignoring branches that aren't parseable
+	}
+	bv, err := semver.NewVersion(b)
+	if err != nil {
+		return 1 // this is equivalent to ignoring branches that aren't parseable
+	}
+
+	return av.Compare(*bv)
 }
 
 func gitClone(ctx context.Context, r Repository, mirror bool) error {
