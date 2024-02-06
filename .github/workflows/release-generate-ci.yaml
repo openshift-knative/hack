@@ -83,7 +83,6 @@ jobs:
           branch: discover-serverless-ci
           title: "Add new midstream branches"
           commit-message: "Discover new branches"
-          push-to-fork: serverless-qe/release
           delete-branch: true
           body: |
             Discover new branches using openshift-knative/hack.
