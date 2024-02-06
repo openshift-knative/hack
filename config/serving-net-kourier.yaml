@@ -1,28 +1,27 @@
-# Full struct in cmd/prowgen/prowgen.go#Config
-
 config:
   branches:
-    "release-v1.10":
+    release-v1.10:
       openShiftVersions:
-        - version: "4.14"
-        - version: "4.11"
-    "release-v1.11":
+      - version: "4.14"
+      - version: "4.11"
+    release-v1.11:
       openShiftVersions:
-        - version: "4.14"
-        - version: "4.11"
-    "release-v1.12":
+      - version: "4.14"
+      - version: "4.11"
+    release-v1.12:
       openShiftVersions:
-        - version: "4.14"
-        - version: "4.11"
-    "release-v1.13":
+      - version: "4.14"
+      - version: "4.11"
+    release-v1.13:
       openShiftVersions:
-        - version: "4.14"
-        - version: "4.11"
-
+      - version: "4.14"
+      - version: "4.11"
 repositories:
-  - org: openshift-knative
-    repo: net-kourier
-    promotion:
-      namespace: openshift
-    imagePrefix: net-kourier
-    slackChannel: "#knative-serving-ci"
+- dockerfiles: {}
+  ignoreConfigs: {}
+  imagePrefix: net-kourier
+  org: openshift-knative
+  promotion:
+    namespace: openshift
+  repo: net-kourier
+  slackChannel: '#knative-serving-ci'
