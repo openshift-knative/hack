@@ -60,7 +60,6 @@ func CmpBranches(a string, b string) int {
 	if strings.Count(b, ".") == 1 {
 		b += ".0"
 	}
-	log.Printf("%q %q\n", a, b)
 	av, err := semver.NewVersion(a)
 	if err != nil {
 		return -1 // this is equivalent to ignoring branches that aren't parseable
