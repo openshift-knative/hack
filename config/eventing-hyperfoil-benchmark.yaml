@@ -1,18 +1,17 @@
-# Full struct in cmd/prowgen/prowgen.go#Config
-
 config:
   branches:
-    "main":
+    main:
       openShiftVersions:
-        - version: "4.14"
-
+      - version: "4.14"
 repositories:
-  - org: openshift-knative
-    repo: eventing-hyperfoil-benchmark
-    imagePrefix: knative-eventing-hyperfoil-benchmark
-    slackChannel: "#knative-eventing-ci"
-    e2e:
-      - match: ".*test-kafka-broker-upstream-.*"
-      - match: ".*test-kafka-broker-namespaced-midstream-.*"
-        onDemand: true
-
+- dockerfiles: {}
+  e2e:
+  - match: .*test-kafka-broker-upstream-.*
+  - match: .*test-kafka-broker-namespaced-midstream-.*
+    onDemand: true
+  ignoreConfigs: {}
+  imagePrefix: knative-eventing-hyperfoil-benchmark
+  org: openshift-knative
+  promotion: {}
+  repo: eventing-hyperfoil-benchmark
+  slackChannel: '#knative-eventing-ci'

@@ -30,9 +30,9 @@ import (
 
 // Config is the prowgen configuration file struct.
 type Config struct {
-	Repositories []Repository `json:"repositories" yaml:"repositories"`
+	Repositories []Repository `json:"repositories,omitempty" yaml:"repositories,omitempty"`
 
-	Config CommonConfig `json:"config" yaml:"config"`
+	Config CommonConfig `json:"config,omitempty" yaml:"config,omitempty"`
 }
 
 func Main() {

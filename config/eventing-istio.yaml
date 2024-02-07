@@ -1,34 +1,33 @@
-# Full struct in cmd/prowgen/prowgen.go#Config
-
 config:
   branches:
-    "release-v1.10":
+    release-next:
       openShiftVersions:
-        - version: "4.14"
-        - version: "4.11"
-    "release-v1.11":
+      - version: "4.14"
+      - version: "4.11"
+    release-v1.10:
       openShiftVersions:
-        - version: "4.14"
-        - version: "4.11"
-    "release-v1.12":
+      - version: "4.14"
+      - version: "4.11"
+    release-v1.11:
       openShiftVersions:
-        - version: "4.14"
-        - version: "4.11"
-    "release-v1.13":
+      - version: "4.14"
+      - version: "4.11"
+    release-v1.12:
       openShiftVersions:
-        - version: "4.14"
-        - version: "4.11"
-    "release-next":
+      - version: "4.14"
+      - version: "4.11"
+    release-v1.13:
       openShiftVersions:
-        - version: "4.14"
-        - version: "4.11"
-
+      - version: "4.14"
+      - version: "4.11"
 repositories:
-  - org: openshift-knative
-    repo: eventing-istio
-    promotion:
-      namespace: openshift
-    imagePrefix: knative-eventing-istio
-    slackChannel: "#knative-eventing-ci"
-    e2e:
-      - match: ".*e2e-tests$"
+- dockerfiles: {}
+  e2e:
+  - match: .*e2e-tests$
+  ignoreConfigs: {}
+  imagePrefix: knative-eventing-istio
+  org: openshift-knative
+  promotion:
+    namespace: openshift
+  repo: eventing-istio
+  slackChannel: '#knative-eventing-ci'

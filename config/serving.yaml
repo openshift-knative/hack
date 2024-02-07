@@ -1,68 +1,66 @@
-# Full struct in cmd/prowgen/prowgen.go#Config
-
 config:
   branches:
-    "release-v1.10":
+    release-next:
       openShiftVersions:
-        - version: "4.14"
-        - version: "4.11"
-    "release-v1.11":
-      openShiftVersions:
-        - version: "4.14"
-        - version: "4.11"
-    "release-v1.12":
-      openShiftVersions:
-        - version: "4.14"
-        - version: "4.11"
-    "release-v1.13":
-      openShiftVersions:
-        - version: "4.14"
-        - version: "4.11"
-    "release-next":
-      skipE2EMatches:
-        - "perf-tests$"
-        - ".*e2e-tls$"
+      - version: "4.14"
+      - version: "4.11"
       skipDockerFilesMatches:
-        - "openshift/ci-operator/knative-perf-images.*"
+      - openshift/ci-operator/knative-perf-images.*
+      skipE2EMatches:
+      - perf-tests$
+      - .*e2e-tls$
+    release-v1.10:
       openShiftVersions:
-        - version: "4.14"
-        - version: "4.11"
-
+      - version: "4.14"
+      - version: "4.11"
+    release-v1.11:
+      openShiftVersions:
+      - version: "4.14"
+      - version: "4.11"
+    release-v1.12:
+      openShiftVersions:
+      - version: "4.14"
+      - version: "4.11"
+    release-v1.13:
+      openShiftVersions:
+      - version: "4.14"
+      - version: "4.11"
 repositories:
-  - org: openshift-knative
-    repo: serving
-    promotion:
-      namespace: openshift
-    imagePrefix: knative-serving
-    imageNameOverrides:
-      migrate: storage-version-migration
-    slackChannel: "#knative-serving-ci"
-    e2e:
-      - match: ".*e2e$"
-        skipImages:
-            - "knative-serving-load-test"
-            - "knative-serving-dataplane-probe"
-            - "knative-serving-real-traffic-test"
-            - "knative-serving-reconciliation-delay"
-            - "knative-serving-rollout-probe"
-            - "knative-serving-scale-from-zero"
-      - match: ".*e2e-tls$"
-        skipImages:
-            - "knative-serving-load-test"
-            - "knative-serving-dataplane-probe"
-            - "knative-serving-real-traffic-test"
-            - "knative-serving-reconciliation-delay"
-            - "knative-serving-rollout-probe"
-            - "knative-serving-scale-from-zero"
-      - match: "perf-tests$"
-        onDemand: true
-    dockerfiles:
-      matches:
-        - "openshift/ci-operator/knative-images.*"
-        - "openshift/ci-operator/knative-test-images.*"
-        - "openshift/ci-operator/knative-perf-images.*"
-    resources:
-      '*':
-        requests:
-          cpu: 500m
-          memory: 4Gi
+- dockerfiles:
+    matches:
+    - openshift/ci-operator/knative-images.*
+    - openshift/ci-operator/knative-test-images.*
+    - openshift/ci-operator/knative-perf-images.*
+  e2e:
+  - match: .*e2e$
+    skipImages:
+    - knative-serving-load-test
+    - knative-serving-dataplane-probe
+    - knative-serving-real-traffic-test
+    - knative-serving-reconciliation-delay
+    - knative-serving-rollout-probe
+    - knative-serving-scale-from-zero
+  - match: .*e2e-tls$
+    skipImages:
+    - knative-serving-load-test
+    - knative-serving-dataplane-probe
+    - knative-serving-real-traffic-test
+    - knative-serving-reconciliation-delay
+    - knative-serving-rollout-probe
+    - knative-serving-scale-from-zero
+  - match: perf-tests$
+    onDemand: true
+  ignoreConfigs: {}
+  imageNameOverrides:
+    migrate: storage-version-migration
+  imagePrefix: knative-serving
+  org: openshift-knative
+  promotion:
+    namespace: openshift
+  repo: serving
+  resources:
+    '*':
+      requests:
+        cpu: 500m
+        memory: 4Gi
+  slackChannel: '#knative-serving-ci'

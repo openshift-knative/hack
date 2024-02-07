@@ -1,0 +1,54 @@
+---
+name: Discover branches
+
+on:
+  pull_request:
+    branches:
+      - '**'
+  push:
+    branches:
+      - 'main'
+  schedule:
+    - cron: "0 5 * * *" # Daily at 05:00.
+  workflow_dispatch: # Manual workflow trigger
+
+jobs:
+  discover-branches:
+    name: generate-ci
+    runs-on: ubuntu-latest
+    env:
+      GOPATH: ${{ github.workspace }}
+    steps:
+
+      - name: Checkout openshift-knative/hack
+        uses: actions/checkout@v3
+        with:
+          path: ./src/github.com/openshift-knative/hack
+
+      - name: Setup Golang
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: ./src/github.com/openshift-knative/hack/go.mod
+
+      - name: Configure Git user
+        run: |
+          git config --global user.email "serverless-support@redhat.com"
+          git config --global user.name "OpenShift Serverless"
+
+      - name: Discover branches
+        working-directory: ./src/github.com/openshift-knative/hack
+        run: make discover-branches ARGS="--config config/"
+
+      - name: Create Discovery Pull Request
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          path: ./src/github.com/openshift-knative/hack
+          base: main
+          branch: discover-serverless-ci
+          title: "Add new midstream branches"
+          commit-message: "Discover new branches"
+          delete-branch: true
+          body: |
+            Discover new branches using openshift-knative/hack.

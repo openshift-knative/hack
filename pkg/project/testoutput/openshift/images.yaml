@@ -1,3 +1,4 @@
+github.com/openshift-knative/hack/cmd/discover: registry.ci.openshift.org/openshift/knative-discover:main
 github.com/openshift-knative/hack/cmd/generate: hello
 github.com/openshift-knative/hack/cmd/prowcopy: registry.ci.openshift.org/openshift/knative-prowcopy:main
 github.com/openshift-knative/hack/cmd/prowgen: registry.ci.openshift.org/openshift/knative-prowgen:main
