@@ -68,21 +68,3 @@ jobs:
           delete-branch: true
           body: |
             Sync Serverless CI using openshift-knative/hack.
-
-      - name: Discover branches
-        working-directory: ./src/github.com/openshift-knative/hack
-        run: make discover-branches ARGS="--config config/"
-
-      - name: Create Discovery Pull Request
-        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main'
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
-          path: ./src/github.com/openshift-knative/hack
-          base: main
-          branch: discover-serverless-ci
-          title: "Add new midstream branches"
-          commit-message: "Discover new branches"
-          delete-branch: true
-          body: |
-            Discover new branches using openshift-knative/hack.
