@@ -17,13 +17,14 @@ limitations under the License.
 package config
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
 	"time"
 
-	pipelinev1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	pipelinev1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -113,7 +114,9 @@ type JobBase struct {
 	// Spec is the Kubernetes pod spec used if Agent is kubernetes.
 	Spec *v1.PodSpec `json:"spec,omitempty"`
 	// PipelineRunSpec is the tekton pipeline spec used if Agent is tekton-pipeline.
-	PipelineRunSpec *pipelinev1alpha1.PipelineRunSpec `json:"pipeline_run_spec,omitempty"`
+	PipelineRunSpec *pipelinev1beta1.PipelineRunSpec `json:"pipeline_run_spec,omitempty"`
+	// TektonPipelineRunSpec is the versioned tekton pipeline spec used if Agent is tekton-pipeline.
+	TektonPipelineRunSpec *prowapi.TektonPipelineRunSpec `json:"tekton_pipeline_run_spec,omitempty"`
 	// Annotations are unused by prow itself, but provide a space to configure other automation.
 	Annotations map[string]string `json:"annotations,omitempty"`
 	// ReporterConfig provides the option to configure reporting on job level
@@ -148,6 +151,30 @@ func (jb JobBase) GetAnnotations() map[string]string {
 	return jb.Annotations
 }
 
+func (jb JobBase) HasPipelineRunSpec() bool {
+	if jb.TektonPipelineRunSpec != nil && jb.TektonPipelineRunSpec.V1Beta1 != nil {
+		return true
+	}
+	if jb.PipelineRunSpec != nil {
+		return true
+	}
+	return false
+}
+
+func (jb JobBase) GetPipelineRunSpec() (*pipelinev1beta1.PipelineRunSpec, error) {
+	var found *pipelinev1beta1.PipelineRunSpec
+	if jb.TektonPipelineRunSpec != nil {
+		found = jb.TektonPipelineRunSpec.V1Beta1
+	}
+	if found == nil && jb.PipelineRunSpec != nil {
+		found = jb.PipelineRunSpec
+	}
+	if found == nil {
+		return nil, errors.New("pipeline run spec not found")
+	}
+	return found, nil
+}
+
 // +k8s:deepcopy-gen=true
 
 // Presubmit runs on PRs.
@@ -175,7 +202,7 @@ type Presubmit struct {
 	// Brancher matches.
 	// This is used when a prowjob is so expensive that it's not ideal to run on
 	// every single push from all PRs.
-	RunBeforeMerge bool `json:"run_before_merge"`
+	RunBeforeMerge bool `json:"run_before_merge,omitempty"`
 
 	Brancher
 
@@ -352,15 +379,15 @@ func (br Brancher) Intersects(other Brancher) bool {
 		return true
 	}
 	if len(br.Branches) > 0 {
-		baseBranches := sets.NewString(br.Branches...)
+		baseBranches := sets.New[string](br.Branches...)
 		if len(other.Branches) > 0 {
-			otherBranches := sets.NewString(other.Branches...)
+			otherBranches := sets.New[string](other.Branches...)
 			return baseBranches.Intersection(otherBranches).Len() > 0
 		}
 
 		// Actually test our branches against the other brancher - if there are regex skip lists, simple comparison
 		// is insufficient.
-		for _, b := range baseBranches.List() {
+		for _, b := range sets.List(baseBranches) {
 			if other.ShouldRun(b) {
 				return true
 			}

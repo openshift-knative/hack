@@ -170,7 +170,9 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 						Candidate: &cioperatorapi.Candidate{
 							Version: ov.Version,
 							Stream:  "nightly",
-							Product: "ocp",
+							ReleaseDescriptor: cioperatorapi.ReleaseDescriptor{
+								Product: "ocp",
+							},
 						}},
 				}
 			}
@@ -304,11 +306,15 @@ func withNamePromotion(r Repository, branchName string) ReleaseBuildConfiguratio
 			ns = r.Promotion.Namespace
 		}
 		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
-			Namespace: ns,
-			Name:      strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
-			AdditionalImages: map[string]string{
-				// Add source image
-				transformLegacyKnativeSourceImageName(r): "src",
+			Targets: []cioperatorapi.PromotionTarget{
+				{
+					Namespace: ns,
+					Name:      strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
+					AdditionalImages: map[string]string{
+						// Add source image
+						transformLegacyKnativeSourceImageName(r): "src",
+					},
+				},
 			},
 		}
 		return nil
@@ -322,12 +328,16 @@ func withTagPromotion(r Repository, branchName string) ReleaseBuildConfiguration
 			ns = r.Promotion.Namespace
 		}
 		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
-			Namespace:   ns,
-			Tag:         strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
-			TagByCommit: false, // TODO: revisit this later
-			AdditionalImages: map[string]string{
-				// Add source image
-				transformLegacyKnativeSourceImageName(r): "src",
+			Targets: []cioperatorapi.PromotionTarget{
+				{
+					Namespace:   ns,
+					Tag:         strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
+					TagByCommit: false, // TODO: revisit this later
+					AdditionalImages: map[string]string{
+						// Add source image
+						transformLegacyKnativeSourceImageName(r): "src",
+					},
+				},
 			},
 		}
 		return nil

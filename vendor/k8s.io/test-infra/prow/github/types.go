@@ -586,10 +586,17 @@ type RequiredPullRequestReviews struct {
 	DismissStaleReviews          bool                   `json:"dismiss_stale_reviews"`
 	RequireCodeOwnerReviews      bool                   `json:"require_code_owner_reviews"`
 	RequiredApprovingReviewCount int                    `json:"required_approving_review_count"`
+	BypassRestrictions           *BypassRestrictions    `json:"bypass_pull_request_allowances"`
 }
 
 // DismissalRestrictions exposes restrictions in github for an activity to people/teams.
 type DismissalRestrictions struct {
+	Users []User `json:"users,omitempty"`
+	Teams []Team `json:"teams,omitempty"`
+}
+
+// BypassRestrictions exposes bypass option in github for a pull request to people/teams.
+type BypassRestrictions struct {
 	Users []User `json:"users,omitempty"`
 	Teams []Team `json:"teams,omitempty"`
 }
@@ -634,6 +641,7 @@ type RequiredPullRequestReviewsRequest struct {
 	DismissStaleReviews          bool                         `json:"dismiss_stale_reviews"`
 	RequireCodeOwnerReviews      bool                         `json:"require_code_owner_reviews"`
 	RequiredApprovingReviewCount int                          `json:"required_approving_review_count"`
+	BypassRestrictions           BypassRestrictionsRequest    `json:"bypass_pull_request_allowances"`
 }
 
 // DismissalRestrictionsRequest tells github to restrict an activity to people/teams.
@@ -642,6 +650,18 @@ type RequiredPullRequestReviewsRequest struct {
 // This is needed by dismissal_restrictions to distinguish
 // do not restrict (empty object) and restrict everyone (nil user/teams list)
 type DismissalRestrictionsRequest struct {
+	// Users is a list of user logins
+	Users *[]string `json:"users,omitempty"`
+	// Teams is a list of team slugs
+	Teams *[]string `json:"teams,omitempty"`
+}
+
+// BypassRestrictionsRequest tells github to restrict PR bypass activity to people/teams.
+//
+// Use *[]string in order to distinguish unset and empty list.
+// This is needed by bypass_pull_request_allowances to distinguish
+// do not restrict (empty object) and restrict everyone (nil user/teams list)
+type BypassRestrictionsRequest struct {
 	// Users is a list of user logins
 	Users *[]string `json:"users,omitempty"`
 	// Teams is a list of team slugs
@@ -749,10 +769,46 @@ type IssueEvent struct {
 // ListedIssueEvent represents an issue event from the events API (not from a webhook payload).
 // https://developer.github.com/v3/issues/events/
 type ListedIssueEvent struct {
-	Event     IssueEventAction `json:"event"` // This is the same as IssueEvent.Action.
-	Actor     User             `json:"actor"`
-	Label     Label            `json:"label"`
-	CreatedAt time.Time        `json:"created_at"`
+	ID  int64  `json:"id,omitempty"`
+	URL string `json:"url,omitempty"`
+
+	// The User that generated this event.
+	Actor User `json:"actor"`
+
+	// This is the same as IssueEvent.Action
+	Event IssueEventAction `json:"event"`
+
+	CreatedAt time.Time `json:"created_at"`
+	Issue     Issue     `json:"issue,omitempty"`
+
+	// Only present on certain events.
+	Assignee          User            `json:"assignee,omitempty"`
+	Assigner          User            `json:"assigner,omitempty"`
+	CommitID          string          `json:"commit_id,omitempty"`
+	Milestone         Milestone       `json:"milestone,omitempty"`
+	Label             Label           `json:"label"`
+	Rename            Rename          `json:"rename,omitempty"`
+	LockReason        string          `json:"lock_reason,omitempty"`
+	ProjectCard       ProjectCard     `json:"project_card,omitempty"`
+	DismissedReview   DismissedReview `json:"dismissed_review,omitempty"`
+	RequestedReviewer User            `json:"requested_reviewer,omitempty"`
+	ReviewRequester   User            `json:"review_requester,omitempty"`
+}
+
+// Rename contains details for 'renamed' events.
+type Rename struct {
+	From string `json:"from,omitempty"`
+	To   string `json:"to,omitempty"`
+}
+
+// DismissedReview represents details for 'dismissed_review' events.
+type DismissedReview struct {
+	// State represents the state of the dismissed review.DismissedReview
+	// Possible values are: "commented", "approved", and "changes_requested".
+	State             string `json:"state,omitempty"`
+	ReviewID          int64  `json:"review_id,omitempty"`
+	DismissalMessage  string `json:"dismissal_message,omitempty"`
+	DismissalCommitID string `json:"dismissal_commit_id,omitempty"`
 }
 
 // IssueCommentEventAction enumerates the triggers for this
@@ -1099,8 +1155,9 @@ type Membership struct {
 type Organization struct {
 	// Login has the same meaning as Name, but it's more reliable to use as Name can sometimes be empty,
 	// see https://developer.github.com/v3/orgs/#list-organizations
-	Login string `json:"login"`
-	Id    int    `json:"id"`
+	Login  string `json:"login"`
+	Id     int    `json:"id"`
+	NodeId string `json:"node_id"`
 	// BillingEmail holds private billing address
 	BillingEmail string `json:"billing_email"`
 	Company      string `json:"company"`
@@ -1205,6 +1262,21 @@ const (
 	GenericCommentActionDeleted GenericCommentEventAction = "deleted" // "dismissed"
 )
 
+// GeneralizeCommentAction normalizes the action string to a GenericCommentEventAction or returns ""
+// if the action is unrelated to the comment text. (For example a PR 'label' action.)
+func GeneralizeCommentAction(action string) GenericCommentEventAction {
+	switch action {
+	case "created", "opened", "submitted":
+		return GenericCommentActionCreated
+	case "edited":
+		return GenericCommentActionEdited
+	case "deleted", "dismissed":
+		return GenericCommentActionDeleted
+	}
+	// The action is not related to the text body.
+	return ""
+}
+
 // GenericCommentEvent is a fake event type that is instantiated for any github event that contains
 // comment like content.
 // The specific events that are also handled as GenericCommentEvents are:
@@ -1240,6 +1312,7 @@ type GenericCommentEvent struct {
 type Milestone struct {
 	Title  string `json:"title"`
 	Number int    `json:"number"`
+	State  string `json:"state"`
 }
 
 // RepositoryCommit represents a commit in a repo.
@@ -1550,4 +1623,99 @@ type Workflow struct {
 	State     string    `json:"state"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// RegistryPackageEvent holds information about an `registry_package` GitHub webhook event.
+// see https://docs.github.com/en/webhooks/webhook-events-and-payloads#registry_package
+type RegistryPackageEvent struct {
+	Action          string          `json:"action"`
+	RegistryPackage RegistryPackage `json:"registry_package"`
+	Repo            *Repo           `json:"repository"`
+	Organization    Organization    `json:"organization"`
+	Sender          User            `json:"sender"`
+
+	// GUID is included in the header of the request received by GitHub.
+	GUID string
+}
+
+type RegistryPackage struct {
+	ID             int            `json:"id"`
+	Name           string         `json:"name"`
+	Namespace      string         `json:"namespace"`
+	Description    string         `json:"description"`
+	Ecosystem      string         `json:"ecosystem"`
+	PackageType    string         `json:"package_type"`
+	HTMLURL        string         `json:"html_url"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+	Owner          User           `json:"owner"`
+	Registry       Registry       `json:"registry"`
+	PackageVersion PackageVersion `json:"package_version"`
+}
+
+type Registry struct {
+	AboutURL string `json:"about_url"`
+	Name     string `json:"name"`
+	Type     string `json:"type"`
+	URL      string `json:"url"`
+	Vendor   string `json:"vendor"`
+}
+
+type PackageVersion struct {
+	ID                  int               `json:"id"`
+	Version             string            `json:"version"`
+	Name                string            `json:"name"`
+	Description         string            `json:"description"`
+	Summary             string            `json:"summary"`
+	Manifest            string            `json:"manifest"`
+	HTMLURL             string            `json:"html_url"`
+	TargetCommitish     string            `json:"target_commitish"`
+	TargetOid           string            `json:"target_oid"`
+	CreatedAt           time.Time         `json:"created_at"`
+	UpdatedAt           time.Time         `json:"updated_at"`
+	Metadata            []interface{}     `json:"metadata"`
+	ContainerMetadata   ContainerMetadata `json:"container_metadata"`
+	PackageFiles        []interface{}     `json:"package_files"`
+	Author              User              `json:"author"`
+	InstallationCommand string            `json:"installation_command"`
+	PackageURL          string            `json:"package_url"`
+}
+
+type ContainerMetadata struct {
+	Tag      Tag      `json:"tag"`
+	Labels   Labels   `json:"labels"`
+	Manifest Manifest `json:"manifest"`
+}
+type Tag struct {
+	Name   string `json:"name"`
+	Digest string `json:"digest"`
+}
+
+type Labels struct {
+	Description string `json:"description"`
+	Source      string `json:"source"`
+	Revision    string `json:"revision"`
+	ImageURL    string `json:"image_url"`
+	Licenses    string `json:"licenses"`
+}
+
+type Manifest struct {
+	Digest    string   `json:"digest"`
+	MediaType string   `json:"media_type"`
+	URI       string   `json:"uri"`
+	Size      int      `json:"size"`
+	Config    Config   `json:"config"`
+	Layers    []Layers `json:"layers"`
+}
+
+type Config struct {
+	Digest    string `json:"digest"`
+	MediaType string `json:"media_type"`
+	Size      int    `json:"size"`
+}
+
+type Layers struct {
+	Digest    string `json:"digest"`
+	MediaType string `json:"media_type"`
+	Size      int    `json:"size"`
 }

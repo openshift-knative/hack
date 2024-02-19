@@ -155,16 +155,21 @@ func getJobConfig(match string, c Config) (*prowgen.ReleaseBuildConfiguration, e
 		return nil, err
 	}
 
+	initialConfig, _ := json.MarshalIndent(jobConfig, "", "  ")
+	log.Println("Initial configuration\n", string(initialConfig))
+
 	jobConfig.Path = strings.Replace(match, c.FromBranch, c.Branch, 1)
 	jobConfig.Branch = c.Branch
 	jobConfig.Metadata.Branch = c.Branch
 
 	if jobConfig.PromotionConfiguration != nil && c.Tag != "" {
-		if jobConfig.PromotionConfiguration.Name != "" {
-			jobConfig.PromotionConfiguration.Name = c.Tag
-		}
-		if jobConfig.PromotionConfiguration.Tag != "" {
-			jobConfig.PromotionConfiguration.Tag = c.Tag
+		for i := range jobConfig.PromotionConfiguration.Targets {
+			if jobConfig.PromotionConfiguration.Targets[i].Name != "" {
+				jobConfig.PromotionConfiguration.Targets[i].Name = c.Tag
+			}
+			if jobConfig.PromotionConfiguration.Targets[i].Tag != "" {
+				jobConfig.PromotionConfiguration.Targets[i].Tag = c.Tag
+			}
 		}
 	}
 

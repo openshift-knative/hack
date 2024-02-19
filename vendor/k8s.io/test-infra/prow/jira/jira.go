@@ -94,6 +94,7 @@ type Client interface {
 	JiraURL() string
 	Used() bool
 	WithFields(fields logrus.Fields) Client
+	GetProjectVersions(project string) ([]*jira.Version, error)
 }
 
 type BasicAuthGenerator func() (username, password string)
@@ -535,6 +536,12 @@ func unsetProblematicFields(issue *jira.Issue, responseBody string) (*jira.Issue
 	for field := range processedResponse.Errors {
 		delete(fieldsMap, field)
 	}
+	// Remove null value "customfields_" because they cause the server to return: 500 Internal Server Error
+	for field, value := range fieldsMap {
+		if strings.HasPrefix(field, "customfield_") && value == nil {
+			delete(fieldsMap, field)
+		}
+	}
 	issueMap["fields"] = fieldsMap
 	// turn back into jira.Issue type
 	marshalledFixedIssue, err := json.Marshal(issueMap)
@@ -637,7 +644,7 @@ func (bart *basicAuthRoundtripper) RoundTrip(req *http.Request) (*http.Response,
 	return bart.upstream.RoundTrip(req2)
 }
 
-var knownAuthTypes = sets.NewString("bearer", "basic", "negotiate")
+var knownAuthTypes = sets.New[string]("bearer", "basic", "negotiate")
 
 // maskAuthorizationHeader masks credential content from authorization headers
 // See https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Authorization
@@ -839,4 +846,21 @@ func GetIssueTargetVersion(issue *jira.Issue) (*[]*jira.Version, error) {
 
 func (jc *client) GetIssueTargetVersion(issue *jira.Issue) (*[]*jira.Version, error) {
 	return GetIssueTargetVersion(issue)
+}
+
+// GetProjectVersions returns the list of all the Versions defined in a Project
+func (jc *client) GetProjectVersions(project string) ([]*jira.Version, error) {
+	req, err := jc.upstream.NewRequest("GET", "rest/api/2/project/"+project+"/versions", nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to construct request: %w", err)
+	}
+	versions := []*jira.Version{}
+	resp, err := jc.upstream.Do(req, &versions)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+	if err != nil {
+		return nil, HandleJiraError(resp, err)
+	}
+	return versions, nil
 }

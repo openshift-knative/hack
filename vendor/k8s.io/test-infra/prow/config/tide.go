@@ -17,8 +17,11 @@ limitations under the License.
 package config
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"text/template"
@@ -34,6 +37,122 @@ import (
 
 // TideQueries is a TideQuery slice.
 type TideQueries []TideQuery
+
+type TideBranchMergeType struct {
+	MergeType types.PullRequestMergeType
+	Regexpr   *regexp.Regexp
+}
+
+func (tbmt TideBranchMergeType) Match(branch string) bool {
+	return tbmt.Regexpr.MatchString(branch)
+}
+
+func (tbmt TideBranchMergeType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(tbmt.MergeType)
+}
+
+func (tbmt *TideBranchMergeType) UnmarshalJSON(b []byte) error {
+	return json.Unmarshal(b, &tbmt.MergeType)
+}
+
+type TideRepoMergeType struct {
+	Branches  map[string]TideBranchMergeType
+	MergeType types.PullRequestMergeType
+}
+
+// When TideRepoMergeType.MergeType is present, unmarshal into:
+//
+//	kubernetes: squash
+//
+// when TideRepoMergeType.Branches is not empty, unmarshal into:
+//
+//	kubernetes:
+//	  main: squash
+func (trmt TideRepoMergeType) MarshalJSON() ([]byte, error) {
+	if trmt.MergeType != "" {
+		return json.Marshal(trmt.MergeType)
+	}
+	if trmt.Branches == nil || len(trmt.Branches) == 0 {
+		return json.Marshal("")
+	}
+	return json.Marshal(trmt.Branches)
+}
+
+// Full configuration:
+//
+//	test-infra:
+//	  main: merge
+//
+// unmarshal into map[string][TideBranchMergeType]
+//
+// Repo-wide configuration:
+//
+//	test-infra: merge
+//
+// unmarshal into types.PullRequestMergeType
+func (trmt *TideRepoMergeType) UnmarshalJSON(b []byte) error {
+	var mt types.PullRequestMergeType
+	if err := json.Unmarshal(b, &mt); err == nil {
+		trmt.MergeType = mt
+		return nil
+	}
+	var branches map[string]TideBranchMergeType
+	if err := json.Unmarshal(b, &branches); err != nil {
+		return err
+	}
+	trmt.Branches = branches
+	return nil
+}
+
+type TideOrgMergeType struct {
+	Repos     map[string]TideRepoMergeType
+	MergeType types.PullRequestMergeType
+}
+
+// When TideOrgMergeType.MergeType is present, unmarshal into:
+//
+//	kubernetes: squash
+//
+// when TideOrgMergeType.Repos is not empty, unmarshal into:
+//
+//	kubernetes:
+//	  test-infra: squash
+func (tomt TideOrgMergeType) MarshalJSON() ([]byte, error) {
+	if tomt.MergeType != "" {
+		return json.Marshal(tomt.MergeType)
+	}
+	if tomt.Repos == nil || len(tomt.Repos) == 0 {
+		return json.Marshal("")
+	}
+	return json.Marshal(tomt.Repos)
+}
+
+// Org-wide configuration:
+//
+//	kubernetes: merge
+//
+// unmarshal into types.PullRequestMergeType.
+//
+// Full configuration:
+//
+//	kubernetes:
+//	  test-infra:
+//	    main: merge
+//
+// unmarshal into map[string][TideRepoMergeType]:
+func (tomt *TideOrgMergeType) UnmarshalJSON(b []byte) error {
+	var mt types.PullRequestMergeType
+	if err := json.Unmarshal(b, &mt); err == nil {
+		tomt.MergeType = mt
+		return nil
+	}
+	var repos map[string]TideRepoMergeType
+	if err := json.Unmarshal(b, &repos); err != nil {
+		return err
+	}
+	tomt.Repos = repos
+	return nil
+}
 
 // TideContextPolicy configures options about how to handle various contexts.
 type TideContextPolicy struct {
@@ -115,7 +234,7 @@ type TideGitHubConfig struct {
 
 	// A key/value pair of an org/repo as the key and merge method to override
 	// the default method of merge. Valid options are squash, rebase, and merge.
-	MergeType map[string]types.PullRequestMergeType `json:"merge_method,omitempty"`
+	MergeType map[string]TideOrgMergeType `json:"merge_method,omitempty"`
 
 	// A key/value pair of an org/repo as the key and Go template to override
 	// the default merge commit title and/or message. Template is passed the
@@ -246,16 +365,98 @@ func (t *Tide) BatchSizeLimit(repo OrgRepo) int {
 // MergeMethod returns the merge method to use for a repo. The default of merge is
 // returned when not overridden.
 func (t *Tide) MergeMethod(repo OrgRepo) types.PullRequestMergeType {
-	v, ok := t.MergeType[repo.String()]
-	if !ok {
-		if ov, found := t.MergeType[repo.Org]; found {
-			return ov
-		}
+	return t.OrgRepoBranchMergeMethod(repo, "")
+}
 
-		return types.MergeMerge
+// OrgRepoBranchMergeMethod returns the merge method to use for a given triple: org, repo, branch.
+// The following matching criteria apply, the priority goes from the highest to the lowest:
+//
+//  1. kubernetes/test-infra@main: rebase       org/repo@branch shorthand
+//
+//  2. kubernetes:
+//     test-infra:
+//     ma(ster|in): rebase                  branch level regex
+//
+//  3. kubernetes/test-infra: rebase            org/repo shorthand
+//
+//  4. kubernetes:
+//     test-infra: rebase                     repo-wide config
+//
+//  5. kubernetes: rebase                       org shorthand
+//
+//  6. default to "merge"
+func (t *Tide) OrgRepoBranchMergeMethod(orgRepo OrgRepo, branch string) types.PullRequestMergeType {
+	isOrgSet, isRepoSet, isBranchSet := orgRepo.Org != "", orgRepo.Repo != "", branch != ""
+	var orgFound, repoFound bool
+
+	// The repository to look for can either be provided as an input or the "*" wildcard
+	repo := orgRepo.Repo
+
+	// Check if the org exists
+	if isOrgSet {
+		_, orgFound = t.MergeType[orgRepo.Org]
 	}
 
-	return v
+	// Check if the repo exists
+	if isOrgSet && isRepoSet && orgFound {
+		_, repoFound = t.MergeType[orgRepo.Org].Repos[orgRepo.Repo]
+		_, wildcardRepoFound := t.MergeType[orgRepo.Org].Repos["*"]
+		if !repoFound && wildcardRepoFound {
+			repoFound = true
+			repo = "*"
+		}
+	}
+
+	// 1. "$org/$repo@$branch" shorthand
+	if isOrgSet && isRepoSet && isBranchSet {
+		orgRepoBranchShorthand := fmt.Sprintf("%s/%s@%s", orgRepo.Org, orgRepo.Repo, branch)
+		if orgRepoBranch, found := t.MergeType[orgRepoBranchShorthand]; found && orgRepoBranch.MergeType != "" {
+			return orgRepoBranch.MergeType
+		}
+	}
+
+	// 2. Branch level regex match
+	if orgFound && repoFound {
+		branches := t.MergeType[orgRepo.Org].Repos[repo].Branches
+		keys := make([]string, 0, len(branches))
+
+		for k := range branches {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+
+		for _, key := range keys {
+			branchConfig := branches[key]
+			if branchConfig.Regexpr.MatchString(branch) {
+				return branchConfig.MergeType
+			}
+		}
+	}
+
+	// 3. "$org/$repo" shorthand
+	if isOrgSet && isRepoSet {
+		orgRepoShorthand := fmt.Sprintf("%s/%s", orgRepo.Org, orgRepo.Repo)
+		if orgRepo, found := t.MergeType[orgRepoShorthand]; found && orgRepo.MergeType != "" {
+			return orgRepo.MergeType
+		}
+	}
+
+	// 4. Repo-wide match
+	if orgFound && repoFound {
+		if t.MergeType[orgRepo.Org].Repos[repo].MergeType != "" {
+			return t.MergeType[orgRepo.Org].Repos[repo].MergeType
+		}
+	}
+
+	// 5. "$org" shorthand
+	if orgFound {
+		if t.MergeType[orgRepo.Org].MergeType != "" {
+			return t.MergeType[orgRepo.Org].MergeType
+		}
+	}
+
+	// 6. Default
+	return types.MergeMerge
 }
 
 // MergeCommitTemplate returns a struct with Go template string(s) or nil
@@ -311,14 +512,14 @@ type TideQuery struct {
 }
 
 func (q TideQuery) TenantIDs(cfg Config) []string {
-	res := sets.String{}
+	res := sets.Set[string]{}
 	for _, org := range q.Orgs {
 		res.Insert(cfg.GetProwJobDefault(org, "*").TenantID)
 	}
 	for _, repo := range q.Repos {
 		res.Insert(cfg.GetProwJobDefault(repo, "*").TenantID)
 	}
-	return res.List()
+	return sets.List(res)
 }
 
 // tideQueryConfig contains the subset of attributes by which we de-duplicate
@@ -332,6 +533,7 @@ type tideQueryConfig struct {
 	MissingLabels          []string
 	Milestone              string
 	ReviewApprovedRequired bool
+	TenantIDs              []string
 }
 
 type tideQueryTarget struct {
@@ -372,7 +574,11 @@ func (tq *TideQuery) constructQuery() (map[string][]string, string) {
 		queryString = append(queryString, fmt.Sprintf("base:\"%s\"", b))
 	}
 	for _, l := range tq.Labels {
-		queryString = append(queryString, fmt.Sprintf("label:\"%s\"", l))
+		var orOperands []string
+		for _, alt := range strings.Split(l, ",") {
+			orOperands = append(orOperands, fmt.Sprintf("\"%s\"", alt))
+		}
+		queryString = append(queryString, fmt.Sprintf("label:%s", strings.Join(orOperands, ",")))
 	}
 	for _, l := range tq.MissingLabels {
 		queryString = append(queryString, fmt.Sprintf("-label:\"%s\"", l))
@@ -454,11 +660,11 @@ func reposInOrg(org string, repos []string) []string {
 // OrgExceptionsAndRepos determines which orgs and repos a set of queries cover.
 // Output is returned as a mapping from 'included org'->'repos excluded in the org'
 // and a set of included repos.
-func (tqs TideQueries) OrgExceptionsAndRepos() (map[string]sets.String, sets.String) {
-	orgs := make(map[string]sets.String)
+func (tqs TideQueries) OrgExceptionsAndRepos() (map[string]sets.Set[string], sets.Set[string]) {
+	orgs := make(map[string]sets.Set[string])
 	for i := range tqs {
 		for _, org := range tqs[i].Orgs {
-			applicableRepos := sets.NewString(reposInOrg(org, tqs[i].ExcludedRepos)...)
+			applicableRepos := sets.New[string](reposInOrg(org, tqs[i].ExcludedRepos)...)
 			if excepts, ok := orgs[org]; !ok {
 				// We have not seen this org so the exceptions are just applicable
 				// members of 'excludedRepos'.
@@ -470,7 +676,7 @@ func (tqs TideQueries) OrgExceptionsAndRepos() (map[string]sets.String, sets.Str
 			}
 		}
 	}
-	repos := sets.NewString()
+	repos := sets.New[string]()
 	for i := range tqs {
 		repos.Insert(tqs[i].Repos...)
 	}
@@ -529,8 +735,8 @@ func (qm *QueryMap) ForRepo(repo OrgRepo) TideQueries {
 // * a branch that is in both included and excluded branch set.
 func (tq *TideQuery) Validate() error {
 	duplicates := func(field string, list []string) error {
-		dups := sets.NewString()
-		seen := sets.NewString()
+		dups := sets.New[string]()
+		seen := sets.New[string]()
 		for _, elem := range list {
 			if seen.Has(elem) {
 				dups.Insert(elem)
@@ -542,10 +748,10 @@ func (tq *TideQuery) Validate() error {
 		if dupCount == 0 {
 			return nil
 		}
-		return fmt.Errorf("%q contains %d duplicate entries: %s", field, dupCount, strings.Join(dups.List(), ", "))
+		return fmt.Errorf("%q contains %d duplicate entries: %s", field, dupCount, strings.Join(sets.List(dups), ", "))
 	}
 
-	orgs := sets.NewString()
+	orgs := sets.New[string]()
 	for o := range tq.Orgs {
 		if strings.Contains(tq.Orgs[o], "/") {
 			return fmt.Errorf("orgs[%d]: %q contains a '/' which is not valid", o, tq.Orgs[o])
@@ -590,8 +796,8 @@ func (tq *TideQuery) Validate() error {
 		return err
 	}
 
-	if invalids := sets.NewString(tq.Labels...).Intersection(sets.NewString(tq.MissingLabels...)); len(invalids) > 0 {
-		return fmt.Errorf("the labels: %q are both required and forbidden", invalids.List())
+	if invalids := sets.New[string](tq.Labels...).Intersection(sets.New[string](tq.MissingLabels...)); len(invalids) > 0 {
+		return fmt.Errorf("the labels: %q are both required and forbidden", sets.List(invalids))
 	}
 	if err := duplicates("labels", tq.Labels); err != nil {
 		return err
@@ -615,14 +821,14 @@ func (tq *TideQuery) Validate() error {
 
 // Validate returns an error if any contexts are listed more than once in the config.
 func (cp *TideContextPolicy) Validate() error {
-	if inter := sets.NewString(cp.RequiredContexts...).Intersection(sets.NewString(cp.OptionalContexts...)); inter.Len() > 0 {
-		return fmt.Errorf("contexts %s are defined as required and optional", strings.Join(inter.List(), ", "))
+	if inter := sets.New[string](cp.RequiredContexts...).Intersection(sets.New[string](cp.OptionalContexts...)); inter.Len() > 0 {
+		return fmt.Errorf("contexts %s are defined as required and optional", strings.Join(sets.List(inter), ", "))
 	}
-	if inter := sets.NewString(cp.RequiredContexts...).Intersection(sets.NewString(cp.RequiredIfPresentContexts...)); inter.Len() > 0 {
-		return fmt.Errorf("contexts %s are defined as required and required if present", strings.Join(inter.List(), ", "))
+	if inter := sets.New[string](cp.RequiredContexts...).Intersection(sets.New[string](cp.RequiredIfPresentContexts...)); inter.Len() > 0 {
+		return fmt.Errorf("contexts %s are defined as required and required if present", strings.Join(sets.List(inter), ", "))
 	}
-	if inter := sets.NewString(cp.OptionalContexts...).Intersection(sets.NewString(cp.RequiredIfPresentContexts...)); inter.Len() > 0 {
-		return fmt.Errorf("contexts %s are defined as optional and required if present", strings.Join(inter.List(), ", "))
+	if inter := sets.New[string](cp.OptionalContexts...).Intersection(sets.New[string](cp.RequiredIfPresentContexts...)); inter.Len() > 0 {
+		return fmt.Errorf("contexts %s are defined as optional and required if present", strings.Join(sets.List(inter), ", "))
 	}
 	return nil
 }
@@ -637,20 +843,20 @@ func mergeTideContextPolicy(a, b TideContextPolicy) TideContextPolicy {
 	c := TideContextPolicy{}
 	c.FromBranchProtection = mergeBool(a.FromBranchProtection, b.FromBranchProtection)
 	c.SkipUnknownContexts = mergeBool(a.SkipUnknownContexts, b.SkipUnknownContexts)
-	required := sets.NewString(a.RequiredContexts...)
-	requiredIfPresent := sets.NewString(a.RequiredIfPresentContexts...)
-	optional := sets.NewString(a.OptionalContexts...)
+	required := sets.New[string](a.RequiredContexts...)
+	requiredIfPresent := sets.New[string](a.RequiredIfPresentContexts...)
+	optional := sets.New[string](a.OptionalContexts...)
 	required.Insert(b.RequiredContexts...)
 	requiredIfPresent.Insert(b.RequiredIfPresentContexts...)
 	optional.Insert(b.OptionalContexts...)
 	if required.Len() > 0 {
-		c.RequiredContexts = required.List()
+		c.RequiredContexts = sets.List(required)
 	}
 	if requiredIfPresent.Len() > 0 {
-		c.RequiredIfPresentContexts = requiredIfPresent.List()
+		c.RequiredIfPresentContexts = sets.List(requiredIfPresent)
 	}
 	if optional.Len() > 0 {
-		c.OptionalContexts = optional.List()
+		c.OptionalContexts = sets.List(optional)
 	}
 	return c
 }
@@ -673,40 +879,44 @@ func parseTideContextPolicyOptions(org, repo, branch string, options TideContext
 // If none are set, it will use the prow jobs configured and use the default github combined status.
 // Otherwise if set it will use the branch protection setting, or the listed jobs.
 func (c Config) GetTideContextPolicy(gitClient git.ClientFactory, org, repo, branch string, baseSHAGetter RefGetter, headSHA string) (*TideContextPolicy, error) {
+	var requireManuallyTriggeredJobs *bool
 	options := parseTideContextPolicyOptions(org, repo, branch, c.Tide.ContextOptions)
 	// Adding required and optional contexts from options
-	required := sets.NewString(options.RequiredContexts...)
-	requiredIfPresent := sets.NewString(options.RequiredIfPresentContexts...)
-	optional := sets.NewString(options.OptionalContexts...)
+	required := sets.New[string](options.RequiredContexts...)
+	requiredIfPresent := sets.New[string](options.RequiredIfPresentContexts...)
+	optional := sets.New[string](options.OptionalContexts...)
 
 	headSHAGetter := func() (string, error) {
 		return headSHA, nil
 	}
-	presubmits, err := c.GetPresubmits(gitClient, org+"/"+repo, baseSHAGetter, headSHAGetter)
+	presubmits, err := c.GetPresubmits(gitClient, org+"/"+repo, branch, baseSHAGetter, headSHAGetter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get presubmits: %w", err)
 	}
-
-	// automatically generate required and optional entries for Prow Jobs
-	prowRequired, prowRequiredIfPresent, prowOptional := BranchRequirements(branch, presubmits)
-	required.Insert(prowRequired...)
-	requiredIfPresent.Insert(prowRequiredIfPresent...)
-	optional.Insert(prowOptional...)
 
 	// Using Branch protection configuration
 	if options.FromBranchProtection != nil && *options.FromBranchProtection {
 		bp, err := c.GetBranchProtection(org, repo, branch, presubmits)
 		if err != nil {
 			logrus.WithError(err).Warningf("Error getting branch protection for %s/%s+%s", org, repo, branch)
-		} else if bp != nil && bp.Protect != nil && *bp.Protect && bp.RequiredStatusChecks != nil {
-			required.Insert(bp.RequiredStatusChecks.Contexts...)
+		} else if bp != nil {
+			requireManuallyTriggeredJobs = bp.RequireManuallyTriggeredJobs
+			if bp.Protect != nil && *bp.Protect && bp.RequiredStatusChecks != nil {
+				required.Insert(bp.RequiredStatusChecks.Contexts...)
+			}
 		}
 	}
 
+	// automatically generate required and optional entries for Prow Jobs
+	prowRequired, prowRequiredIfPresent, prowOptional := BranchRequirements(branch, presubmits, requireManuallyTriggeredJobs)
+	required.Insert(prowRequired...)
+	requiredIfPresent.Insert(prowRequiredIfPresent...)
+	optional.Insert(prowOptional...)
+
 	t := &TideContextPolicy{
-		RequiredContexts:          required.List(),
-		RequiredIfPresentContexts: requiredIfPresent.List(),
-		OptionalContexts:          optional.List(),
+		RequiredContexts:          sets.List(required),
+		RequiredIfPresentContexts: sets.List(requiredIfPresent),
+		OptionalContexts:          sets.List(optional),
 		SkipUnknownContexts:       options.SkipUnknownContexts,
 	}
 	if err := t.Validate(); err != nil {
@@ -721,14 +931,14 @@ func (c Config) GetTideContextPolicy(gitClient git.ClientFactory, org, repo, bra
 // - required contexts are registered and the context provided is not required
 // Will return false otherwise. Every context is required.
 func (cp *TideContextPolicy) IsOptional(c string) bool {
-	if sets.NewString(cp.OptionalContexts...).Has(c) {
+	if sets.New[string](cp.OptionalContexts...).Has(c) {
 		return true
 	}
-	if sets.NewString(cp.RequiredContexts...).Has(c) {
+	if sets.New[string](cp.RequiredContexts...).Has(c) {
 		return false
 	}
 	// assume if we're asking that the context is present on the PR
-	if sets.NewString(cp.RequiredIfPresentContexts...).Has(c) {
+	if sets.New[string](cp.RequiredIfPresentContexts...).Has(c) {
 		return false
 	}
 	if cp.SkipUnknownContexts != nil && *cp.SkipUnknownContexts {
@@ -742,12 +952,12 @@ func (cp *TideContextPolicy) MissingRequiredContexts(contexts []string) []string
 	if len(cp.RequiredContexts) == 0 {
 		return nil
 	}
-	existingContexts := sets.NewString()
+	existingContexts := sets.New[string]()
 	for _, c := range contexts {
 		existingContexts.Insert(c)
 	}
 	var missingContexts []string
-	for c := range sets.NewString(cp.RequiredContexts...).Difference(existingContexts) {
+	for c := range sets.New[string](cp.RequiredContexts...).Difference(existingContexts) {
 		missingContexts = append(missingContexts, c)
 	}
 	return missingContexts
