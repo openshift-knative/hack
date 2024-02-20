@@ -41,10 +41,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 
+	"github.com/cjwagner/httpcache"
+	"github.com/cjwagner/httpcache/diskcache"
+	rediscache "github.com/cjwagner/httpcache/redis"
 	"github.com/gomodule/redigo/redis"
-	"github.com/gregjones/httpcache"
-	"github.com/gregjones/httpcache/diskcache"
-	rediscache "github.com/gregjones/httpcache/redis"
 	"github.com/peterbourgon/diskv"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -317,11 +317,15 @@ func (c *throttlingTransport) RoundTrip(req *http.Request) (*http.Response, erro
 // reach the cache layer in order to force the caching policy we require.
 //
 // By default github responds to PR requests with:
-//    Cache-Control: private, max-age=60, s-maxage=60
+//
+//	Cache-Control: private, max-age=60, s-maxage=60
+//
 // Which means the httpcache would not consider anything stale for 60 seconds.
 // However, we want to always revalidate cache entries using ETags and last
 // modified times so this RoundTripper overrides response headers to:
-//    Cache-Control: no-cache
+//
+//	Cache-Control: no-cache
+//
 // This instructs the cache to store the response, but always consider it stale.
 type upstreamTransport struct {
 	roundTripper http.RoundTripper

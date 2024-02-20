@@ -35,16 +35,18 @@ func GenerateImageMirroringConfigs(openshiftRelease Repository, cfgs []ReleaseBu
 			lines := sets.NewString()
 			release := ""
 			for _, img := range cfg.Images {
-				if cfg.PromotionConfiguration.Name != "" {
-					from := fmt.Sprintf("%s/%s/%s:%s", CIRegistry, cfg.PromotionConfiguration.Namespace, cfg.PromotionConfiguration.Name, img.To)
-					to := fmt.Sprintf("%s/%s", QuayRegistry, img.To)
-					lines.Insert(fmt.Sprintf("%s %s", from, to))
-					release = cfg.PromotionConfiguration.Name
-				} else if cfg.PromotionConfiguration.Tag != "" {
-					from := fmt.Sprintf("%s/%s/%s:%s", CIRegistry, cfg.PromotionConfiguration.Namespace, img.To, cfg.PromotionConfiguration.Tag)
-					to := fmt.Sprintf("%s/%s", QuayRegistry, img.To)
-					lines.Insert(fmt.Sprintf("%s %s", from, to))
-					release = cfg.PromotionConfiguration.Tag
+				for _, p := range cfg.PromotionConfiguration.Targets {
+					if p.Name != "" {
+						from := fmt.Sprintf("%s/%s/%s:%s", CIRegistry, p.Namespace, p.Name, img.To)
+						to := fmt.Sprintf("%s/%s", QuayRegistry, img.To)
+						lines.Insert(fmt.Sprintf("%s %s", from, to))
+						release = p.Name
+					} else if p.Tag != "" {
+						from := fmt.Sprintf("%s/%s/%s:%s", CIRegistry, p.Namespace, img.To, p.Tag)
+						to := fmt.Sprintf("%s/%s", QuayRegistry, img.To)
+						lines.Insert(fmt.Sprintf("%s %s", from, to))
+						release = p.Tag
+					}
 				}
 			}
 

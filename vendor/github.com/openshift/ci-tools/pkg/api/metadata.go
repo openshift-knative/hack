@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
+
+	"github.com/openshift/ci-tools/pkg/api/utils"
 )
 
 // IsComplete returns an error if at least one of Org, Repo, Branch members is
@@ -110,7 +112,7 @@ var fourXBranches = regexp.MustCompile(`^(release|enterprise|openshift)-(4\.[0-9
 func FlavorForBranch(branch string) string {
 	var flavor string
 	if branch == "master" || branch == "main" {
-		flavor = "master"
+		flavor = branch
 	} else if m := fourXBranches.FindStringSubmatch(branch); m != nil {
 		flavor = m[2] // the 4.x release string
 	} else if m := releaseBranches.FindStringSubmatch(branch); m != nil {
@@ -130,22 +132,20 @@ func LogFieldsFor(metadata Metadata) logrus.Fields {
 	}
 }
 
-func BuildCacheFor(metadata Metadata) MultiArchImageStreamTagReference {
+func BuildCacheFor(metadata Metadata) ImageStreamTagReference {
 	tag := metadata.Branch
 	if metadata.Variant != "" {
 		tag = fmt.Sprintf("%s-%s", tag, metadata.Variant)
 	}
-	return MultiArchImageStreamTagReference{
-		ImageStreamTagReference: ImageStreamTagReference{
-			Namespace: "build-cache",
-			Name:      fmt.Sprintf("%s-%s", metadata.Org, metadata.Repo),
-			Tag:       tag,
-		},
+	return ImageStreamTagReference{
+		Namespace: "build-cache",
+		Name:      fmt.Sprintf("%s-%s", metadata.Org, metadata.Repo),
+		Tag:       tag,
 	}
 }
 
 func ImageVersionLabel(fromTag PipelineImageStreamTagReference) string {
-	return fmt.Sprintf("io.openshift.ci.from.%s", fromTag)
+	return utils.Trim63(fmt.Sprintf("io.openshift.ci.from.%s", fromTag))
 }
 
 var testPathRegex = regexp.MustCompile(`(?P<org>[^/]+)/(?P<repo>[^@]+)@(?P<branch>[^:]+):(?P<test>.+)`)
