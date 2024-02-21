@@ -53,9 +53,18 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 			}
 			var clusterProfile cioperatorapi.ClusterProfile
 			workflow := pointer.String("generic-claim")
+			var env cioperatorapi.TestEnvironment
 			if openShift.CandidateRelease {
 				clusterClaim = nil
-				clusterProfile = "aws"
+				if strings.Contains(r.RepositoryDirectory(), "serverless-operator") {
+					// Use the shared profile for s-o.
+					clusterProfile = "aws"
+				} else {
+					clusterProfile = "aws-serverless"
+					env = map[string]string{
+						"BASE_DOMAIN": "ocp.ci-aws.rhocf-dev.net",
+					}
+				}
 				workflow = pointer.String("ipi-aws")
 			}
 			testConfiguration := cioperatorapi.TestStepConfiguration{
@@ -66,6 +75,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 					ClusterProfile:           clusterProfile,
 					AllowBestEffortPostSteps: pointer.Bool(true),
 					AllowSkipOnSuccess:       pointer.Bool(true),
+					Environment:              env,
 					Test: []cioperatorapi.TestStep{
 						{
 							LiteralTestStep: &cioperatorapi.LiteralTestStep{
@@ -137,6 +147,15 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 					},
 					Workflow: workflow,
 				},
+			}
+
+			if openShift.CandidateRelease {
+				testConfiguration.MultiStageTestConfiguration.Post =
+					append(testConfiguration.MultiStageTestConfiguration.Post,
+						cioperatorapi.TestStep{
+							Reference: pointer.String("ipi-deprovision-deprovision"),
+						},
+					)
 			}
 
 			preSubmitConfiguration := testConfiguration.DeepCopy()
