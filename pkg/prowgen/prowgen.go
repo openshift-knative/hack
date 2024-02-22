@@ -334,10 +334,30 @@ type JobConfigInjectors []JobConfigInjector
 
 func (jcis JobConfigInjectors) Inject(inConfig *Config, openShiftRelease Repository) error {
 	for _, jci := range jcis {
-		if err := jci.Inject(inConfig, openShiftRelease); err != nil {
-			return err
+		for branchName, branch := range inConfig.Config.Branches {
+			for _, r := range inConfig.Repositories {
+				generatedOutputDir := "ci-operator/jobs"
+				glob := filepath.Join(openShiftRelease.RepositoryDirectory(), generatedOutputDir, r.RepositoryDirectory(), "*"+branchName+"*"+string(jci.Type)+"*")
+				matches, err := filepath.Glob(glob)
+				if err != nil {
+					return err
+				}
+				for _, match := range matches {
+					jobConfig, err := GetJobConfig(match)
+					if err != nil {
+						return err
+					}
+					if err := jci.Update(&r, &branch, branchName, jobConfig); err != nil {
+						return err
+					}
+					if err := SaveJobConfig(match, jobConfig); err != nil {
+						return err
+					}
+				}
+			}
 		}
 	}
+
 	return nil
 }
 
@@ -346,37 +366,7 @@ type JobConfigInjector struct {
 	Update func(r *Repository, b *Branch, branchName string, jobConfig *prowconfig.JobConfig) error
 }
 
-func (jci *JobConfigInjector) Inject(inConfig *Config, openShiftRelease Repository) error {
-	for branchName, branch := range inConfig.Config.Branches {
-		for _, r := range inConfig.Repositories {
-
-			generatedOutputDir := "ci-operator/jobs"
-			glob := filepath.Join(openShiftRelease.RepositoryDirectory(), generatedOutputDir, r.RepositoryDirectory(), "*"+branchName+"*"+string(jci.Type)+"*")
-			matches, err := filepath.Glob(glob)
-			if err != nil {
-				return err
-			}
-			for _, match := range matches {
-				jobConfig, err := getJobConfig(match)
-				if err != nil {
-					return err
-				}
-
-				if err := jci.Update(&r, &branch, branchName, jobConfig); err != nil {
-					return err
-				}
-
-				if err := saveJobConfig(match, jobConfig); err != nil {
-					return err
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
-func saveJobConfig(match string, jobConfig *prowconfig.JobConfig) error {
+func SaveJobConfig(match string, jobConfig *prowconfig.JobConfig) error {
 	// Going directly from struct to YAML produces unexpected configs (due to missing YAML tags),
 	// so we produce JSON and then convert it to YAML.
 	out, err := json.Marshal(jobConfig)
@@ -394,7 +384,7 @@ func saveJobConfig(match string, jobConfig *prowconfig.JobConfig) error {
 	return nil
 }
 
-func getJobConfig(match string) (*prowconfig.JobConfig, error) {
+func GetJobConfig(match string) (*prowconfig.JobConfig, error) {
 	// Going directly from YAML raw input produces unexpected configs (due to missing YAML tags),
 	// so we convert YAML to JSON and unmarshal the struct from the JSON object.
 	y, err := os.ReadFile(match)
