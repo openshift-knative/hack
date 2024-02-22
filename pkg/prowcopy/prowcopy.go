@@ -25,6 +25,7 @@ type Config struct {
 	Tag            string
 	RemovePeriodic bool
 	Remote         string
+	Config         string
 }
 
 // Main is the main function for prowcopy.
@@ -44,7 +45,14 @@ func Main() error {
 	flag.StringVar(&c.Tag, "tag", "", "Target promotion name or tag")
 	flag.BoolVar(&c.RemovePeriodic, "remove-periodic-tests", true, "Remove periodic tests")
 	flag.StringVar(&c.Remote, "remote", "", "Git remote URL")
+	flag.StringVar(&c.Config, "config", filepath.Join("config", "repositories.yaml"), "Specify repositories config"))
 	flag.Parse()
+
+
+	inConfig, err := prowgen.LoadConfig(c.Config)
+	if err != nil {
+		log.Fatalln("Failed to load config", err)
+	}
 
 	// Clone openshift/release and clean up existing jobs for the configured branches
 	openShiftRelease := prowgen.Repository{
@@ -79,6 +87,10 @@ func Main() error {
 
 	if err := prowgen.RunOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
 		log.Fatalln("Failed to run openshift/release generator:", err)
+	}
+
+	if err := runProwCopyInjectors(inConfig, openShiftRelease); err != nil {
+		log.Fatalln("Failed to run Prow job injectors", err)
 	}
 
 	return nil
@@ -174,4 +186,11 @@ func getJobConfig(match string, c Config) (*prowgen.ReleaseBuildConfiguration, e
 	}
 
 	return jobConfig, nil
+}
+
+func runProwCopyInjectors(inConfig *prowgen.Config, openShiftRelease prowgen.Repository) error {
+	injectors := prowgen.JobConfigInjectors{
+		prowgen.AlwaysRunInjector(),
+	}
+	return injectors.Inject(inConfig, openShiftRelease)
 }
