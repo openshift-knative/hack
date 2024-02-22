@@ -19,7 +19,10 @@ import (
 	"k8s.io/utils/strings/slices"
 )
 
-const defaultCron = "0 5 * * 2,6"
+const (
+	defaultCron          = "0 5 * * 2,6"
+	devclusterBaseDomain = "serverless.devcluster.openshift.com"
+)
 
 func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, skipE2ETestMatch []string) ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
@@ -62,7 +65,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				} else {
 					clusterProfile = "aws-serverless"
 					env = map[string]string{
-						"BASE_DOMAIN": "ocp.ci-aws.rhocf-dev.net",
+						"BASE_DOMAIN": devclusterBaseDomain,
 					}
 				}
 				workflow = pointer.String("ipi-aws")
