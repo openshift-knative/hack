@@ -3,7 +3,7 @@ config:
     release-next:
       openShiftVersions:
       - version: "4.14"
-      - version: "4.11"
+      - version: "4.12"
       skipDockerFilesMatches:
       - openshift/ci-operator/knative-perf-images.*
       skipE2EMatches:
@@ -16,15 +16,15 @@ config:
     release-v1.11:
       openShiftVersions:
       - version: "4.14"
-      - version: "4.11"
+      - version: "4.12"
     release-v1.12:
       openShiftVersions:
       - version: "4.14"
-      - version: "4.11"
+      - version: "4.12"
     release-v1.13:
       openShiftVersions:
       - version: "4.14"
-      - version: "4.11"
+      - version: "4.12"
 repositories:
 - dockerfiles:
     matches:

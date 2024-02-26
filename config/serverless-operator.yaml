@@ -7,7 +7,7 @@ config:
         version: "4.14"
       - cron: 0 6 * * *
         onDemand: true
-        version: "4.11"
+        version: "4.12"
 repositories:
 - customConfigs:
   - name: aws-ovn
