@@ -12,6 +12,7 @@ import (
 
 	gyaml "github.com/ghodss/yaml"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
+	"golang.org/x/sync/errgroup"
 	"k8s.io/utils/pointer"
 
 	"github.com/openshift-knative/hack/pkg/prowgen"
@@ -25,6 +26,7 @@ type Config struct {
 	Tag            string
 	RemovePeriodic bool
 	Remote         string
+	Config         string
 }
 
 // Main is the main function for prowcopy.
@@ -44,7 +46,13 @@ func Main() error {
 	flag.StringVar(&c.Tag, "tag", "", "Target promotion name or tag")
 	flag.BoolVar(&c.RemovePeriodic, "remove-periodic-tests", true, "Remove periodic tests")
 	flag.StringVar(&c.Remote, "remote", "", "Git remote URL")
+	flag.StringVar(&c.Config, "config", filepath.Join("config", "repositories.yaml"), "Specify repositories config")
 	flag.Parse()
+
+	prowgenConfig, err := prowgen.LoadConfig(c.Config)
+	if err != nil {
+		log.Fatalln("Failed to load config", err)
+	}
 
 	// Clone openshift/release and clean up existing jobs for the configured branches
 	openShiftRelease := prowgen.Repository{
@@ -81,6 +89,31 @@ func Main() error {
 		log.Fatalln("Failed to run openshift/release generator:", err)
 	}
 
+	if err := mirrorRepositories(ctx, prowgenConfig); err != nil {
+		log.Fatalln("Failed to mirror repositories", err)
+	}
+
+	if err := runProwCopyInjectors(&c, prowgenConfig, openShiftRelease); err != nil {
+		log.Fatalln("Failed to run Prow job injectors", err)
+	}
+
+	return nil
+}
+
+func mirrorRepositories(ctx context.Context, inConfig *prowgen.Config) error {
+	repositoryMirrors, generatorsCtx := errgroup.WithContext(ctx)
+	for _, r := range inConfig.Repositories {
+		r := r
+		repositoryMirrors.Go(func() error {
+			if err := prowgen.GitMirror(generatorsCtx, r); err != nil {
+				return err
+			}
+			return nil
+		})
+	}
+	if err := repositoryMirrors.Wait(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -174,4 +207,52 @@ func getJobConfig(match string, c Config) (*prowgen.ReleaseBuildConfiguration, e
 	}
 
 	return jobConfig, nil
+}
+
+// JobConfigCopiedInjectors are configured from the base branch. They're applied to
+// generated Prow jobs for the target branch.
+type JobConfigCopiedInjectors []prowgen.JobConfigInjector
+
+func (jcis JobConfigCopiedInjectors) Inject(prowcopyCfg *Config, prowgenCfg *prowgen.Config, openShiftRelease prowgen.Repository) error {
+	for _, jci := range jcis {
+		sourceBranchName, targetBranch := prowcopyCfg.FromBranch, prowcopyCfg.Branch
+		var sourceBranch *prowgen.Branch
+		// Injectors need to be applied to the new branch in the same way as they were applied
+		// to the source branch when its config was generated.
+		for branchName, branch := range prowgenCfg.Config.Branches {
+			if branchName == sourceBranchName {
+				sourceBranch = &branch
+			}
+		}
+
+		for _, r := range prowgenCfg.Repositories {
+			generatedOutputDir := "ci-operator/jobs"
+			glob := filepath.Join(openShiftRelease.RepositoryDirectory(), generatedOutputDir, r.RepositoryDirectory(), "*"+targetBranch+"*"+string(jci.Type)+"*")
+			matches, err := filepath.Glob(glob)
+			if err != nil {
+				return err
+			}
+			for _, match := range matches {
+				jobConfig, err := prowgen.GetJobConfig(match)
+				if err != nil {
+					return err
+				}
+				if err := jci.Update(&r, sourceBranch, sourceBranchName, jobConfig); err != nil {
+					return err
+				}
+				if err := prowgen.SaveJobConfig(match, jobConfig); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func runProwCopyInjectors(config *Config, inConfig *prowgen.Config, openShiftRelease prowgen.Repository) error {
+	injectors := JobConfigCopiedInjectors{
+		prowgen.AlwaysRunInjector(),
+	}
+	return injectors.Inject(config, inConfig, openShiftRelease)
 }
