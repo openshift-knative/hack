@@ -63,7 +63,8 @@ func Main() error {
 		return err
 	}
 
-	if err := prowgen.DeleteExistingReleaseBuildConfigurationForBranch(pointer.String(""), prowgen.Repository{Org: c.Org, Repo: c.Repo}, c.Branch); err != nil {
+	outConfig := filepath.Join(openShiftRelease.Org, openShiftRelease.Repo, "ci-operator", "config")
+	if err := prowgen.DeleteExistingReleaseBuildConfigurationForBranch(&outConfig, prowgen.Repository{Org: c.Org, Repo: c.Repo}, c.Branch); err != nil {
 		return err
 	}
 
