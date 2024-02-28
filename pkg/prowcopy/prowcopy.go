@@ -63,7 +63,8 @@ func Main() error {
 		return err
 	}
 
-	if err := prowgen.DeleteExistingReleaseBuildConfigurationForBranch(pointer.String(""), prowgen.Repository{Org: c.Org, Repo: c.Repo}, c.Branch); err != nil {
+	outConfig := filepath.Join(openShiftRelease.Org, openShiftRelease.Repo, "ci-operator", "config")
+	if err := prowgen.DeleteExistingReleaseBuildConfigurationForBranch(&outConfig, prowgen.Repository{Org: c.Org, Repo: c.Repo}, c.Branch); err != nil {
 		return err
 	}
 
@@ -219,11 +220,11 @@ func (jcis JobConfigCopiedInjectors) Inject(prowcopyCfg *Config, prowgenCfg *pro
 		var sourceBranch *prowgen.Branch
 		// Injectors need to be applied to the new branch in the same way as they were applied
 		// to the source branch when its config was generated.
-		for branchName, branch := range prowgenCfg.Config.Branches {
-			if branchName == sourceBranchName {
-				sourceBranch = &branch
-			}
+		sb, ok := prowgenCfg.Config.Branches[sourceBranchName]
+		if !ok {
+			return fmt.Errorf("unable to find source branch in config")
 		}
+		sourceBranch = &sb
 
 		for _, r := range prowgenCfg.Repositories {
 			generatedOutputDir := "ci-operator/jobs"
