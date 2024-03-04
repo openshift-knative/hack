@@ -5,10 +5,10 @@ FROM registry.ci.openshift.org/openshift/release:rhel-8-release-golang-1.21-open
 
 RUN echo "[kubernetes]" >> /etc/yum.repos.d/kubernetes.repo && \
     echo "name=Kubernetes" >> /etc/yum.repos.d/kubernetes.repo && \
-    echo "baseurl=https://pkgs.k8s.io/core:/stable:/v1.28/rpm/" >> /etc/yum.repos.d/kubernetes.repo && \
+    echo "baseurl=https://pkgs.k8s.io/core:/stable:/v1.29/rpm/" >> /etc/yum.repos.d/kubernetes.repo && \
     echo "enabled=1" >> /etc/yum.repos.d/kubernetes.repo && \
     echo "gpgcheck=1" >> /etc/yum.repos.d/kubernetes.repo && \
-    echo "gpgkey=https://pkgs.k8s.io/core:/stable:/v1.28/rpm/repodata/repomd.xml.key" >> /etc/yum.repos.d/kubernetes.repo
+    echo "gpgkey=https://pkgs.k8s.io/core:/stable:/v1.29/rpm/repodata/repomd.xml.key" >> /etc/yum.repos.d/kubernetes.repo
 
 RUN yum install -y kubectl httpd-tools
 
