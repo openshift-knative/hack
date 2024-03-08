@@ -4,6 +4,7 @@ config:
       openShiftVersions:
       - version: "4.14"
       - version: "4.12"
+        onDemand: true
       skipDockerFilesMatches:
       - openshift/ci-operator/knative-perf-images.*
       skipE2EMatches:
@@ -13,18 +14,22 @@ config:
       openShiftVersions:
       - version: "4.14"
       - version: "4.11"
+        onDemand: true
     release-v1.11:
       openShiftVersions:
       - version: "4.14"
       - version: "4.12"
+        onDemand: true
     release-v1.12:
       openShiftVersions:
       - version: "4.14"
       - version: "4.12"
+        onDemand: true
     release-v1.13:
       openShiftVersions:
       - version: "4.14"
       - version: "4.12"
+        onDemand: true
 repositories:
 - dockerfiles:
     matches:
