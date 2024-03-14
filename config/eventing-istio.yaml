@@ -3,28 +3,28 @@ config:
     release-next:
       openShiftVersions:
       - version: "4.14"
-      - version: "4.12"
-        onDemand: true
+      - onDemand: true
+        version: "4.12"
     release-v1.10:
       openShiftVersions:
       - version: "4.14"
-      - version: "4.11"
-        onDemand: true
+      - onDemand: true
+        version: "4.11"
     release-v1.11:
       openShiftVersions:
       - version: "4.14"
-      - version: "4.12"
-        onDemand: true
+      - onDemand: true
+        version: "4.12"
     release-v1.12:
       openShiftVersions:
       - version: "4.14"
-      - version: "4.12"
-        onDemand: true
+      - onDemand: true
+        version: "4.12"
     release-v1.13:
       openShiftVersions:
       - version: "4.14"
-      - version: "4.12"
-        onDemand: true
+      - onDemand: true
+        version: "4.12"
 repositories:
 - dockerfiles: {}
   e2e:
