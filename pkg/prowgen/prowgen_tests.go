@@ -166,6 +166,10 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 			preSubmitConfiguration.RunIfChanged = test.RunIfChanged
 			cfg.Tests = append(cfg.Tests, *preSubmitConfiguration)
 
+			// This condition allows skipping generation of periodic jobs either
+			// for individual tests or, for all tests running on the given
+			// OpenShift version. Periodic tests are also not generated for candidate
+			// versions.
 			if !test.SkipCron && !openShift.SkipCron && !openShift.CandidateRelease {
 				cronTestConfiguration := testConfiguration.DeepCopy()
 				cronTestConfiguration.As += "-c"

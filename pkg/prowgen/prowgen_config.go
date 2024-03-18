@@ -31,13 +31,14 @@ type Repository struct {
 }
 
 type E2ETest struct {
-	Match        string            `json:"match,omitempty" yaml:"match,omitempty"`
-	OnDemand     bool              `json:"onDemand,omitempty" yaml:"onDemand,omitempty"`
-	IgnoreError  bool              `json:"ignoreError,omitempty" yaml:"ignoreError,omitempty"`
-	RunIfChanged string            `json:"runIfChanged,omitempty" yaml:"runIfChanged,omitempty"`
-	SkipCron     bool              `json:"skipCron,omitempty" yaml:"skipCron,omitempty"`
-	SkipImages   []string          `json:"skipImages,omitempty" yaml:"skipImages,omitempty"`
-	Timeout      *prowapi.Duration `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	Match        string `json:"match,omitempty" yaml:"match,omitempty"`
+	OnDemand     bool   `json:"onDemand,omitempty" yaml:"onDemand,omitempty"`
+	IgnoreError  bool   `json:"ignoreError,omitempty" yaml:"ignoreError,omitempty"`
+	RunIfChanged string `json:"runIfChanged,omitempty" yaml:"runIfChanged,omitempty"`
+	// SkipCron ensures that no periodic job will be generated for the given test.
+	SkipCron   bool              `json:"skipCron,omitempty" yaml:"skipCron,omitempty"`
+	SkipImages []string          `json:"skipImages,omitempty" yaml:"skipImages,omitempty"`
+	Timeout    *prowapi.Duration `json:"timeout,omitempty" yaml:"timeout,omitempty"`
 }
 
 type Dockerfiles struct {
@@ -71,12 +72,13 @@ type Branch struct {
 }
 
 type OpenShift struct {
-	Version               string `json:"version,omitempty" yaml:"version,omitempty"`
-	Cron                  string `json:"cron,omitempty" yaml:"cron,omitempty"`
-	SkipCron              bool   `json:"skipCron,omitempty" yaml:"skipCron,omitempty"`
-	OnDemand              bool   `json:"onDemand,omitempty" yaml:"onDemand,omitempty"`
-	GenerateCustomConfigs bool   `json:"generateCustomConfigs,omitempty" yaml:"generateCustomConfigs,omitempty"`
-	CandidateRelease      bool   `json:"candidateRelease,omitempty" yaml:"candidateRelease,omitempty"`
+	Version string `json:"version,omitempty" yaml:"version,omitempty"`
+	Cron    string `json:"cron,omitempty" yaml:"cron,omitempty"`
+	// SkipCron ensures that no periodic jobs are generated for tests running on the given OpenShift version.
+	SkipCron              bool `json:"skipCron,omitempty" yaml:"skipCron,omitempty"`
+	OnDemand              bool `json:"onDemand,omitempty" yaml:"onDemand,omitempty"`
+	GenerateCustomConfigs bool `json:"generateCustomConfigs,omitempty" yaml:"generateCustomConfigs,omitempty"`
+	CandidateRelease      bool `json:"candidateRelease,omitempty" yaml:"candidateRelease,omitempty"`
 }
 
 type CommonConfig struct {
