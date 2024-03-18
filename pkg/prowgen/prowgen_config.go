@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
@@ -97,6 +98,10 @@ type ReleaseBuildConfiguration struct {
 }
 
 func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts ...ReleaseBuildConfigurationOption) ([]ReleaseBuildConfiguration, error) {
+	// Use the same seed to always get the same sequence of random
+	// numbers for tests within the given repository. It means the cron schedules
+	// for jobs will change less often when generating jobs.
+	random := rand.New(rand.NewSource(1))
 
 	cfgs := make([]ReleaseBuildConfiguration, 0, len(cc.Branches)*2)
 
@@ -209,7 +214,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 			options = append(
 				options,
 				DiscoverImages(r, branch.SkipDockerFilesMatches),
-				DiscoverTests(r, ov, fromImage, branch.SkipE2EMatches),
+				DiscoverTests(r, ov, fromImage, branch.SkipE2EMatches, random),
 			)
 
 			log.Println(r.RepositoryDirectory(), "Apply input options", len(options))

@@ -2,6 +2,7 @@ package prowgen
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -62,10 +63,11 @@ func TestDiscoverTestsServing(t *testing.T) {
 
 	cron := pointer.String("0 8 * * 1-5")
 
+	random := rand.New(rand.NewSource(1))
 	servingSourceImage := "knative-serving-source-image"
 	options := []ReleaseBuildConfigurationOption{
 		DiscoverImages(r, []string{"skip-images/.*"}),
-		DiscoverTests(r, OpenShift{Version: "4.12", Cron: *cron}, servingSourceImage, []string{"skip-e2e$"}),
+		DiscoverTests(r, OpenShift{Version: "4.12", Cron: *cron}, servingSourceImage, []string{"skip-e2e$"}, random),
 	}
 
 	dependencies := []cioperatorapi.StepDependency{
@@ -385,10 +387,13 @@ func TestDiscoverTestsEventing(t *testing.T) {
 		},
 	}
 
+	// Use the same seed to always get the same sequence of random numbers.
+	random := rand.New(rand.NewSource(1))
+
 	eventingSourceImage := "knative-eventing-source-image"
 	options := []ReleaseBuildConfigurationOption{
 		DiscoverImages(r, nil),
-		DiscoverTests(r, OpenShift{Version: "4.12"}, eventingSourceImage, nil),
+		DiscoverTests(r, OpenShift{Version: "4.12"}, eventingSourceImage, nil, random),
 	}
 
 	dependencies := []cioperatorapi.StepDependency{
@@ -440,7 +445,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 		},
 		{
 			As:   "test-conformance-aws-412-c",
-			Cron: pointer.String("0 5 * * 2,6"),
+			Cron: pointer.String("0 6 * * 2,6"),
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
 				Version:      "4.12",
@@ -503,7 +508,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 		},
 		{
 			As:   "test-conformance-long-lo-510e96a-aws-412-c",
-			Cron: pointer.String("0 5 * * 2,6"),
+			Cron: pointer.String("0 2 * * 2,6"),
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
 				Version:      "4.12",
@@ -566,7 +571,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 		},
 		{
 			As:   "test-e2e-aws-412-c",
-			Cron: pointer.String("0 5 * * 2,6"),
+			Cron: pointer.String("0 1 * * 2,6"),
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
 				Version:      "4.12",
@@ -629,7 +634,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 		},
 		{
 			As:   "test-reconciler-aws-412-c",
-			Cron: pointer.String("0 5 * * 2,6"),
+			Cron: pointer.String("0 0 * * 2,6"),
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
 				Version:      "4.12",

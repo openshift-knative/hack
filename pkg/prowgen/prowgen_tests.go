@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -20,11 +21,11 @@ import (
 )
 
 const (
-	defaultCron          = "0 5 * * 2,6"
+	cronTemplate         = "0 %d * * 2,6"
 	devclusterBaseDomain = "serverless.devcluster.openshift.com"
 )
 
-func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, skipE2ETestMatch []string) ReleaseBuildConfigurationOption {
+func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, skipE2ETestMatch []string, random *rand.Rand) ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
 		tests, err := discoverE2ETests(r, skipE2ETestMatch)
 		if err != nil {
@@ -174,7 +175,9 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				cronTestConfiguration := testConfiguration.DeepCopy()
 				cronTestConfiguration.As += "-c"
 				if openShift.Cron == "" {
-					cronTestConfiguration.Cron = pointer.String(defaultCron)
+					// Make sure jobs run between 00:00 and 07:00 UTC by default.
+					nightlyCron := fmt.Sprintf(cronTemplate, random.Intn(7))
+					cronTestConfiguration.Cron = pointer.String(nightlyCron)
 				} else {
 					cronTestConfiguration.Cron = &openShift.Cron
 				}
