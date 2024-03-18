@@ -73,6 +73,7 @@ type Branch struct {
 type OpenShift struct {
 	Version               string `json:"version,omitempty" yaml:"version,omitempty"`
 	Cron                  string `json:"cron,omitempty" yaml:"cron,omitempty"`
+	SkipCron              bool   `json:"skipCron,omitempty" yaml:"skipCron,omitempty"`
 	OnDemand              bool   `json:"onDemand,omitempty" yaml:"onDemand,omitempty"`
 	GenerateCustomConfigs bool   `json:"generateCustomConfigs,omitempty" yaml:"generateCustomConfigs,omitempty"`
 	CandidateRelease      bool   `json:"candidateRelease,omitempty" yaml:"candidateRelease,omitempty"`

@@ -166,7 +166,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 			preSubmitConfiguration.RunIfChanged = test.RunIfChanged
 			cfg.Tests = append(cfg.Tests, *preSubmitConfiguration)
 
-			if !test.SkipCron && !openShift.CandidateRelease {
+			if !test.SkipCron && !openShift.SkipCron && !openShift.CandidateRelease {
 				cronTestConfiguration := testConfiguration.DeepCopy()
 				cronTestConfiguration.As += "-c"
 				if openShift.Cron == "" {
