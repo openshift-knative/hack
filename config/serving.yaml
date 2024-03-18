@@ -12,13 +12,14 @@ config:
       - .*e2e-tls$
     release-v1.10:
       openShiftVersions:
-      - version: "4.14"
-      - onDemand: true
-        version: "4.11"
+      - skipCron: true
+        version: "4.14"
     release-v1.11:
       openShiftVersions:
-      - version: "4.14"
+      - skipCron: true
+        version: "4.14"
       - onDemand: true
+        skipCron: true
         version: "4.12"
     release-v1.12:
       openShiftVersions:
