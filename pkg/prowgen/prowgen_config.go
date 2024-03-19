@@ -101,7 +101,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 	// Use the same seed to always get the same sequence of random
 	// numbers for tests within the given repository. It means the cron schedules
 	// for jobs will change less often when generating jobs.
-	random := rand.New(rand.NewSource(1))
+	random := rand.New(rand.NewSource(seed))
 
 	cfgs := make([]ReleaseBuildConfiguration, 0, len(cc.Branches)*2)
 

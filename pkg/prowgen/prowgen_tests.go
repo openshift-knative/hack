@@ -21,7 +21,8 @@ import (
 )
 
 const (
-	cronTemplate         = "0 %d * * 2,6"
+	cronTemplate         = "%d %d * * 2,6"
+	seed                 = 12345
 	devclusterBaseDomain = "serverless.devcluster.openshift.com"
 )
 
@@ -175,8 +176,11 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				cronTestConfiguration := testConfiguration.DeepCopy()
 				cronTestConfiguration.As += "-c"
 				if openShift.Cron == "" {
-					// Make sure jobs run between 00:00 and 07:00 UTC by default.
-					nightlyCron := fmt.Sprintf(cronTemplate, random.Intn(7))
+					// Make sure jobs start between 00:00 and 06:00 UTC by default.
+					r := random.Intn(360)
+					hour := r / 60
+					minute := r % 60
+					nightlyCron := fmt.Sprintf(cronTemplate, minute, hour)
 					cronTestConfiguration.Cron = pointer.String(nightlyCron)
 				} else {
 					cronTestConfiguration.Cron = &openShift.Cron

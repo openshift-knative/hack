@@ -388,7 +388,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 	}
 
 	// Use the same seed to always get the same sequence of random numbers.
-	random := rand.New(rand.NewSource(1))
+	random := rand.New(rand.NewSource(seed))
 
 	eventingSourceImage := "knative-eventing-source-image"
 	options := []ReleaseBuildConfigurationOption{
@@ -445,7 +445,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 		},
 		{
 			As:   "test-conformance-aws-412-c",
-			Cron: pointer.String("0 6 * * 2,6"),
+			Cron: pointer.String("23 1 * * 2,6"),
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
 				Version:      "4.12",
@@ -508,7 +508,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 		},
 		{
 			As:   "test-conformance-long-lo-510e96a-aws-412-c",
-			Cron: pointer.String("0 2 * * 2,6"),
+			Cron: pointer.String("43 1 * * 2,6"),
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
 				Version:      "4.12",
@@ -571,7 +571,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 		},
 		{
 			As:   "test-e2e-aws-412-c",
-			Cron: pointer.String("0 1 * * 2,6"),
+			Cron: pointer.String("4 1 * * 2,6"),
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
 				Version:      "4.12",
@@ -634,7 +634,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 		},
 		{
 			As:   "test-reconciler-aws-412-c",
-			Cron: pointer.String("0 0 * * 2,6"),
+			Cron: pointer.String("16 5 * * 2,6"),
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
 				Version:      "4.12",
