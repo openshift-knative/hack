@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/coreos/go-semver/semver"
@@ -97,6 +99,10 @@ type ReleaseBuildConfiguration struct {
 }
 
 func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts ...ReleaseBuildConfigurationOption) ([]ReleaseBuildConfiguration, error) {
+	// Use the same seed to always get the same sequence of random
+	// numbers for tests within the given repository. It means the cron schedules
+	// for jobs will change less often when generating jobs.
+	random := rand.New(rand.NewSource(seed))
 
 	cfgs := make([]ReleaseBuildConfiguration, 0, len(cc.Branches)*2)
 
@@ -104,7 +110,16 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 		return nil, err
 	}
 
-	for branchName, branch := range cc.Branches {
+	branches := make([]string, 0, len(cc.Branches))
+	for k := range cc.Branches {
+		branches = append(branches, k)
+	}
+	// Make sure to iterate every time in the same order to keep
+	// cron times consistent between runs.
+	slices.Sort(branches)
+
+	for _, branchName := range branches {
+		branch := cc.Branches[branchName]
 
 		if err := GitCheckout(ctx, r, branchName); err != nil {
 			return nil, fmt.Errorf("[%s] failed to checkout branch %s", r.RepositoryDirectory(), branchName)
@@ -209,7 +224,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 			options = append(
 				options,
 				DiscoverImages(r, branch.SkipDockerFilesMatches),
-				DiscoverTests(r, ov, fromImage, branch.SkipE2EMatches),
+				DiscoverTests(r, ov, fromImage, branch.SkipE2EMatches, random),
 			)
 
 			log.Println(r.RepositoryDirectory(), "Apply input options", len(options))
