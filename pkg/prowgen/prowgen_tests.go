@@ -24,9 +24,10 @@ const (
 	cronTemplate         = "%d %d * * 2,6"
 	seed                 = 12345
 	devclusterBaseDomain = "serverless.devcluster.openshift.com"
-	// Holds version of the cluster pool dedicated to OpenShift Serverless in CI.
+	// Holds version of the existing cluster pool dedicated to OpenShift Serverless in CI.
 	// See https://docs.ci.openshift.org/docs/how-tos/cluster-claim/#existing-cluster-pools
-	clusterPoolVersion = "4.15"
+	clusterPoolVersion       = "4.15"
+	serverlessClusterProfile = "aws-serverless"
 )
 
 func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, skipE2ETestMatch []string, random *rand.Rand) ReleaseBuildConfigurationOption {
@@ -71,7 +72,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				}
 				workflow = pointer.String("generic-claim")
 			} else {
-				clusterProfile = "aws-serverless"
+				clusterProfile = serverlessClusterProfile
 				env = map[string]string{
 					"BASE_DOMAIN": devclusterBaseDomain,
 				}
