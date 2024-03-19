@@ -188,7 +188,16 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 							},
 						}},
 				}
+			} else if ov.Version != clusterPoolVersion {
+				releases = map[string]cioperatorapi.UnresolvedRelease{
+					"latest": {
+						Release: &cioperatorapi.Release{
+							Version: ov.Version,
+							Channel: "stable",
+						}},
+				}
 			}
+
 			cfg := cioperatorapi.ReleaseBuildConfiguration{
 				Metadata: metadata,
 				InputConfiguration: cioperatorapi.InputConfiguration{

@@ -24,6 +24,9 @@ const (
 	cronTemplate         = "%d %d * * 2,6"
 	seed                 = 12345
 	devclusterBaseDomain = "serverless.devcluster.openshift.com"
+	// Holds version of the cluster pool dedicated to OpenShift Serverless in CI.
+	// See https://docs.ci.openshift.org/docs/how-tos/cluster-claim/#existing-cluster-pools
+	clusterPoolVersion = "4.15"
 )
 
 func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, skipE2ETestMatch []string, random *rand.Rand) ReleaseBuildConfigurationOption {
@@ -48,27 +51,29 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				testTimeout = &prowapi.Duration{Duration: 4 * time.Hour}
 			}
 
-			clusterClaim := &cioperatorapi.ClusterClaim{
-				Product:      cioperatorapi.ReleaseProductOCP,
-				Version:      openShift.Version,
-				Architecture: cioperatorapi.ReleaseArchitectureAMD64,
-				Cloud:        cioperatorapi.CloudAWS,
-				Owner:        "openshift-ci",
-				Timeout:      &prowapi.Duration{Duration: time.Hour},
-			}
-			var clusterProfile cioperatorapi.ClusterProfile
-			workflow := pointer.String("generic-claim")
-			var env cioperatorapi.TestEnvironment
-			if openShift.CandidateRelease {
-				clusterClaim = nil
-				if strings.Contains(r.RepositoryDirectory(), "serverless-operator") {
-					// Use the shared profile for s-o.
-					clusterProfile = "aws"
-				} else {
-					clusterProfile = "aws-serverless"
-					env = map[string]string{
-						"BASE_DOMAIN": devclusterBaseDomain,
-					}
+			var (
+				clusterClaim   *cioperatorapi.ClusterClaim
+				clusterProfile cioperatorapi.ClusterProfile
+				workflow       *string
+				env            cioperatorapi.TestEnvironment
+			)
+
+			useClusterPool := openShift.Version == clusterPoolVersion
+			// Make sure to use the existing cluster pool if available for the given OpenShift version.
+			if useClusterPool {
+				clusterClaim = &cioperatorapi.ClusterClaim{
+					Product:      cioperatorapi.ReleaseProductOCP,
+					Version:      openShift.Version,
+					Architecture: cioperatorapi.ReleaseArchitectureAMD64,
+					Cloud:        cioperatorapi.CloudAWS,
+					Owner:        "serverless-ci",
+					Timeout:      &prowapi.Duration{Duration: time.Hour},
+				}
+				workflow = pointer.String("generic-claim")
+			} else {
+				clusterProfile = "aws-serverless"
+				env = map[string]string{
+					"BASE_DOMAIN": devclusterBaseDomain,
 				}
 				workflow = pointer.String("ipi-aws")
 			}
@@ -154,7 +159,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				},
 			}
 
-			if openShift.CandidateRelease {
+			if !useClusterPool {
 				testConfiguration.MultiStageTestConfiguration.Post =
 					append(testConfiguration.MultiStageTestConfiguration.Post,
 						cioperatorapi.TestStep{
