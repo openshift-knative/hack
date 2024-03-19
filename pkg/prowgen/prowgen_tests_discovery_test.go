@@ -327,10 +327,9 @@ func TestDiscoverTestsServingClusterClaim(t *testing.T) {
 		},
 	}
 
-	variant := strings.ReplaceAll(clusterPoolVersion, ".", "")
 	expectedTests := []cioperatorapi.TestStepConfiguration{
 		{
-			As: fmt.Sprintf("perf-tests-aws-%s", variant),
+			As: fmt.Sprintf("perf-tests-aws-%s", strings.ReplaceAll(clusterPoolVersion, ".", "")),
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
 				Version:      clusterPoolVersion,
