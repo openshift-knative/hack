@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/coreos/go-semver/semver"
@@ -109,7 +110,16 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 		return nil, err
 	}
 
-	for branchName, branch := range cc.Branches {
+	branches := make([]string, 0, len(cc.Branches))
+	for k := range cc.Branches {
+		branches = append(branches, k)
+	}
+	// Make sure to iterate every time in the same order to keep
+	// cron times consistent between runs.
+	slices.Sort(branches)
+
+	for _, branchName := range branches {
+		branch := cc.Branches[branchName]
 
 		if err := GitCheckout(ctx, r, branchName); err != nil {
 			return nil, fmt.Errorf("[%s] failed to checkout branch %s", r.RepositoryDirectory(), branchName)
