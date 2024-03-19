@@ -192,7 +192,9 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				}
 				// Periodic jobs gather artifacts on both failure/success.
 				for _, postStep := range cronTestConfiguration.MultiStageTestConfiguration.Post {
-					postStep.OptionalOnSuccess = pointer.Bool(false)
+					if postStep.LiteralTestStep != nil && strings.Contains(postStep.LiteralTestStep.As, "gather") {
+						postStep.OptionalOnSuccess = pointer.Bool(false)
+					}
 				}
 				cfg.Tests = append(cfg.Tests, *cronTestConfiguration)
 			}
