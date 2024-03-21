@@ -189,6 +189,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 						}},
 				}
 			}
+
 			cfg := cioperatorapi.ReleaseBuildConfiguration{
 				Metadata: metadata,
 				InputConfiguration: cioperatorapi.InputConfiguration{

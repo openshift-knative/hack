@@ -4,7 +4,7 @@ config:
       openShiftVersions:
       - cron: 0 3 * * *
         generateCustomConfigs: true
-        version: "4.14"
+        version: "4.15"
       - cron: 0 5 * * *
         onDemand: true
         version: "4.12"
@@ -137,18 +137,18 @@ repositories:
     releaseBuildConfiguration:
       base_images:
         hypershift-operator:
-          name: "4.14"
+          name: "4.15"
           namespace: ocp
           tag: hypershift-operator
         upi-installer:
-          name: "4.14"
+          name: "4.15"
           namespace: ocp
           tag: upi-installer
       releases:
         latest:
           integration:
             include_built_images: true
-            name: "4.14"
+            name: "4.15"
             namespace: ocp
       tests:
       - as: e2e-hypershift-continuous
@@ -207,7 +207,7 @@ repositories:
           cluster_profile: osd-ephemeral
           env:
             CLUSTER_DURATION: "10800"
-            CLUSTER_VERSION: "4.14"
+            CLUSTER_VERSION: "4.15"
             COMPUTE_NODES: "4"
           post:
           - chain: gather
@@ -266,7 +266,7 @@ repositories:
     releaseBuildConfiguration:
       base_images:
         upi-installer:
-          name: "4.14"
+          name: "4.15"
           namespace: ocp
           tag: upi-installer
       tests:

@@ -21,9 +21,21 @@ import (
 )
 
 const (
-	cronTemplate         = "%d %d * * 2,6"
-	seed                 = 12345
+	cronTemplate = "%d %d * * 2,6"
+	seed         = 12345
+	// Name of the cluster profile for starting new clusters from scratch.
+	// Introduced in https://github.com/openshift/ci-tools/pull/3978
+	serverlessClusterProfile = "aws-serverless"
+	// Name of a base domain that was created in a hosted zone with same name
+	// in AWS under rh-serverless account. The cluster profile defined earlier has permissions
+	// to create subdomains for new clusters.
 	devclusterBaseDomain = "serverless.devcluster.openshift.com"
+	// Holds version of the existing cluster pool dedicated to OpenShift Serverless in CI.
+	// See https://docs.ci.openshift.org/docs/how-tos/cluster-claim/#existing-cluster-pools
+	clusterPoolVersion = "4.15"
+	// Name of the owner for the existing cluster pool.
+	// Introduced in https://github.com/openshift/release/pull/49904
+	clusterPoolOwner = "serverless-ci"
 )
 
 func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, skipE2ETestMatch []string, random *rand.Rand) ReleaseBuildConfigurationOption {
@@ -48,27 +60,32 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				testTimeout = &prowapi.Duration{Duration: 4 * time.Hour}
 			}
 
-			clusterClaim := &cioperatorapi.ClusterClaim{
-				Product:      cioperatorapi.ReleaseProductOCP,
-				Version:      openShift.Version,
-				Architecture: cioperatorapi.ReleaseArchitectureAMD64,
-				Cloud:        cioperatorapi.CloudAWS,
-				Owner:        "openshift-ci",
-				Timeout:      &prowapi.Duration{Duration: time.Hour},
-			}
-			var clusterProfile cioperatorapi.ClusterProfile
-			workflow := pointer.String("generic-claim")
-			var env cioperatorapi.TestEnvironment
-			if openShift.CandidateRelease {
-				clusterClaim = nil
-				if strings.Contains(r.RepositoryDirectory(), "serverless-operator") {
-					// Use the shared profile for s-o.
-					clusterProfile = "aws"
-				} else {
-					clusterProfile = "aws-serverless"
-					env = map[string]string{
-						"BASE_DOMAIN": devclusterBaseDomain,
-					}
+			var (
+				clusterClaim   *cioperatorapi.ClusterClaim
+				clusterProfile cioperatorapi.ClusterProfile
+				workflow       *string
+				env            cioperatorapi.TestEnvironment
+			)
+
+			useClusterPool := openShift.Version == clusterPoolVersion
+			// Make sure to use the existing cluster pool if available for the given OpenShift version.
+			if useClusterPool {
+				// ClusterClaim references the existing cluster pool.
+				// Mutually exclusive with ClusterProfile.
+				clusterClaim = &cioperatorapi.ClusterClaim{
+					Product:      cioperatorapi.ReleaseProductOCP,
+					Version:      openShift.Version,
+					Architecture: cioperatorapi.ReleaseArchitectureAMD64,
+					Cloud:        cioperatorapi.CloudAWS,
+					Owner:        clusterPoolOwner,
+					Timeout:      &prowapi.Duration{Duration: time.Hour},
+				}
+				workflow = pointer.String("generic-claim")
+			} else {
+				// References the existing cluster profile in CI.
+				clusterProfile = serverlessClusterProfile
+				env = map[string]string{
+					"BASE_DOMAIN": devclusterBaseDomain,
 				}
 				workflow = pointer.String("ipi-aws")
 			}
@@ -154,7 +171,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				},
 			}
 
-			if openShift.CandidateRelease {
+			if !useClusterPool {
 				testConfiguration.MultiStageTestConfiguration.Post =
 					append(testConfiguration.MultiStageTestConfiguration.Post,
 						cioperatorapi.TestStep{
@@ -187,7 +204,9 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				}
 				// Periodic jobs gather artifacts on both failure/success.
 				for _, postStep := range cronTestConfiguration.MultiStageTestConfiguration.Post {
-					postStep.OptionalOnSuccess = pointer.Bool(false)
+					if postStep.LiteralTestStep != nil && strings.Contains(postStep.LiteralTestStep.As, "gather") {
+						postStep.OptionalOnSuccess = pointer.Bool(false)
+					}
 				}
 				cfg.Tests = append(cfg.Tests, *cronTestConfiguration)
 			}
