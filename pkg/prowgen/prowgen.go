@@ -308,6 +308,10 @@ func AlwaysRunInjector() JobConfigInjector {
 						}
 					}
 
+					// Prevent sneaking in wrong settings from previous runs of "make jobs".
+					// Make sure we reset it to default.
+					jobConfig.PresubmitsStatic[k][i].AlwaysRun = true
+
 					for _, t := range tests {
 						name := ToName(*r, &t, ocpVersion)
 						if (t.OnDemand || t.RunIfChanged != "" || onDemandForOpenShift) && strings.Contains(jobConfig.PresubmitsStatic[k][i].Name, name) {
