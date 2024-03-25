@@ -336,7 +336,7 @@ func TestDiscoverTestsServingClusterClaim(t *testing.T) {
 				Architecture: cioperatorapi.ReleaseArchitectureAMD64,
 				Cloud:        cioperatorapi.CloudAWS,
 				Owner:        "serverless-ci",
-				Timeout:      &prowapi.Duration{Duration: time.Hour},
+				Timeout:      &prowapi.Duration{Duration: 2 * time.Hour},
 			},
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				Test: []cioperatorapi.TestStep{
