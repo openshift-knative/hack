@@ -78,7 +78,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 					Architecture: cioperatorapi.ReleaseArchitectureAMD64,
 					Cloud:        cioperatorapi.CloudAWS,
 					Owner:        clusterPoolOwner,
-					Timeout:      &prowapi.Duration{Duration: time.Hour},
+					Timeout:      &prowapi.Duration{Duration: 2 * time.Hour},
 				}
 				workflow = pointer.String("generic-claim")
 			} else {
