@@ -21,8 +21,9 @@ import (
 )
 
 const (
-	cronTemplate = "%d %d * * 2,6"
-	seed         = 12345
+	midstreamCronTemplate  = "%d %d * * 2,6"
+	serverlessCronTemplate = "%d %d * * 1,5"
+	seed                   = 12345
 	// Name of the cluster profile for starting new clusters from scratch.
 	// Introduced in https://github.com/openshift/ci-tools/pull/3978
 	serverlessClusterProfile = "aws-serverless"
@@ -193,10 +194,14 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				cronTestConfiguration := testConfiguration.DeepCopy()
 				cronTestConfiguration.As += "-c"
 				if openShift.Cron == "" {
+					cronTemplate := midstreamCronTemplate
+					// Run s-o tests on other days to prevent hitting limits in AWS.
+					if strings.Contains(r.RepositoryDirectory(), "serverless-operator") {
+						cronTemplate = serverlessCronTemplate
+					}
 					// Make sure jobs start between 00:00 and 06:00 UTC by default.
 					r := random.Intn(360)
-					hour := r / 60
-					minute := r % 60
+					minute, hour := r%60, r/60
 					nightlyCron := fmt.Sprintf(cronTemplate, minute, hour)
 					cronTestConfiguration.Cron = pointer.String(nightlyCron)
 				} else {

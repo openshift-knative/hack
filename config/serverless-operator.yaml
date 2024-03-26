@@ -2,11 +2,9 @@ config:
   branches:
     main:
       openShiftVersions:
-      - cron: 0 3 * * *
-        generateCustomConfigs: true
+      - generateCustomConfigs: true
         version: "4.15"
-      - cron: 0 5 * * *
-        onDemand: true
+      - onDemand: true
         version: "4.12"
 repositories:
 - customConfigs:
