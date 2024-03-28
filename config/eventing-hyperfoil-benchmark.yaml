@@ -2,14 +2,13 @@ config:
   branches:
     main:
       openShiftVersions:
-      - version: "4.15"
+      - version: "4.14"
+        skipCron: true
 repositories:
 - dockerfiles: {}
   e2e:
-  - match: .*test-kafka-broker-upstream-.*
-  - match: .*test-kafka-broker-namespaced-midstream-.*
+  - match: test.*
     onDemand: true
-  ignoreConfigs: {}
   imagePrefix: knative-eventing-hyperfoil-benchmark
   org: openshift-knative
   promotion: {}
