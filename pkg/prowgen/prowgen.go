@@ -234,6 +234,10 @@ func SaveReleaseBuildConfiguration(outConfig *string, cfg ReleaseBuildConfigurat
 		return err
 	}
 
+	return copyOwnersFile(dir)
+}
+
+func copyOwnersFile(dir string) error {
 	owners, err := os.ReadFile("OWNERS")
 	if err != nil {
 		// Log just a warning
@@ -241,9 +245,8 @@ func SaveReleaseBuildConfiguration(outConfig *string, cfg ReleaseBuildConfigurat
 		return nil
 	}
 	if err := os.WriteFile(filepath.Join(dir, "OWNERS"), owners, os.ModePerm); err != nil {
-		return err
+		return fmt.Errorf("failed to write OWNERS file in %q: %w", dir, err)
 	}
-
 	return nil
 }
 
@@ -352,7 +355,11 @@ func (jcis JobConfigInjectors) Inject(inConfig *Config, openShiftRelease Reposit
 		for branchName, branch := range inConfig.Config.Branches {
 			for _, r := range inConfig.Repositories {
 				generatedOutputDir := "ci-operator/jobs"
-				glob := filepath.Join(openShiftRelease.RepositoryDirectory(), generatedOutputDir, r.RepositoryDirectory(), "*"+branchName+"*"+string(jci.Type)+"*")
+				dir := filepath.Join(openShiftRelease.RepositoryDirectory(), generatedOutputDir, r.RepositoryDirectory())
+				glob := filepath.Join(dir, "*"+branchName+"*"+string(jci.Type)+"*")
+				if err := copyOwnersFile(dir); err != nil {
+					return err
+				}
 				matches, err := filepath.Glob(glob)
 				if err != nil {
 					return err
