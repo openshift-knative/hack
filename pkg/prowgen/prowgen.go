@@ -240,16 +240,7 @@ func SaveReleaseBuildConfiguration(outConfig *string, cfg ReleaseBuildConfigurat
 		log.Printf("failed to read file: %v", err)
 		return nil
 	}
-	ownerAliases, err := os.ReadFile("OWNERS_ALIASES")
-	if err != nil {
-		// Log just a warning
-		log.Printf("failed to read file: %v", err)
-		return nil
-	}
 	if err := os.WriteFile(filepath.Join(dir, "OWNERS"), owners, os.ModePerm); err != nil {
-		return err
-	}
-	if err := os.WriteFile(filepath.Join(dir, "OWNERS_ALIASES"), ownerAliases, os.ModePerm); err != nil {
 		return err
 	}
 
