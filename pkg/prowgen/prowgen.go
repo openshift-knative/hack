@@ -326,6 +326,11 @@ func AlwaysRunInjector() JobConfigInjector {
 					// Make sure we reset it to default.
 					jobConfig.PresubmitsStatic[k][i].AlwaysRun = true
 
+					// Build images in pre-submit phase only for OpenShift versions that are mandatory to test.
+					if strings.HasSuffix(jobConfig.PresubmitsStatic[k][i].Name, "-images") {
+						jobConfig.PresubmitsStatic[k][i].AlwaysRun = !onDemandForOpenShift && strings.HasSuffix(jobConfig.PresubmitsStatic[k][i].Name, ocpVersion+"-images")
+					}
+
 					for _, t := range tests {
 						name := ToName(*r, &t, ocpVersion)
 						if (t.OnDemand || t.RunIfChanged != "" || onDemandForOpenShift) && strings.Contains(jobConfig.PresubmitsStatic[k][i].Name, name) {
