@@ -16,11 +16,6 @@ config:
       - version: "4.15"
       - onDemand: true
         version: "4.12"
-    release-v1.13:
-      openShiftVersions:
-      - version: "4.15"
-      - onDemand: true
-        version: "4.12"
 repositories:
 - dockerfiles: {}
   ignoreConfigs: {}
