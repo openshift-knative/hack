@@ -234,10 +234,14 @@ func SaveReleaseBuildConfiguration(outConfig *string, cfg ReleaseBuildConfigurat
 		return err
 	}
 
-	return copyOwnersFile(dir)
+	return copyOwnersFileIfNotPresent(dir)
 }
 
-func copyOwnersFile(dir string) error {
+func copyOwnersFileIfNotPresent(dir string) error {
+	if _, err := os.Stat(filepath.Join(dir, "OWNERS")); err == nil {
+		// skip if file already exists, openshift-ci bot will keep it up to date
+		return nil
+	}
 	owners, err := os.ReadFile("OWNERS")
 	if err != nil {
 		// Log just a warning
@@ -362,7 +366,7 @@ func (jcis JobConfigInjectors) Inject(inConfig *Config, openShiftRelease Reposit
 				generatedOutputDir := "ci-operator/jobs"
 				dir := filepath.Join(openShiftRelease.RepositoryDirectory(), generatedOutputDir, r.RepositoryDirectory())
 				glob := filepath.Join(dir, "*"+branchName+"*"+string(jci.Type)+"*")
-				if err := copyOwnersFile(dir); err != nil {
+				if err := copyOwnersFileIfNotPresent(dir); err != nil {
 					return err
 				}
 				matches, err := filepath.Glob(glob)
