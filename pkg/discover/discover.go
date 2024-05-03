@@ -63,16 +63,16 @@ func discover(ctx context.Context, path string) error {
 			continue // nothing to do here
 		}
 
-		var latest string
+		configuredBranches := make([]string, 0, len(inConfig.Config.Branches))
+		for branchName, _ := range inConfig.Config.Branches {
+			configuredBranches = append(configuredBranches, branchName)
+		}
+		slices.SortFunc(configuredBranches, prowgen.CmpBranches)
+		latestConfigured := configuredBranches[len(configuredBranches)-1]
+
+		latest := latestConfigured
 		if _, ok := inConfig.Config.Branches["release-next"]; ok {
 			latest = "release-next"
-		} else {
-			configuredBranches := make([]string, 0, len(inConfig.Config.Branches))
-			for branchName, _ := range inConfig.Config.Branches {
-				configuredBranches = append(configuredBranches, branchName)
-			}
-			slices.SortFunc(configuredBranches, prowgen.CmpBranches)
-			latest = configuredBranches[len(configuredBranches)-1]
 		}
 
 		availableBranches, err := prowgen.Branches(ctx, r)
@@ -83,7 +83,7 @@ func discover(ctx context.Context, path string) error {
 		log.Println(r.RepositoryDirectory(), "Latest branch", latest)
 
 		for i := 0; i < len(availableBranches); i++ {
-			if latest == availableBranches[i] {
+			if latestConfigured == availableBranches[i] {
 				for ; i < len(availableBranches); i++ {
 					if _, ok := inConfig.Config.Branches[availableBranches[i]]; !ok {
 						inConfig.Config.Branches[availableBranches[i]] = inConfig.Config.Branches[latest]

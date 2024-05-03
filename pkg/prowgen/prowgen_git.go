@@ -32,7 +32,7 @@ func Branches(ctx context.Context, r Repository) ([]string, error) {
 	}
 
 	// git --no-pager branch --list "release-v*"
-	branchesBytes, err := run(ctx, r, "git", "--no-pager", "branch", "--list", "release-v*")
+	branchesBytes, err := run(ctx, r, "git", "--no-pager", "branch", "--list", "release-*")
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +51,20 @@ func Branches(ctx context.Context, r Repository) ([]string, error) {
 	return sortedBranches, nil
 }
 
+var (
+	ignoreBranches = []string{"1.13"}
+)
+
 func CmpBranches(a string, b string) int {
+	for _, branch := range ignoreBranches {
+		if strings.Contains(a, branch) {
+			return -1 // this is equivalent to ignoring the branch
+		}
+		if strings.Contains(b, branch) {
+			return 1 // this is equivalent to ignoring the branch
+		}
+	}
+
 	a = strings.ReplaceAll(a, "release-v", "")
 	b = strings.ReplaceAll(b, "release-v", "")
 	if strings.Count(a, ".") == 1 {
