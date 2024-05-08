@@ -2,7 +2,7 @@ config:
   branches:
     release-v1.12:
       openShiftVersions:
-      - version: "4.15"
+      - version: "4.16"
       - onDemand: true
         version: "4.12"
 repositories:
