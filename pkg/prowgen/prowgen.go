@@ -47,6 +47,8 @@ func Main() {
 	outConfig := flag.String("output", filepath.Join(openShiftRelease.Org, openShiftRelease.Repo, "ci-operator", "config"), "Specify repositories config")
 	remote := flag.String("remote", "", "openshift/release remote fork (example: git@github.com:pierDipi/release.git)")
 	branch := flag.String("branch", "sync-serverless-ci", "Branch for remote fork")
+	push := flag.Bool("push", true, "Push changes to remote fork")
+	build := flag.Bool("build", true, "Run the openshift/release generator")
 	flag.Parse()
 
 	log.Println(*inputConfig, *outConfig)
@@ -116,18 +118,21 @@ func Main() {
 	if err := repositoriesGenerateConfigs.Wait(); err != nil {
 		log.Fatalln("Failed waiting for repositories generator", err)
 	}
-
-	if err := RunOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
-		log.Fatalln("Failed to run openshift/release generator:", err)
+	if *build {
+		if err := RunOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
+			log.Fatalln("Failed to run openshift/release generator:", err)
+		}
+		if err := runJobConfigInjectors(inConfig, openShiftRelease); err != nil {
+			log.Fatalln("Failed to inject Slack reporter", err)
+		}
+		if err := RunOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
+			log.Fatalln("Failed to run openshift/release generator after injecting Slack reporter", err)
+		}
 	}
-	if err := runJobConfigInjectors(inConfig, openShiftRelease); err != nil {
-		log.Fatalln("Failed to inject Slack reporter", err)
-	}
-	if err := RunOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
-		log.Fatalln("Failed to run openshift/release generator after injecting Slack reporter", err)
-	}
-	if err := PushBranch(ctx, openShiftRelease, remote, *branch, *inputConfig); err != nil {
-		log.Fatalln("Failed to push branch to openshift/release fork", *remote, err)
+	if *push {
+		if err := PushBranch(ctx, openShiftRelease, remote, *branch, *inputConfig); err != nil {
+			log.Fatalln("Failed to push branch to openshift/release fork", *remote, err)
+		}
 	}
 }
 

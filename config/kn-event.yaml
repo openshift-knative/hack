@@ -1,0 +1,64 @@
+---
+config:
+  branches:
+    release-1.11:
+      openShiftVersions:
+        - skipCron: true
+          version: '4.15'
+    release-1.13:
+      openShiftVersions:
+        - version: '4.15'
+    release-1.14:
+      openShiftVersions:
+        - version: '4.15'
+    release-next:
+      openShiftVersions:
+        - version: '4.15'
+repositories:
+  - org: openshift-knative
+    repo: kn-plugin-event
+    imagePrefix: client-plugin-event
+    imageNameOverrides:
+      kn-event-sender: sender
+    promotion:
+      namespace: knative
+      template: release-${version}
+      omitSource: true
+    slackChannel: '#knative-client'
+    resources:
+      '*':
+        limits:
+          memory: 6Gi
+        requests:
+          cpu: 100m
+          memory: 200Mi
+    tests:
+      - as: unit
+        commands: make unit
+        container:
+          from: src
+#      - as: e2e
+#        cluster_claim:
+#          architecture: amd64
+#          cloud: aws
+#          owner: serverless-ci
+#          product: ocp
+#          timeout: 2h30m0s
+#          version: "4.15"
+#        steps:
+#          test:
+#            - as: test
+#              commands: openshift/e2e-tests.sh
+#              dependencies:
+#                - env: TEST_IMAGES_EVENTSHUB
+#                  name: client-plugin-event-test-eventshub
+#                - env: TEST_IMAGES_WATHOLA_FORWARDER
+#                  name: client-plugin-event-test-wathola-forwarder
+#                - env: IMAGES_KN_EVENT_SENDER
+#                  name: client-plugin-event-sender
+#              from: src
+#              resources:
+#                requests:
+#                  cpu: 100m
+#              timeout: 30m0s
+#          workflow: generic-claim

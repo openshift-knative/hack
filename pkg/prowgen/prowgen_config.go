@@ -52,7 +52,9 @@ type IgnoreConfigs struct {
 }
 
 type Promotion struct {
-	Namespace string `json:"namespace,omitempty" yaml:"namespace,omitempty"`
+	Namespace  string `json:"namespace,omitempty" yaml:"namespace,omitempty"`
+	Template   string `json:"template,omitempty" yaml:"template,omitempty"`
+	OmitSource bool   `json:"omitSource,omitempty" yaml:"omitSource,omitempty"`
 }
 
 type CustomConfigs struct {
@@ -320,16 +322,11 @@ func withNamePromotion(r Repository, branchName string) ReleaseBuildConfiguratio
 			ns = r.Promotion.Namespace
 		}
 		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
-			Targets: []cioperatorapi.PromotionTarget{
-				{
-					Namespace: ns,
-					Name:      strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
-					AdditionalImages: map[string]string{
-						// Add source image
-						transformLegacyKnativeSourceImageName(r): "src",
-					},
-				},
-			},
+			Targets: []cioperatorapi.PromotionTarget{{
+				Namespace:        ns,
+				Name:             createPropotionName(r.Promotion, branchName),
+				AdditionalImages: createPromotionAdditionalImages(r),
+			}},
 		}
 		return nil
 	}
@@ -342,20 +339,37 @@ func withTagPromotion(r Repository, branchName string) ReleaseBuildConfiguration
 			ns = r.Promotion.Namespace
 		}
 		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
-			Targets: []cioperatorapi.PromotionTarget{
-				{
-					Namespace:   ns,
-					Tag:         strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
-					TagByCommit: false, // TODO: revisit this later
-					AdditionalImages: map[string]string{
-						// Add source image
-						transformLegacyKnativeSourceImageName(r): "src",
-					},
-				},
-			},
+			Targets: []cioperatorapi.PromotionTarget{{
+				Namespace:        ns,
+				Tag:              createPropotionName(r.Promotion, branchName),
+				TagByCommit:      false, // TODO: revisit this later
+				AdditionalImages: createPromotionAdditionalImages(r),
+			}},
 		}
 		return nil
 	}
+}
+
+func createPromotionAdditionalImages(r Repository) map[string]string {
+	if r.Promotion.OmitSource {
+		return nil
+	}
+	return map[string]string{
+		// Add source image
+		transformLegacyKnativeSourceImageName(r): "src",
+	}
+}
+
+func createPropotionName(p Promotion, branchName string) string {
+	tpl := "knative-${version}"
+	if p.Template != "" {
+		tpl = p.Template
+	}
+	version := strings.Replace(branchName, "release-", "", 1)
+	if version == "next" {
+		version = "nightly"
+	}
+	return strings.ReplaceAll(tpl, "${version}", version)
 }
 
 func addCandidateRelease(openshiftVersions []OpenShift) ([]OpenShift, error) {

@@ -27,6 +27,7 @@ var (
 		"openshift/ci-operator/knative-images.*",
 		"openshift/ci-operator/knative-test-images.*",
 		"openshift/ci-operator/static-images.*",
+		"openshift/ci-operator/.*images?.*",
 	}
 )
 

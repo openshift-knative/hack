@@ -2,29 +2,33 @@
 # replacing reference images via env variable.
 include pkg/project/testdata/env
 
-generate-ci: clean generate-eventing-ci generate-serving-ci
-.PHONY: generate-ci
+all: eventing serving operator client
+.PHONY: all
 
-generate-ci-no-clean: generate-eventing-ci generate-serving-ci generate-serverless-operator-ci
-.PHONY: generate-ci-no-clean
-
-generate-eventing-ci:
+eventing:
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/backstage-plugins.yaml $(ARGS)
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing.yaml $(ARGS)
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-istio.yaml $(ARGS)
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-kafka-broker.yaml $(ARGS)
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-hyperfoil-benchmark.yaml $(ARGS)
-.PHONY: generate-eventing-ci
+.PHONY: eventing
 
-generate-serving-ci:
+serving:
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/serving.yaml $(ARGS)
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/serving-net-istio.yaml $(ARGS)
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/serving-net-kourier.yaml $(ARGS)
-.PHONY: generate-serving-ci
+.PHONY: serving
 
-generate-serverless-operator-ci:
+operator:
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/serverless-operator.yaml $(ARGS)
-.PHONY: generate-serverless-operator-ci
+.PHONY: operator
+
+client: kn-event
+.PHONY: client
+
+kn-event:
+	go run github.com/openshift-knative/hack/cmd/prowgen --config config/kn-event.yaml $(ARGS)
+.PHONY: kn-event
 
 discover-branches:
 	go run github.com/openshift-knative/hack/cmd/discover $(ARGS)
