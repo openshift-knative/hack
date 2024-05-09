@@ -63,9 +63,11 @@ func Main() error {
 		return err
 	}
 
-	outConfig := filepath.Join(openShiftRelease.Org, openShiftRelease.Repo, "ci-operator", "config")
-	if err := prowgen.DeleteExistingReleaseBuildConfigurationForBranch(&outConfig, prowgen.Repository{Org: c.Org, Repo: c.Repo}, c.Branch); err != nil {
-		return err
+	if c.FromBranch != c.Branch {
+		outConfig := filepath.Join(openShiftRelease.Org, openShiftRelease.Repo, "ci-operator", "config")
+		if err := prowgen.DeleteExistingReleaseBuildConfigurationForBranch(&outConfig, prowgen.Repository{Org: c.Org, Repo: c.Repo}, c.Branch); err != nil {
+			return err
+		}
 	}
 
 	files, err := discoverJobConfigs(openShiftRelease, c)
@@ -94,8 +96,10 @@ func Main() error {
 		log.Fatalln("Failed to mirror repositories", err)
 	}
 
-	if err := runProwCopyInjectors(&c, prowgenConfig, openShiftRelease); err != nil {
-		log.Fatalln("Failed to run Prow job injectors", err)
+	if c.FromBranch != c.Branch {
+		if err := runProwCopyInjectors(&c, prowgenConfig, openShiftRelease); err != nil {
+			log.Fatalln("Failed to run Prow job injectors", err)
+		}
 	}
 
 	return nil
