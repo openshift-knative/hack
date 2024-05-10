@@ -31,7 +31,7 @@ discover-branches:
 .PHONY: discover-branches
 
 unit-tests:
-	go test ./pkg/...
+	go test -race -count=1 ./...
 
 	rm -rf openshift/project/testoutput
 	go run ./cmd/generate/ --generators dockerfile \
@@ -41,7 +41,7 @@ unit-tests:
 		--images-from "hack" \
 		--images-from-url-format "https://raw.githubusercontent.com/openshift-knative/%s/%s/pkg/project/testdata/additional-images.yaml" \
 		--output "openshift/project/testoutput/openshift"
-	diff -r "pkg/project/testoutput" "openshift/project/testoutput"
+	diff --unified --recursive "pkg/project/testoutput" "openshift/project/testoutput"
 
 .PHONY: unit-tests
 
