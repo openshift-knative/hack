@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -48,7 +49,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 
 		for i := range tests {
 			test := &tests[i]
-			as := ToName(r, test, openShift.Version)
+			as := ToName(r, test)
 
 			var testTimeout *prowapi.Duration
 			var jobTimeout *prowapi.Duration
@@ -99,75 +100,70 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 					AllowBestEffortPostSteps: pointer.Bool(true),
 					AllowSkipOnSuccess:       pointer.Bool(true),
 					Environment:              env,
-					Test: []cioperatorapi.TestStep{
-						{
-							LiteralTestStep: &cioperatorapi.LiteralTestStep{
-								As:       "test",
-								From:     sourceImageName,
-								Commands: fmt.Sprintf("SKIP_MESH_AUTH_POLICY_GENERATION=true make %s", test.Command),
-								Resources: cioperatorapi.ResourceRequirements{
-									Requests: cioperatorapi.ResourceList{
-										"cpu": "100m",
-									},
+					Test: []cioperatorapi.TestStep{{
+						LiteralTestStep: &cioperatorapi.LiteralTestStep{
+							As:       "test",
+							From:     sourceImageName,
+							Commands: test.EffectiveCommand(),
+							Resources: cioperatorapi.ResourceRequirements{
+								Requests: cioperatorapi.ResourceList{
+									"cpu": "100m",
 								},
-								Timeout:      testTimeout,
-								Dependencies: dependenciesFromImages(cfg.Images, test.SkipImages),
-								Cli:          "latest",
 							},
+							Environment:  test.EnvironmentAsStepParams(),
+							Timeout:      testTimeout,
+							Dependencies: dependenciesFromImages(cfg.Images, test.SkipImages),
+							Cli:          "latest",
 						},
-					},
-					Post: []cioperatorapi.TestStep{
-						{
-							LiteralTestStep: &cioperatorapi.LiteralTestStep{
-								As:       "knative-must-gather",
-								From:     sourceImageName,
-								Commands: `oc adm must-gather --image=quay.io/openshift-knative/must-gather --dest-dir "${ARTIFACT_DIR}/gather-knative"`,
-								Resources: cioperatorapi.ResourceRequirements{
-									Requests: cioperatorapi.ResourceList{
-										"cpu": "100m",
-									},
+					}},
+					Post: []cioperatorapi.TestStep{{
+						LiteralTestStep: &cioperatorapi.LiteralTestStep{
+							As:       "knative-must-gather",
+							From:     sourceImageName,
+							Commands: `oc adm must-gather --image=quay.io/openshift-knative/must-gather --dest-dir "${ARTIFACT_DIR}/gather-knative"`,
+							Resources: cioperatorapi.ResourceRequirements{
+								Requests: cioperatorapi.ResourceList{
+									"cpu": "100m",
 								},
-								Timeout:           &prowapi.Duration{Duration: 20 * time.Minute},
-								BestEffort:        pointer.Bool(true),
-								OptionalOnSuccess: pointer.Bool(true),
-								Cli:               "latest",
 							},
+							Timeout:           &prowapi.Duration{Duration: 20 * time.Minute},
+							BestEffort:        pointer.Bool(true),
+							OptionalOnSuccess: pointer.Bool(true),
+							Cli:               "latest",
 						},
-						{
-							LiteralTestStep: &cioperatorapi.LiteralTestStep{
-								As:       "openshift-must-gather",
-								From:     sourceImageName,
-								Commands: `oc adm must-gather --dest-dir "${ARTIFACT_DIR}/gather-openshift"`,
-								Resources: cioperatorapi.ResourceRequirements{
-									Requests: cioperatorapi.ResourceList{
-										"cpu": "100m",
-									},
+					}, {
+						LiteralTestStep: &cioperatorapi.LiteralTestStep{
+							As:       "openshift-must-gather",
+							From:     sourceImageName,
+							Commands: `oc adm must-gather --dest-dir "${ARTIFACT_DIR}/gather-openshift"`,
+							Resources: cioperatorapi.ResourceRequirements{
+								Requests: cioperatorapi.ResourceList{
+									"cpu": "100m",
 								},
-								Timeout:           &prowapi.Duration{Duration: 20 * time.Minute},
-								BestEffort:        pointer.Bool(true),
-								OptionalOnSuccess: pointer.Bool(true),
-								Cli:               "latest",
 							},
+							Timeout:           &prowapi.Duration{Duration: 20 * time.Minute},
+							BestEffort:        pointer.Bool(true),
+							OptionalOnSuccess: pointer.Bool(true),
+							Cli:               "latest",
 						},
-						{
-							LiteralTestStep: &cioperatorapi.LiteralTestStep{
-								As:          "openshift-gather-extra",
-								From:        sourceImageName,
-								Commands:    `curl -skSL https://raw.githubusercontent.com/openshift/release/master/ci-operator/step-registry/gather/extra/gather-extra-commands.sh | /bin/bash -s`,
-								GracePeriod: &prowapi.Duration{Duration: 60 * time.Second},
-								Resources: cioperatorapi.ResourceRequirements{
-									Requests: cioperatorapi.ResourceList{
-										"cpu":    "300m",
-										"memory": "300Mi",
-									},
+					}, {
+						LiteralTestStep: &cioperatorapi.LiteralTestStep{
+							As:          "openshift-gather-extra",
+							From:        sourceImageName,
+							Commands:    `curl -skSL https://raw.githubusercontent.com/openshift/release/master/ci-operator/step-registry/gather/extra/gather-extra-commands.sh | /bin/bash -s`,
+							GracePeriod: &prowapi.Duration{Duration: 60 * time.Second},
+							Resources: cioperatorapi.ResourceRequirements{
+								Requests: cioperatorapi.ResourceList{
+									"cpu":    "300m",
+									"memory": "300Mi",
 								},
-								Timeout:           &prowapi.Duration{Duration: 20 * time.Minute},
-								BestEffort:        pointer.Bool(true),
-								OptionalOnSuccess: pointer.Bool(true),
-								Cli:               "latest",
 							},
+							Timeout:           &prowapi.Duration{Duration: 20 * time.Minute},
+							BestEffort:        pointer.Bool(true),
+							OptionalOnSuccess: pointer.Bool(true),
+							Cli:               "latest",
 						},
-					},
+					}},
 					Workflow: workflow,
 				},
 			}
@@ -239,7 +235,10 @@ const (
 )
 
 type Test struct {
+	Name         string
 	Command      string
+	Environment  cioperatorapi.TestEnvironment
+	Makefile     bool
 	OnDemand     bool
 	IgnoreError  bool
 	RunIfChanged string
@@ -254,58 +253,139 @@ func (t *Test) HexSha() string {
 	return hex.EncodeToString(h.Sum(nil))[:shaLength]
 }
 
+func (t *Test) EffectiveCommand() string {
+	if t.Makefile {
+		return fmt.Sprintf("make %s", t.Command)
+	}
+	return t.Command
+}
+
+func (t *Test) EnvironmentAsStepParams() []cioperatorapi.StepParameter {
+	params := make([]cioperatorapi.StepParameter, 0, len(t.Environment))
+	for k, v := range t.Environment {
+		params = append(params, cioperatorapi.StepParameter{
+			Name:    k,
+			Default: &v,
+		})
+	}
+	return params
+
+}
+
 func discoverE2ETests(r Repository, skipE2ETestMatch []string) ([]Test, error) {
+	var tests []Test
+	if manualE2eTests, err := defineManualE2ETests(r); err != nil {
+		return nil, fmt.Errorf("failed to define manual tests: %w", err)
+	} else {
+		tests = append(tests, manualE2eTests...)
+	}
+	defer sort.Slice(tests, func(i, j int) bool {
+		return tests[i].Command < tests[j].Command
+	})
 	makefilePath := filepath.Join(r.RepositoryDirectory(), "Makefile")
 	if _, err := os.Stat(makefilePath); err != nil && os.IsNotExist(err) {
-		return nil, nil
+		return tests, nil
 	}
 
 	mc, err := os.ReadFile(makefilePath)
 	if err != nil {
-		return nil, fmt.Errorf("[%s] failed to read file %s: %w", r.RepositoryDirectory(), "Makefile", err)
+		return tests, fmt.Errorf("[%s] failed to read file %s: %w", r.RepositoryDirectory(), "Makefile", err)
 	}
 
 	mcStr := string(mc)
 	lines := strings.Split(mcStr, "\n")
-	targets := make([]Test, 0, len(lines)/2)
-	commands := sets.NewString()
+	commands := sets.New[string]()
 
 	for _, l := range lines {
 		l := strings.TrimSpace(l)
 		for _, e2e := range r.E2ETests {
-			if slices.Contains(skipE2ETestMatch, e2e.Match) {
+			if e2e.Match == "" || slices.Contains(skipE2ETestMatch, e2e.Match) {
 				continue
 			}
-			if err := createTest(r, l, e2e, &targets, commands); err != nil {
+			if err := createTest(r, l, e2e, &tests, commands); err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	sort.Slice(targets, func(i, j int) bool {
-		return targets[i].Command < targets[j].Command
-	})
-
-	return targets, nil
+	return tests, nil
 }
 
-func createTest(r Repository, line string, e2e E2ETest, tests *[]Test, commands sets.String) error {
-	if strings.HasSuffix(line, ":") {
-		line := strings.TrimSuffix(line, ":")
+func createTest(r Repository, line string, e2e E2ETest, tests *[]Test, commands sets.Set[string]) error {
+	// trim trailing comments
+	if strings.Contains(line, "#") {
+		line = strings.Split(line, "#")[0]
+	}
+	if !strings.HasSuffix(line, ":") {
+		return nil
+	}
+	line = strings.TrimSuffix(line, ":")
 
-		log.Println(r.RepositoryDirectory(), "Comparing", line, "to match", e2e.Match)
+	log.Println(r.RepositoryDirectory(), "Comparing", line, "to match", e2e.Match)
 
-		matches, err := regexp.Match(e2e.Match, []byte(line))
-		if err != nil {
-			return fmt.Errorf("[%s] failed to match test %s: %w", r.RepositoryDirectory(), e2e.Match, err)
-		}
-		if matches && !commands.Has(line) {
-			*tests = append(*tests, Test{Command: line, OnDemand: e2e.OnDemand, IgnoreError: e2e.IgnoreError, RunIfChanged: e2e.RunIfChanged, SkipCron: e2e.SkipCron, SkipImages: e2e.SkipImages, Timeout: e2e.Timeout})
-			commands.Insert(line)
+	matches, err := regexp.Match(e2e.Match, []byte(line))
+	if err != nil {
+		return fmt.Errorf("[%s] failed to match test %s: %w", r.RepositoryDirectory(), e2e.Match, err)
+	}
+	if matches && !commands.Has(line) {
+		*tests = append(*tests, Test{
+			Command:      line,
+			Makefile:     true,
+			OnDemand:     e2e.OnDemand,
+			Environment:  e2e.Environment,
+			IgnoreError:  e2e.IgnoreError,
+			RunIfChanged: e2e.RunIfChanged,
+			SkipCron:     e2e.SkipCron,
+			SkipImages:   e2e.SkipImages,
+			Timeout:      e2e.Timeout,
+		})
+		commands.Insert(line)
+	}
+	return nil
+}
+
+func defineManualE2ETests(r Repository) ([]Test, error) {
+	tests := make([]Test, 0, len(r.E2ETests))
+	for _, e2e := range r.E2ETests {
+		if e2e.Command != "" {
+			if e2e.Match != "" {
+				return nil, fmt.Errorf("[%s] e2e test %s has both command and match defined",
+					r.RepositoryDirectory(), e2e.Name)
+			}
+			tests = append(tests, Test{
+				Name:         sanitizeNames(e2e.Name, e2e.Command),
+				Command:      e2e.Command,
+				Environment:  e2e.Environment,
+				OnDemand:     e2e.OnDemand,
+				IgnoreError:  e2e.IgnoreError,
+				RunIfChanged: e2e.RunIfChanged,
+				SkipCron:     e2e.SkipCron,
+				SkipImages:   e2e.SkipImages,
+				Timeout:      e2e.Timeout,
+			})
 		}
 	}
+	return tests, nil
+}
 
-	return nil
+func sanitizeNames(names ...string) string {
+	for _, name := range names {
+		// replace all non-alphanumeric characters with a dash
+		name = strings.Map(func(r rune) rune {
+			if r >= 'a' && r <= 'z' || r >= '0' && r <= '9' {
+				return r
+			}
+			return '-'
+
+		}, name)
+		// replace multiple dashes with a single dash
+		re := regexp.MustCompile(`-+`)
+		name = re.ReplaceAllString(name, "-")
+		if name != "" {
+			return name
+		}
+	}
+	return "empty-list-n" + strconv.Itoa(len(names))
 }
 
 func dependenciesFromImages(images []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration, skipImages []string) []cioperatorapi.StepDependency {

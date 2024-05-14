@@ -317,9 +317,7 @@ func AlwaysRunInjector() JobConfigInjector {
 					variant := jobConfig.PresubmitsStatic[k][i].Labels["ci-operator.openshift.io/variant"]
 					ocpVersion := strings.ReplaceAll(strings.SplitN(variant, "-", 2)[0], ".", "")
 
-					var err error
-					openshiftVersions := b.OpenShiftVersions
-					openshiftVersions, err = addCandidateRelease(b.OpenShiftVersions)
+					openshiftVersions, err := addCandidateRelease(b.OpenShiftVersions)
 					if err != nil {
 						return err
 					}
@@ -341,7 +339,7 @@ func AlwaysRunInjector() JobConfigInjector {
 					}
 
 					for _, t := range tests {
-						name := ToName(*r, &t, ocpVersion)
+						name := ToName(*r, &t)
 						if (t.OnDemand || t.RunIfChanged != "" || onDemandForOpenShift) && strings.Contains(jobConfig.PresubmitsStatic[k][i].Name, name) {
 							jobConfig.PresubmitsStatic[k][i].AlwaysRun = false
 						}

@@ -1,7 +1,6 @@
 package prowgen
 
 import (
-	"fmt"
 	"log"
 	"strings"
 )
@@ -13,25 +12,24 @@ const (
 
 // ToName creates a test name for the given Test following the constraints in openshift/release.
 // - name cannot be longer than maxNameLength characters.
-func ToName(r Repository, test *Test, openShiftVersion string) string {
+func ToName(r Repository, test *Test) string {
+	if test.Name != "" {
+		return test.Name
+	}
 
-	variant := strings.ReplaceAll(openShiftVersion, ".", "")
-	suffix := fmt.Sprintf("-aws-%s", variant)
 	continuousSuffix := "-c"
 
-	maxCommandLength := maxNameLength - len(suffix) - len(continuousSuffix)
+	maxCommandLength := maxNameLength - len(continuousSuffix)
 	if len(test.Command) > maxCommandLength {
 		sha := test.HexSha() // guarantees uniqueness
 		prefix := test.Command[:maxCommandLength-len(sha)-1]
-		if strings.HasSuffix(prefix, "-") {
-			// OpenShift CI doesnt' like double dashes, such as `stable-latest-test-kafka--7465737-aws-ocp-412`.
-			// So, if the prefix of the command ends with a dash, we remove it.
-			prefix = prefix[:len(prefix)-1]
-		}
+		// OpenShift CI doesnt' like double dashes, such as `stable-latest-test-kafka--7465737-aws-ocp-412`.
+		// So, if the prefix of the command ends with a dash, we remove it.
+		prefix = strings.TrimSuffix(prefix, "-")
 		newTarget := prefix + "-" + sha
 		log.Println(r.RepositoryDirectory(), "command as test name is too long", test.Command, "truncating it to", newTarget)
-		return fmt.Sprintf("%s%s", newTarget, suffix)
+		return newTarget
 	}
 
-	return fmt.Sprintf("%s%s", test.Command, suffix)
+	return test.Command
 }
