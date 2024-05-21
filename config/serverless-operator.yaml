@@ -16,6 +16,15 @@ repositories:
         steps:
           cluster_profile: aws
           test:
+          - as: knative-eventing-kafka-broker-e2e
+            commands: make test-upstream-e2e-kafka-no-upgrade
+            from: serverless-source-image
+            resources:
+              limits:
+                memory: 8Gi
+              requests:
+                cpu: 100m
+                memory: 200Mi
           - as: operator-e2e
             commands: make test-e2e-with-kafka
             from: serverless-source-image
@@ -27,15 +36,6 @@ repositories:
                 memory: 200Mi
           - as: knative-serving-eventing-e2e
             commands: make test-upstream-e2e-no-upgrade
-            from: serverless-source-image
-            resources:
-              limits:
-                memory: 6Gi
-              requests:
-                cpu: 100m
-                memory: 200Mi
-          - as: knative-eventing-kafka-broker-e2e
-            commands: make test-upstream-e2e-kafka-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -57,6 +57,15 @@ repositories:
         steps:
           cluster_profile: azure4
           test:
+          - as: knative-eventing-kafka-broker-e2e
+            commands: make test-upstream-e2e-kafka-no-upgrade
+            from: serverless-source-image
+            resources:
+              limits:
+                memory: 8Gi
+              requests:
+                cpu: 100m
+                memory: 200Mi
           - as: operator-e2e
             commands: make test-e2e-with-kafka
             from: serverless-source-image
@@ -68,15 +77,6 @@ repositories:
                 memory: 200Mi
           - as: knative-serving-eventing-e2e
             commands: make test-upstream-e2e-no-upgrade
-            from: serverless-source-image
-            resources:
-              limits:
-                memory: 6Gi
-              requests:
-                cpu: 100m
-                memory: 200Mi
-          - as: knative-eventing-kafka-broker-e2e
-            commands: make test-upstream-e2e-kafka-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -98,6 +98,15 @@ repositories:
         steps:
           cluster_profile: gcp
           test:
+          - as: knative-eventing-kafka-broker-e2e
+            commands: make test-upstream-e2e-kafka-no-upgrade
+            from: serverless-source-image
+            resources:
+              limits:
+                memory: 8Gi
+              requests:
+                cpu: 100m
+                memory: 200Mi
           - as: operator-e2e
             commands: make test-e2e-with-kafka
             from: serverless-source-image
@@ -109,15 +118,6 @@ repositories:
                 memory: 200Mi
           - as: knative-serving-eventing-e2e
             commands: make test-upstream-e2e-no-upgrade
-            from: serverless-source-image
-            resources:
-              limits:
-                memory: 6Gi
-              requests:
-                cpu: 100m
-                memory: 200Mi
-          - as: knative-eventing-kafka-broker-e2e
-            commands: make test-upstream-e2e-kafka-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -158,6 +158,15 @@ repositories:
             HYPERSHIFT_BASE_DOMAIN: cspilp.interop.ccitredhat.com
             HYPERSHIFT_NODE_COUNT: "5"
           test:
+          - as: knative-eventing-kafka-broker-e2e
+            commands: make test-upstream-e2e-kafka-no-upgrade
+            from: serverless-source-image
+            resources:
+              limits:
+                memory: 8Gi
+              requests:
+                cpu: 100m
+                memory: 200Mi
           - as: operator-e2e
             commands: make USER_MANAGEMENT_ALLOWED=false test-e2e-with-kafka
             from: serverless-source-image
@@ -169,15 +178,6 @@ repositories:
                 memory: 200Mi
           - as: knative-serving-eventing-e2e
             commands: make test-upstream-e2e-no-upgrade
-            from: serverless-source-image
-            resources:
-              limits:
-                memory: 6Gi
-              requests:
-                cpu: 100m
-                memory: 200Mi
-          - as: knative-eventing-kafka-broker-e2e
-            commands: make test-upstream-e2e-kafka-no-upgrade
             from: serverless-source-image
             resources:
               limits:
