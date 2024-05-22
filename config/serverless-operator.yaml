@@ -39,7 +39,7 @@ repositories:
             from: serverless-source-image
             resources:
               limits:
-                memory: 6Gi
+                memory: 8Gi
               requests:
                 cpu: 100m
                 memory: 200Mi
@@ -80,7 +80,7 @@ repositories:
             from: serverless-source-image
             resources:
               limits:
-                memory: 6Gi
+                memory: 8Gi
               requests:
                 cpu: 100m
                 memory: 200Mi
@@ -121,7 +121,7 @@ repositories:
             from: serverless-source-image
             resources:
               limits:
-                memory: 6Gi
+                memory: 8Gi
               requests:
                 cpu: 100m
                 memory: 200Mi
@@ -181,7 +181,7 @@ repositories:
             from: serverless-source-image
             resources:
               limits:
-                memory: 6Gi
+                memory: 8Gi
               requests:
                 cpu: 100m
                 memory: 200Mi
