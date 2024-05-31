@@ -22,7 +22,10 @@ const (
 )
 
 var (
-	registryRegex             = regexp.MustCompile(`registry\.(|svc\.)ci\.openshift\.org/\S+`)
+	registryIncludes = []string{
+		`registry\.(|svc\.)ci\.openshift\.org/\S+`,
+		`registry\.access\.redhat\.com/\S+`,
+	}
 	defaultDockerfileIncludes = []string{
 		"openshift/ci-operator/knative-images.*",
 		"openshift/ci-operator/knative-test-images.*",
@@ -197,10 +200,15 @@ func getPullStringsFromDockerfile(filename string) ([]string, error) {
 			continue
 		}
 
-		match := registryRegex.FindString(line)
-		if match != "" {
-			images = append(images, match)
+		regexps := ToRegexp(registryIncludes)
+		for _, r := range regexps {
+			match := r.FindString(line)
+			if match != "" {
+				images = append(images, match)
+				break
+			}
 		}
+
 		if line == "FROM src" {
 			images = append(images, srcImage)
 		}
