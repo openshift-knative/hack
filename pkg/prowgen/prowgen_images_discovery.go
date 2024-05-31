@@ -22,9 +22,16 @@ const (
 )
 
 var (
-	ciRegistryRegex           = regexp.MustCompile(`registry\.(|svc\.)ci\.openshift\.org/\S+`)
-	ubiImageRegex             = regexp.MustCompile(`registry\.access\.redhat\.com/ubi(\d{1,2})-minimal:latest$`)
-	registryRegexSlice        = []*regexp.Regexp{ciRegistryRegex, ubiImageRegex}
+	ciRegistryRegex = regexp.MustCompile(`registry\.(|svc\.)ci\.openshift\.org/\S+`)
+
+	ubiMinimal8Regex = regexp.MustCompile(`registry\.access\.redhat\.com/ubi8-minimal:latest$`)
+	ubiMinimal9Regex = regexp.MustCompile(`registry\.access\.redhat\.com/ubi9-minimal:latest$`)
+
+	imageOverrides = map[*regexp.Regexp]orgRepoTag{
+		ubiMinimal8Regex: {Org: "ocp", Repo: "ubi-minimal", Tag: "8"},
+		ubiMinimal9Regex: {Org: "ocp", Repo: "ubi-minimal", Tag: "9"},
+	}
+
 	defaultDockerfileIncludes = []string{
 		"openshift/ci-operator/knative-images.*",
 		"openshift/ci-operator/knative-test-images.*",
@@ -164,24 +171,27 @@ func discoverInputImages(dockerfile string) (map[string]cioperatorapi.ImageStrea
 		if imagePath == srcImage {
 			inputImages[srcImage] = cioperatorapi.ImageBuildInputs{As: []string{srcImage}}
 		} else {
-			imageOrgRepoTag, err := orgRepoTagFromPullString(imagePath)
+			orgRepoTag, err := orgRepoTagFromPullString(imagePath)
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to parse string %s as pullspec: %w", imagePath, err)
 			}
-			// Override imageOrgRepoTag for ubi-image from registry.access.redhat.com.
-			if matches := ubiImageRegex.FindStringSubmatch(imagePath); len(matches) == 2 {
-				imageOrgRepoTag = orgRepoTag{Org: "ocp", Repo: "ubi-minimal", Tag: matches[1]}
+
+			for k, override := range imageOverrides {
+				if k.FindString(imagePath) != "" {
+					orgRepoTag = override
+					break
+				}
 			}
 
-			requiredBaseImages[imageOrgRepoTag.String()] = cioperatorapi.ImageStreamTagReference{
-				Namespace: imageOrgRepoTag.Org,
-				Name:      imageOrgRepoTag.Repo,
-				Tag:       imageOrgRepoTag.Tag,
+			requiredBaseImages[orgRepoTag.String()] = cioperatorapi.ImageStreamTagReference{
+				Namespace: orgRepoTag.Org,
+				Name:      orgRepoTag.Repo,
+				Tag:       orgRepoTag.Tag,
 			}
 
-			inputs := inputImages[imageOrgRepoTag.String()]
-			inputs.As = sets.NewString(inputs.As...).Insert(imagePath).List() //different registries can resolve to the same imageOrgRepoTag
-			inputImages[imageOrgRepoTag.String()] = inputs
+			inputs := inputImages[orgRepoTag.String()]
+			inputs.As = sets.NewString(inputs.As...).Insert(imagePath).List() //different registries can resolve to the same orgRepoTag
+			inputImages[orgRepoTag.String()] = inputs
 		}
 	}
 
@@ -203,7 +213,13 @@ func getPullStringsFromDockerfile(filename string) ([]string, error) {
 			continue
 		}
 
-		for _, r := range registryRegexSlice {
+		match := ciRegistryRegex.FindString(line)
+		if match != "" {
+			images = append(images, match)
+		}
+
+		// Also include any images for which there are overrides.
+		for r := range imageOverrides {
 			match := r.FindString(line)
 			if match != "" {
 				images = append(images, match)
