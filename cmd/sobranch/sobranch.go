@@ -3,9 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/openshift-knative/hack/pkg/sobranch"
 	"strings"
-
-	"github.com/coreos/go-semver/semver"
 )
 
 func main() {
@@ -21,10 +20,7 @@ func main() {
 		*upstreamVersion = *upstreamVersion + ".0"
 	}
 
-	upstream := semver.New(*upstreamVersion)
-	for i := 0; i < 21; i++ { // Example 1.11 -> 1.32
-		upstream.BumpMinor()
-	}
+	soBranch := sobranch.FromUpstreamVersion(*upstreamVersion)
 
-	fmt.Printf("release-%d.%d", upstream.Major, upstream.Minor)
+	fmt.Printf(soBranch)
 }
