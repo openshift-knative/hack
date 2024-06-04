@@ -22,7 +22,16 @@ const (
 )
 
 var (
-	registryRegex             = regexp.MustCompile(`registry\.(|svc\.)ci\.openshift\.org/\S+`)
+	ciRegistryRegex = regexp.MustCompile(`registry\.(|svc\.)ci\.openshift\.org/\S+`)
+
+	ubiMinimal8Regex = regexp.MustCompile(`registry\.access\.redhat\.com/ubi8-minimal:latest$`)
+	ubiMinimal9Regex = regexp.MustCompile(`registry\.access\.redhat\.com/ubi9-minimal:latest$`)
+
+	imageOverrides = map[*regexp.Regexp]orgRepoTag{
+		ubiMinimal8Regex: {Org: "ocp", Repo: "ubi-minimal", Tag: "8"},
+		ubiMinimal9Regex: {Org: "ocp", Repo: "ubi-minimal", Tag: "9"},
+	}
+
 	defaultDockerfileIncludes = []string{
 		"openshift/ci-operator/knative-images.*",
 		"openshift/ci-operator/knative-test-images.*",
@@ -167,6 +176,13 @@ func discoverInputImages(dockerfile string) (map[string]cioperatorapi.ImageStrea
 				return nil, nil, fmt.Errorf("failed to parse string %s as pullspec: %w", imagePath, err)
 			}
 
+			for k, override := range imageOverrides {
+				if k.FindString(imagePath) != "" {
+					orgRepoTag = override
+					break
+				}
+			}
+
 			requiredBaseImages[orgRepoTag.String()] = cioperatorapi.ImageStreamTagReference{
 				Namespace: orgRepoTag.Org,
 				Name:      orgRepoTag.Repo,
@@ -197,10 +213,20 @@ func getPullStringsFromDockerfile(filename string) ([]string, error) {
 			continue
 		}
 
-		match := registryRegex.FindString(line)
+		match := ciRegistryRegex.FindString(line)
 		if match != "" {
 			images = append(images, match)
 		}
+
+		// Also include any images for which there are overrides.
+		for r := range imageOverrides {
+			match := r.FindString(line)
+			if match != "" {
+				images = append(images, match)
+				break
+			}
+		}
+
 		if line == "FROM src" {
 			images = append(images, srcImage)
 		}
