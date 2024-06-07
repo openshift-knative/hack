@@ -75,7 +75,7 @@ func discoverImages(r Repository, skipDockerFiles []string) ([]ReleaseBuildConfi
 			WithImage(ProjectDirectoryImageBuildStepConfigurationFuncFromImageInput(r, ImageInput{
 				Context:        discoverImageContext(dockerfile),
 				DockerfilePath: strings.Join(strings.Split(dockerfile, string(os.PathSeparator))[2:], string(os.PathSeparator)),
-				Inputs:         inputImages,
+				Inputs:         computeInputs(r, inputImages, dockerfile),
 			})),
 		)
 	}
@@ -205,6 +205,7 @@ func getPullStringsFromDockerfile(filename string) ([]string, error) {
 		if line == "FROM src" {
 			images = append(images, srcImage)
 		}
+
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -212,6 +213,29 @@ func getPullStringsFromDockerfile(filename string) ([]string, error) {
 	}
 
 	return images, nil
+}
+
+func computeInputs(
+	r Repository,
+	images map[string]cioperatorapi.ImageBuildInputs,
+	dockerfile string,
+) map[string]cioperatorapi.ImageBuildInputs {
+	if isSourceOrBuildDockerfile(dockerfile) {
+		return images
+	}
+	inputs := make(map[string]cioperatorapi.ImageBuildInputs, len(r.SharedInputs)+len(images))
+	for k, v := range r.SharedInputs {
+		inputs[k] = v
+	}
+	for k, v := range images {
+		inputs[k] = v
+	}
+	return inputs
+}
+
+func isSourceOrBuildDockerfile(dockerfile string) bool {
+	return strings.Contains(dockerfile, "source-image") ||
+		strings.Contains(dockerfile, "build-image")
 }
 
 func orgRepoTagFromPullString(pullString string) (orgRepoTag, error) {

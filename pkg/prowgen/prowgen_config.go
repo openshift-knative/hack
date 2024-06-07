@@ -26,6 +26,7 @@ type Repository struct {
 	CanonicalGoRepository *string                                                     `json:"canonicalGoRepository,omitempty" yaml:"canonicalGoRepository,omitempty"`
 	E2ETests              []E2ETest                                                   `json:"e2e,omitempty" yaml:"e2e,omitempty"`
 	Dockerfiles           Dockerfiles                                                 `json:"dockerfiles,omitempty" yaml:"dockerfiles,omitempty"`
+	SharedInputs          map[string]cioperatorapi.ImageBuildInputs                   `json:"sharedInputs,omitempty" yaml:"sharedInputs,omitempty"`
 	IgnoreConfigs         IgnoreConfigs                                               `json:"ignoreConfigs,omitempty" yaml:"ignoreConfigs,omitempty"`
 	CustomConfigs         []CustomConfigs                                             `json:"customConfigs,omitempty" yaml:"customConfigs,omitempty"`
 	Images                []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration `json:"images,omitempty" yaml:"images,omitempty"`

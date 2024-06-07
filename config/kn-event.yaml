@@ -20,7 +20,7 @@ repositories:
     imagePrefix: client-plugin-event
     binaryBuildCommands: |-
       export HOME=/tmp
-      export TEST_IMAGES_DIR=/usr/bin
+      export TEST_IMAGES_DIR=/var/build/bin
       ./mage build
     imageNameOverrides:
       kn-event-sender: sender
@@ -28,6 +28,11 @@ repositories:
       namespace: knative
       template: release-${version}
       omitSource: true
+    sharedInputs:
+      bin:
+        paths:
+          - destination_dir: ./
+            source_path: /var/build/bin
     slackChannel: '#knative-client'
     resources:
       '*':
