@@ -2,10 +2,21 @@ package sobranch
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/coreos/go-semver/semver"
 )
 
 func FromUpstreamVersion(upstream string) string {
+
+	upstream = strings.Replace(upstream, "release-v", "", 1)
+	upstream = strings.Replace(upstream, "release-", "", 1)
+	upstream = strings.Replace(upstream, "v", "", 1)
+
+	dotParts := strings.SplitN(upstream, ".", 3)
+	if len(dotParts) == 2 {
+		upstream = upstream + ".0"
+	}
 	soVersion := semver.New(upstream)
 	for i := 0; i < 21; i++ { // Example 1.11 -> 1.32
 		soVersion.BumpMinor()
