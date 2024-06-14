@@ -43,12 +43,11 @@ repositories:
           memory: 200Mi
     tests:
       - as: unit
-        commands: ./mage test
+        commands: |
+          export HOME=/tmp
+          ./mage test
         container:
           from: src
-        steps:
-          env:
-            HOME: /tmp
     e2e:
       - name: e2e
         command: openshift/e2e-tests.sh
