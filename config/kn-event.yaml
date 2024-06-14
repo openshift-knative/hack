@@ -31,7 +31,7 @@ repositories:
     sharedInputs:
       bin:
         paths:
-          - destination_dir: ./
+          - destination_dir: .
             source_path: /var/build/bin
     slackChannel: '#knative-client'
     resources:

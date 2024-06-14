@@ -52,7 +52,8 @@ type E2ETest struct {
 }
 
 type Dockerfiles struct {
-	Matches []string `json:"matches,omitempty" yaml:"matches,omitempty"`
+	Matches  []string `json:"matches,omitempty" yaml:"matches,omitempty"`
+	Excludes []string `json:"excludes,omitempty" yaml:"excludes,omitempty"`
 }
 
 type IgnoreConfigs struct {

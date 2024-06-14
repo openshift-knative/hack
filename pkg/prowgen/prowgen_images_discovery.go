@@ -29,6 +29,10 @@ var (
 		"openshift/ci-operator/static-images.*",
 		"openshift/ci-operator/.*images?.*",
 	}
+	defaultDockerfileExcludes = []string{
+		"openshift/ci-operator/source-image.*",
+		"openshift/ci-operator/build-image.*",
+	}
 )
 
 type orgRepoTag struct {
@@ -96,10 +100,15 @@ func discoverDockerfiles(r Repository, skipDockerFiles []string) ([]string, erro
 	if len(r.Dockerfiles.Matches) != 0 {
 		dockerFilesToInclude = r.Dockerfiles.Matches
 	}
+	dockerFilesToExclude := defaultDockerfileExcludes
+	if len(r.Dockerfiles.Excludes) != 0 {
+		dockerFilesToExclude = r.Dockerfiles.Excludes
+	}
 	filteredDockerFiles := slices.Filter(nil, dockerFilesToInclude, func(s string) bool {
 		return !slices.Contains(skipDockerFiles, s)
 	})
 	includePathRegex := ToRegexp(filteredDockerFiles)
+	excludePathRegex := ToRegexp(dockerFilesToExclude)
 	dockerfiles := sets.NewString()
 	rootDir := r.RepositoryDirectory()
 	err := filepath.Walk(rootDir, func(path string, info fs.FileInfo, err error) error {
@@ -116,6 +125,15 @@ func discoverDockerfiles(r Repository, skipDockerFiles []string) ([]string, erro
 					include = true
 					break
 				}
+			}
+		}
+		if !include {
+			return nil
+		}
+		for _, r := range excludePathRegex {
+			if r.MatchString(path) {
+				include = false
+				break
 			}
 		}
 		if !include {
