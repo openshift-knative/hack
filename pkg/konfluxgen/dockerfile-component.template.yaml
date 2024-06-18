@@ -1,0 +1,22 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Component
+metadata:
+  annotations:
+    image.redhat.com/generate: "true"
+    appstudio.openshift.io/pac-provision: request
+  name: {{ truncate ( sanitize .ProjectDirectoryImageBuildStepConfiguration.To ) }}
+spec:
+  componentName: {{ .ProjectDirectoryImageBuildStepConfiguration.To }}
+  application: {{ sanitize .ApplicationName }}
+  {{ $nudgesN := len .Nudges }} {{ if ne $nudgesN 0 }}
+  build-nudges-ref:
+    {{ range $nudge := .Nudges }}
+    - "{{ $nudge }}"
+    {{ end }}
+  {{ end }}
+  source:
+    git:
+      url: https://github.com/{{ .ReleaseBuildConfiguration.Metadata.Org }}/{{ .ReleaseBuildConfiguration.Metadata.Repo }}.git
+      context: {{ .ProjectDirectoryImageBuildStepConfiguration.ProjectDirectoryImageBuildInputs.ContextDir }}
+      dockerfileUrl: {{ .ProjectDirectoryImageBuildStepConfiguration.ProjectDirectoryImageBuildInputs.DockerfilePath }}
+      revision: {{ .ReleaseBuildConfiguration.Metadata.Branch }}
