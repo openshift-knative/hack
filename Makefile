@@ -47,7 +47,6 @@ unit-tests:
 
 	go run ./cmd/generate/ --generators dockerfile \
 		--project-file pkg/project/testdata/project.yaml \
-		--excludes ".*vendor.*" \
 		--excludes ".*konflux-gen.*" \
 		--excludes "openshift.*" \
 		--images-from "hack" \
