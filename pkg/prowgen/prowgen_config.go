@@ -83,6 +83,13 @@ type Branch struct {
 	OpenShiftVersions      []OpenShift `json:"openShiftVersions,omitempty" yaml:"openShiftVersions,omitempty"`
 	SkipE2EMatches         []string    `json:"skipE2EMatches,omitempty" yaml:"skipE2EMatches,omitempty"`
 	SkipDockerFilesMatches []string    `json:"skipDockerFilesMatches,omitempty" yaml:"skipDockerFilesMatches,omitempty"`
+	Konflux                *Konflux    `json:"konflux,omitempty" yaml:"konflux,omitempty"`
+}
+
+type Konflux struct {
+	Enabled bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+
+	Nudges []string `json:"nudges,omitempty" yaml:"nudges,omitempty"`
 }
 
 type OpenShift struct {

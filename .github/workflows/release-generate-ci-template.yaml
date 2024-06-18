@@ -1,0 +1,80 @@
+name: Generate CI config (template)
+
+on:
+  pull_request:
+    branches:
+      - '**'
+  push:
+    branches:
+      - 'main'
+  schedule:
+    - cron: "0 6 * * *" # Daily at 06:00.
+  workflow_dispatch: # Manual workflow trigger
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate-ci:
+    name: generate-ci
+    runs-on: ubuntu-latest
+    env:
+      GOPATH: ${{ github.workspace }}
+    steps:
+      - name: Install prerequisites
+        env:
+          YQ_VERSION: 3.4.0
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 -O /usr/bin/yq
+          sudo chmod +x /usr/bin/yq
+          sudo mv /usr/bin/yq /usr/local/bin/yq
+
+      - name: Checkout openshift-knative/hack
+        uses: actions/checkout@v3
+        with:
+          path: ./src/github.com/openshift-knative/hack
+
+      - name: Setup Golang
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: ./src/github.com/openshift-knative/hack/go.mod
+
+      - name: Install YAML2JSON
+        run: go install github.com/bronze1man/yaml2json@latest
+
+      - name: Convert configurations to JSON
+        working-directory: ./src/github.com/openshift-knative/hack
+        run: find config/*.yaml | xargs -I{} sh -c "yaml2json < {} > {}.json"
+
+      - name: Checkout openshift/release
+        uses: actions/checkout@v3
+        with:
+          branch: 'master'
+          repository: 'openshift/release'
+          path: ./src/github.com/openshift-knative/hack/openshift/release
+
+      - name: Configure Git user
+        run: |
+          git config --global user.email "serverless-support@redhat.com"
+          git config --global user.name "OpenShift Serverless"
+
+      - name: Generate CI
+        working-directory: ./src/github.com/openshift-knative/hack
+        # Use master, see https://github.com/peter-evans/create-pull-request/issues/2108
+        run: make generate-ci-no-clean ARGS=--branch=master
+
+      - name: Create Pull Request
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          path: ./src/github.com/openshift-knative/hack/openshift/release
+          base: master
+          branch: sync-serverless-ci
+          title: "Sync Serverless CI"
+          commit-message: "Sync Serverless CI"
+          push-to-fork: serverless-qe/release
+          delete-branch: true
+          body: |
+            Sync Serverless CI using openshift-knative/hack.

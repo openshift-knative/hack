@@ -16,6 +16,7 @@
 
 /openshift
 /openshift-knative
+/konflux-gen/out
 
 # MacOS
 .DS_Store
