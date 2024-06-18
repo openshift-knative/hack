@@ -58,11 +58,11 @@ func UpdateAction(cfg Config) error {
 
 					steps = append(steps, map[string]interface{}{
 						"name": fmt.Sprintf("[%s - %s] Create Konflux PR", r.Repo, branchName),
-						"if":   "(github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main'",
+						"if":   "${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main' }}",
 						"uses": "peter-evans/create-pull-request@v5",
 						"with": map[string]interface{}{
 							"token":          "${{ secrets.SERVERLESS_QE_ROBOT }}",
-							"path":           fmt.Sprintf("/src/github.com/openshift-knative/hack/%s", r.RepositoryDirectory()),
+							"path":           fmt.Sprintf("./src/github.com/openshift-knative/hack/%s", r.RepositoryDirectory()),
 							"base":           targetBranch,
 							"branch":         fmt.Sprintf("%s%s", prowgen.KonfluxBranchPrefix, branchName),
 							"title":          commit,
@@ -87,9 +87,12 @@ func UpdateAction(cfg Config) error {
 	}
 
 	buf := bytes.NewBuffer(nil)
-	if err := yaml.NewEncoder(buf).Encode(&node); err != nil {
+	enc := yaml.NewEncoder(buf)
+	enc.SetIndent(2)
+	if err := enc.Encode(&node); err != nil {
 		return fmt.Errorf("failed to encode node into buf: %w", err)
 	}
+	defer enc.Close()
 
 	if err := os.WriteFile(cfg.OutputAction, buf.Bytes(), 0600); err != nil {
 		return fmt.Errorf("failed to write updates: %w", err)

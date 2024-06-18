@@ -47,6 +47,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, config *C
 						".*test.*",
 					},
 					ResourcesOutputPath: fmt.Sprintf("%s/.konflux", r.RepositoryDirectory()),
+					PipelinesOutputPath: fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
 					Nudges:              b.Konflux.Nudges,
 				}
 

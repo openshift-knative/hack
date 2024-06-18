@@ -6,8 +6,8 @@ all: eventing serving operator client ## Generate all the prow jobs
 .PHONY: all
 
 eventing: ## Generate the eventing prow jobs
-	go run github.com/openshift-knative/hack/cmd/prowgen --config config/backstage-plugins.yaml $(ARGS)
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing.yaml $(ARGS)
+	go run github.com/openshift-knative/hack/cmd/prowgen --config config/backstage-plugins.yaml $(ARGS)
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-istio.yaml $(ARGS)
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-kafka-broker.yaml $(ARGS)
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-hyperfoil-benchmark.yaml $(ARGS)
