@@ -16,7 +16,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, config *C
 
 	for _, r := range config.Repositories {
 		for branchName, b := range config.Config.Branches {
-			if b.Konflux.Enabled {
+			if b.Konflux != nil && b.Konflux.Enabled {
 
 				if err := GitMirror(ctx, r); err != nil {
 					return err
