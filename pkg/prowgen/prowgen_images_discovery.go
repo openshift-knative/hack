@@ -1,7 +1,6 @@
 package prowgen
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -12,6 +11,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/asottile/dockerfile"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/strings/slices"
@@ -75,6 +75,7 @@ func discoverImages(r Repository, skipDockerFiles []string) ([]ReleaseBuildConfi
 		}
 
 		options = append(options,
+			WithBaseImages(r.BaseImages),
 			WithBaseImages(requiredBaseImages),
 			WithImage(ProjectDirectoryImageBuildStepConfigurationFuncFromImageInput(r, ImageInput{
 				Context:        discoverImageContext(dockerfile),
@@ -186,15 +187,20 @@ func discoverInputImages(dockerfile string) (map[string]cioperatorapi.ImageStrea
 				return nil, nil, fmt.Errorf("failed to parse string %s as pullspec: %w", imagePath, err)
 			}
 
-			requiredBaseImages[orgRepoTag.String()] = cioperatorapi.ImageStreamTagReference{
-				Namespace: orgRepoTag.Org,
-				Name:      orgRepoTag.Repo,
-				Tag:       orgRepoTag.Tag,
-			}
-
 			inputs := inputImages[orgRepoTag.String()]
 			inputs.As = sets.NewString(inputs.As...).Insert(imagePath).List() //different registries can resolve to the same orgRepoTag
-			inputImages[orgRepoTag.String()] = inputs
+
+			if orgRepoTag.Org == "_" {
+				// consider image as a base image alias
+				inputImages[imagePath] = inputs
+			} else {
+				requiredBaseImages[orgRepoTag.String()] = cioperatorapi.ImageStreamTagReference{
+					Namespace: orgRepoTag.Org,
+					Name:      orgRepoTag.Repo,
+					Tag:       orgRepoTag.Tag,
+				}
+				inputImages[orgRepoTag.String()] = inputs
+			}
 		}
 	}
 
@@ -202,32 +208,28 @@ func discoverInputImages(dockerfile string) (map[string]cioperatorapi.ImageStrea
 }
 
 func getPullStringsFromDockerfile(filename string) ([]string, error) {
-	file, err := os.Open(filename)
+	cmds, err := dockerfile.ParseFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open Dockerfile %s: %w", filename, err)
 	}
-	defer file.Close()
 
-	var images []string
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if !(strings.Contains(line, "FROM ") || strings.Contains(line, "--from=")) {
+	images := make([]string, 0, 1)
+	for _, cmd := range cmds {
+		if cmd.Cmd == "FROM" {
+			if len(cmd.Value) != 1 {
+				return nil, fmt.Errorf("expected one value for FROM "+
+					"command, got %d: %q", len(cmd.Value), cmd.Value)
+			}
+			images = append(images, cmd.Value[0])
 			continue
 		}
-
-		match := registryRegex.FindString(line)
-		if match != "" {
-			images = append(images, match)
+		if cmd.Cmd == "COPY" || cmd.Cmd == "ADD" {
+			for _, fl := range cmd.Flags {
+				if strings.HasPrefix(fl, "--from=") {
+					images = append(images, strings.TrimPrefix(fl, "--from="))
+				}
+			}
 		}
-		if line == "FROM src" {
-			images = append(images, srcImage)
-		}
-
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("failed to read Dockerfile %s: %w", filename, err)
 	}
 
 	return images, nil

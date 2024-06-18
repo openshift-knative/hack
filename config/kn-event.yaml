@@ -32,7 +32,12 @@ repositories:
       bin:
         paths:
           - destination_dir: .
-            source_path: /var/build/bin
+            source_path: /var/build/bin/.
+    baseImages:
+      base:
+        name: ubi-minimal
+        namespace: ocp
+        tag: '8'
     slackChannel: '#knative-client'
     resources:
       '*':
