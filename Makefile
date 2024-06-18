@@ -2,10 +2,11 @@
 # replacing reference images via env variable.
 include pkg/project/testdata/env
 
-generate-ci: clean generate-eventing-ci generate-serving-ci
+generate-ci: clean generate-ci-no-clean
 .PHONY: generate-ci
 
-generate-ci-no-clean: generate-eventing-ci generate-serving-ci generate-serverless-operator-ci
+generate-ci-no-clean:
+	go run github.com/openshift-knative/hack/cmd/prowgen --config config/
 .PHONY: generate-ci-no-clean
 
 generate-eventing-ci:

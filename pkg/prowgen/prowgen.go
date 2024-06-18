@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -51,62 +52,97 @@ func Main() {
 
 	log.Println(*inputConfig, *outConfig)
 
-	inConfig, err := LoadConfig(*inputConfig)
+	var inConfigs []*Config
+
+	fi, err := os.Lstat(*inputConfig)
 	if err != nil {
-		log.Fatalln("Failed to load config", err)
+		log.Fatalln(err)
+	}
+	if fi.IsDir() {
+		err := filepath.WalkDir(*inputConfig, func(path string, d fs.DirEntry, err error) error {
+			if d.IsDir() {
+				return nil
+			}
+
+			if !strings.HasSuffix(path, ".yaml") {
+				return nil
+			}
+
+			inConfig, err := LoadConfig(path)
+			if err != nil {
+				return fmt.Errorf("failed to load config file %q: %v", path, err)
+			}
+			inConfigs = append(inConfigs, inConfig)
+			return nil
+		})
+		if err != nil {
+			log.Fatalln("Failed to load configs", *inputConfig, err)
+		}
+	} else {
+		inConfig, err := LoadConfig(*inputConfig)
+		if err != nil {
+			log.Fatalln("Failed to load config", err)
+		}
+		inConfigs = append(inConfigs, inConfig)
 	}
 
-	for _, v := range inConfig.Config.Branches {
-		sort.Slice(v.OpenShiftVersions, func(i, j int) bool {
-			return semver.New(v.OpenShiftVersions[i].Version + ".0").LessThan(*semver.New(v.OpenShiftVersions[j].Version + ".0"))
-		})
+	for _, inConfig := range inConfigs {
+		for _, v := range inConfig.Config.Branches {
+			sort.Slice(v.OpenShiftVersions, func(i, j int) bool {
+				return semver.New(v.OpenShiftVersions[i].Version + ".0").LessThan(*semver.New(v.OpenShiftVersions[j].Version + ".0"))
+			})
+		}
 	}
 
 	// Clone openshift/release and clean up existing jobs for the configured branches
 	openshiftReleaseInitialization, openshiftReleaseInitCtx := errgroup.WithContext(ctx)
 	openshiftReleaseInitialization.Go(func() error {
-		return InitializeOpenShiftReleaseRepository(openshiftReleaseInitCtx, openShiftRelease, inConfig, outConfig)
+		return InitializeOpenShiftReleaseRepository(openshiftReleaseInitCtx, openShiftRelease, inConfigs, outConfig)
 	})
 
 	// For each repository and branch generate openshift/release configuration, and write it to the output file.
 	repositoriesGenerateConfigs, generatorsCtx := errgroup.WithContext(ctx)
-	for _, repository := range inConfig.Repositories {
-		repository := repository
+	for _, inConfig := range inConfigs {
+		inConfig := inConfig
 
-		repositoriesGenerateConfigs.Go(func() error {
+		for _, repository := range inConfig.Repositories {
+			repository := repository
 
-			cfgs, err := NewGenerateConfigs(generatorsCtx, repository, inConfig.Config)
-			if err != nil {
-				return err
-			}
+			repositoriesGenerateConfigs.Go(func() error {
 
-			// Wait for the openshift/release initialization goroutine.
-			if err := openshiftReleaseInitialization.Wait(); err != nil {
-				return fmt.Errorf("failed waiting for %s initialization: %w", openShiftRelease.RepositoryDirectory(), err)
-			}
-
-			// Delete existing configuration for each configured branch.
-			for branch := range inConfig.Config.Branches {
-				if err := DeleteExistingReleaseBuildConfigurationForBranch(outConfig, repository, branch); err != nil {
+				cfgs, err := NewGenerateConfigs(generatorsCtx, repository, inConfig.Config)
+				if err != nil {
 					return err
 				}
-			}
 
-			// Write generated configurations.
-			for _, cfg := range cfgs {
-				if err := SaveReleaseBuildConfiguration(outConfig, cfg); err != nil {
-					return err
+				// Wait for the openshift/release initialization goroutine.
+				if err := openshiftReleaseInitialization.Wait(); err != nil {
+					return fmt.Errorf("failed waiting for %s initialization: %w", openShiftRelease.RepositoryDirectory(), err)
 				}
-			}
 
-			// Generate and write image mirroring configurations.
-			for _, imageMirroring := range GenerateImageMirroringConfigs(openShiftRelease, cfgs) {
-				if err := ReconcileImageMirroringConfig(imageMirroring); err != nil {
-					return err
+				// Delete existing configuration for each configured branch.
+				for branch := range inConfig.Config.Branches {
+					if err := DeleteExistingReleaseBuildConfigurationForBranch(outConfig, repository, branch); err != nil {
+						return err
+					}
 				}
-			}
-			return nil
-		})
+
+				// Write generated configurations.
+				for _, cfg := range cfgs {
+					if err := SaveReleaseBuildConfiguration(outConfig, cfg); err != nil {
+						return err
+					}
+				}
+
+				// Generate and write image mirroring configurations.
+				for _, imageMirroring := range GenerateImageMirroringConfigs(openShiftRelease, cfgs) {
+					if err := ReconcileImageMirroringConfig(imageMirroring); err != nil {
+						return err
+					}
+				}
+				return nil
+			})
+		}
 	}
 
 	// Wait for the openshift/release initialization goroutine and repositories generators goroutines.
@@ -120,7 +156,7 @@ func Main() {
 	if err := RunOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
 		log.Fatalln("Failed to run openshift/release generator:", err)
 	}
-	if err := runJobConfigInjectors(inConfig, openShiftRelease); err != nil {
+	if err := runJobConfigInjectors(inConfigs, openShiftRelease); err != nil {
 		log.Fatalln("Failed to inject Slack reporter", err)
 	}
 	if err := RunOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
@@ -130,7 +166,7 @@ func Main() {
 		log.Fatalln("Failed to push branch to openshift/release fork", *remote, err)
 	}
 
-	if err := GenerateKonflux(ctx, openShiftRelease, inConfig); err != nil {
+	if err := GenerateKonflux(ctx, openShiftRelease, inConfigs); err != nil {
 		log.Fatalln("Failed to generate Konflux configurations: %w", err)
 	}
 }
@@ -265,12 +301,17 @@ func RunOpenShiftReleaseGenerator(ctx context.Context, openShiftRelease Reposito
 	return nil
 }
 
-func runJobConfigInjectors(inConfig *Config, openShiftRelease Repository) error {
-	injectors := JobConfigInjectors{
-		AlwaysRunInjector(),
-		slackInjector(),
+func runJobConfigInjectors(inConfigs []*Config, openShiftRelease Repository) error {
+	for _, inConfig := range inConfigs {
+		injectors := JobConfigInjectors{
+			AlwaysRunInjector(),
+			slackInjector(),
+		}
+		if err := injectors.Inject(inConfig, openShiftRelease); err != nil {
+			return err
+		}
 	}
-	return injectors.Inject(inConfig, openShiftRelease)
+	return nil
 }
 
 func slackInjector() JobConfigInjector {
@@ -440,7 +481,7 @@ func GetJobConfig(match string) (*prowconfig.JobConfig, error) {
 
 // InitializeOpenShiftReleaseRepository clones openshift/release and clean up existing jobs
 // for the configured branches
-func InitializeOpenShiftReleaseRepository(ctx context.Context, openShiftRelease Repository, inConfig *Config, outputConfig *string) error {
+func InitializeOpenShiftReleaseRepository(ctx context.Context, openShiftRelease Repository, inConfigs []*Config, outputConfig *string) error {
 	if err := GitMirror(ctx, openShiftRelease); err != nil {
 		return err
 	}
@@ -449,36 +490,38 @@ func InitializeOpenShiftReleaseRepository(ctx context.Context, openShiftRelease 
 	}
 
 	// Remove all config files except the ones explicitly excluded
-	for _, r := range inConfig.Repositories {
-		// TODO: skip automatic deletion for S-O for now
-		if strings.Contains(r.RepositoryDirectory(), "serverless-operator") {
-			for branch := range inConfig.Config.Branches {
-				matches, err := filepath.Glob(filepath.Join(*outputConfig, r.RepositoryDirectory(), "*"+branch+"*"))
-				if err != nil {
-					return err
+	for _, inConfig := range inConfigs {
+		for _, r := range inConfig.Repositories {
+			// TODO: skip automatic deletion for S-O for now
+			if strings.Contains(r.RepositoryDirectory(), "serverless-operator") {
+				for branch := range inConfig.Config.Branches {
+					matches, err := filepath.Glob(filepath.Join(*outputConfig, r.RepositoryDirectory(), "*"+branch+"*"))
+					if err != nil {
+						return err
+					}
+					if err := deleteConfigsIfNeeded(r.IgnoreConfigs.Matches, matches, branch); err != nil {
+						return err
+					}
 				}
-				if err := deleteConfigsIfNeeded(r.IgnoreConfigs.Matches, matches, branch); err != nil {
-					return err
-				}
+				continue
 			}
-			continue
-		}
-		// Remove all config files except the ones explicitly excluded
-		matchesForDeletion, err := filepath.Glob(filepath.Join(*outputConfig, r.RepositoryDirectory(), "*.*"))
-		if err != nil {
-			return err
-		}
-		if err := deleteConfigsIfNeeded(r.IgnoreConfigs.Matches, matchesForDeletion, ""); err != nil {
-			return err
-		}
-		mirrorPath := filepath.Join(openShiftRelease.RepositoryDirectory(), ImageMirroringConfigPath, ImageMirroringConfigFilePrefix+"*"+r.Repo+"*")
-		matchesForDeletion, err = filepath.Glob(mirrorPath)
-		if err != nil {
-			return err
-		}
+			// Remove all config files except the ones explicitly excluded
+			matchesForDeletion, err := filepath.Glob(filepath.Join(*outputConfig, r.RepositoryDirectory(), "*.*"))
+			if err != nil {
+				return err
+			}
+			if err := deleteConfigsIfNeeded(r.IgnoreConfigs.Matches, matchesForDeletion, ""); err != nil {
+				return err
+			}
+			mirrorPath := filepath.Join(openShiftRelease.RepositoryDirectory(), ImageMirroringConfigPath, ImageMirroringConfigFilePrefix+"*"+r.Repo+"*")
+			matchesForDeletion, err = filepath.Glob(mirrorPath)
+			if err != nil {
+				return err
+			}
 
-		if err := deleteConfigsIfNeeded([]string{"serverless-operator", "client", "nightly"}, matchesForDeletion, ""); err != nil {
-			return err
+			if err := deleteConfigsIfNeeded([]string{"serverless-operator", "client", "nightly"}, matchesForDeletion, ""); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

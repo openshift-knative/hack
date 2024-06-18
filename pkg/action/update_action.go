@@ -58,7 +58,7 @@ func UpdateAction(cfg Config) error {
 
 					steps = append(steps, map[string]interface{}{
 						"name": fmt.Sprintf("[%s - %s] Create Konflux PR", r.Repo, branchName),
-						"if":   "${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main' }}",
+						"if":   "${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}",
 						"uses": "peter-evans/create-pull-request@v5",
 						"with": map[string]interface{}{
 							"token":          "${{ secrets.SERVERLESS_QE_ROBOT }}",

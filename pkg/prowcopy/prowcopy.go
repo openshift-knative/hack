@@ -59,7 +59,7 @@ func Main() error {
 		Org:  "openshift",
 		Repo: "release",
 	}
-	if err := prowgen.InitializeOpenShiftReleaseRepository(ctx, openShiftRelease, &prowgen.Config{}, pointer.String("")); err != nil {
+	if err := prowgen.InitializeOpenShiftReleaseRepository(ctx, openShiftRelease, nil, pointer.String("")); err != nil {
 		return err
 	}
 
