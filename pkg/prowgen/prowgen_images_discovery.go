@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/asottile/dockerfile"
+	"github.com/distribution/reference"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/strings/slices"
@@ -22,12 +23,12 @@ const (
 )
 
 var (
-	ciRegistryRegex = regexp.MustCompile(`registry\.(|svc\.)ci\.openshift\.org/\S+`)
+	ciRegistryRegex = regexp.MustCompile(`registry\.(|svc\.)ci\.openshift\.org`)
 
 	ubiMinimal8Regex = regexp.MustCompile(`registry\.access\.redhat\.com/ubi8-minimal:latest$`)
 	ubiMinimal9Regex = regexp.MustCompile(`registry\.access\.redhat\.com/ubi9-minimal:latest$`)
 
-	imageOverrides = map[*regexp.Regexp]orgRepoTag{
+	imageOverrides = map[*regexp.Regexp]ociReference{
 		ubiMinimal8Regex: {Org: "ocp", Repo: "ubi-minimal", Tag: "8"},
 		ubiMinimal9Regex: {Org: "ocp", Repo: "ubi-minimal", Tag: "9"},
 	}
@@ -44,13 +45,15 @@ var (
 	}
 )
 
-type orgRepoTag struct {
-	Org  string
-	Repo string
-	Tag  string
+type ociReference struct {
+	Domain string
+	Org    string
+	Repo   string
+	Tag    string
+	Digest string
 }
 
-func (ort orgRepoTag) String() string {
+func (ort ociReference) String() string {
 	return ort.Org + "_" + ort.Repo + "_" + ort.Tag
 }
 
@@ -191,32 +194,37 @@ func discoverInputImages(dockerfile string) (map[string]cioperatorapi.ImageStrea
 		if imagePath == srcImage {
 			inputImages[srcImage] = cioperatorapi.ImageBuildInputs{As: []string{srcImage}}
 		} else {
-			orgRepoTag, err := orgRepoTagFromPullString(imagePath)
+			ref, err := parseOciReference(imagePath)
 			if err != nil {
 				return nil, nil, fmt.Errorf("failed to parse string %s as pullspec: %w", imagePath, err)
 			}
 
 			for k, override := range imageOverrides {
 				if k.FindString(imagePath) != "" {
-					orgRepoTag = override
+					ref = override
 					break
 				}
 			}
 
-			inputs := inputImages[orgRepoTag.String()]
-			inputs.As = sets.NewString(inputs.As...).Insert(imagePath).List() //different registries can resolve to the same orgRepoTag
+			inputs := inputImages[ref.String()]
+			inputs.As = sets.NewString(inputs.As...).Insert(imagePath).List() //different registries can resolve to the same ociReference
 
-			if orgRepoTag.Org == "_" {
+			if ref.Org == "" && ref.Domain == "" {
 				// consider image as a base image alias
 				inputImages[imagePath] = inputs
-			} else {
-				requiredBaseImages[orgRepoTag.String()] = cioperatorapi.ImageStreamTagReference{
-					Namespace: orgRepoTag.Org,
-					Name:      orgRepoTag.Repo,
-					Tag:       orgRepoTag.Tag,
-				}
-				inputImages[orgRepoTag.String()] = inputs
+				continue
 			}
+			if !ciRegistryRegex.MatchString(ref.Domain) {
+				// don't include images from other registries then registry.ci.openshift.org
+				continue
+			}
+
+			requiredBaseImages[ref.String()] = cioperatorapi.ImageStreamTagReference{
+				Namespace: ref.Org,
+				Name:      ref.Repo,
+				Tag:       ref.Tag,
+			}
+			inputImages[ref.String()] = inputs
 		}
 	}
 
@@ -230,19 +238,28 @@ func getPullStringsFromDockerfile(filename string) ([]string, error) {
 	}
 
 	images := make([]string, 0, 1)
+	aliases := make(map[string]string)
 	for _, cmd := range cmds {
 		if cmd.Cmd == "FROM" {
-			if len(cmd.Value) != 1 {
-				return nil, fmt.Errorf("expected one value for FROM "+
-					"command, got %d: %q", len(cmd.Value), cmd.Value)
+			if len(cmd.Value) == 1 {
+				images = append(images, cmd.Value[0])
+				continue
 			}
-			images = append(images, cmd.Value[0])
-			continue
+			if len(cmd.Value) == 3 && strings.ToLower(cmd.Value[1]) == "as" {
+				aliases[cmd.Value[2]] = cmd.Value[0]
+				images = append(images, cmd.Value[0])
+				continue
+			}
+			return nil, fmt.Errorf("invalid FROM stanza: %q", cmd.Value)
 		}
 		if cmd.Cmd == "COPY" || cmd.Cmd == "ADD" {
 			for _, fl := range cmd.Flags {
 				if strings.HasPrefix(fl, "--from=") {
-					images = append(images, strings.TrimPrefix(fl, "--from="))
+					imageOrAlias := strings.TrimPrefix(fl, "--from=")
+					if _, ok := aliases[imageOrAlias]; !ok {
+						// not an alias, consider it as an image
+						images = append(images, imageOrAlias)
+					}
 				}
 			}
 		}
@@ -274,28 +291,31 @@ func isSourceOrBuildDockerfile(dockerfile string) bool {
 		strings.Contains(dockerfile, "build-image")
 }
 
-func orgRepoTagFromPullString(pullString string) (orgRepoTag, error) {
-	res := orgRepoTag{Tag: "latest"}
-	slashSplit := strings.Split(pullString, "/")
-	switch n := len(slashSplit); n {
-	case 1:
-		res.Org = "_"
-		res.Repo = slashSplit[0]
-	case 2:
-		res.Org = slashSplit[0]
-		res.Repo = slashSplit[1]
-	case 3:
-		res.Org = slashSplit[1]
-		res.Repo = slashSplit[2]
-	default:
-		return res, fmt.Errorf("pull string %q couldn't be parsed, expected to get between one and three elements after slashsplitting, got %d", pullString, n)
+func parseOciReference(pullString string) (ociReference, error) {
+	ref, err := reference.Parse(pullString)
+	if err != nil {
+		return ociReference{}, fmt.Errorf("failed to parse %q as a reference: %w", pullString, err)
 	}
-	if repoTag := strings.Split(res.Repo, ":"); len(repoTag) == 2 {
-		res.Repo = repoTag[0]
-		res.Tag = repoTag[1]
+	res := ociReference{Tag: "latest"}
+	if named, ok := ref.(reference.Named); ok {
+		res.Domain = reference.Domain(named)
+		path := strings.SplitN(reference.Path(named), "/", 2)
+		if len(path) == 1 {
+			res.Repo = path[0]
+		} else {
+			res.Org = path[0]
+			res.Repo = path[1]
+		}
+		if tagged, ok := ref.(reference.Tagged); ok {
+			res.Tag = tagged.Tag()
+		}
+		if digested, ok := ref.(reference.Digested); ok {
+			res.Digest = digested.Digest().String()
+		}
+		return res, nil
 	}
 
-	return res, nil
+	return res, fmt.Errorf("pull string %q couldn't be parsed as OCI image", pullString)
 }
 
 func ToRegexp(s []string) []*regexp.Regexp {

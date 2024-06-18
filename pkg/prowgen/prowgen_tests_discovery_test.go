@@ -1,9 +1,8 @@
 package prowgen
 
 import (
-	"fmt"
 	"math/rand"
-	"strings"
+	"sort"
 	"testing"
 	"time"
 
@@ -99,7 +98,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 
 	expectedTests := []cioperatorapi.TestStepConfiguration{
 		{
-			As: "perf-tests-aws-412",
+			As: "perf-tests",
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
 				Test: []cioperatorapi.TestStep{
@@ -107,7 +106,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     servingSourceImage,
-							Commands: formatCommand("make perf-tests"),
+							Commands: "make perf-tests",
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -123,7 +122,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 			},
 		},
 		{
-			As:       "test-e2e-aws-412",
+			As:       "test-e2e",
 			Optional: true,
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
@@ -132,7 +131,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     servingSourceImage,
-							Commands: formatCommand("make test-e2e"),
+							Commands: "make test-e2e",
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -148,7 +147,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 			},
 		},
 		{
-			As:   "test-e2e-aws-412-c",
+			As:   "test-e2e-c",
 			Cron: cron,
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
@@ -157,7 +156,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     servingSourceImage,
-							Commands: formatCommand("make test-e2e"),
+							Commands: "make test-e2e",
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -173,7 +172,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 			},
 		},
 		{
-			As: "test-e2e-tls-aws-412",
+			As: "test-e2e-tls",
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
 				Test: []cioperatorapi.TestStep{
@@ -181,7 +180,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     servingSourceImage,
-							Commands: formatCommand("make test-e2e-tls"),
+							Commands: "make test-e2e-tls",
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -197,7 +196,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 			},
 		},
 		{
-			As:   "test-e2e-tls-aws-412-c",
+			As:   "test-e2e-tls-c",
 			Cron: cron,
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
@@ -206,7 +205,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     servingSourceImage,
-							Commands: formatCommand("make test-e2e-tls"),
+							Commands: "make test-e2e-tls",
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -222,7 +221,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 			},
 		},
 		{
-			As:           "ui-e2e-aws-412",
+			As:           "ui-e2e",
 			RunIfChanged: "test/ui",
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
@@ -231,7 +230,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     servingSourceImage,
-							Commands: formatCommand("make ui-e2e"),
+							Commands: "make ui-e2e",
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -277,8 +276,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !equality.Semantic.DeepEqual(expectedTests, cfg.Tests) {
-		diff := cmp.Diff(expectedTests, cfg.Tests)
+	if ok, diff := equals(expectedTests, cfg.Tests); !ok {
 		t.Errorf("Unexpected tests (-want, +got): \n%s", diff)
 	}
 }
@@ -329,7 +327,7 @@ func TestDiscoverTestsServingClusterClaim(t *testing.T) {
 
 	expectedTests := []cioperatorapi.TestStepConfiguration{
 		{
-			As: fmt.Sprintf("perf-tests-aws-%s", strings.ReplaceAll(clusterPoolVersion, ".", "")),
+			As: "perf-tests",
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
 				Version:      clusterPoolVersion,
@@ -344,7 +342,7 @@ func TestDiscoverTestsServingClusterClaim(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     servingSourceImage,
-							Commands: formatCommand("make perf-tests"),
+							Commands: "make perf-tests",
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -381,8 +379,7 @@ func TestDiscoverTestsServingClusterClaim(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !equality.Semantic.DeepEqual(expectedTests, cfg.Tests) {
-		diff := cmp.Diff(expectedTests, cfg.Tests)
+	if ok, diff := equals(expectedTests, cfg.Tests); !ok {
 		t.Errorf("Unexpected tests (-want, +got): \n%s", diff)
 	}
 }
@@ -436,7 +433,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 
 	expectedTests := []cioperatorapi.TestStepConfiguration{
 		{
-			As: "test-conformance-aws-412",
+			As: "test-conformance",
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
 				Test: []cioperatorapi.TestStep{
@@ -444,7 +441,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     eventingSourceImage,
-							Commands: formatCommand("make test-conformance"),
+							Commands: "make test-conformance",
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -460,56 +457,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 			},
 		},
 		{
-			As:   "test-conformance-aws-412-c",
-			Cron: pointer.String("23 1 * * 2,6"),
-			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
-				ClusterProfile: serverlessClusterProfile,
-				Test: []cioperatorapi.TestStep{
-					{
-						LiteralTestStep: &cioperatorapi.LiteralTestStep{
-							As:       "test",
-							From:     eventingSourceImage,
-							Commands: formatCommand("make test-conformance"),
-							Resources: cioperatorapi.ResourceRequirements{
-								Requests: cioperatorapi.ResourceList{
-									"cpu": "100m",
-								},
-							},
-							Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
-							Dependencies: dependencies,
-							Cli:          "latest",
-						},
-					},
-				},
-				Workflow: pointer.String("ipi-aws"),
-			},
-		},
-		{
-			As: "test-conformance-long-lo-510e96a-aws-412",
-			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
-				ClusterProfile: serverlessClusterProfile,
-				Test: []cioperatorapi.TestStep{
-					{
-						LiteralTestStep: &cioperatorapi.LiteralTestStep{
-							As:       "test",
-							From:     eventingSourceImage,
-							Commands: formatCommand("make test-conformance-long-long-long-command"),
-							Resources: cioperatorapi.ResourceRequirements{
-								Requests: cioperatorapi.ResourceList{
-									"cpu": "100m",
-								},
-							},
-							Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
-							Dependencies: dependencies,
-							Cli:          "latest",
-						},
-					},
-				},
-				Workflow: pointer.String("ipi-aws"),
-			},
-		},
-		{
-			As:   "test-conformance-long-lo-510e96a-aws-412-c",
+			As:   "test-conformance-c",
 			Cron: pointer.String("43 1 * * 2,6"),
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
@@ -518,7 +466,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     eventingSourceImage,
-							Commands: formatCommand("make test-conformance-long-long-long-command"),
+							Commands: "make test-conformance",
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -534,7 +482,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 			},
 		},
 		{
-			As: "test-e2e-aws-412",
+			As: "test-conformance-long-long-long-360d252",
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
 				Test: []cioperatorapi.TestStep{
@@ -542,7 +490,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     eventingSourceImage,
-							Commands: formatCommand("make test-e2e"),
+							Commands: "make test-conformance-long-long-long-loooooooooong-command",
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -558,56 +506,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 			},
 		},
 		{
-			As:   "test-e2e-aws-412-c",
-			Cron: pointer.String("4 1 * * 2,6"),
-			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
-				ClusterProfile: serverlessClusterProfile,
-				Test: []cioperatorapi.TestStep{
-					{
-						LiteralTestStep: &cioperatorapi.LiteralTestStep{
-							As:       "test",
-							From:     eventingSourceImage,
-							Commands: formatCommand("make test-e2e"),
-							Resources: cioperatorapi.ResourceRequirements{
-								Requests: cioperatorapi.ResourceList{
-									"cpu": "100m",
-								},
-							},
-							Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
-							Dependencies: dependencies,
-							Cli:          "latest",
-						},
-					},
-				},
-				Workflow: pointer.String("ipi-aws"),
-			},
-		},
-		{
-			As: "test-reconciler-aws-412",
-			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
-				ClusterProfile: serverlessClusterProfile,
-				Test: []cioperatorapi.TestStep{
-					{
-						LiteralTestStep: &cioperatorapi.LiteralTestStep{
-							As:       "test",
-							From:     eventingSourceImage,
-							Commands: formatCommand("make test-reconciler"),
-							Resources: cioperatorapi.ResourceRequirements{
-								Requests: cioperatorapi.ResourceList{
-									"cpu": "100m",
-								},
-							},
-							Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
-							Dependencies: dependencies,
-							Cli:          "latest",
-						},
-					},
-				},
-				Workflow: pointer.String("ipi-aws"),
-			},
-		},
-		{
-			As:   "test-reconciler-aws-412-c",
+			As:   "test-conformance-long-long-long-360d252-c",
 			Cron: pointer.String("16 5 * * 2,6"),
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
@@ -616,7 +515,105 @@ func TestDiscoverTestsEventing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     eventingSourceImage,
-							Commands: formatCommand("make test-reconciler"),
+							Commands: "make test-conformance-long-long-long-loooooooooong-command",
+							Resources: cioperatorapi.ResourceRequirements{
+								Requests: cioperatorapi.ResourceList{
+									"cpu": "100m",
+								},
+							},
+							Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
+							Dependencies: dependencies,
+							Cli:          "latest",
+						},
+					},
+				},
+				Workflow: pointer.String("ipi-aws"),
+			},
+		},
+		{
+			As: "test-e2e",
+			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
+				ClusterProfile: serverlessClusterProfile,
+				Test: []cioperatorapi.TestStep{
+					{
+						LiteralTestStep: &cioperatorapi.LiteralTestStep{
+							As:       "test",
+							From:     eventingSourceImage,
+							Commands: "make test-e2e",
+							Resources: cioperatorapi.ResourceRequirements{
+								Requests: cioperatorapi.ResourceList{
+									"cpu": "100m",
+								},
+							},
+							Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
+							Dependencies: dependencies,
+							Cli:          "latest",
+						},
+					},
+				},
+				Workflow: pointer.String("ipi-aws"),
+			},
+		},
+		{
+			As:   "test-e2e-c",
+			Cron: pointer.String("4 1 * * 2,6"),
+			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
+				ClusterProfile: serverlessClusterProfile,
+				Test: []cioperatorapi.TestStep{
+					{
+						LiteralTestStep: &cioperatorapi.LiteralTestStep{
+							As:       "test",
+							From:     eventingSourceImage,
+							Commands: "make test-e2e",
+							Resources: cioperatorapi.ResourceRequirements{
+								Requests: cioperatorapi.ResourceList{
+									"cpu": "100m",
+								},
+							},
+							Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
+							Dependencies: dependencies,
+							Cli:          "latest",
+						},
+					},
+				},
+				Workflow: pointer.String("ipi-aws"),
+			},
+		},
+		{
+			As: "test-reconciler",
+			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
+				ClusterProfile: serverlessClusterProfile,
+				Test: []cioperatorapi.TestStep{
+					{
+						LiteralTestStep: &cioperatorapi.LiteralTestStep{
+							As:       "test",
+							From:     eventingSourceImage,
+							Commands: "make test-reconciler",
+							Resources: cioperatorapi.ResourceRequirements{
+								Requests: cioperatorapi.ResourceList{
+									"cpu": "100m",
+								},
+							},
+							Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
+							Dependencies: dependencies,
+							Cli:          "latest",
+						},
+					},
+				},
+				Workflow: pointer.String("ipi-aws"),
+			},
+		},
+		{
+			As:   "test-reconciler-c",
+			Cron: pointer.String("23 1 * * 2,6"),
+			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
+				ClusterProfile: serverlessClusterProfile,
+				Test: []cioperatorapi.TestStep{
+					{
+						LiteralTestStep: &cioperatorapi.LiteralTestStep{
+							As:       "test",
+							From:     eventingSourceImage,
+							Commands: "make test-reconciler",
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -662,10 +659,28 @@ func TestDiscoverTestsEventing(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !equality.Semantic.DeepEqual(expectedTests, cfg.Tests) {
-		diff := cmp.Diff(expectedTests, cfg.Tests)
+	if ok, diff := equals(expectedTests, cfg.Tests); !ok {
 		t.Errorf("Unexpected tests (-want, +got): \n%s", diff)
 	}
+}
+
+func equals(a, b []cioperatorapi.TestStepConfiguration) (bool, string) {
+	sa := sortByName(a)
+	sb := sortByName(b)
+
+	if !equality.Semantic.DeepEqual(sa, sb) {
+		return false, cmp.Diff(sa, sb)
+	}
+	return true, ""
+}
+
+func sortByName(tests []cioperatorapi.TestStepConfiguration) []cioperatorapi.TestStepConfiguration {
+	sorted := make([]cioperatorapi.TestStepConfiguration, len(tests))
+	copy(sorted, tests)
+	sort.Slice(sorted, func(i, j int) bool {
+		return sorted[i].As < sorted[j].As
+	})
+	return sorted
 }
 
 func mustGatherSteps(sourceImage string, optionalOnSuccess bool) []cioperatorapi.TestStep {
@@ -721,8 +736,4 @@ func mustGatherSteps(sourceImage string, optionalOnSuccess bool) []cioperatorapi
 			},
 		},
 	}
-}
-
-func formatCommand(cmd string) string {
-	return fmt.Sprintf("SKIP_MESH_AUTH_POLICY_GENERATION=true %s", cmd)
 }

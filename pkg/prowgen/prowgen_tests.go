@@ -100,70 +100,76 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 					AllowBestEffortPostSteps: pointer.Bool(true),
 					AllowSkipOnSuccess:       pointer.Bool(true),
 					Environment:              env,
-					Test: []cioperatorapi.TestStep{{
-						LiteralTestStep: &cioperatorapi.LiteralTestStep{
-							As:       "test",
-							From:     sourceImageName,
-							Commands: test.EffectiveCommand(),
-							Resources: cioperatorapi.ResourceRequirements{
-								Requests: cioperatorapi.ResourceList{
-									"cpu": "100m",
+					Test: []cioperatorapi.TestStep{
+						{
+							LiteralTestStep: &cioperatorapi.LiteralTestStep{
+								As:       "test",
+								From:     sourceImageName,
+								Commands: test.EffectiveCommand(),
+								Resources: cioperatorapi.ResourceRequirements{
+									Requests: cioperatorapi.ResourceList{
+										"cpu": "100m",
+									},
 								},
+								Environment:  test.EnvironmentAsStepParams(),
+								Timeout:      testTimeout,
+								Dependencies: dependenciesFromImages(cfg.Images, test.SkipImages),
+								Cli:          "latest",
 							},
-							Environment:  test.EnvironmentAsStepParams(),
-							Timeout:      testTimeout,
-							Dependencies: dependenciesFromImages(cfg.Images, test.SkipImages),
-							Cli:          "latest",
 						},
-					}},
-					Post: []cioperatorapi.TestStep{{
-						LiteralTestStep: &cioperatorapi.LiteralTestStep{
-							As:       "knative-must-gather",
-							From:     sourceImageName,
-							Commands: `oc adm must-gather --image=quay.io/openshift-knative/must-gather --dest-dir "${ARTIFACT_DIR}/gather-knative"`,
-							Resources: cioperatorapi.ResourceRequirements{
-								Requests: cioperatorapi.ResourceList{
-									"cpu": "100m",
+					},
+					Post: []cioperatorapi.TestStep{
+						{
+							LiteralTestStep: &cioperatorapi.LiteralTestStep{
+								As:       "knative-must-gather",
+								From:     sourceImageName,
+								Commands: `oc adm must-gather --image=quay.io/openshift-knative/must-gather --dest-dir "${ARTIFACT_DIR}/gather-knative"`,
+								Resources: cioperatorapi.ResourceRequirements{
+									Requests: cioperatorapi.ResourceList{
+										"cpu": "100m",
+									},
 								},
+								Timeout:           &prowapi.Duration{Duration: 20 * time.Minute},
+								BestEffort:        pointer.Bool(true),
+								OptionalOnSuccess: pointer.Bool(true),
+								Cli:               "latest",
 							},
-							Timeout:           &prowapi.Duration{Duration: 20 * time.Minute},
-							BestEffort:        pointer.Bool(true),
-							OptionalOnSuccess: pointer.Bool(true),
-							Cli:               "latest",
 						},
-					}, {
-						LiteralTestStep: &cioperatorapi.LiteralTestStep{
-							As:       "openshift-must-gather",
-							From:     sourceImageName,
-							Commands: `oc adm must-gather --dest-dir "${ARTIFACT_DIR}/gather-openshift"`,
-							Resources: cioperatorapi.ResourceRequirements{
-								Requests: cioperatorapi.ResourceList{
-									"cpu": "100m",
+						{
+							LiteralTestStep: &cioperatorapi.LiteralTestStep{
+								As:       "openshift-must-gather",
+								From:     sourceImageName,
+								Commands: `oc adm must-gather --dest-dir "${ARTIFACT_DIR}/gather-openshift"`,
+								Resources: cioperatorapi.ResourceRequirements{
+									Requests: cioperatorapi.ResourceList{
+										"cpu": "100m",
+									},
 								},
+								Timeout:           &prowapi.Duration{Duration: 20 * time.Minute},
+								BestEffort:        pointer.Bool(true),
+								OptionalOnSuccess: pointer.Bool(true),
+								Cli:               "latest",
 							},
-							Timeout:           &prowapi.Duration{Duration: 20 * time.Minute},
-							BestEffort:        pointer.Bool(true),
-							OptionalOnSuccess: pointer.Bool(true),
-							Cli:               "latest",
 						},
-					}, {
-						LiteralTestStep: &cioperatorapi.LiteralTestStep{
-							As:          "openshift-gather-extra",
-							From:        sourceImageName,
-							Commands:    `curl -skSL https://raw.githubusercontent.com/openshift/release/master/ci-operator/step-registry/gather/extra/gather-extra-commands.sh | /bin/bash -s`,
-							GracePeriod: &prowapi.Duration{Duration: 60 * time.Second},
-							Resources: cioperatorapi.ResourceRequirements{
-								Requests: cioperatorapi.ResourceList{
-									"cpu":    "300m",
-									"memory": "300Mi",
+						{
+							LiteralTestStep: &cioperatorapi.LiteralTestStep{
+								As:          "openshift-gather-extra",
+								From:        sourceImageName,
+								Commands:    `curl -skSL https://raw.githubusercontent.com/openshift/release/master/ci-operator/step-registry/gather/extra/gather-extra-commands.sh | /bin/bash -s`,
+								GracePeriod: &prowapi.Duration{Duration: 60 * time.Second},
+								Resources: cioperatorapi.ResourceRequirements{
+									Requests: cioperatorapi.ResourceList{
+										"cpu":    "300m",
+										"memory": "300Mi",
+									},
 								},
+								Timeout:           &prowapi.Duration{Duration: 20 * time.Minute},
+								BestEffort:        pointer.Bool(true),
+								OptionalOnSuccess: pointer.Bool(true),
+								Cli:               "latest",
 							},
-							Timeout:           &prowapi.Duration{Duration: 20 * time.Minute},
-							BestEffort:        pointer.Bool(true),
-							OptionalOnSuccess: pointer.Bool(true),
-							Cli:               "latest",
 						},
-					}},
+					},
 					Workflow: workflow,
 				},
 			}
@@ -261,6 +267,9 @@ func (t *Test) EffectiveCommand() string {
 }
 
 func (t *Test) EnvironmentAsStepParams() []cioperatorapi.StepParameter {
+	if len(t.Environment) == 0 {
+		return nil
+	}
 	params := make([]cioperatorapi.StepParameter, 0, len(t.Environment))
 	for k, v := range t.Environment {
 		params = append(params, cioperatorapi.StepParameter{

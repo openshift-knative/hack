@@ -7,6 +7,7 @@ replace k8s.io/client-go => k8s.io/client-go v0.27.2
 require (
 	github.com/asottile/dockerfile v3.1.0+incompatible
 	github.com/coreos/go-semver v0.3.0
+	github.com/distribution/reference v0.6.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/google/go-cmp v0.6.0
 	github.com/openshift/ci-tools v0.0.0-20240219083709-f792a49ba107
