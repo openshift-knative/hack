@@ -24,6 +24,12 @@ var ApplicationTemplate embed.FS
 //go:embed dockerfile-component.template.yaml
 var DockerfileComponentTemplate embed.FS
 
+//go:embed pipeline-run.template.yaml
+var PipelineRunTemplate embed.FS
+
+//go:embed docker-build-oci-ta.yaml
+var PipelineDockerBuildTemplate embed.FS
+
 type Config struct {
 	OpenShiftReleasePath string
 	ApplicationName      string
@@ -33,6 +39,7 @@ type Config struct {
 	ExcludesImages []string
 
 	ResourcesOutputPath string
+	PipelinesOutputPath string
 
 	Nudges []string
 }
@@ -76,6 +83,14 @@ func Generate(cfg Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to parse dockerfile component template: %w", err)
 	}
+	pipelineRunTemplate, err := template.New("pipeline-run.template.yaml").Delims("{{{", "}}}").Funcs(funcs).ParseFS(PipelineRunTemplate, "*.yaml")
+	if err != nil {
+		return fmt.Errorf("failed to parse pipeline run push template: %w", err)
+	}
+	pipelineDockerBuildTemplate, err := template.New("docker-build-oci-ta.yaml").Delims("{{{", "}}}").Funcs(funcs).ParseFS(PipelineDockerBuildTemplate, "*.yaml")
+	if err != nil {
+		return fmt.Errorf("failed to parse pipeline run push template: %w", err)
+	}
 
 	applications := make(map[string]map[string]DockerfileApplicationConfig, 8)
 	for _, c := range configs {
@@ -104,6 +119,11 @@ func Generate(cfg Config) error {
 				Nudges: cfg.Nudges,
 			}
 		}
+	}
+
+	containerBuildPipelinePath := filepath.Join(cfg.PipelinesOutputPath, "docker-build-oci-ta.yaml")
+	if err := os.MkdirAll(filepath.Dir(containerBuildPipelinePath), 0777); err != nil {
+		return fmt.Errorf("failed to create directory for %q: %w", containerBuildPipelinePath, err)
 	}
 
 	for appKey, components := range applications {
@@ -136,8 +156,41 @@ func Generate(cfg Config) error {
 			if err := os.WriteFile(componentPath, buf.Bytes(), 0777); err != nil {
 				return fmt.Errorf("failed to write component file %q: %w", componentPath, err)
 			}
+
+			buf.Reset()
+
+			pipelineRunPRPath := filepath.Join(cfg.PipelinesOutputPath, fmt.Sprintf("%s-pull-request.yaml", config.ProjectDirectoryImageBuildStepConfiguration.To))
+			pipelineRunPushPath := filepath.Join(cfg.PipelinesOutputPath, fmt.Sprintf("%s-push.yaml", config.ProjectDirectoryImageBuildStepConfiguration.To))
+
+			config.Event = PullRequestEvent
+			if err := pipelineRunTemplate.Execute(buf, config); err != nil {
+				return fmt.Errorf("failed to execute template for pipeline run PR %q: %w", pipelineRunPRPath, err)
+			}
+			if err := os.WriteFile(pipelineRunPRPath, buf.Bytes(), 0777); err != nil {
+				return fmt.Errorf("failed to write component file %q: %w", pipelineRunPRPath, err)
+			}
+
+			buf.Reset()
+
+			config.Event = PushEvent
+			if err := pipelineRunTemplate.Execute(buf, config); err != nil {
+				return fmt.Errorf("failed to execute template for pipeline run PR %q: %w", pipelineRunPushPath, err)
+			}
+			if err := os.WriteFile(pipelineRunPushPath, buf.Bytes(), 0777); err != nil {
+				return fmt.Errorf("failed to write component file %q: %w", pipelineRunPushPath, err)
+			}
 		}
 	}
+
+	buf := &bytes.Buffer{}
+	if err := pipelineDockerBuildTemplate.Execute(buf, nil); err != nil {
+		return fmt.Errorf("failed to execute template for pipeline run PR %q: %w", containerBuildPipelinePath, err)
+	}
+	if err := os.WriteFile(containerBuildPipelinePath, buf.Bytes(), 0777); err != nil {
+		return fmt.Errorf("failed to write component file %q: %w", containerBuildPipelinePath, err)
+	}
+
+	buf.Reset()
 
 	return nil
 }
@@ -200,7 +253,16 @@ type DockerfileApplicationConfig struct {
 	Path                                        string
 	ProjectDirectoryImageBuildStepConfiguration cioperatorapi.ProjectDirectoryImageBuildStepConfiguration
 	Nudges                                      []string
+
+	Event PipelineEvent
 }
+
+type PipelineEvent string
+
+const (
+	PushEvent        PipelineEvent = "push"
+	PullRequestEvent PipelineEvent = "pull_request"
+)
 
 func parseConfig(path string) (*cioperatorapi.ReleaseBuildConfiguration, error) {
 	// Going directly from YAML raw input produces unexpected configs (due to missing YAML tags),
@@ -236,10 +298,6 @@ func toRegexp(rawRegexps []string) ([]*regexp.Regexp, error) {
 
 func dockerfileComponentKey(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
 	return fmt.Sprintf("%s-%s-%s-%s", cfg.Metadata.Org, cfg.Metadata.Repo, cfg.Metadata.Branch, ib.To)
-}
-
-func applicationKey(cfg cioperatorapi.ReleaseBuildConfiguration) string {
-	return fmt.Sprintf("%s-%s-%s", cfg.Metadata.Org, cfg.Metadata.Repo, cfg.Metadata.Branch)
 }
 
 func sanitize(input interface{}) string {
