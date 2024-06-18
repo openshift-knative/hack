@@ -62,7 +62,7 @@ func UpdateAction(cfg Config) error {
 						"uses": "peter-evans/create-pull-request@v5",
 						"with": map[string]interface{}{
 							"token":          "${{ secrets.SERVERLESS_QE_ROBOT }}",
-							"path":           fmt.Sprintf("/src/github.com/openshift-knative/hack/%s", r.RepositoryDirectory()),
+							"path":           fmt.Sprintf("./src/github.com/openshift-knative/hack/%s", r.RepositoryDirectory()),
 							"base":           targetBranch,
 							"branch":         fmt.Sprintf("%s%s", prowgen.KonfluxBranchPrefix, branchName),
 							"title":          commit,
