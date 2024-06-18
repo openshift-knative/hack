@@ -46,7 +46,7 @@ func UpdateAction(cfg Config) error {
 
 		for _, r := range inConfig.Repositories {
 			for branchName, b := range inConfig.Config.Branches {
-				if b.Konflux.Enabled {
+				if b.Konflux != nil && b.Konflux.Enabled {
 
 					// Special case "release-next"
 					targetBranch := branchName
