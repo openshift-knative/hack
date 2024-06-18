@@ -2,15 +2,22 @@ config:
   branches:
     release-next:
       konflux:
-        enabled: true
+        Enabled: true
+        Nudges: null
       openShiftVersions:
       - version: "4.15"
       - version: "4.12"
     release-v1.10:
+      konflux:
+        Enabled: false
+        Nudges: null
       openShiftVersions:
       - skipCron: true
         version: "4.15"
     release-v1.11:
+      konflux:
+        Enabled: false
+        Nudges: null
       openShiftVersions:
       - skipCron: true
         version: "4.15"
@@ -18,11 +25,17 @@ config:
         skipCron: true
         version: "4.12"
     release-v1.12:
+      konflux:
+        Enabled: false
+        Nudges: null
       openShiftVersions:
       - version: "4.15"
       - onDemand: true
         version: "4.12"
     release-v1.14:
+      konflux:
+        Enabled: false
+        Nudges: null
       openShiftVersions:
       - version: "4.15"
       - version: "4.12"

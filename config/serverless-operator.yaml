@@ -1,6 +1,9 @@
 config:
   branches:
     main:
+      konflux:
+        Enabled: false
+        Nudges: null
       openShiftVersions:
       - generateCustomConfigs: true
         version: "4.15"

@@ -1,6 +1,9 @@
 config:
   branches:
     main:
+      konflux:
+        Enabled: false
+        Nudges: null
       openShiftVersions:
       - skipCron: true
         version: "4.14"
