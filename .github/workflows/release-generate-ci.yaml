@@ -76,7 +76,7 @@ jobs:
           branch: sync-konflux/release-next
           commit-message: '[main] Sync Konflux configurations'
           delete-branch: true
-          path: /src/github.com/openshift-knative/hack/openshift-knative/eventing
+          path: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
           push-to-fork: serverless-qe/eventing
           title: '[main] Sync Konflux configurations'
           token: ${{ secrets.SERVERLESS_QE_ROBOT }}
