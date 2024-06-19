@@ -55,6 +55,8 @@ jobs:
         run: make generate-ci-no-clean ARGS=--branch=master
       - name: Create Pull Request
         if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
         run: gh auth setup-git && git remote add fork https://github.com/serverless-qe/release.git && git push fork sync-serverless-ci:sync-serverless-ci -f && gh pr create --base master --head serverless-qe:sync-serverless-ci --fill-verbose
         working-directory: ./src/github.com/openshift-knative/hack/openshift/release
       - env:
