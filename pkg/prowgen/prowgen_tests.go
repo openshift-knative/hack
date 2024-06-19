@@ -317,6 +317,10 @@ func discoverE2ETests(r Repository, skipE2ETestMatch []string) ([]Test, error) {
 		}
 	}
 
+	sort.Slice(tests, func(i, j int) bool {
+		return ToName(r, &tests[i]) < ToName(r, &tests[j])
+	})
+
 	return tests, nil
 }
 

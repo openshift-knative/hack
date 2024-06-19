@@ -2,7 +2,6 @@ package prowgen
 
 import (
 	"math/rand"
-	"sort"
 	"testing"
 	"time"
 
@@ -458,7 +457,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 		},
 		{
 			As:   "test-conformance-c",
-			Cron: pointer.String("43 1 * * 2,6"),
+			Cron: pointer.String("23 1 * * 2,6"),
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
 				Test: []cioperatorapi.TestStep{
@@ -507,7 +506,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 		},
 		{
 			As:   "test-conformance-long-long-long-360d252-c",
-			Cron: pointer.String("16 5 * * 2,6"),
+			Cron: pointer.String("43 1 * * 2,6"),
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
 				Test: []cioperatorapi.TestStep{
@@ -605,7 +604,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 		},
 		{
 			As:   "test-reconciler-c",
-			Cron: pointer.String("23 1 * * 2,6"),
+			Cron: pointer.String("16 5 * * 2,6"),
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
 				Test: []cioperatorapi.TestStep{
@@ -665,22 +664,10 @@ func TestDiscoverTestsEventing(t *testing.T) {
 }
 
 func equals(a, b []cioperatorapi.TestStepConfiguration) (bool, string) {
-	sa := sortByName(a)
-	sb := sortByName(b)
-
-	if !equality.Semantic.DeepEqual(sa, sb) {
-		return false, cmp.Diff(sa, sb)
+	if !equality.Semantic.DeepEqual(a, b) {
+		return false, cmp.Diff(a, b)
 	}
 	return true, ""
-}
-
-func sortByName(tests []cioperatorapi.TestStepConfiguration) []cioperatorapi.TestStepConfiguration {
-	sorted := make([]cioperatorapi.TestStepConfiguration, len(tests))
-	copy(sorted, tests)
-	sort.Slice(sorted, func(i, j int) bool {
-		return sorted[i].As < sorted[j].As
-	})
-	return sorted
 }
 
 func mustGatherSteps(sourceImage string, optionalOnSuccess bool) []cioperatorapi.TestStep {
