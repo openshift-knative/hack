@@ -1,0 +1,59 @@
+---
+config:
+  branches:
+    release-1.11:
+      openShiftVersions:
+        - skipCron: true
+          version: '4.15'
+    release-1.13:
+      openShiftVersions:
+        - version: '4.15'
+    release-1.14:
+      openShiftVersions:
+        - version: '4.15'
+    release-next:
+      openShiftVersions:
+        - version: '4.15'
+repositories:
+  - org: openshift-knative
+    repo: kn-plugin-event
+    imagePrefix: client-plugin-event
+    binaryBuildCommands: |-
+      export HOME=/tmp
+      export TEST_IMAGES_DIR=/var/build/bin
+      ./mage build
+    imageNameOverrides:
+      kn-event-sender: sender
+    promotion:
+      namespace: knative
+      template: release-${version}
+      omitSource: true
+    sharedInputs:
+      bin:
+        paths:
+          - destination_dir: .
+            source_path: /var/build/bin/.
+    baseImages:
+      base:
+        name: ubi-minimal
+        namespace: ocp
+        tag: '8'
+    slackChannel: '#knative-client'
+    resources:
+      '*':
+        limits:
+          memory: 8Gi
+        requests:
+          cpu: 100m
+          memory: 200Mi
+    tests:
+      - as: unit
+        commands: |
+          export HOME=/tmp
+          ./mage test
+        container:
+          from: src
+    e2e:
+      - name: e2e
+        command: openshift/e2e-tests.sh
+        timeout: 30m0s

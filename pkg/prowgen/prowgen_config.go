@@ -19,12 +19,15 @@ type Repository struct {
 	Org                   string                                                      `json:"org,omitempty" yaml:"org,omitempty"`
 	Repo                  string                                                      `json:"repo,omitempty" yaml:"repo,omitempty"`
 	Promotion             Promotion                                                   `json:"promotion,omitempty" yaml:"promotion,omitempty"`
+	BinaryBuildCommands   string                                                      `json:"binaryBuildCommands,omitempty" yaml:"binaryBuildCommands,omitempty"`
 	ImagePrefix           string                                                      `json:"imagePrefix,omitempty" yaml:"imagePrefix,omitempty"`
 	ImageNameOverrides    map[string]string                                           `json:"imageNameOverrides,omitempty" yaml:"imageNameOverrides,omitempty"`
 	SlackChannel          string                                                      `json:"slackChannel,omitempty" yaml:"slackChannel,omitempty"`
 	CanonicalGoRepository *string                                                     `json:"canonicalGoRepository,omitempty" yaml:"canonicalGoRepository,omitempty"`
 	E2ETests              []E2ETest                                                   `json:"e2e,omitempty" yaml:"e2e,omitempty"`
 	Dockerfiles           Dockerfiles                                                 `json:"dockerfiles,omitempty" yaml:"dockerfiles,omitempty"`
+	BaseImages            map[string]cioperatorapi.ImageStreamTagReference            `json:"baseImages,omitempty" yaml:"baseImages,omitempty"`
+	SharedInputs          map[string]cioperatorapi.ImageBuildInputs                   `json:"sharedInputs,omitempty" yaml:"sharedInputs,omitempty"`
 	IgnoreConfigs         IgnoreConfigs                                               `json:"ignoreConfigs,omitempty" yaml:"ignoreConfigs,omitempty"`
 	CustomConfigs         []CustomConfigs                                             `json:"customConfigs,omitempty" yaml:"customConfigs,omitempty"`
 	Images                []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration `json:"images,omitempty" yaml:"images,omitempty"`
@@ -33,10 +36,16 @@ type Repository struct {
 }
 
 type E2ETest struct {
-	Match        string `json:"match,omitempty" yaml:"match,omitempty"`
-	OnDemand     bool   `json:"onDemand,omitempty" yaml:"onDemand,omitempty"`
-	IgnoreError  bool   `json:"ignoreError,omitempty" yaml:"ignoreError,omitempty"`
-	RunIfChanged string `json:"runIfChanged,omitempty" yaml:"runIfChanged,omitempty"`
+	// Name is an optional field that can be used to identify the test.
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+	// Command or Match is required to define the test. If both are defined, the config will fail.
+	Command string `json:"command,omitempty" yaml:"command,omitempty"`
+	// Match will look for a given Makefile target to run the test.
+	Match        string                        `json:"match,omitempty" yaml:"match,omitempty"`
+	Environment  cioperatorapi.TestEnvironment `json:"env,omitempty" yaml:"env,omitempty"`
+	OnDemand     bool                          `json:"onDemand,omitempty" yaml:"onDemand,omitempty"`
+	IgnoreError  bool                          `json:"ignoreError,omitempty" yaml:"ignoreError,omitempty"`
+	RunIfChanged string                        `json:"runIfChanged,omitempty" yaml:"runIfChanged,omitempty"`
 	// SkipCron ensures that no periodic job will be generated for the given test.
 	SkipCron   bool              `json:"skipCron,omitempty" yaml:"skipCron,omitempty"`
 	SkipImages []string          `json:"skipImages,omitempty" yaml:"skipImages,omitempty"`
@@ -44,7 +53,8 @@ type E2ETest struct {
 }
 
 type Dockerfiles struct {
-	Matches []string `json:"matches,omitempty" yaml:"matches,omitempty"`
+	Matches  []string `json:"matches,omitempty" yaml:"matches,omitempty"`
+	Excludes []string `json:"excludes,omitempty" yaml:"excludes,omitempty"`
 }
 
 type IgnoreConfigs struct {
@@ -52,7 +62,9 @@ type IgnoreConfigs struct {
 }
 
 type Promotion struct {
-	Namespace string `json:"namespace,omitempty" yaml:"namespace,omitempty"`
+	Namespace  string `json:"namespace,omitempty" yaml:"namespace,omitempty"`
+	Template   string `json:"template,omitempty" yaml:"template,omitempty"`
+	OmitSource bool   `json:"omitSource,omitempty" yaml:"omitSource,omitempty"`
 }
 
 type CustomConfigs struct {
@@ -132,9 +144,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 			return nil, fmt.Errorf("[%s] failed to checkout branch %s", r.RepositoryDirectory(), branchName)
 		}
 
-		var err error
-		openshiftVersions := branch.OpenShiftVersions
-		openshiftVersions, err = addCandidateRelease(branch.OpenShiftVersions)
+		openshiftVersions, err := addCandidateRelease(branch.OpenShiftVersions)
 		if err != nil {
 			return nil, err
 		}
@@ -198,7 +208,8 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 			}
 
 			cfg := cioperatorapi.ReleaseBuildConfiguration{
-				Metadata: metadata,
+				BinaryBuildCommands: r.BinaryBuildCommands,
+				Metadata:            metadata,
 				InputConfiguration: cioperatorapi.InputConfiguration{
 					BuildRootImage: buildRootImage,
 					Releases:       releases,
@@ -327,16 +338,11 @@ func withNamePromotion(r Repository, branchName string) ReleaseBuildConfiguratio
 			ns = r.Promotion.Namespace
 		}
 		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
-			Targets: []cioperatorapi.PromotionTarget{
-				{
-					Namespace: ns,
-					Name:      strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
-					AdditionalImages: map[string]string{
-						// Add source image
-						transformLegacyKnativeSourceImageName(r): "src",
-					},
-				},
-			},
+			Targets: []cioperatorapi.PromotionTarget{{
+				Namespace:        ns,
+				Name:             createPromotionName(r.Promotion, branchName),
+				AdditionalImages: createPromotionAdditionalImages(r),
+			}},
 		}
 		return nil
 	}
@@ -349,20 +355,37 @@ func withTagPromotion(r Repository, branchName string) ReleaseBuildConfiguration
 			ns = r.Promotion.Namespace
 		}
 		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
-			Targets: []cioperatorapi.PromotionTarget{
-				{
-					Namespace:   ns,
-					Tag:         strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
-					TagByCommit: false, // TODO: revisit this later
-					AdditionalImages: map[string]string{
-						// Add source image
-						transformLegacyKnativeSourceImageName(r): "src",
-					},
-				},
-			},
+			Targets: []cioperatorapi.PromotionTarget{{
+				Namespace:        ns,
+				Tag:              createPromotionName(r.Promotion, branchName),
+				TagByCommit:      false, // TODO: revisit this later
+				AdditionalImages: createPromotionAdditionalImages(r),
+			}},
 		}
 		return nil
 	}
+}
+
+func createPromotionAdditionalImages(r Repository) map[string]string {
+	if r.Promotion.OmitSource {
+		return nil
+	}
+	return map[string]string{
+		// Add source image
+		transformLegacyKnativeSourceImageName(r): "src",
+	}
+}
+
+func createPromotionName(p Promotion, branchName string) string {
+	tpl := "knative-${version}"
+	if p.Template != "" {
+		tpl = p.Template
+	}
+	version := strings.Replace(branchName, "release-", "", 1)
+	if version == "next" {
+		version = "nightly"
+	}
+	return strings.ReplaceAll(tpl, "${version}", version)
 }
 
 func addCandidateRelease(openshiftVersions []OpenShift) ([]OpenShift, error) {

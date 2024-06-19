@@ -297,20 +297,32 @@ repositories:
     - olm-catalog/serverless-operator/index/Dockerfile
   e2e:
   - match: ^operator-e2e$
+    env:
+      SKIP_MESH_AUTH_POLICY_GENERATION: "true"
   - match: ^test-upgrade$
+    env:
+      SKIP_MESH_AUTH_POLICY_GENERATION: "true"
   - ignoreError: true
     match: ^upstream-e2e$
     skipCron: true
+    env:
+      SKIP_MESH_AUTH_POLICY_GENERATION: "true"
   - ignoreError: true
     match: ^upstream-e2e-kafka$
+    env:
+      SKIP_MESH_AUTH_POLICY_GENERATION: "true"
   - ignoreError: true
     match: ^mesh-e2e$
     onDemand: true
     timeout: 4h0m0s
+    env:
+      SKIP_MESH_AUTH_POLICY_GENERATION: "true"
   - ignoreError: true
     match: ^mesh-upgrade$
     onDemand: true
     skipCron: true
+    env:
+      SKIP_MESH_AUTH_POLICY_GENERATION: "true"
   - ignoreError: true
     match: ^ui-e2e$
     onDemand: true
@@ -318,9 +330,13 @@ repositories:
   - ignoreError: true
     match: ^kitchensink-e2e$
     onDemand: true
+    env:
+      SKIP_MESH_AUTH_POLICY_GENERATION: "true"
   - ignoreError: true
     match: ^kitchensink-upgrade$
     onDemand: true
+    env:
+      SKIP_MESH_AUTH_POLICY_GENERATION: "true"
   ignoreConfigs:
     matches:
     - .*main.yaml$

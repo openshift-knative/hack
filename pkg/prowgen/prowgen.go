@@ -48,6 +48,8 @@ func Main() {
 	outConfig := flag.String("output", filepath.Join(openShiftRelease.Org, openShiftRelease.Repo, "ci-operator", "config"), "Specify repositories config")
 	remote := flag.String("remote", "", "openshift/release remote fork (example: git@github.com:pierDipi/release.git)")
 	branch := flag.String("branch", "sync-serverless-ci", "Branch for remote fork")
+	push := flag.Bool("push", true, "Push changes to remote fork")
+	build := flag.Bool("build", true, "Run the openshift/release generator")
 	flag.Parse()
 
 	log.Println(*inputConfig, *outConfig)
@@ -152,18 +154,21 @@ func Main() {
 	if err := repositoriesGenerateConfigs.Wait(); err != nil {
 		log.Fatalln("Failed waiting for repositories generator", err)
 	}
-
-	if err := RunOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
-		log.Fatalln("Failed to run openshift/release generator:", err)
+	if *build {
+		if err := RunOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
+			log.Fatalln("Failed to run openshift/release generator:", err)
+		}
+		if err := runJobConfigInjectors(inConfigs, openShiftRelease); err != nil {
+			log.Fatalln("Failed to inject Slack reporter", err)
+		}
+		if err := RunOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
+			log.Fatalln("Failed to run openshift/release generator after injecting Slack reporter", err)
+		}
 	}
-	if err := runJobConfigInjectors(inConfigs, openShiftRelease); err != nil {
-		log.Fatalln("Failed to inject Slack reporter", err)
-	}
-	if err := RunOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
-		log.Fatalln("Failed to run openshift/release generator after injecting Slack reporter", err)
-	}
-	if err := PushBranch(ctx, openShiftRelease, remote, *branch, "Sync Serverless CI "+*inputConfig); err != nil {
-		log.Fatalln("Failed to push branch to openshift/release fork", *remote, err)
+	if *push {
+		if err := PushBranch(ctx, openShiftRelease, remote, *branch, "Sync Serverless CI "+*inputConfig); err != nil {
+			log.Fatalln("Failed to push branch to openshift/release fork", *remote, err)
+		}
 	}
 
 	if err := GenerateKonflux(ctx, openShiftRelease, inConfigs); err != nil {
@@ -357,9 +362,7 @@ func AlwaysRunInjector() JobConfigInjector {
 					variant := jobConfig.PresubmitsStatic[k][i].Labels["ci-operator.openshift.io/variant"]
 					ocpVersion := strings.ReplaceAll(strings.SplitN(variant, "-", 2)[0], ".", "")
 
-					var err error
-					openshiftVersions := b.OpenShiftVersions
-					openshiftVersions, err = addCandidateRelease(b.OpenShiftVersions)
+					openshiftVersions, err := addCandidateRelease(b.OpenShiftVersions)
 					if err != nil {
 						return err
 					}
@@ -381,7 +384,7 @@ func AlwaysRunInjector() JobConfigInjector {
 					}
 
 					for _, t := range tests {
-						name := ToName(*r, &t, ocpVersion)
+						name := ToName(*r, &t)
 						if (t.OnDemand || t.RunIfChanged != "" || onDemandForOpenShift) && strings.Contains(jobConfig.PresubmitsStatic[k][i].Name, name) {
 							jobConfig.PresubmitsStatic[k][i].AlwaysRun = false
 						}
