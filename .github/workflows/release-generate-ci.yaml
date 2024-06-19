@@ -54,7 +54,7 @@ jobs:
         # Use master, see https://github.com/peter-evans/create-pull-request/issues/2108
         run: make all ARGS=--branch=master
       - name: Create Pull Request
-        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main' }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' ||  github.event_name == 'schedule') && github.ref_name == 'main' }}
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -67,7 +67,7 @@ jobs:
           delete-branch: true
           body: |
             Sync Serverless CI using openshift-knative/hack.
-      - if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main' }}
+      - if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         name: '[eventing - release-next] Create Konflux PR'
         uses: peter-evans/create-pull-request@v5
         with:

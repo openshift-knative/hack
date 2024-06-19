@@ -2,7 +2,8 @@
 # replacing reference images via env variable.
 include pkg/project/testdata/env
 
-all: eventing serving operator client ## Generate all the prow jobs
+all:  ## Generate all the prow jobs
+	go run github.com/openshift-knative/hack/cmd/prowgen --config config/ $(ARGS)
 .PHONY: all
 
 eventing: ## Generate the eventing prow jobs
