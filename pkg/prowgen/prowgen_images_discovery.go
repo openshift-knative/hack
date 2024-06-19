@@ -265,7 +265,9 @@ func getPullStringsFromDockerfile(filename string) ([]string, error) {
 		}
 	}
 
-	return images, nil
+	return slices.Filter(make([]string, 0, len(images)), images, func(s string) bool {
+		return s != "" && s != "scratch"
+	}), nil
 }
 
 func computeInputs(
