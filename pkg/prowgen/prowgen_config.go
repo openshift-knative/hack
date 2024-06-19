@@ -340,7 +340,7 @@ func withNamePromotion(r Repository, branchName string) ReleaseBuildConfiguratio
 		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
 			Targets: []cioperatorapi.PromotionTarget{{
 				Namespace:        ns,
-				Name:             createPropotionName(r.Promotion, branchName),
+				Name:             createPromotionName(r.Promotion, branchName),
 				AdditionalImages: createPromotionAdditionalImages(r),
 			}},
 		}
@@ -357,7 +357,7 @@ func withTagPromotion(r Repository, branchName string) ReleaseBuildConfiguration
 		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
 			Targets: []cioperatorapi.PromotionTarget{{
 				Namespace:        ns,
-				Tag:              createPropotionName(r.Promotion, branchName),
+				Tag:              createPromotionName(r.Promotion, branchName),
 				TagByCommit:      false, // TODO: revisit this later
 				AdditionalImages: createPromotionAdditionalImages(r),
 			}},
@@ -376,7 +376,7 @@ func createPromotionAdditionalImages(r Repository) map[string]string {
 	}
 }
 
-func createPropotionName(p Promotion, branchName string) string {
+func createPromotionName(p Promotion, branchName string) string {
 	tpl := "knative-${version}"
 	if p.Template != "" {
 		tpl = p.Template
