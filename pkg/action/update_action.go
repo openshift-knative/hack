@@ -54,23 +54,21 @@ func UpdateAction(cfg Config) error {
 						targetBranch = "main"
 					}
 
-					commit := fmt.Sprintf("[%s] Sync Konflux configurations", targetBranch)
-
+					localBranch := fmt.Sprintf("%s%s", prowgen.KonfluxBranchPrefix, branchName)
 					steps = append(steps, map[string]interface{}{
 						"name": fmt.Sprintf("[%s - %s] Create Konflux PR", r.Repo, branchName),
 						"if":   "${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}",
-						"uses": "peter-evans/create-pull-request@v5",
-						"with": map[string]interface{}{
-							"token":          "${{ secrets.SERVERLESS_QE_ROBOT }}",
-							"path":           fmt.Sprintf("./src/github.com/openshift-knative/hack/%s", r.RepositoryDirectory()),
-							"base":           targetBranch,
-							"branch":         fmt.Sprintf("%s%s", prowgen.KonfluxBranchPrefix, branchName),
-							"title":          commit,
-							"commit-message": commit,
-							"push-to-fork":   fmt.Sprintf("serverless-qe/%s", r.Repo),
-							"delete-branch":  true,
-							"body":           commit,
+						"env": map[string]string{
+							"GH_TOKEN": "${{ secrets.SERVERLESS_QE_ROBOT }}",
 						},
+						"working-directory": fmt.Sprintf("./src/github.com/openshift-knative/hack/%s", r.RepositoryDirectory()),
+						"run": fmt.Sprintf("gh auth setup-git && git remote add fork https://github.com/serverless-qe/%s.git && git push fork %s:%s && gh pr create --base %s --head %s --fill-verbose",
+							r.Repo,
+							localBranch,
+							localBranch,
+							targetBranch,
+							fmt.Sprintf("serverless-qe:%s", localBranch),
+						),
 					})
 				}
 			}
