@@ -59,10 +59,11 @@ func UpdateAction(cfg Config) error {
 						"name": fmt.Sprintf("[%s - %s] Create Konflux PR", r.Repo, branchName),
 						"if":   "${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}",
 						"env": map[string]string{
-							"GH_TOKEN": "${{ secrets.SERVERLESS_QE_ROBOT }}",
+							"GH_TOKEN":     "${{ secrets.SERVERLESS_QE_ROBOT }}",
+							"GITHUB_TOKEN": "${{ secrets.SERVERLESS_QE_ROBOT }}",
 						},
 						"working-directory": fmt.Sprintf("./src/github.com/openshift-knative/hack/%s", r.RepositoryDirectory()),
-						"run": fmt.Sprintf("git remote add fork https://x-access-token:${{ secrets.SERVERLESS_QE_ROBOT }}@github.com/serverless-qe/%s.git && git push fork %s:%s -f && gh pr create --base %s --head %s --fill-verbose",
+						"run": fmt.Sprintf("git remote add fork https://${{ secrets.SERVERLESS_QE_ROBOT }}@github.com/serverless-qe/%s.git && git push fork %s:%s -f && gh pr create --base %s --head %s --fill-verbose",
 							r.Repo,
 							localBranch,
 							localBranch,
