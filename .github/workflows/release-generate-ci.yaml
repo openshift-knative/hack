@@ -58,6 +58,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
         run: gh auth status
+      - name: Auth login
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        run: |
+          gh auth login
+          gh auth setup-git
       - name: Create Pull Request
         if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         env:
