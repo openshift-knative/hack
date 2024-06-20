@@ -53,11 +53,6 @@ jobs:
         working-directory: ./src/github.com/openshift-knative/hack
         # Use master, see https://github.com/peter-evans/create-pull-request/issues/2108
         run: make generate-ci-no-clean ARGS=--branch=master
-      - name: Auth status
-        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
-        env:
-          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
-        run: gh auth status
       - name: Auth login
         if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         env:
@@ -65,6 +60,11 @@ jobs:
         run: |
           gh auth login
           gh auth setup-git
+      - name: Auth status
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        run: gh auth status
       - name: Create Pull Request
         if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         env:
