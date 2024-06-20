@@ -57,11 +57,11 @@ jobs:
         if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
-        run: gh auth setup-git && git remote add fork https://github.com/serverless-qe/release.git && git push fork sync-serverless-ci:sync-serverless-ci -f && gh pr create --base master --head serverless-qe:sync-serverless-ci --fill-verbose
+        run: git remote add fork https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/release.git && git push fork sync-serverless-ci:sync-serverless-ci -f && gh pr create --base master --head serverless-qe:sync-serverless-ci --fill-verbose
         working-directory: ./src/github.com/openshift-knative/hack/openshift/release
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
         if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         name: '[eventing - release-next] Create Konflux PR'
-        run: gh auth setup-git && git remote add fork https://github.com/serverless-qe/eventing.git && git push fork sync-konflux/release-next:sync-konflux/release-next -f && gh pr create --base main --head serverless-qe:sync-konflux/release-next --fill-verbose
+        run: git remote add fork https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/eventing.git && git push fork sync-konflux/release-next:sync-konflux/release-next -f && gh pr create --base main --head serverless-qe:sync-konflux/release-next --fill-verbose
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
