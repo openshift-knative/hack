@@ -22,6 +22,69 @@ jobs:
     env:
       GOPATH: ${{ github.workspace }}
     steps:
+      - if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[backstage-plugins] Clone repository'
+        uses: actions/checkout@v4
+        with:
+          path: ./src/github.com/openshift-knative/hack/openshift-knative/backstage-plugins
+          repository: openshift-knative/backstage-plugins
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
+      - if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[eventing-hyperfoil-benchmark] Clone repository'
+        uses: actions/checkout@v4
+        with:
+          path: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-hyperfoil-benchmark
+          repository: openshift-knative/eventing-hyperfoil-benchmark
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
+      - if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[eventing-istio] Clone repository'
+        uses: actions/checkout@v4
+        with:
+          path: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-istio
+          repository: openshift-knative/eventing-istio
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
+      - if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[eventing-kafka-broker] Clone repository'
+        uses: actions/checkout@v4
+        with:
+          path: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-kafka-broker
+          repository: openshift-knative/eventing-kafka-broker
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
+      - if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[eventing] Clone repository'
+        uses: actions/checkout@v4
+        with:
+          path: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
+          repository: openshift-knative/eventing
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
+      - if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[serverless-operator] Clone repository'
+        uses: actions/checkout@v4
+        with:
+          path: ./src/github.com/openshift-knative/hack/openshift-knative/serverless-operator
+          repository: openshift-knative/serverless-operator
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
+      - if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[net-istio] Clone repository'
+        uses: actions/checkout@v4
+        with:
+          path: ./src/github.com/openshift-knative/hack/openshift-knative/net-istio
+          repository: openshift-knative/net-istio
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
+      - if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[net-kourier] Clone repository'
+        uses: actions/checkout@v4
+        with:
+          path: ./src/github.com/openshift-knative/hack/openshift-knative/net-kourier
+          repository: openshift-knative/net-kourier
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
+      - if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[serving] Clone repository'
+        uses: actions/checkout@v4
+        with:
+          path: ./src/github.com/openshift-knative/hack/openshift-knative/serving
+          repository: openshift-knative/serving
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
       - name: Install prerequisites
         env:
           YQ_VERSION: 3.4.0
@@ -62,7 +125,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
         run: |
           set -x
-          git remote add fork "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/release.git"
+          git remote add fork "https://github.com/serverless-qe/release.git"
           git push fork sync-serverless-ci:sync-serverless-ci -f
           gh pr create --base master --head serverless-qe:sync-serverless-ci --fill-verbose
         working-directory: ./src/github.com/openshift-knative/hack/openshift/release
@@ -73,7 +136,7 @@ jobs:
         name: '[eventing - release-next] Create Konflux PR'
         run: |
           set -x
-          git remote add fork "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/eventing.git"
+          git remote add fork "https://github.com/serverless-qe/eventing.git"
           git push fork sync-konflux/release-next:sync-konflux/release-next -f
           gh pr create --base main --head serverless-qe:sync-konflux/release-next --fill-verbose
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing

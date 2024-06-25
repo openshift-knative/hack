@@ -20,6 +20,7 @@ type Config struct {
 
 func UpdateAction(cfg Config) error {
 	var steps []interface{}
+	var cloneSteps []interface{}
 
 	y, err := os.ReadFile(cfg.InputAction)
 	if err != nil {
@@ -30,7 +31,7 @@ func UpdateAction(cfg Config) error {
 		return fmt.Errorf("failed to decode file into node: %w", err)
 	}
 
-	if err := AddNestedField(&node, "Generate CI config", "name"); err != nil {
+	if err := AddNestedField(&node, "Generate CI config", false, "name"); err != nil {
 		return fmt.Errorf("failed to add steps: %w", err)
 	}
 
@@ -45,6 +46,19 @@ func UpdateAction(cfg Config) error {
 		}
 
 		for _, r := range inConfig.Repositories {
+
+			cloneSteps = append(cloneSteps,
+				map[string]interface{}{
+					"name": fmt.Sprintf("[%s] Clone repository", r.Repo),
+					"if":   "${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}",
+					"uses": "actions/checkout@v4",
+					"with": map[string]interface{}{
+						"repository": r.RepositoryDirectory(),
+						"token":      "${{ secrets.SERVERLESS_QE_ROBOT }}",
+						"path":       fmt.Sprintf("./src/github.com/openshift-knative/hack/%s", r.RepositoryDirectory()),
+					},
+				})
+
 			for branchName, b := range inConfig.Config.Branches {
 				if b.Konflux != nil && b.Konflux.Enabled {
 
@@ -64,7 +78,7 @@ func UpdateAction(cfg Config) error {
 						},
 						"working-directory": fmt.Sprintf("./src/github.com/openshift-knative/hack/%s", r.RepositoryDirectory()),
 						"run": fmt.Sprintf(`set -x
-git remote add fork "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/%s.git"
+git remote add fork "https://github.com/serverless-qe/%s.git"
 git push fork %s:%s -f
 gh pr create --base %s --head %s --fill-verbose
 `,
@@ -85,7 +99,11 @@ gh pr create --base %s --head %s --fill-verbose
 		return fmt.Errorf("failed to walk filesystem path %q: %w", cfg.InputConfigPath, err)
 	}
 
-	if err := AddNestedField(&node, steps, "jobs", "generate-ci", "steps"); err != nil {
+	if err := AddNestedField(&node, cloneSteps, true, "jobs", "generate-ci", "steps"); err != nil {
+		return fmt.Errorf("failed to add cloned steps: %w", err)
+	}
+
+	if err := AddNestedField(&node, steps, false, "jobs", "generate-ci", "steps"); err != nil {
 		return fmt.Errorf("failed to add steps: %w", err)
 	}
 
@@ -104,7 +122,7 @@ gh pr create --base %s --head %s --fill-verbose
 	return nil
 }
 
-func AddNestedField(node *yaml.Node, value interface{}, fields ...string) error {
+func AddNestedField(node *yaml.Node, value interface{}, prepend bool, fields ...string) error {
 
 	for i, n := range node.Content {
 
@@ -129,17 +147,21 @@ func AddNestedField(node *yaml.Node, value interface{}, fields ...string) error 
 						return err
 					}
 
-					n.Content = append(n.Content, s.Content[0].Content...)
+					if prepend {
+						n.Content = append(s.Content[0].Content, n.Content...)
+					} else {
+						n.Content = append(n.Content, s.Content[0].Content...)
+					}
 				}
 				break
 			}
 
 			// Continue to the next level
-			return AddNestedField(n, value, fields[1:]...)
+			return AddNestedField(n, value, prepend, fields[1:]...)
 		}
 
 		if node.Kind == yaml.DocumentNode {
-			return AddNestedField(n, value, fields...)
+			return AddNestedField(n, value, prepend, fields...)
 		}
 	}
 
