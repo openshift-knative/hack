@@ -126,7 +126,7 @@ jobs:
         run: |
           set -x
           git remote add fork "https://github.com/serverless-qe/release.git"
-          git push fork sync-serverless-ci:sync-serverless-ci -f
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/release.git" sync-serverless-ci:sync-serverless-ci -f
           gh pr create --base master --head serverless-qe:sync-serverless-ci --fill-verbose
         working-directory: ./src/github.com/openshift-knative/hack/openshift/release
       - env:
@@ -137,6 +137,6 @@ jobs:
         run: |
           set -x
           git remote add fork "https://github.com/serverless-qe/eventing.git"
-          git push fork sync-konflux/release-next:sync-konflux/release-next -f
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/eventing.git" sync-konflux/release-next:sync-konflux/release-next -f
           gh pr create --base main --head serverless-qe:sync-konflux/release-next --fill-verbose
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing

@@ -79,9 +79,10 @@ func UpdateAction(cfg Config) error {
 						"working-directory": fmt.Sprintf("./src/github.com/openshift-knative/hack/%s", r.RepositoryDirectory()),
 						"run": fmt.Sprintf(`set -x
 git remote add fork "https://github.com/serverless-qe/%s.git"
-git push fork %s:%s -f
+git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/%s.git" %s:%s -f
 gh pr create --base %s --head %s --fill-verbose
 `,
+							r.Repo,
 							r.Repo,
 							localBranch,
 							localBranch,
