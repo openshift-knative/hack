@@ -72,5 +72,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
-        run: git remote add fork "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/release.git" && git push fork sync-serverless-ci:sync-serverless-ci -f && gh pr create --base master --head serverless-qe:sync-serverless-ci --fill-verbose
+        run: |
+          git remote add fork "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/release.git"
+          git push fork sync-serverless-ci:sync-serverless-ci -f
+          gh pr create --base master --head serverless-qe:sync-serverless-ci --fill-verbose
         working-directory: ./src/github.com/openshift-knative/hack/openshift/release
