@@ -19,14 +19,6 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 			for branchName, b := range config.Config.Branches {
 				if b.Konflux != nil && b.Konflux.Enabled {
 
-					if err := GitMirror(ctx, r); err != nil {
-						return err
-					}
-
-					if err := GitCheckout(ctx, r, branchName); err != nil {
-						return err
-					}
-
 					// Special case "release-next"
 					targetBranch := branchName
 					upstreamVersion := "release-next"
@@ -34,6 +26,14 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						targetBranch = "main"
 					} else {
 						upstreamVersion = sobranch.FromUpstreamVersion(branchName)
+					}
+
+					if err := GitMirror(ctx, r); err != nil {
+						return err
+					}
+
+					if err := GitCheckout(ctx, r, targetBranch); err != nil {
+						return err
 					}
 
 					cfg := konfluxgen.Config{
