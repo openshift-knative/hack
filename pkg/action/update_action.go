@@ -80,7 +80,7 @@ func UpdateAction(cfg Config) error {
 						"run": fmt.Sprintf(`set -x
 git remote add fork "https://github.com/serverless-qe/%s.git"
 git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/%s.git" %s:%s -f
-gh pr create --base %s --head %s --fill-verbose
+gh pr create --base %s --head %s --fill-verbose || true
 `,
 							r.Repo,
 							r.Repo,

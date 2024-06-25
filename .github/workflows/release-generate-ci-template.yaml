@@ -86,5 +86,5 @@ jobs:
           set -x
           git remote add fork "https://github.com/serverless-qe/release.git"
           git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/release.git" sync-serverless-ci:sync-serverless-ci -f
-          gh pr create --base master --head serverless-qe:sync-serverless-ci --fill-verbose
+          gh pr create --base master --head serverless-qe:sync-serverless-ci --fill-verbose || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift/release
