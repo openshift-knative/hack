@@ -35,7 +35,7 @@ jobs:
           sudo mv /usr/bin/yq /usr/local/bin/yq
 
       - name: Checkout openshift-knative/hack
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: ./src/github.com/openshift-knative/hack
 
@@ -52,11 +52,21 @@ jobs:
         run: find config/*.yaml | xargs -I{} sh -c "yaml2json < {} > {}.json"
 
       - name: Checkout openshift/release
-        uses: actions/checkout@v3
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/checkout@v4
         with:
           branch: 'master'
           repository: 'openshift/release'
           path: ./src/github.com/openshift-knative/hack/openshift/release
+
+      - name: Checkout openshift/release
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        uses: actions/checkout@v4
+        with:
+          branch: 'master'
+          repository: 'openshift/release'
+          path: ./src/github.com/openshift-knative/hack/openshift/release
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
 
       - name: Configure Git user
         run: |
