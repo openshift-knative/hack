@@ -147,5 +147,5 @@ jobs:
           set -x
           git remote add fork "https://github.com/serverless-qe/eventing.git"
           git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/eventing.git" sync-konflux/release-next:sync-konflux/release-next -f
-          gh pr create --base main --head serverless-qe:sync-konflux/release-next --title "[main] Add Konflux configurations" || true
+          gh pr create --base main --head serverless-qe:sync-konflux/release-next --title "[main] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
