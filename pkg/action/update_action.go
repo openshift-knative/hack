@@ -63,7 +63,8 @@ func UpdateAction(cfg Config) error {
 							"GITHUB_TOKEN": "${{ secrets.SERVERLESS_QE_ROBOT }}",
 						},
 						"working-directory": fmt.Sprintf("./src/github.com/openshift-knative/hack/%s", r.RepositoryDirectory()),
-						"run": fmt.Sprintf(`git remote add fork "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/%s.git"
+						"run": fmt.Sprintf(`set -x
+git remote add fork "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/%s.git"
 git push fork %s:%s -f
 gh pr create --base %s --head %s --fill-verbose
 `,
