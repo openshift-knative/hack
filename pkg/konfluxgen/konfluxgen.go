@@ -73,6 +73,7 @@ func Generate(cfg Config) error {
 	funcs := template.FuncMap{
 		"sanitize": sanitize,
 		"truncate": truncate,
+		"replace":  replace,
 	}
 
 	applicationTemplate, err := template.New("application.template.yaml").Funcs(funcs).ParseFS(ApplicationTemplate, "*.yaml")
@@ -310,6 +311,11 @@ func truncate(input interface{}) string {
 	in := fmt.Sprintf("%s", input)
 	// TODO very basic name sanitizer
 	return Name(in, "")
+}
+
+func replace(input interface{}, old, new string) string {
+	in := fmt.Sprintf("%s", input)
+	return strings.ReplaceAll(in, old, new)
 }
 
 const (
