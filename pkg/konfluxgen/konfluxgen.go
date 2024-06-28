@@ -50,6 +50,10 @@ func Generate(cfg Config) error {
 		return fmt.Errorf("failed to remove %q directory: %w", cfg.ResourcesOutputPath, err)
 	}
 
+	if err := os.RemoveAll(cfg.PipelinesOutputPath); err != nil {
+		return fmt.Errorf("failed to remove %q directory: %w", cfg.PipelinesOutputPath, err)
+	}
+
 	includes, err := toRegexp(cfg.Includes)
 	if err != nil {
 		return fmt.Errorf("failed to create regular expressions for %+v: %w", cfg.Includes, err)
@@ -160,8 +164,8 @@ func Generate(cfg Config) error {
 
 			buf.Reset()
 
-			pipelineRunPRPath := filepath.Join(cfg.PipelinesOutputPath, fmt.Sprintf("%s-pull-request.yaml", config.ProjectDirectoryImageBuildStepConfiguration.To))
-			pipelineRunPushPath := filepath.Join(cfg.PipelinesOutputPath, fmt.Sprintf("%s-push.yaml", config.ProjectDirectoryImageBuildStepConfiguration.To))
+			pipelineRunPRPath := filepath.Join(cfg.PipelinesOutputPath, fmt.Sprintf("%s-%s-pull-request.yaml", config.ProjectDirectoryImageBuildStepConfiguration.To, sanitize(config.ReleaseBuildConfiguration.Metadata.Branch)))
+			pipelineRunPushPath := filepath.Join(cfg.PipelinesOutputPath, fmt.Sprintf("%s-%s-push.yaml", config.ProjectDirectoryImageBuildStepConfiguration.To, sanitize(config.ReleaseBuildConfiguration.Metadata.Branch)))
 
 			config.Event = PullRequestEvent
 			if err := pipelineRunTemplate.Execute(buf, config); err != nil {

@@ -16,7 +16,7 @@ metadata:
     appstudio.openshift.io/application: {{{ truncate ( sanitize .ApplicationName ) }}}
     appstudio.openshift.io/component: {{{ truncate ( sanitize ( print .ProjectDirectoryImageBuildStepConfiguration.To "-" .ReleaseBuildConfiguration.Metadata.Branch ) ) }}}
     pipelines.appstudio.openshift.io/type: build
-  name: {{{ truncate ( sanitize .ProjectDirectoryImageBuildStepConfiguration.To ) }}}-on-{{{ replace .Event "_" "-" }}}
+  name: {{{ truncate ( sanitize ( print .ProjectDirectoryImageBuildStepConfiguration.To "-" .ReleaseBuildConfiguration.Metadata.Branch ) ) }}}-on-{{{ replace .Event "_" "-" }}}
   namespace: ocp-serverless-tenant
 spec:
   params:
