@@ -50,6 +50,10 @@ func Generate(cfg Config) error {
 		return fmt.Errorf("failed to remove %q directory: %w", cfg.ResourcesOutputPath, err)
 	}
 
+	if err := os.RemoveAll(cfg.PipelinesOutputPath); err != nil {
+		return fmt.Errorf("failed to remove %q directory: %w", cfg.PipelinesOutputPath, err)
+	}
+
 	includes, err := toRegexp(cfg.Includes)
 	if err != nil {
 		return fmt.Errorf("failed to create regular expressions for %+v: %w", cfg.Includes, err)
