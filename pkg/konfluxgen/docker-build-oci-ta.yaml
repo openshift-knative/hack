@@ -1,6 +1,7 @@
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
+  creationTimestamp: null
   labels:
     pipelines.openshift.io/runtime: generic
     pipelines.openshift.io/strategy: docker
@@ -13,8 +14,14 @@ spec:
     - name: IMAGE_URL
       value: $(tasks.build-container.results.IMAGE_URL)
     taskRef:
-      name: show-sbom
-      version: "0.1"
+      params:
+      - name: name
+        value: show-sbom
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-show-sbom:0.1@sha256:bb6de6584cc47524ac69d2fb0bc310e546696b707e4052a465966e2446e33a15
+      - name: kind
+        value: task
+      resolver: bundles
   params:
   - description: Source Repository URL
     name: git-url
@@ -73,15 +80,20 @@ spec:
     name: build-args-file
     type: string
   results:
-  - name: IMAGE_URL
+  - description: ""
+    name: IMAGE_URL
     value: $(tasks.build-container.results.IMAGE_URL)
-  - name: IMAGE_DIGEST
+  - description: ""
+    name: IMAGE_DIGEST
     value: $(tasks.build-container.results.IMAGE_DIGEST)
-  - name: CHAINS-GIT_URL
+  - description: ""
+    name: CHAINS-GIT_URL
     value: $(tasks.clone-repository.results.url)
-  - name: CHAINS-GIT_COMMIT
+  - description: ""
+    name: CHAINS-GIT_COMMIT
     value: $(tasks.clone-repository.results.commit)
-  - name: JAVA_COMMUNITY_DEPENDENCIES
+  - description: ""
+    name: JAVA_COMMUNITY_DEPENDENCIES
     value: $(tasks.build-container.results.JAVA_COMMUNITY_DEPENDENCIES)
   tasks:
   - name: init
@@ -93,8 +105,14 @@ spec:
     - name: skip-checks
       value: $(params.skip-checks)
     taskRef:
-      name: init
-      version: "0.2"
+      params:
+      - name: name
+        value: init
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-init:0.2@sha256:83b7df553a736def52dd47bca2a3614c8fa2c88d112d691a4834289cf8c2abf5
+      - name: kind
+        value: task
+      resolver: bundles
   - name: clone-repository
     params:
     - name: url
@@ -108,8 +126,14 @@ spec:
     runAfter:
     - init
     taskRef:
-      name: git-clone-oci-ta
-      version: "0.1"
+      params:
+      - name: name
+        value: git-clone-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-git-clone-oci-ta:0.1@sha256:0c16d8e001d177d632cf0f0f4d4d248fadaebc840e7916e3fbbd737498e2fba3
+      - name: kind
+        value: task
+      resolver: bundles
     when:
     - input: $(tasks.init.results.build)
       operator: in
@@ -131,8 +155,14 @@ spec:
     runAfter:
     - clone-repository
     taskRef:
-      name: prefetch-dependencies-oci-ta
-      version: "0.1"
+      params:
+      - name: name
+        value: prefetch-dependencies-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:74b5c30fec6600f53e92e9a35637bf67ec718794166312da45175f01b17e0215
+      - name: kind
+        value: task
+      resolver: bundles
     when:
     - input: $(params.prefetch-input)
       operator: notin
@@ -141,6 +171,8 @@ spec:
     workspaces:
     - name: git-basic-auth
       workspace: git-auth
+    - name: netrc
+      workspace: netrc
   - name: build-container
     params:
     - name: IMAGE
@@ -169,14 +201,19 @@ spec:
     runAfter:
     - prefetch-dependencies
     taskRef:
-      name: buildah-oci-ta
-      version: "0.1"
+      params:
+      - name: name
+        value: buildah-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-buildah-oci-ta:0.1@sha256:d2afe2d1578300e19e098c38126ed931af3ce5c67f4a3c96a438288c5bfea0bd
+      - name: kind
+        value: task
+      resolver: bundles
     when:
     - input: $(tasks.init.results.build)
       operator: in
       values:
       - "true"
-    workspaces: []
   - name: build-source-image
     params:
     - name: BINARY_IMAGE
@@ -190,8 +227,14 @@ spec:
     runAfter:
     - build-container
     taskRef:
-      name: source-build-oci-ta
-      version: "0.1"
+      params:
+      - name: name
+        value: source-build-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-source-build-oci-ta:0.1@sha256:3c1ddfff7799dc8224f8e1c3a0989b9e803ca4ac276c8bc80ad736b23cbd73de
+      - name: kind
+        value: task
+      resolver: bundles
     when:
     - input: $(tasks.init.results.build)
       operator: in
@@ -201,7 +244,6 @@ spec:
       operator: in
       values:
       - "true"
-    workspaces: []
   - name: deprecated-base-image-check
     params:
     - name: BASE_IMAGES_DIGESTS
@@ -213,8 +255,14 @@ spec:
     runAfter:
     - build-container
     taskRef:
-      name: deprecated-image-check
-      version: "0.4"
+      params:
+      - name: name
+        value: deprecated-image-check
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-deprecated-image-check:0.4@sha256:0d61c9a7d3f7df8ae4989fa09cd387b2e88234876b2eca527a9b5b7e8ce78ad0
+      - name: kind
+        value: task
+      resolver: bundles
     when:
     - input: $(params.skip-checks)
       operator: in
@@ -229,8 +277,14 @@ spec:
     runAfter:
     - build-container
     taskRef:
-      name: clair-scan
-      version: "0.1"
+      params:
+      - name: name
+        value: clair-scan
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-clair-scan:0.1@sha256:48a051b5d9cb93f722a9fa2eca0e1d28eb3a28118cfff74a6448b2ee956d95f9
+      - name: kind
+        value: task
+      resolver: bundles
     when:
     - input: $(params.skip-checks)
       operator: in
@@ -243,8 +297,14 @@ spec:
     runAfter:
     - build-container
     taskRef:
-      name: ecosystem-cert-preflight-checks
-      version: "0.1"
+      params:
+      - name: name
+        value: ecosystem-cert-preflight-checks
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-ecosystem-cert-preflight-checks:0.1@sha256:8838d3e1628dbe61f4851b3640d2e3a9a3079d3ff3da955f4a3e4c2c95a013df
+      - name: kind
+        value: task
+      resolver: bundles
     when:
     - input: $(params.skip-checks)
       operator: in
@@ -255,16 +315,21 @@ spec:
     - name: SOURCE_ARTIFACT
       value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
     runAfter:
-    - clone-repository
+    - build-container
     taskRef:
-      name: sast-snyk-check-oci-ta
-      version: "0.1"
+      params:
+      - name: name
+        value: sast-snyk-check-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-sast-snyk-check-oci-ta:0.1@sha256:4a91bd7797d2c67678693c5d1f662c97fc72ec1577a9795404b9fb66bea80b87
+      - name: kind
+        value: task
+      resolver: bundles
     when:
     - input: $(params.skip-checks)
       operator: in
       values:
       - "false"
-    workspaces: []
   - name: clamav-scan
     params:
     - name: image-digest
@@ -274,8 +339,14 @@ spec:
     runAfter:
     - build-container
     taskRef:
-      name: clamav-scan
-      version: "0.1"
+      params:
+      - name: name
+        value: clamav-scan
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-clamav-scan:0.1@sha256:b7f9f87a275d47e8076ee759145865575364c2eb44a834cd111cb373a10da0c2
+      - name: kind
+        value: task
+      resolver: bundles
     when:
     - input: $(params.skip-checks)
       operator: in
@@ -290,8 +361,14 @@ spec:
     runAfter:
     - build-container
     taskRef:
-      name: sbom-json-check
-      version: "0.1"
+      params:
+      - name: name
+        value: sbom-json-check
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-sbom-json-check:0.1@sha256:acc9cb8a714f33c0e48d6ca219b6bd0191f09cdd767af4ef3a35d0a5cac53b5d
+      - name: kind
+        value: task
+      resolver: bundles
     when:
     - input: $(params.skip-checks)
       operator: in
@@ -304,8 +381,16 @@ spec:
     runAfter:
     - build-container
     taskRef:
-      name: apply-tags
-      version: "0.1"
+      params:
+      - name: name
+        value: apply-tags
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-apply-tags:0.1@sha256:175162b0a1c55e911d0d25ddef97e90932b5043f0b523cf83ed4824363840d74
+      - name: kind
+        value: task
+      resolver: bundles
   workspaces:
   - name: git-auth
+    optional: true
+  - name: netrc
     optional: true
