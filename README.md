@@ -10,6 +10,9 @@ CI tooling and hacks to improve CI
 - Run `make generate-ci ARGS=--remote=<your_remote>`
     - For example, `make generate-ci ARGS=--remote=git@github.com:pierDipi/release.git`
     - If you are using `podman`, make sure to have `export CONTAINER_ENGINE=podman` set
+    - Make sure podman can access QCI registry at quay-proxy.ci.openshift.org. Members of this [Rover group](https://rover.redhat.com/groups/group/openshift-serverless-admins) can authenticate in this way:
+      - Copy the login command from [app.ci](https://oauth-openshift.apps.ci.l2s4.p1.openshiftapps.com/oauth/token/request) and run it
+      - Run `podman login -u=$(oc whoami) -p=$(oc whoami -t) quay-proxy.ci.openshift.org`
 - Create a PR to [https://github.com/openshift/release](https://github.com/openshift/release) (to be
   automated)
 

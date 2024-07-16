@@ -75,7 +75,11 @@ jobs:
 
       - name: Generate CI
         working-directory: ./src/github.com/openshift-knative/hack
-        run: make generate-ci-no-clean ARGS=--branch=master
+        env:
+          QCI_TOKEN: ${{ secrets.QCI_TOKEN }}
+        run: |
+          podman login -u=image-puller -p="${QCI_TOKEN}" quay-proxy.ci.openshift.org
+          make generate-ci-no-clean ARGS=--branch=master
 
       - name: Create Pull Request
         if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
