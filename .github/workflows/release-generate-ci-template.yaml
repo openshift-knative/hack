@@ -78,7 +78,7 @@ jobs:
         env:
           QCI_TOKEN: ${{ secrets.QCI_TOKEN }}
         run: |
-          podman login -u=image-puller -p=${QCI_TOKEN} quay-proxy.ci.openshift.org
+          podman login -u=image-puller -p="${QCI_TOKEN}" quay-proxy.ci.openshift.org
           make generate-ci-no-clean ARGS=--branch=master
 
       - name: Create Pull Request
