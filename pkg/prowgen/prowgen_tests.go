@@ -87,6 +87,8 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				clusterProfile = serverlessClusterProfile
 				env = map[string]string{
 					"BASE_DOMAIN": devclusterBaseDomain,
+					// Use single zone to save costs. See https://red.ht/3Y8g7Ar
+					"ZONES_COUNT": "1",
 				}
 				workflow = pointer.String("ipi-aws")
 			}
