@@ -255,7 +255,9 @@ func TestDiscoverTestsServing(t *testing.T) {
 			optionalOnSuccess = false
 		}
 		expectedTests[i].MultiStageTestConfiguration.Environment = cioperatorapi.TestEnvironment{
-			"BASE_DOMAIN": devclusterBaseDomain,
+			"BASE_DOMAIN":    devclusterBaseDomain,
+			"SPOT_INSTANCES": "true",
+			"ZONES_COUNT":    "1",
 		}
 		expectedTests[i].MultiStageTestConfiguration.AllowBestEffortPostSteps = pointer.Bool(true)
 		expectedTests[i].MultiStageTestConfiguration.AllowSkipOnSuccess = pointer.Bool(true)
@@ -640,7 +642,9 @@ func TestDiscoverTestsEventing(t *testing.T) {
 			optionalOnSuccess = false
 		}
 		expectedTests[i].MultiStageTestConfiguration.Environment = cioperatorapi.TestEnvironment{
-			"BASE_DOMAIN": devclusterBaseDomain,
+			"BASE_DOMAIN":    devclusterBaseDomain,
+			"SPOT_INSTANCES": "true",
+			"ZONES_COUNT":    "1",
 		}
 		expectedTests[i].MultiStageTestConfiguration.AllowBestEffortPostSteps = pointer.Bool(true)
 		expectedTests[i].MultiStageTestConfiguration.AllowSkipOnSuccess = pointer.Bool(true)
