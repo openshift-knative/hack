@@ -295,7 +295,7 @@ func copyOwnersFileIfNotPresent(dir string) error {
 }
 
 func RunOpenShiftReleaseGenerator(ctx context.Context, openShiftRelease Repository) error {
-	if _, err := run(ctx, openShiftRelease, "make", "ci-operator-config", "jobs"); err != nil {
+	if _, err := run(ctx, openShiftRelease, "make", "-f", "Makefile.legacy", "ci-operator-config", "jobs"); err != nil {
 		return err
 	}
 	return nil
