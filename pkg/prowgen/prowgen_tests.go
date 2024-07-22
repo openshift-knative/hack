@@ -37,7 +37,15 @@ const (
 	// Name of the owner for the existing cluster pool.
 	// Introduced in https://github.com/openshift/release/pull/49904
 	clusterPoolOwner = "serverless-ci"
+	// Phony targets in Makefile that should be skipped.
+	makefilePhonyTarget = ".PHONY"
 )
+
+// Makefile targets can be defined in multiple ways:
+// - as a single target: "operator-e2e:"
+// - as a target with dependencies: "test-upstream-e2e-no-upgrade: upstream-e2e"
+// this matches the target in the first capturing group
+var makefileTargetPattern = regexp.MustCompile("^(\\S+):\\s*(.*)$")
 
 func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, skipE2ETestMatch []string, random *rand.Rand) ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
@@ -274,13 +282,19 @@ func discoverE2ETests(r Repository, skipE2ETestMatch []string) ([]Test, error) {
 	commands := sets.NewString()
 
 	for _, l := range lines {
-		l := strings.TrimSpace(l)
-		for _, e2e := range r.E2ETests {
-			if slices.Contains(skipE2ETestMatch, e2e.Match) {
+		if makefileTargetPattern.MatchString(l) {
+			target := makefileTargetPattern.FindStringSubmatch(l)[1]
+			// Skip phony targets
+			if strings.HasPrefix(target, makefilePhonyTarget) {
 				continue
 			}
-			if err := createTest(r, l, e2e, &targets, commands); err != nil {
-				return nil, err
+			for _, e2e := range r.E2ETests {
+				if slices.Contains(skipE2ETestMatch, e2e.Match) {
+					continue
+				}
+				if err := createTest(r, target, e2e, &targets, commands); err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
@@ -292,22 +306,17 @@ func discoverE2ETests(r Repository, skipE2ETestMatch []string) ([]Test, error) {
 	return targets, nil
 }
 
-func createTest(r Repository, line string, e2e E2ETest, tests *[]Test, commands sets.String) error {
-	if strings.HasSuffix(line, ":") {
-		line := strings.TrimSuffix(line, ":")
+func createTest(r Repository, target string, e2e E2ETest, tests *[]Test, commands sets.String) error {
+	log.Println(r.RepositoryDirectory(), "Comparing", target, "to match", e2e.Match)
 
-		log.Println(r.RepositoryDirectory(), "Comparing", line, "to match", e2e.Match)
-
-		matches, err := regexp.Match(e2e.Match, []byte(line))
-		if err != nil {
-			return fmt.Errorf("[%s] failed to match test %s: %w", r.RepositoryDirectory(), e2e.Match, err)
-		}
-		if matches && !commands.Has(line) {
-			*tests = append(*tests, Test{Command: line, OnDemand: e2e.OnDemand, IgnoreError: e2e.IgnoreError, RunIfChanged: e2e.RunIfChanged, SkipCron: e2e.SkipCron, SkipImages: e2e.SkipImages, Timeout: e2e.Timeout})
-			commands.Insert(line)
-		}
+	matches, err := regexp.Match(e2e.Match, []byte(target))
+	if err != nil {
+		return fmt.Errorf("[%s] failed to match test %s: %w", r.RepositoryDirectory(), e2e.Match, err)
 	}
-
+	if matches && !commands.Has(target) {
+		*tests = append(*tests, Test{Command: target, OnDemand: e2e.OnDemand, IgnoreError: e2e.IgnoreError, RunIfChanged: e2e.RunIfChanged, SkipCron: e2e.SkipCron, SkipImages: e2e.SkipImages, Timeout: e2e.Timeout})
+		commands.Insert(target)
+	}
 	return nil
 }
 

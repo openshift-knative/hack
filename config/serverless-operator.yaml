@@ -304,7 +304,7 @@ repositories:
   - ignoreError: true
     match: ^upstream-e2e-kafka$
   - ignoreError: true
-    match: ^mesh-e2e:.*$
+    match: ^mesh-e2e$
     onDemand: true
     timeout: 4h0m0s
   - ignoreError: true
