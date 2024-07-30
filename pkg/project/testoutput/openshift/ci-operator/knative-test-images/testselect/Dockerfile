@@ -1,5 +1,5 @@
 # DO NOT EDIT! Generated Dockerfile for cmd/testselect.
-FROM registry.ci.openshift.org/openshift/release:rhel-8-release-golang-1.21-openshift-4.16 as builder
+FROM registry.ci.openshift.org/openshift/release:rhel-8-release-golang-1.21-openshift-4.17 as builder
 
 COPY . .
 
