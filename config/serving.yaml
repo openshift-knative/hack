@@ -10,10 +10,6 @@ config:
       skipE2EMatches:
       - perf-tests$
       - .*e2e-tls$
-    release-v1.10:
-      openShiftVersions:
-      - skipCron: true
-        version: "4.15"
     release-v1.11:
       openShiftVersions:
       - skipCron: true
@@ -33,6 +29,11 @@ config:
       - version: "4.15"
       - onDemand: true
         version: "4.12"
+    release-v1.15:
+      openShiftVersions:
+        - version: "4.15"
+        - onDemand: true
+          version: "4.12"
 repositories:
 - dockerfiles:
     matches:
