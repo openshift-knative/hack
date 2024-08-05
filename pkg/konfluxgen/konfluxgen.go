@@ -24,6 +24,9 @@ var ApplicationTemplate embed.FS
 //go:embed dockerfile-component.template.yaml
 var DockerfileComponentTemplate embed.FS
 
+//go:embed imagerepository.template.yaml
+var ImageRepositoryTemplate embed.FS
+
 //go:embed pipeline-run.template.yaml
 var PipelineRunTemplate embed.FS
 
@@ -85,6 +88,10 @@ func Generate(cfg Config) error {
 		return fmt.Errorf("failed to parse application template: %w", err)
 	}
 	dockerfileComponentTemplate, err := template.New("dockerfile-component.template.yaml").Funcs(funcs).ParseFS(DockerfileComponentTemplate, "*.yaml")
+	if err != nil {
+		return fmt.Errorf("failed to parse dockerfile component template: %w", err)
+	}
+	imageRepositoryTemplate, err := template.New("imagerepository.template.yaml").Funcs(funcs).ParseFS(ImageRepositoryTemplate, "*.yaml")
 	if err != nil {
 		return fmt.Errorf("failed to parse dockerfile component template: %w", err)
 	}
@@ -160,6 +167,20 @@ func Generate(cfg Config) error {
 			}
 			if err := os.WriteFile(componentPath, buf.Bytes(), 0777); err != nil {
 				return fmt.Errorf("failed to write component file %q: %w", componentPath, err)
+			}
+
+			buf.Reset()
+
+			imageRepositoryPath := filepath.Join(cfg.ResourcesOutputPath, "applications", appKey, "components", "imagerepositories", fmt.Sprintf("%s.yaml", componentKey))
+			if err := os.MkdirAll(filepath.Dir(imageRepositoryPath), 0777); err != nil {
+				return fmt.Errorf("failed to create directory for %q: %w", imageRepositoryPath, err)
+			}
+
+			if err := imageRepositoryTemplate.Execute(buf, config); err != nil {
+				return fmt.Errorf("failed to execute template for imagerepository for %q: %w", componentKey, err)
+			}
+			if err := os.WriteFile(imageRepositoryPath, buf.Bytes(), 0777); err != nil {
+				return fmt.Errorf("failed to write imagerepository file %q: %w", imageRepositoryPath, err)
 			}
 
 			buf.Reset()
