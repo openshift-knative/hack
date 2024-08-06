@@ -30,7 +30,7 @@ func runNoRepo(ctx context.Context, name string, args ...string) ([]byte, error)
 	return buf.Bytes(), nil
 }
 
-func run(ctx context.Context, r Repository, name string, args ...string) ([]byte, error) {
+func Run(ctx context.Context, r Repository, name string, args ...string) ([]byte, error) {
 	var buf bytes.Buffer
 
 	select {

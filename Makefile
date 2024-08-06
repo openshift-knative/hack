@@ -35,6 +35,13 @@ generate-action:
 	go run github.com/openshift-knative/hack/cmd/update-konflux-gen-action
 .PHONY: generate-action
 
+konflux-apply: clean konflux-apply-no-clean
+.PHONY: konflux-apply
+
+konflux-apply-no-clean:
+	go run github.com/openshift-knative/hack/cmd/konflux-apply
+.PHONY: konflux-apply-no-clean
+
 unit-tests:
 	go test ./pkg/...
 

@@ -192,13 +192,13 @@ func LoadConfig(path string) (*Config, error) {
 func PushBranch(ctx context.Context, release Repository, remote *string, branch string, commitMsg string) error {
 
 	// Ignore error since remote and branch might be already there
-	_, _ = run(ctx, release, "git", "checkout", "-b", branch)
-	_, _ = run(ctx, release, "git", "checkout", branch)
+	_, _ = Run(ctx, release, "git", "checkout", "-b", branch)
+	_, _ = Run(ctx, release, "git", "checkout", branch)
 
-	if _, err := run(ctx, release, "git", "add", "."); err != nil {
+	if _, err := Run(ctx, release, "git", "add", "."); err != nil {
 		return err
 	}
-	if _, err := run(ctx, release, "git", "commit", "-m", commitMsg); err != nil {
+	if _, err := Run(ctx, release, "git", "commit", "-m", commitMsg); err != nil {
 		// Ignore error since we could have nothing to commit
 		log.Println("Ignored error", err)
 	}
@@ -209,8 +209,8 @@ func PushBranch(ctx context.Context, release Repository, remote *string, branch 
 
 	log.Println("Pushing branch", branch, "to", *remote)
 
-	_, _ = run(ctx, release, "git", "remote", "add", "fork", *remote)
-	if _, err := run(ctx, release, "git", "push", "fork", branch, "-f"); err != nil {
+	_, _ = Run(ctx, release, "git", "remote", "add", "fork", *remote)
+	if _, err := Run(ctx, release, "git", "push", "fork", branch, "-f"); err != nil {
 		return err
 	}
 
@@ -295,7 +295,7 @@ func copyOwnersFileIfNotPresent(dir string) error {
 }
 
 func RunOpenShiftReleaseGenerator(ctx context.Context, openShiftRelease Repository) error {
-	if _, err := run(ctx, openShiftRelease, "make", "-f", "Makefile.legacy", "ci-operator-config", "jobs"); err != nil {
+	if _, err := Run(ctx, openShiftRelease, "make", "-f", "Makefile.legacy", "ci-operator-config", "jobs"); err != nil {
 		return err
 	}
 	return nil
