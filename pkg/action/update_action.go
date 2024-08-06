@@ -84,7 +84,7 @@ func UpdateAction(cfg Config) error {
 						},
 						"working-directory": fmt.Sprintf("./src/github.com/openshift-knative/hack/%s", r.RepositoryDirectory()),
 						"run": fmt.Sprintf(`set -x
-git remote add fork "https://github.com/serverless-qe/%s.git"
+git remote add fork "https://github.com/serverless-qe/%s.git" || true # ignore: already exists errors
 git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/%s.git" %s:%s -f
 gh pr create --base %s --head %s --title "[%s] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
 `,
