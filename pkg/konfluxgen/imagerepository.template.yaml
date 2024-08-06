@@ -6,7 +6,7 @@ metadata:
   labels:
     appstudio.redhat.com/application: {{ sanitize .ApplicationName }}
     appstudio.redhat.com/component: {{ truncate ( sanitize ( print .ProjectDirectoryImageBuildStepConfiguration.To "-" .ReleaseBuildConfiguration.Metadata.Branch ) ) }}
-  name: {{ sanitize .ApplicationName }}-{{ .ProjectDirectoryImageBuildStepConfiguration.To }}
+  name: {{ truncate ( sanitize ( print .ProjectDirectoryImageBuildStepConfiguration.To "-" .ReleaseBuildConfiguration.Metadata.Branch ) ) }}
 spec:
   image:
     name: {{ sanitize .ApplicationName }}/{{ .ProjectDirectoryImageBuildStepConfiguration.To }}
