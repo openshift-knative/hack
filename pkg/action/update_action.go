@@ -2,10 +2,12 @@ package action
 
 import (
 	"bytes"
+	"cmp"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"gopkg.in/yaml.v3"
 
@@ -59,7 +61,11 @@ func UpdateAction(cfg Config) error {
 					},
 				})
 
-			for branchName, b := range inConfig.Config.Branches {
+			sortedBranches := sortedKeys(inConfig.Config.Branches)
+
+			for _, branchName := range sortedBranches {
+				b := inConfig.Config.Branches[branchName]
+
 				if b.Konflux != nil && b.Konflux.Enabled {
 
 					// Special case "release-next"
@@ -168,4 +174,13 @@ func AddNestedField(node *yaml.Node, value interface{}, prepend bool, fields ...
 	}
 
 	return nil
+}
+
+func sortedKeys[K cmp.Ordered, V any](m map[K]V) []K {
+	keys := make([]K, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
+	return keys
 }
