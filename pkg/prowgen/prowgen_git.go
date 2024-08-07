@@ -14,7 +14,7 @@ import (
 )
 
 func GitCheckout(ctx context.Context, r Repository, branch string) error {
-	_, err := run(ctx, r, "git", "checkout", branch)
+	_, err := Run(ctx, r, "git", "checkout", branch)
 	return err
 }
 
@@ -32,7 +32,7 @@ func Branches(ctx context.Context, r Repository) ([]string, error) {
 	}
 
 	// git --no-pager branch --list "release-v*"
-	branchesBytes, err := run(ctx, r, "git", "--no-pager", "branch", "--list", "release-*")
+	branchesBytes, err := Run(ctx, r, "git", "--no-pager", "branch", "--list", "release-*")
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func gitClone(ctx context.Context, r Repository, mirror bool) error {
 		if _, err := runNoRepo(ctx, "git", "clone", "--mirror", remoteRepo, filepath.Join(r.RepositoryDirectory(), ".git")); err != nil {
 			return fmt.Errorf("[%s] failed to clone repository: %w", r.RepositoryDirectory(), err)
 		}
-		if _, err := run(ctx, r, "git", "config", "--bool", "core.bare", "false"); err != nil {
+		if _, err := Run(ctx, r, "git", "config", "--bool", "core.bare", "false"); err != nil {
 			return fmt.Errorf("[%s] failed to set config for repository: %w", r.RepositoryDirectory(), err)
 		}
 	} else {
@@ -125,18 +125,18 @@ func gitClone(ctx context.Context, r Repository, mirror bool) error {
 }
 
 func GitMerge(ctx context.Context, r Repository, sha string) error {
-	_, err := run(ctx, r, "git", "merge", sha, "--no-ff", "-m", "Merge "+sha)
+	_, err := Run(ctx, r, "git", "merge", sha, "--no-ff", "-m", "Merge "+sha)
 	return err
 }
 
 func GitFetch(ctx context.Context, r Repository, sha string) error {
 	remoteRepo := fmt.Sprintf("https://github.com/%s/%s.git", r.Org, r.Repo)
-	_, err := run(ctx, r, "git", "fetch", remoteRepo, sha)
+	_, err := Run(ctx, r, "git", "fetch", remoteRepo, sha)
 	return err
 }
 
 func GitDiffNameOnly(ctx context.Context, r Repository, sha string) ([]string, error) {
-	out, err := run(ctx, r, "git", "diff", "--name-only", sha)
+	out, err := Run(ctx, r, "git", "diff", "--name-only", sha)
 	if err != nil {
 		return nil, err
 	}
