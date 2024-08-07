@@ -25,7 +25,7 @@ jobs:
       GOPATH: ${{ github.workspace }}
     steps:
       - name: Checkout ${{ inputs.repository }}
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: '${{ inputs.repository }}'
           path: "./src/github.com/${{ inputs.repository }}"
@@ -34,6 +34,7 @@ jobs:
       - name: Setup Golang
         uses: actions/setup-go@v5
         with:
+          cache: false
           go-version-file: "./src/github.com/${{ inputs.repository }}/go.mod"
 
       - name: Install prerequisites
