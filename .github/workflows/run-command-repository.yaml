@@ -65,3 +65,10 @@ jobs:
           delete-branch: true
           body: |
             Run `make ${{ inputs.command }}` using openshift-knative/hack.
+
+      - name: Debug
+        if: always()
+        working-directory: "./src/github.com/${{ inputs.repository }}"
+        run: |
+          tree
+          git --no-pager diff
