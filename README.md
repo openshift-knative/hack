@@ -51,7 +51,7 @@ Limitations:
    at [GitLab (VPN required)](https://gitlab.cee.redhat.com/konflux/docs/users/-/blob/main/topics/getting-started/getting-access.md#accessing-konflux-via-cli)
 2. Set the `kubectl` context to use the `ocp-serverless` workspace
     ```shell
-    kubectl config set-context konflux-ocp-serverless
+    kubectl config use-context konflux-ocp-serverless
     ```
 3. Run `make konflux-apply`
 
