@@ -21,8 +21,6 @@ jobs:
   run-command:
     name: run-command ${{ inputs.repository }} - ${{ inputs.command }}
     runs-on: ubuntu-latest
-    env:
-      GOPATH: ${{ github.workspace }}
     steps:
       - name: Checkout ${{ inputs.repository }}
         uses: actions/checkout@v4
