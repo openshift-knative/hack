@@ -55,6 +55,34 @@ Limitations:
     ```
 3. Run `make konflux-apply`
 
+### Additional hints to onboard a repository initially
+
+Konflux requires to have at least one of their "custom-pipelines" PRs (e.g. [this](https://github.com/openshift-knative/eventing/pull/760)) to be merged per repo to enable components of this repository properly. Therefor the following additional steps are required, which need to be done **only once per repository**:
+
+1. Apply a component of the repo and add the `build.appstudio.openshift.io/request: configure-pac` annotation (do this from the `release-next` branch, so changes will be overridden again later). For example:
+   ```
+   $ cat <<-EOF | kubectl apply -f - 
+   apiVersion: appstudio.redhat.com/v1alpha1
+   kind: Component
+   metadata:
+     annotations:
+       build.appstudio.openshift.io/pipeline: '{"name":"docker-build","bundle":"latest"}'
+       build.appstudio.openshift.io/request: configure-pac
+     name: knative-eventing-controller-release-next
+   spec:
+     componentName: knative-eventing-controller
+     application: serverless-operator-release-next
+     source:
+       git:
+         url: https://github.com/openshift-knative/eventing.git
+         context: 
+         dockerfileUrl: openshift/ci-operator/knative-images/controller/Dockerfile
+         revision: release-next
+   EOF
+   ```
+2. This will create a Konflux PR for a custom pipeline. Merge this PR from Konflux.
+3. As you have done the change on a release-next component (an branch), the above change will be overridden again with the next update-to-head job and we will have *our* custom pipeline again.
+
 ## Run unit tests
 
 ```shell
