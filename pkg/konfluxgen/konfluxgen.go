@@ -151,7 +151,7 @@ func Generate(cfg Config) error {
 			if err := applicationTemplate.Execute(buf, config); err != nil {
 				return fmt.Errorf("failed to execute template for application %q: %w", appKey, err)
 			}
-			if err := os.WriteFile(appPath, buf.Bytes(), 0777); err != nil {
+			if err := WriteFileReplacingNewerTaskImages(appPath, buf.Bytes(), 0777); err != nil {
 				return fmt.Errorf("failed to write application file %q: %w", appPath, err)
 			}
 
@@ -165,7 +165,7 @@ func Generate(cfg Config) error {
 			if err := dockerfileComponentTemplate.Execute(buf, config); err != nil {
 				return fmt.Errorf("failed to execute template for component %q: %w", componentKey, err)
 			}
-			if err := os.WriteFile(componentPath, buf.Bytes(), 0777); err != nil {
+			if err := WriteFileReplacingNewerTaskImages(componentPath, buf.Bytes(), 0777); err != nil {
 				return fmt.Errorf("failed to write component file %q: %w", componentPath, err)
 			}
 
@@ -179,7 +179,7 @@ func Generate(cfg Config) error {
 			if err := imageRepositoryTemplate.Execute(buf, config); err != nil {
 				return fmt.Errorf("failed to execute template for imagerepository for %q: %w", componentKey, err)
 			}
-			if err := os.WriteFile(imageRepositoryPath, buf.Bytes(), 0777); err != nil {
+			if err := WriteFileReplacingNewerTaskImages(imageRepositoryPath, buf.Bytes(), 0777); err != nil {
 				return fmt.Errorf("failed to write imagerepository file %q: %w", imageRepositoryPath, err)
 			}
 
@@ -192,7 +192,7 @@ func Generate(cfg Config) error {
 			if err := pipelineRunTemplate.Execute(buf, config); err != nil {
 				return fmt.Errorf("failed to execute template for pipeline run PR %q: %w", pipelineRunPRPath, err)
 			}
-			if err := os.WriteFile(pipelineRunPRPath, buf.Bytes(), 0777); err != nil {
+			if err := WriteFileReplacingNewerTaskImages(pipelineRunPRPath, buf.Bytes(), 0777); err != nil {
 				return fmt.Errorf("failed to write component file %q: %w", pipelineRunPRPath, err)
 			}
 
@@ -202,7 +202,7 @@ func Generate(cfg Config) error {
 			if err := pipelineRunTemplate.Execute(buf, config); err != nil {
 				return fmt.Errorf("failed to execute template for pipeline run PR %q: %w", pipelineRunPushPath, err)
 			}
-			if err := os.WriteFile(pipelineRunPushPath, buf.Bytes(), 0777); err != nil {
+			if err := WriteFileReplacingNewerTaskImages(pipelineRunPushPath, buf.Bytes(), 0777); err != nil {
 				return fmt.Errorf("failed to write component file %q: %w", pipelineRunPushPath, err)
 			}
 		}
@@ -212,7 +212,7 @@ func Generate(cfg Config) error {
 	if err := pipelineDockerBuildTemplate.Execute(buf, nil); err != nil {
 		return fmt.Errorf("failed to execute template for pipeline run PR %q: %w", containerBuildPipelinePath, err)
 	}
-	if err := os.WriteFile(containerBuildPipelinePath, buf.Bytes(), 0777); err != nil {
+	if err := WriteFileReplacingNewerTaskImages(containerBuildPipelinePath, buf.Bytes(), 0777); err != nil {
 		return fmt.Errorf("failed to write component file %q: %w", containerBuildPipelinePath, err)
 	}
 
@@ -391,4 +391,49 @@ func makeValidName(n string) string {
 		n = n[:len(n)-1]
 	}
 	return n
+}
+
+func WriteFileReplacingNewerTaskImages(name string, data []byte, perm os.FileMode) error {
+	if !strings.HasSuffix(name, ".yaml") || !strings.HasSuffix(name, ".yml") {
+		return os.WriteFile(name, data, perm)
+	}
+	if _, err := os.Stat(name); err != nil {
+		return os.WriteFile(name, data, perm)
+	}
+
+	existingBytes, err := os.ReadFile(name)
+	if err != nil {
+		return fmt.Errorf("failed to read file %q: %w", name, err)
+	}
+
+	data = replaceTaskImagesFromExisting(existingBytes, data)
+	return os.WriteFile(name, data, perm)
+}
+
+func replaceTaskImagesFromExisting(existingBytes, newBytes []byte) []byte {
+
+	dataStr := string(newBytes)
+
+	existingRegex := regexp.MustCompile(`.*(quay.io/konflux-ci.*):(.*)@(.*):(.*)`)
+	existingMatches := existingRegex.FindAllStringSubmatch(string(existingBytes), -1)
+	for _, existingMatch := range existingMatches {
+		existingImg := existingMatch[1]
+		existingVersion := existingMatch[2]
+		existingS := existingMatch[3]
+		existingSha := existingMatch[4]
+
+		newRegex := regexp.MustCompile(fmt.Sprintf(`.*(%s):(.*)@(.*):(.*)`, existingImg))
+		newMatches := newRegex.FindAllStringSubmatch(dataStr, -1)
+		for _, match := range newMatches {
+			img := match[1]
+			v := match[2]
+			s := match[3]
+			sha := match[4]
+
+			pattern := "%s:%s@%s:%s"
+			dataStr = strings.ReplaceAll(dataStr, fmt.Sprintf(pattern, img, v, s, sha), fmt.Sprintf(pattern, img, existingVersion, existingS, existingSha))
+		}
+	}
+
+	return []byte(dataStr)
 }
