@@ -30,7 +30,7 @@ var ImageRepositoryTemplate embed.FS
 //go:embed pipeline-run.template.yaml
 var PipelineRunTemplate embed.FS
 
-//go:embed docker-build-oci-ta.yaml
+//go:embed docker-build.yaml
 var PipelineDockerBuildTemplate embed.FS
 
 type Config struct {
@@ -99,7 +99,7 @@ func Generate(cfg Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to parse pipeline run push template: %w", err)
 	}
-	pipelineDockerBuildTemplate, err := template.New("docker-build-oci-ta.yaml").Delims("{{{", "}}}").Funcs(funcs).ParseFS(PipelineDockerBuildTemplate, "*.yaml")
+	pipelineDockerBuildTemplate, err := template.New("docker-build.yaml").Delims("{{{", "}}}").Funcs(funcs).ParseFS(PipelineDockerBuildTemplate, "*.yaml")
 	if err != nil {
 		return fmt.Errorf("failed to parse pipeline run push template: %w", err)
 	}
@@ -133,7 +133,7 @@ func Generate(cfg Config) error {
 		}
 	}
 
-	containerBuildPipelinePath := filepath.Join(cfg.PipelinesOutputPath, "docker-build-oci-ta.yaml")
+	containerBuildPipelinePath := filepath.Join(cfg.PipelinesOutputPath, "docker-build.yaml")
 	if err := os.MkdirAll(filepath.Dir(containerBuildPipelinePath), 0777); err != nil {
 		return fmt.Errorf("failed to create directory for %q: %w", containerBuildPipelinePath, err)
 	}
