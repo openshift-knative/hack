@@ -31,5 +31,5 @@ go run ./cmd/konflux-gen/main.go --openshift-release-path openshift/release \
 [//]: # (TODO automate this step)
 
 ```shell
-tkn bundle list quay.io/konflux-ci/tekton-catalog/pipeline-docker-build-oci-ta:devel -o=yaml > pkg/konfluxgen/docker-build-oci-ta.yaml
+tkn bundle list quay.io/konflux-ci/tekton-catalog/pipeline-docker-build:devel -o=yaml > pkg/konfluxgen/docker-build.yaml
 ```

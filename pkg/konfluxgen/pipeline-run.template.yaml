@@ -36,7 +36,7 @@ spec:
     - name: revision
       value: '{{revision}}'
   pipelineRef:
-    name: docker-build-oci-ta
+    name: docker-build
   taskRunTemplate: {}
   workspaces:
     - name: workspace

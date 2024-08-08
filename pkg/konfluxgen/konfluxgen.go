@@ -30,7 +30,7 @@ var ImageRepositoryTemplate embed.FS
 //go:embed pipeline-run.template.yaml
 var PipelineRunTemplate embed.FS
 
-//go:embed docker-build-oci-ta.yaml
+//go:embed docker-build.yaml
 var PipelineDockerBuildTemplate embed.FS
 
 type Config struct {
