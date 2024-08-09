@@ -28,6 +28,8 @@ config:
       - onDemand: true
         version: "4.12"
     release-v1.15:
+      konflux:
+        enabled: true
       openShiftVersions:
       - version: "4.15"
       - onDemand: true
