@@ -22,14 +22,21 @@ const (
 )
 
 var (
-	ciRegistryRegex = regexp.MustCompile(`registry\.(|svc\.)ci\.openshift\.org/\S+`)
-
-	ubiMinimal8Regex = regexp.MustCompile(`registry\.access\.redhat\.com/ubi8-minimal:latest$`)
-	ubiMinimal9Regex = regexp.MustCompile(`registry\.access\.redhat\.com/ubi9-minimal:latest$`)
+	ciRegistryRegex       = regexp.MustCompile(`registry\.(|svc\.)ci\.openshift\.org/\S+`)
+	ubiMinimal8Regex1     = regexp.MustCompile(`registry\.access\.redhat\.com/ubi8-minimal\S*`)
+	ubiMinimal8Regex2     = regexp.MustCompile(`registry\.access\.redhat\.com/ubi8/ubi-minimal\S*`)
+	ubiMinimal9Regex1     = regexp.MustCompile(`registry\.access\.redhat\.com/ubi9-minimal\S*`)
+	ubiMinimal9Regex2     = regexp.MustCompile(`registry\.access\.redhat\.com/ubi9/ubi-minimal\S*`)
+	rhel8golang122Builder = regexp.MustCompile(`brew\.registry\.redhat\.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1\.22\S*`)
+	rhel9golang122Builder = regexp.MustCompile(`brew\.registry\.redhat\.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1\.22\S*`)
 
 	imageOverrides = map[*regexp.Regexp]orgRepoTag{
-		ubiMinimal8Regex: {Org: "ocp", Repo: "ubi-minimal", Tag: "8"},
-		ubiMinimal9Regex: {Org: "ocp", Repo: "ubi-minimal", Tag: "9"},
+		ubiMinimal8Regex1:     {Org: "ocp", Repo: "ubi-minimal", Tag: "8"},
+		ubiMinimal8Regex2:     {Org: "ocp", Repo: "ubi-minimal", Tag: "8"},
+		ubiMinimal9Regex1:     {Org: "ocp", Repo: "ubi-minimal", Tag: "9"},
+		ubiMinimal9Regex2:     {Org: "ocp", Repo: "ubi-minimal", Tag: "9"},
+		rhel8golang122Builder: {Org: "openshift", Repo: "release", Tag: "rhel-8-release-golang-1.22-openshift-4.17"},
+		rhel9golang122Builder: {Org: "openshift", Repo: "release", Tag: "rhel-9-release-golang-1.22-openshift-4.17"},
 	}
 
 	defaultDockerfileIncludes = []string{

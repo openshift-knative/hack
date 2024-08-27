@@ -81,7 +81,8 @@ func main() {
 	pflag.StringVar(&dockerfilesTestDir, "dockerfile-test-dir", "ci-operator/knative-test-images", "Dockerfiles output directory for test images relative to output flag")
 	pflag.StringVar(&output, "output", filepath.Join(wd, "openshift"), "Output directory")
 	pflag.StringVar(&projectFilePath, "project-file", filepath.Join(wd, "openshift", "project.yaml"), "Project metadata file path")
-	pflag.StringVar(&dockerfileImageBuilderFmt, "dockerfile-image-builder-fmt", "registry.ci.openshift.org/openshift/release:rhel-8-release-golang-%s-openshift-4.17", "Dockerfile image builder format")
+	// Requires credentials as described in https://source.redhat.com/groups/public/teamnado/wiki/brew_registry
+	pflag.StringVar(&dockerfileImageBuilderFmt, "dockerfile-image-builder-fmt", "brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_%s", "Dockerfile image builder format")
 	pflag.StringVar(&registryImageFmt, "registry-image-fmt", "registry.ci.openshift.org/openshift/%s:%s", "Container registry image format")
 	pflag.StringArrayVar(&imagesFromRepositories, "images-from", nil, "Additional image references to be pulled from other midstream repositories matching the tag in project.yaml")
 	pflag.StringVar(&imagesFromRepositoriesURLFmt, "images-from-url-format", "https://raw.githubusercontent.com/openshift-knative/%s/%s/openshift/images.yaml", "Additional images to be pulled from other midstream repositories matching the tag in project.yaml")
