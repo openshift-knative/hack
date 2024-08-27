@@ -13,7 +13,7 @@ require (
 	github.com/openshift/release v0.0.0-20221026112940-9a113497a40b
 	github.com/spf13/pflag v1.0.5
 	go.uber.org/zap v1.24.0
-	golang.org/x/mod v0.10.0
+	golang.org/x/mod v0.20.0
 	golang.org/x/sync v0.2.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
