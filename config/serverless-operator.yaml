@@ -326,7 +326,7 @@ repositories:
     - .*main.yaml$
     - .*lp-interop.*
     - .*lp-interop.*
-    - .*lp-rosa-classic.*
+    - .*rosa-classic.*
   imageNameOverrides:
     serverless-operator: bundle
   imagePrefix: serverless
