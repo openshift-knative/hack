@@ -1,5 +1,8 @@
 # DO NOT EDIT! Generated Dockerfile for {{.main}}.
-FROM {{.builder}} as builder
+ARG GO_BUILDER={{.builder}}
+ARG UBI8_MINIMAL=registry.access.redhat.com/ubi8/ubi-minimal
+
+FROM $GO_BUILDER as builder
 
 COPY . .
 
@@ -8,7 +11,7 @@ RUN mkdir -p /var/run/ko && \
     go build -o /usr/bin/main ./{{.main}} && \
     cp -r {{ .main }}/kodata /var/run/ko
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal
+FROM $UBI8_MINIMAL
 
 # install the missing zoneinfo to ubi-minimal
 RUN microdnf install tzdata
