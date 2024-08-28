@@ -31,9 +31,9 @@ discover-branches:
 	go run github.com/openshift-knative/hack/cmd/discover $(ARGS)
 .PHONY: discover-branches
 
-generate-action:
-	go run github.com/openshift-knative/hack/cmd/update-konflux-gen-action
-.PHONY: generate-action
+generate-ci-action:
+	go run github.com/openshift-knative/hack/cmd/generate-ci-action
+.PHONY: generate-ci-action
 
 konflux-apply: clean konflux-apply-no-clean
 .PHONY: konflux-apply
@@ -49,14 +49,15 @@ unit-tests:
 	rm -rf openshift/project/.github
 
 	mkdir -p openshift
-	go run ./cmd/update-konflux-gen-action --input ".github/workflows/release-generate-ci-template.yaml" --config "config/" --output "openshift/release-generate-ci.yaml"
-	# If the following fails, please run 'make generate-action'
+	go run ./cmd/generate-ci-action --input ".github/workflows/release-generate-ci-template.yaml" --config "config/" --output "openshift/release-generate-ci.yaml"
+	# If the following fails, please run 'make generate-ci-action'
 	diff -r "openshift/release-generate-ci.yaml" ".github/workflows/release-generate-ci.yaml"
 
 	go run ./cmd/generate/ --generators dockerfile \
 		--project-file pkg/project/testdata/project.yaml \
 		--excludes ".*vendor.*" \
 		--excludes ".*konflux-gen.*" \
+		--excludes ".*generate-ci-action.*" \
 		--excludes "openshift.*" \
 		--images-from "hack" \
 		--images-from-url-format "https://raw.githubusercontent.com/openshift-knative/%s/%s/pkg/project/testdata/additional-images.yaml" \
