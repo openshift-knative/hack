@@ -160,6 +160,11 @@ func main() {
 		goMod := getGoMod(rootDir)
 		goVersion := goMod.Go.Version
 
+		// The builder images are distinguished by golang major.minor, so we ignore the rest of the goVersion
+		if strings.Count(goVersion, ".") > 1 {
+			goVersion = strings.Join(strings.Split(goVersion, ".")[0:2], ".")
+		}
+
 		builderImage := fmt.Sprintf(dockerfileImageBuilderFmt, goVersion)
 
 		goPackageToImageMapping := map[string]string{}
