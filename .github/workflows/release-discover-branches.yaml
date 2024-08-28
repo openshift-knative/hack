@@ -39,10 +39,6 @@ jobs:
         working-directory: ./src/github.com/openshift-knative/hack
         run: make discover-branches ARGS="--config config/"
 
-      - name: Generate Action
-        working-directory: ./src/github.com/openshift-knative/hack
-        run: make generate-ci-action
-
       - name: Create Discovery Pull Request
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main'
         uses: peter-evans/create-pull-request@v5
