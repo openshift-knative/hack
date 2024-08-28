@@ -98,6 +98,6 @@ jobs:
           set -x
           git remote add fork "https://github.com/serverless-qe/hack.git"
           git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/hack.git" sync-konflux/main:sync-konflux/main -f
-          gh pr create --base master --head serverless-qe:sync-konflux/main --fill-verbose || true
+          gh pr create --base main --head serverless-qe:sync-konflux/main --fill-verbose || true
         # Use the repository cloned by the prowgen tool
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/hack
