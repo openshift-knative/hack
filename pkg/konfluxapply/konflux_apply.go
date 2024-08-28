@@ -18,6 +18,25 @@ type ApplyConfig struct {
 }
 
 func Apply(ctx context.Context, cfg ApplyConfig) error {
+	hack := &prowgen.Config{
+		Repositories: []prowgen.Repository{
+			{
+				Org:  "openshift-knative",
+				Repo: "hack",
+			},
+		},
+		Config: prowgen.CommonConfig{
+			Branches: map[string]prowgen.Branch{
+				"main": {
+					Konflux: &prowgen.Konflux{Enabled: true},
+				},
+			},
+		},
+	}
+	if err := apply(ctx, cfg, hack); err != nil {
+		return fmt.Errorf("failed to apply konflux for hack repo: %w", err)
+	}
+
 	err := filepath.Walk(cfg.InputConfigPath, func(path string, info fs.FileInfo, err error) error {
 		if info.IsDir() {
 			return nil

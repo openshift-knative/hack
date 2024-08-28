@@ -3,8 +3,10 @@ package action
 import (
 	"bytes"
 	"cmp"
+	"context"
 	"fmt"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -37,6 +39,33 @@ func UpdateAction(cfg Config) error {
 		return fmt.Errorf("failed to add steps: %w", err)
 	}
 
+	konfluxVersions, err := prowgen.ServerlessOperatorKonfluxVersions(context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to get serverless operator versions: %w", err)
+	}
+
+	soConfig := &prowgen.Config{
+		Repositories: []prowgen.Repository{
+			{Org: "openshift-knative", Repo: "serverless-operator"},
+		},
+	}
+	for _, release := range sortedKeys(konfluxVersions) {
+		branch := konfluxVersions[release]
+		if branch == "main" {
+			continue
+		}
+		if soConfig.Config.Branches == nil {
+			soConfig.Config.Branches = map[string]prowgen.Branch{}
+		}
+		soConfig.Config.Branches[branch] = prowgen.Branch{
+			Konflux: &prowgen.Konflux{
+				Enabled: true,
+			},
+		}
+	}
+	_, s := updateAction(soConfig)
+	steps = append(steps, s...)
+
 	err = filepath.Walk(cfg.InputConfigPath, func(path string, info fs.FileInfo, err error) error {
 		if info.IsDir() {
 			return nil
@@ -47,59 +76,9 @@ func UpdateAction(cfg Config) error {
 			return err
 		}
 
-		for _, r := range inConfig.Repositories {
-
-			cloneSteps = append(cloneSteps,
-				map[string]interface{}{
-					"name": fmt.Sprintf("[%s] Clone repository", r.Repo),
-					"if":   "${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}",
-					"uses": "actions/checkout@v4",
-					"with": map[string]interface{}{
-						"repository": r.RepositoryDirectory(),
-						"token":      "${{ secrets.SERVERLESS_QE_ROBOT }}",
-						"path":       fmt.Sprintf("./src/github.com/openshift-knative/hack/%s", r.RepositoryDirectory()),
-					},
-				})
-
-			sortedBranches := sortedKeys(inConfig.Config.Branches)
-
-			for _, branchName := range sortedBranches {
-				b := inConfig.Config.Branches[branchName]
-
-				if b.Konflux != nil && b.Konflux.Enabled {
-
-					// Special case "release-next"
-					targetBranch := branchName
-					if branchName == "release-next" {
-						targetBranch = "main"
-					}
-
-					localBranch := fmt.Sprintf("%s%s", prowgen.KonfluxBranchPrefix, branchName)
-					steps = append(steps, map[string]interface{}{
-						"name": fmt.Sprintf("[%s - %s] Create Konflux PR", r.Repo, branchName),
-						"if":   "${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}",
-						"env": map[string]string{
-							"GH_TOKEN":     "${{ secrets.SERVERLESS_QE_ROBOT }}",
-							"GITHUB_TOKEN": "${{ secrets.SERVERLESS_QE_ROBOT }}",
-						},
-						"working-directory": fmt.Sprintf("./src/github.com/openshift-knative/hack/%s", r.RepositoryDirectory()),
-						"run": fmt.Sprintf(`set -x
-git remote add fork "https://github.com/serverless-qe/%s.git" || true # ignore: already exists errors
-git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/%s.git" %s:%s -f
-gh pr create --base %s --head %s --title "[%s] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
-`,
-							r.Repo,
-							r.Repo,
-							localBranch,
-							localBranch,
-							targetBranch,
-							fmt.Sprintf("serverless-qe:%s", localBranch),
-							targetBranch,
-						),
-					})
-				}
-			}
-		}
+		cs, s := updateAction(inConfig)
+		cloneSteps = append(cloneSteps, cs...)
+		steps = append(steps, s...)
 
 		return nil
 	})
@@ -128,6 +107,69 @@ gh pr create --base %s --head %s --title "[%s] Add Konflux configurations" --bod
 	}
 
 	return nil
+}
+
+func updateAction(inConfig *prowgen.Config) ([]interface{}, []interface{}) {
+	var cloneSteps []interface{}
+	var steps []interface{}
+	for _, r := range inConfig.Repositories {
+
+		log.Println(r.RepositoryDirectory(), "update action")
+
+		cloneSteps = append(cloneSteps,
+			map[string]interface{}{
+				"name": fmt.Sprintf("[%s] Clone repository", r.Repo),
+				"if":   "${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}",
+				"uses": "actions/checkout@v4",
+				"with": map[string]interface{}{
+					"repository": r.RepositoryDirectory(),
+					"token":      "${{ secrets.SERVERLESS_QE_ROBOT }}",
+					"path":       fmt.Sprintf("./src/github.com/openshift-knative/hack/%s", r.RepositoryDirectory()),
+				},
+			})
+
+		sortedBranches := sortedKeys(inConfig.Config.Branches)
+
+		for _, branchName := range sortedBranches {
+			b := inConfig.Config.Branches[branchName]
+
+			if b.Konflux != nil && b.Konflux.Enabled {
+
+				log.Println(r.RepositoryDirectory(), "adding branch", branchName)
+
+				// Special case "release-next"
+				targetBranch := branchName
+				if branchName == "release-next" {
+					targetBranch = "main"
+				}
+
+				localBranch := fmt.Sprintf("%s%s", prowgen.KonfluxBranchPrefix, branchName)
+				steps = append(steps, map[string]interface{}{
+					"name": fmt.Sprintf("[%s - %s] Create Konflux PR", r.Repo, branchName),
+					"if":   "${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}",
+					"env": map[string]string{
+						"GH_TOKEN":     "${{ secrets.SERVERLESS_QE_ROBOT }}",
+						"GITHUB_TOKEN": "${{ secrets.SERVERLESS_QE_ROBOT }}",
+					},
+					"working-directory": fmt.Sprintf("./src/github.com/openshift-knative/hack/%s", r.RepositoryDirectory()),
+					"run": fmt.Sprintf(`set -x
+git remote add fork "https://github.com/serverless-qe/%s.git" || true # ignore: already exists errors
+git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/%s.git" %s:%s -f
+gh pr create --base %s --head %s --title "[%s] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
+`,
+						r.Repo,
+						r.Repo,
+						localBranch,
+						localBranch,
+						targetBranch,
+						fmt.Sprintf("serverless-qe:%s", localBranch),
+						targetBranch,
+					),
+				})
+			}
+		}
+	}
+	return cloneSteps, steps
 }
 
 func AddNestedField(node *yaml.Node, value interface{}, prepend bool, fields ...string) error {

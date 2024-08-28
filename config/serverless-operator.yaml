@@ -1,6 +1,10 @@
 config:
   branches:
     main:
+      konflux:
+        enabled: true
+        fbcImages:
+          - ".*serverless-index.*"
       openShiftVersions:
       - generateCustomConfigs: true
         version: "4.15"

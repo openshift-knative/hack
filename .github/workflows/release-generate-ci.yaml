@@ -127,7 +127,7 @@ jobs:
       - name: Generate CI
         working-directory: ./src/github.com/openshift-knative/hack
         run: make generate-ci-no-clean ARGS=--branch=master
-      - name: Create Pull Request
+      - name: Create Pull Request - openshift/release
         if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -138,6 +138,18 @@ jobs:
           git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/release.git" sync-serverless-ci:sync-serverless-ci -f
           gh pr create --base master --head serverless-qe:sync-serverless-ci --fill-verbose || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift/release
+      - name: Create Pull Request - openshift-knative/hack
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        run: |
+          set -x
+          git remote add fork "https://github.com/serverless-qe/hack.git"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/hack.git" sync-konflux/main:sync-konflux/main -f
+          gh pr create --base master --head serverless-qe:sync-konflux/main --fill-verbose || true
+        # Use the repository cloned by the prowgen tool
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/hack
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -204,6 +216,17 @@ jobs:
           git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/eventing.git" sync-konflux/release-v1.15:sync-konflux/release-v1.15 -f
           gh pr create --base release-v1.15 --head serverless-qe:sync-konflux/release-v1.15 --title "[release-v1.15] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[serverless-operator - main] Create Konflux PR'
+        run: |
+          set -x
+          git remote add fork "https://github.com/serverless-qe/serverless-operator.git" || true # ignore: already exists errors
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/serverless-operator.git" sync-konflux/main:sync-konflux/main -f
+          gh pr create --base main --head serverless-qe:sync-konflux/main --title "[main] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serverless-operator
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}

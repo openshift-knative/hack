@@ -10,7 +10,7 @@ metadata:
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-cel-expression: event == "{{{ .Event }}}" && target_branch
-      == "{{{ .ReleaseBuildConfiguration.Metadata.Branch }}}"
+      == "{{{ .ReleaseBuildConfiguration.Metadata.Branch }}}" {{{ .AdditionalTektonCELExpression }}}
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: {{{ truncate ( sanitize .ApplicationName ) }}}
@@ -36,7 +36,7 @@ spec:
     - name: revision
       value: '{{revision}}'
   pipelineRef:
-    name: docker-build
+    name: {{{ .Pipeline }}}
   taskRunTemplate: {}
   workspaces:
     - name: workspace

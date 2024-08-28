@@ -9,8 +9,8 @@ using [Konflux](https://redhat-appstudio.github.io/docs.appstudio.io/Documentati
 
 ```shell
 # Clone openshift/release repository in openshift-release
-git clone git@github.com:openshift/release.git openshift-release
-konflux-gen --openshift-release-path openshift-release --includes "ci-operator/config/<org>/.*.yaml" --output "$(pwd)/<org>"
+git clone git@github.com:openshift/release.git openshift/release
+konflux-gen --openshift-release-path openshift/release --includes "ci-operator/config/<org>/.*.yaml" --output "$(pwd)/<org>"
 ```
 
 Example command:
@@ -32,4 +32,5 @@ go run ./cmd/konflux-gen/main.go --openshift-release-path openshift/release \
 
 ```shell
 tkn bundle list quay.io/konflux-ci/tekton-catalog/pipeline-docker-build:devel -o=yaml > pkg/konfluxgen/docker-build.yaml
+tkn bundle list quay.io/konflux-ci/tekton-catalog/pipeline-fbc-builder:devel -o=yaml > pkg/konfluxgen/fbc-builder.yaml
 ```
