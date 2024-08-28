@@ -1,23 +1,33 @@
 # DO NOT EDIT! Generated Dockerfile for {{.main}}.
 ARG GO_BUILDER={{.builder}}
 ARG UBI8_MINIMAL=registry.access.redhat.com/ubi8/ubi-minimal
+ARG VERSION={{.version}}
 
 FROM $GO_BUILDER as builder
 
 COPY . .
 
-RUN mkdir -p /var/run/ko && \
-    mkdir -p {{.main}}/kodata && \
-    go build -o /usr/bin/main ./{{.main}} && \
-    cp -r {{ .main }}/kodata /var/run/ko
+ENV CGO_ENABLED=1
+ENV GOEXPERIMENT=strictfipsruntime
+
+RUN go build -tags strictfipsruntime -o /usr/bin/main ./{{.main}}
 
 FROM $UBI8_MINIMAL
 
-# install the missing zoneinfo to ubi-minimal
+# Install the missing zoneinfo to ubi-minimal
 RUN microdnf install tzdata
 
 USER 65532
 
 COPY --from=builder /usr/bin/main /usr/bin/main
-COPY --from=builder /var/run/ko /var/run/ko
+
+LABEL \
+      com.redhat.component="openshift-serverless-1-{{.project_dashcase}}-{{.component_dashcase}}-rhel8-container" \
+      name="openshift-serverless-1/{{.project_dashcase}}-{{.component_dashcase}}-rhel8" \
+      version="$VERSION" \
+      summary="Red Hat OpenShift Serverless 1 {{.project}} {{.component}}" \
+      maintainer="serverless-support@redhat.com" \
+      description="Red Hat OpenShift Serverless 1 {{.project}} {{.component}}" \
+      io.k8s.display-name="Red Hat OpenShift Serverless 1 {{.project}} {{.component}}"
+
 ENTRYPOINT ["/usr/bin/main"]
