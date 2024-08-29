@@ -39,31 +39,12 @@ func UpdateAction(cfg Config) error {
 		return fmt.Errorf("failed to add steps: %w", err)
 	}
 
-	konfluxVersions, err := prowgen.ServerlessOperatorKonfluxVersions(context.Background())
+	// For serverless-operator, release branches are not configured in the config/serverless-operator.yaml
+	// file, so we need to add them "manually".
+	s, err := getServerlessOperatorReleaseBranchesSteps()
 	if err != nil {
-		return fmt.Errorf("failed to get serverless operator versions: %w", err)
+		return fmt.Errorf("failed to get serverless operator release branches: %w", err)
 	}
-
-	soConfig := &prowgen.Config{
-		Repositories: []prowgen.Repository{
-			{Org: "openshift-knative", Repo: "serverless-operator"},
-		},
-	}
-	for _, release := range sortedKeys(konfluxVersions) {
-		branch := konfluxVersions[release]
-		if branch == "main" {
-			continue
-		}
-		if soConfig.Config.Branches == nil {
-			soConfig.Config.Branches = map[string]prowgen.Branch{}
-		}
-		soConfig.Config.Branches[branch] = prowgen.Branch{
-			Konflux: &prowgen.Konflux{
-				Enabled: true,
-			},
-		}
-	}
-	_, s := updateAction(soConfig)
 	steps = append(steps, s...)
 
 	err = filepath.Walk(cfg.InputConfigPath, func(path string, info fs.FileInfo, err error) error {
@@ -225,4 +206,33 @@ func sortedKeys[K cmp.Ordered, V any](m map[K]V) []K {
 	}
 	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
 	return keys
+}
+
+func getServerlessOperatorReleaseBranchesSteps() ([]interface{}, error) {
+	konfluxVersions, err := prowgen.ServerlessOperatorKonfluxVersions(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get serverless operator versions: %w", err)
+	}
+
+	soConfig := &prowgen.Config{
+		Repositories: []prowgen.Repository{
+			{Org: "openshift-knative", Repo: "serverless-operator"},
+		},
+	}
+	for _, release := range sortedKeys(konfluxVersions) {
+		branch := konfluxVersions[release]
+		if branch == "main" {
+			continue
+		}
+		if soConfig.Config.Branches == nil {
+			soConfig.Config.Branches = map[string]prowgen.Branch{}
+		}
+		soConfig.Config.Branches[branch] = prowgen.Branch{
+			Konflux: &prowgen.Konflux{
+				Enabled: true,
+			},
+		}
+	}
+	_, s := updateAction(soConfig)
+	return s, nil
 }
