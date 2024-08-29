@@ -55,7 +55,7 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         uses: actions/checkout@v4
         with:
-          branch: 'master'
+          ref: 'master'
           repository: 'openshift/release'
           path: ./src/github.com/openshift-knative/hack/openshift/release
 
@@ -63,7 +63,7 @@ jobs:
         if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         uses: actions/checkout@v4
         with:
-          branch: 'master'
+          ref: 'master'
           repository: 'openshift/release'
           path: ./src/github.com/openshift-knative/hack/openshift/release
           token: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -98,6 +98,6 @@ jobs:
           set -x
           git remote add fork "https://github.com/serverless-qe/hack.git"
           git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/hack.git" sync-konflux/main:sync-konflux/main -f
-          gh pr create --base main --head serverless-qe:sync-konflux/main --fill-verbose || true
+          gh pr create --base main --head serverless-qe:sync-konflux/main --title "[main] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
         # Use the repository cloned by the prowgen tool
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/hack
