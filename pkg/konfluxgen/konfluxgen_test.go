@@ -1,6 +1,7 @@
 package konfluxgen
 
 import (
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -11,25 +12,31 @@ func Test_replaceTaskImagesFromExisting(t *testing.T) {
 
 	tt := []struct {
 		name     string
-		ex       string
-		n        string
+		existing string
+		template string
 		expected string
 	}{
 		{
 			name:     "simple value",
-			n:        "        value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:34a2a8b700bfdfddc4a3e6328f0f8ba29eb2de89a921e24d05c39cc6c5d05351",
-			ex:       "        value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:f13f6783f73971e4d1fbe8fd7fde3ea6cc080943c3fe2a4338ce6373c43f26a7",
+			template: "        value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:34a2a8b700bfdfddc4a3e6328f0f8ba29eb2de89a921e24d05c39cc6c5d05351",
+			existing: "        value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:f13f6783f73971e4d1fbe8fd7fde3ea6cc080943c3fe2a4338ce6373c43f26a7",
 			expected: "        value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:f13f6783f73971e4d1fbe8fd7fde3ea6cc080943c3fe2a4338ce6373c43f26a7",
 		},
 		{
+			name:     "simple value, different task",
+			template: "        value: quay.io/konflux-ci/tekton-catalog/task-push-dockerfile:0.1@sha256:81312124d27361cfa2d7ff09fb38a177b27b0e9b43426aa4ea9cec9f640ec42a",
+			existing: "        value: quay.io/konflux-ci/tekton-catalog/task-push-dockerfile:0.1@sha256:e4abc7c7671e4455465e48f96831cfafdb4de368cbcb9f27a8e5b9b0553ac35e",
+			expected: "        value: quay.io/konflux-ci/tekton-catalog/task-push-dockerfile:0.1@sha256:e4abc7c7671e4455465e48f96831cfafdb4de368cbcb9f27a8e5b9b0553ac35e",
+		},
+		{
 			name:     "simple value, trailing whitespace",
-			n:        "        value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:34a2a8b700bfdfddc4a3e6328f0f8ba29eb2de89a921e24d05c39cc6c5d05351   ",
-			ex:       "        value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:f13f6783f73971e4d1fbe8fd7fde3ea6cc080943c3fe2a4338ce6373c43f26a7   ",
+			template: "        value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:34a2a8b700bfdfddc4a3e6328f0f8ba29eb2de89a921e24d05c39cc6c5d05351   ",
+			existing: "        value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:f13f6783f73971e4d1fbe8fd7fde3ea6cc080943c3fe2a4338ce6373c43f26a7   ",
 			expected: "        value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:f13f6783f73971e4d1fbe8fd7fde3ea6cc080943c3fe2a4338ce6373c43f26a7   ",
 		},
 		{
 			name: "full YAML",
-			ex: `
+			existing: `
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
@@ -446,7 +453,7 @@ spec:
   - name: netrc
     optional: true
 `,
-			n: `
+			template: `
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
@@ -1288,11 +1295,58 @@ spec:
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := replaceTaskImagesFromExisting([]byte(tc.ex), []byte(tc.n))
+			got := replaceTaskImagesFromExisting([]byte(tc.existing), []byte(tc.template))
 
 			if diff := cmp.Diff(tc.expected, string(got)); diff != "" {
 				t.Errorf("(-want, +got)\n%s", diff)
 			}
 		})
+	}
+}
+
+func TestWriteFileReplacingNewerTaskImages(t *testing.T) {
+
+	newBytes := []byte(`apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  creationTimestamp: null
+  labels:
+    pipelines.openshift.io/runtime: generic
+    pipelines.openshift.io/strategy: docker
+    pipelines.openshift.io/used-by: build-cloud
+  name: docker-build
+spec:
+  finally:
+    - name: show-sbom
+      params:
+        - name: IMAGE_URL
+          value: $(tasks.build-container.results.IMAGE_URL)
+      taskRef:
+        params:
+          - name: name
+            value: show-sbom
+          - name: bundle
+            value: quay.io/konflux-ci/tekton-catalog/task-show-sbom:0.1@sha256:78bfc6b99ef038800fe131d7b45ff3cd4da3a415dd536f7c657b3527b01c4a13b
+          - name: kind
+            value: task
+        resolver: bundles
+`)
+
+	expected, err := os.ReadFile("testdata/docker-build.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := WriteFileReplacingNewerTaskImages("testdata/docker-build.yaml", newBytes, 0777); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := os.ReadFile("testdata/docker-build.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(string(expected), string(got)); diff != "" {
+		t.Fatalf("(-want, +got)\n%s", diff)
 	}
 }
