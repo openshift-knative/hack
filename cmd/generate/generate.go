@@ -259,23 +259,24 @@ func main() {
 }
 
 func dashcase(path string) string {
-	_, dir, found := strings.Cut(path, "cmd/")
-	if !found {
-		dir = path
-	}
+	dir := cmdSubPath(path)
 	dir = strings.ReplaceAll(dir, "/", "-")
 	dir = strings.ReplaceAll(dir, "_", "-")
 	return strings.ToLower(dir)
 }
 
 func capitalize(path string) string {
-	_, dir, found := strings.Cut(path, "cmd/")
-	if !found {
-		dir = path
-	}
+	dir := cmdSubPath(path)
 	dir = strings.ReplaceAll(dir, "/", " ")
 	dir = strings.ReplaceAll(dir, "_", " ")
 	return strings.Title(strings.ToLower(dir))
+}
+
+func cmdSubPath(path string) string {
+	if _, dir, found := strings.Cut(path, "cmd/"); found {
+		return dir
+	}
+	return path
 }
 
 func getAdditionalImagesFromMatchingRepositories(repositories []string, metadata *project.Metadata, urlFmt string, mapping map[string]string) error {
