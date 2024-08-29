@@ -174,16 +174,9 @@ func discoverInputImages(dockerfile string) (map[string]cioperatorapi.ImageStrea
 		if imagePath == srcImage {
 			inputImages[srcImage] = cioperatorapi.ImageBuildInputs{As: []string{srcImage}}
 		} else {
-			orgRepoTag, err := orgRepoTagFromPullString(imagePath)
+			orgRepoTag, err := getOrgRepoTag(imagePath)
 			if err != nil {
-				return nil, nil, fmt.Errorf("failed to parse string %s as pullspec: %w", imagePath, err)
-			}
-
-			for k, override := range imageOverrides {
-				if k.FindString(imagePath) != "" {
-					orgRepoTag = override
-					break
-				}
+				return nil, nil, err
 			}
 
 			requiredBaseImages[orgRepoTag.String()] = cioperatorapi.ImageStreamTagReference{
@@ -198,14 +191,15 @@ func discoverInputImages(dockerfile string) (map[string]cioperatorapi.ImageStrea
 		}
 	}
 
+	// Also parse args and possibly generate inputs for any pull specs defined in args.
 	args, err := getArgsWithPullSpec(dockerfile)
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not get args from dockerfile: %w", err)
 	}
 	for arg, imagePath := range args {
-		orgRepoTag, err := orgRepoTagFromPullString(imagePath)
+		orgRepoTag, err := getOrgRepoTag(imagePath)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to parse string %s as pullspec: %w", imagePath, err)
+			return nil, nil, err
 		}
 		requiredBaseImages[orgRepoTag.String()] = cioperatorapi.ImageStreamTagReference{
 			Namespace: orgRepoTag.Org,
@@ -220,6 +214,20 @@ func discoverInputImages(dockerfile string) (map[string]cioperatorapi.ImageStrea
 	}
 
 	return requiredBaseImages, inputImages, nil
+}
+
+func getOrgRepoTag(imagePath string) (*orgRepoTag, error) {
+	orgRepoTag, err := orgRepoTagFromPullString(imagePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse string %s as pullspec: %w", imagePath, err)
+	}
+	for k, override := range imageOverrides {
+		if k.FindString(imagePath) != "" {
+			orgRepoTag = override
+			break
+		}
+	}
+	return &orgRepoTag, nil
 }
 
 func getPullStringsFromDockerfile(filename string) ([]string, error) {
