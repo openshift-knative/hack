@@ -1,20 +1,33 @@
 # DO NOT EDIT! Generated Dockerfile for cmd/generate.
-FROM registry.ci.openshift.org/openshift/release:rhel-8-release-golang-1.21-openshift-4.17 as builder
+ARG GO_BUILDER=registry.ci.openshift.org/openshift/release:rhel-8-release-golang-1.21-openshift-4.17
+ARG UBI8_MINIMAL=registry.access.redhat.com/ubi8/ubi-minimal
+ARG VERSION=main
+
+FROM $GO_BUILDER as builder
 
 COPY . .
 
-RUN mkdir -p /var/run/ko && \
-    mkdir -p cmd/generate/kodata && \
-    go build -o /usr/bin/main ./cmd/generate && \
-    cp -r cmd/generate/kodata /var/run/ko
+ENV CGO_ENABLED=1
+ENV GOEXPERIMENT=strictfipsruntime
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal
+RUN go build -tags strictfipsruntime -o /usr/bin/main ./cmd/generate
 
-# install the missing zoneinfo to ubi-minimal
+FROM $UBI8_MINIMAL
+
+# Install the missing zoneinfo to ubi-minimal
 RUN microdnf install tzdata
 
 USER 65532
 
 COPY --from=builder /usr/bin/main /usr/bin/main
-COPY --from=builder /var/run/ko /var/run/ko
+
+LABEL \
+      com.redhat.component="openshift-serverless-1-knative-generate-rhel8-container" \
+      name="openshift-serverless-1/knative-generate-rhel8" \
+      version="$VERSION" \
+      summary="Red Hat OpenShift Serverless 1 Knative Generate" \
+      maintainer="serverless-support@redhat.com" \
+      description="Red Hat OpenShift Serverless 1 Knative Generate" \
+      io.k8s.display-name="Red Hat OpenShift Serverless 1 Knative Generate"
+
 ENTRYPOINT ["/usr/bin/main"]
