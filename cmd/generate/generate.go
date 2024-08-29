@@ -269,6 +269,7 @@ func capitalize(path string) string {
 	dir := cmdSubPath(path)
 	dir = strings.ReplaceAll(dir, "/", " ")
 	dir = strings.ReplaceAll(dir, "_", " ")
+	dir = strings.ReplaceAll(dir, "-", " ")
 	return strings.Title(strings.ToLower(dir))
 }
 
