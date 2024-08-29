@@ -319,21 +319,32 @@ func slackInjector() JobConfigInjector {
 		Type: Periodic,
 		Update: func(r *Repository, _ *Branch, _ string, jobConfig *prowconfig.JobConfig) error {
 			for i := range jobConfig.Periodics {
-				jobConfig.Periodics[i].ReporterConfig = &prowapi.ReporterConfig{
-					Slack: &prowapi.SlackReporterConfig{
-						Channel: r.SlackChannel,
-						JobStatesToReport: []prowapi.ProwJobState{
-							prowapi.SuccessState,
-							prowapi.FailureState,
-							prowapi.ErrorState,
+				if !shouldIgnoreJob(r, jobConfig.Periodics[i].Name) {
+					jobConfig.Periodics[i].ReporterConfig = &prowapi.ReporterConfig{
+						Slack: &prowapi.SlackReporterConfig{
+							Channel: r.SlackChannel,
+							JobStatesToReport: []prowapi.ProwJobState{
+								prowapi.SuccessState,
+								prowapi.FailureState,
+								prowapi.ErrorState,
+							},
+							ReportTemplate: `{{if eq .Status.State "success"}} :rainbow: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :rainbow: {{else}} :volcano: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :volcano: {{end}}`,
 						},
-						ReportTemplate: `{{if eq .Status.State "success"}} :rainbow: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :rainbow: {{else}} :volcano: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :volcano: {{end}}`,
-					},
+					}
 				}
 			}
 			return nil
 		},
 	}
+}
+
+func shouldIgnoreJob(r *Repository, jobName string) bool {
+	for _, r := range ToRegexp(r.IgnoreConfigs.Matches) {
+		if r.MatchString(jobName) {
+			return true
+		}
+	}
+	return false
 }
 
 func AlwaysRunInjector() JobConfigInjector {
