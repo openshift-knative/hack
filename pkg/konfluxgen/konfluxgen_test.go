@@ -2,6 +2,7 @@ package konfluxgen
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -1306,44 +1307,27 @@ spec:
 
 func TestWriteFileReplacingNewerTaskImages(t *testing.T) {
 
-	newBytes := []byte(`apiVersion: tekton.dev/v1
-kind: Pipeline
-metadata:
-  creationTimestamp: null
-  labels:
-    pipelines.openshift.io/runtime: generic
-    pipelines.openshift.io/strategy: docker
-    pipelines.openshift.io/used-by: build-cloud
-  name: docker-build
-spec:
-  finally:
-    - name: show-sbom
-      params:
-        - name: IMAGE_URL
-          value: $(tasks.build-container.results.IMAGE_URL)
-      taskRef:
-        params:
-          - name: name
-            value: show-sbom
-          - name: bundle
-            value: quay.io/konflux-ci/tekton-catalog/task-show-sbom:0.1@sha256:78bfc6b99ef038800fe131d7b45ff3cd4da3a415dd536f7c657b3527b01c4a13b
-          - name: kind
-            value: task
-        resolver: bundles
-`)
+	newBytes, err := os.ReadFile("testdata/docker-build.yaml")
 
-	expected, err := os.ReadFile("testdata/docker-build.yaml")
+	expected, err := os.ReadFile("testdata/docker-build-expected.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err := WriteFileReplacingNewerTaskImages("testdata/docker-build.yaml", newBytes, 0777); err != nil {
+	if err := WriteFileReplacingNewerTaskImages("testdata/docker-build-expected.yaml", newBytes, 0777); err != nil {
 		t.Fatal(err)
 	}
 
-	got, err := os.ReadFile("testdata/docker-build.yaml")
+	got, err := os.ReadFile("testdata/docker-build-expected.yaml")
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if strings.Contains(string(got), "xyz") {
+		t.Fatal("expected new image to be replaced")
+	}
+	if strings.Contains(string(expected), "xyz") {
+		t.Fatal("expected new image to be replaced")
 	}
 
 	if diff := cmp.Diff(string(expected), string(got)); diff != "" {
