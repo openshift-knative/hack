@@ -66,7 +66,9 @@ func CmpBranches(a string, b string) int {
 	}
 
 	a = strings.ReplaceAll(a, "release-v", "")
+	a = strings.ReplaceAll(a, "release-", "")
 	b = strings.ReplaceAll(b, "release-v", "")
+	b = strings.ReplaceAll(b, "release-", "")
 	if strings.Count(a, ".") == 1 {
 		a += ".0"
 	}

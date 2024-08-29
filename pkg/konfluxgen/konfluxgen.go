@@ -33,24 +33,53 @@ var PipelineRunTemplate embed.FS
 //go:embed docker-build.yaml
 var PipelineDockerBuildTemplate embed.FS
 
+//go:embed fbc-builder.yaml
+var PipelineFBCBuildTemplate embed.FS
+
 type Config struct {
 	OpenShiftReleasePath string
 	ApplicationName      string
+	ComponentNameFunc    func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string
 
 	Includes       []string
 	Excludes       []string
 	ExcludesImages []string
 
-	ResourcesOutputPath string
-	PipelinesOutputPath string
+	FBCImages []string
 
-	Nudges []string
+	ResourcesOutputPathSkipRemove bool
+	ResourcesOutputPath           string
+	PipelinesOutputPath           string
+
+	AdditionalTektonCELExpressionFunc func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string
+
+	NudgesFunc func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) []string
+	Nudges     []string
 }
 
 func Generate(cfg Config) error {
 
-	if err := os.RemoveAll(cfg.ResourcesOutputPath); err != nil {
-		return fmt.Errorf("failed to remove %q directory: %w", cfg.ResourcesOutputPath, err)
+	if cfg.ComponentNameFunc == nil {
+		cfg.ComponentNameFunc = func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
+			return fmt.Sprintf("%s-%s", ib.To, cfg.Metadata.Branch)
+		}
+	}
+	if cfg.AdditionalTektonCELExpressionFunc == nil {
+		cfg.AdditionalTektonCELExpressionFunc = func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
+			return ""
+		}
+	}
+
+	if cfg.NudgesFunc == nil {
+		cfg.NudgesFunc = func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) []string {
+			return []string{}
+		}
+	}
+
+	if !cfg.ResourcesOutputPathSkipRemove {
+		if err := os.RemoveAll(cfg.ResourcesOutputPath); err != nil {
+			return fmt.Errorf("failed to remove %q directory: %w", cfg.ResourcesOutputPath, err)
+		}
 	}
 
 	if err := os.RemoveAll(cfg.PipelinesOutputPath); err != nil {
@@ -69,6 +98,10 @@ func Generate(cfg Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to create regular expressions for %+v: %w", cfg.ExcludesImages, err)
 	}
+	fbcImages, err := toRegexp(cfg.FBCImages)
+	if err != nil {
+		return fmt.Errorf("failed to create regular expressions for %+v: %w", cfg.FBCImages, err)
+	}
 
 	configs, err := collectConfigurations(cfg.OpenShiftReleasePath, includes, excludes)
 	if err != nil {
@@ -78,8 +111,8 @@ func Generate(cfg Config) error {
 	log.Printf("Found %d configs", len(configs))
 
 	funcs := template.FuncMap{
-		"sanitize": sanitize,
-		"truncate": truncate,
+		"sanitize": Sanitize,
+		"truncate": Truncate,
 		"replace":  replace,
 	}
 
@@ -103,12 +136,19 @@ func Generate(cfg Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to parse pipeline run push template: %w", err)
 	}
+	pipelineFBCBuildTemplate, err := template.New("fbc-builder.yaml").Delims("{{{", "}}}").Funcs(funcs).ParseFS(PipelineFBCBuildTemplate, "*.yaml")
+	if err != nil {
+		return fmt.Errorf("failed to parse pipeline run push template: %w", err)
+	}
 
 	applications := make(map[string]map[string]DockerfileApplicationConfig, 8)
 	for _, c := range configs {
-		appKey := truncate(sanitize(cfg.ApplicationName))
+		appKey := Truncate(Sanitize(cfg.ApplicationName))
 		if _, ok := applications[appKey]; !ok {
 			applications[appKey] = make(map[string]DockerfileApplicationConfig, 8)
+		}
+		if c.PromotionConfiguration == nil || len(c.PromotionConfiguration.Targets) == 0 {
+			continue
 		}
 		for _, ib := range c.Images {
 
@@ -122,17 +162,28 @@ func Generate(cfg Config) error {
 			if ignore {
 				continue
 			}
+			pipeline := DockerBuild
+			for _, r := range fbcImages {
+				if r.MatchString(string(ib.To)) {
+					pipeline = FBCBuild
+					break
+				}
+			}
 
-			applications[appKey][dockerfileComponentKey(c.ReleaseBuildConfiguration, ib)] = DockerfileApplicationConfig{
-				ApplicationName:           cfg.ApplicationName,
+			applications[appKey][dockerfileComponentKey(cfg.ComponentNameFunc, c.ReleaseBuildConfiguration, ib)] = DockerfileApplicationConfig{
+				ApplicationName:           Truncate(Sanitize(cfg.ApplicationName)),
+				ComponentName:             Truncate(Sanitize(cfg.ComponentNameFunc(c.ReleaseBuildConfiguration, ib))),
 				ReleaseBuildConfiguration: c.ReleaseBuildConfiguration,
 				Path:                      c.Path,
 				ProjectDirectoryImageBuildStepConfiguration: ib,
-				Nudges: cfg.Nudges,
+				Nudges:                        append(cfg.Nudges, cfg.NudgesFunc(c.ReleaseBuildConfiguration, ib)...),
+				Pipeline:                      pipeline,
+				AdditionalTektonCELExpression: cfg.AdditionalTektonCELExpressionFunc(c.ReleaseBuildConfiguration, ib),
 			}
 		}
 	}
 
+	fbcBuildPipelinePath := filepath.Join(cfg.PipelinesOutputPath, "fbc-builder.yaml")
 	containerBuildPipelinePath := filepath.Join(cfg.PipelinesOutputPath, "docker-build.yaml")
 	if err := os.MkdirAll(filepath.Dir(containerBuildPipelinePath), 0777); err != nil {
 		return fmt.Errorf("failed to create directory for %q: %w", containerBuildPipelinePath, err)
@@ -185,8 +236,8 @@ func Generate(cfg Config) error {
 
 			buf.Reset()
 
-			pipelineRunPRPath := filepath.Join(cfg.PipelinesOutputPath, fmt.Sprintf("%s-%s-pull-request.yaml", config.ProjectDirectoryImageBuildStepConfiguration.To, sanitize(config.ReleaseBuildConfiguration.Metadata.Branch)))
-			pipelineRunPushPath := filepath.Join(cfg.PipelinesOutputPath, fmt.Sprintf("%s-%s-push.yaml", config.ProjectDirectoryImageBuildStepConfiguration.To, sanitize(config.ReleaseBuildConfiguration.Metadata.Branch)))
+			pipelineRunPRPath := filepath.Join(cfg.PipelinesOutputPath, fmt.Sprintf("%s-%s-pull-request.yaml", config.ProjectDirectoryImageBuildStepConfiguration.To, Sanitize(config.ReleaseBuildConfiguration.Metadata.Branch)))
+			pipelineRunPushPath := filepath.Join(cfg.PipelinesOutputPath, fmt.Sprintf("%s-%s-push.yaml", config.ProjectDirectoryImageBuildStepConfiguration.To, Sanitize(config.ReleaseBuildConfiguration.Metadata.Branch)))
 
 			config.Event = PullRequestEvent
 			if err := pipelineRunTemplate.Execute(buf, config); err != nil {
@@ -204,6 +255,19 @@ func Generate(cfg Config) error {
 			}
 			if err := WriteFileReplacingNewerTaskImages(pipelineRunPushPath, buf.Bytes(), 0777); err != nil {
 				return fmt.Errorf("failed to write component file %q: %w", pipelineRunPushPath, err)
+			}
+
+			buf.Reset()
+
+			if config.Pipeline == FBCBuild {
+
+				if err := pipelineFBCBuildTemplate.Execute(buf, nil); err != nil {
+					return fmt.Errorf("failed to execute template for pipeline %q: %w", fbcBuildPipelinePath, err)
+				}
+				if err := WriteFileReplacingNewerTaskImages(fbcBuildPipelinePath, buf.Bytes(), 0777); err != nil {
+					return fmt.Errorf("failed to write FBC build pipeline file %q: %w", fbcBuildPipelinePath, err)
+				}
+
 			}
 		}
 	}
@@ -275,12 +339,15 @@ type TemplateConfig struct {
 
 type DockerfileApplicationConfig struct {
 	ApplicationName                             string
+	ComponentName                               string
 	ReleaseBuildConfiguration                   cioperatorapi.ReleaseBuildConfiguration
 	Path                                        string
 	ProjectDirectoryImageBuildStepConfiguration cioperatorapi.ProjectDirectoryImageBuildStepConfiguration
 	Nudges                                      []string
 
-	Event PipelineEvent
+	AdditionalTektonCELExpression string
+	Event                         PipelineEvent
+	Pipeline                      Pipeline
 }
 
 type PipelineEvent string
@@ -288,6 +355,13 @@ type PipelineEvent string
 const (
 	PushEvent        PipelineEvent = "push"
 	PullRequestEvent PipelineEvent = "pull_request"
+)
+
+type Pipeline string
+
+const (
+	DockerBuild Pipeline = "docker-build"
+	FBCBuild    Pipeline = "fbc-builder"
 )
 
 func parseConfig(path string) (*cioperatorapi.ReleaseBuildConfiguration, error) {
@@ -322,17 +396,17 @@ func toRegexp(rawRegexps []string) ([]*regexp.Regexp, error) {
 	return regexps, nil
 }
 
-func dockerfileComponentKey(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
-	return fmt.Sprintf("%s-%s-%s-%s", cfg.Metadata.Org, cfg.Metadata.Repo, cfg.Metadata.Branch, ib.To)
+func dockerfileComponentKey(componentNameFunc func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string, cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
+	return fmt.Sprintf("%s-%s-%s", cfg.Metadata.Org, cfg.Metadata.Repo, Truncate(Sanitize(componentNameFunc(cfg, ib))))
 }
 
-func sanitize(input interface{}) string {
+func Sanitize(input interface{}) string {
 	in := fmt.Sprintf("%s", input)
 	// TODO very basic name sanitizer
 	return strings.ReplaceAll(strings.ReplaceAll(in, ".", ""), " ", "-")
 }
 
-func truncate(input interface{}) string {
+func Truncate(input interface{}) string {
 	in := fmt.Sprintf("%s", input)
 	// TODO very basic name sanitizer
 	return Name(in, "")
@@ -394,9 +468,6 @@ func makeValidName(n string) string {
 }
 
 func WriteFileReplacingNewerTaskImages(name string, data []byte, perm os.FileMode) error {
-	if !strings.HasSuffix(name, ".yaml") || !strings.HasSuffix(name, ".yml") {
-		return os.WriteFile(name, data, perm)
-	}
 	if _, err := os.Stat(name); err != nil {
 		return os.WriteFile(name, data, perm)
 	}

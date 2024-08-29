@@ -64,6 +64,9 @@ type CustomConfigs struct {
 }
 
 func (r Repository) RepositoryDirectory() string {
+	if r.Org == "" && r.Repo == "" {
+		return ""
+	}
 	return filepath.Join(r.Org, r.Repo)
 }
 
@@ -78,6 +81,11 @@ type Konflux struct {
 	Enabled bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 
 	Nudges []string `json:"nudges,omitempty" yaml:"nudges,omitempty"`
+
+	Excludes       []string `json:"excludes,omitempty" yaml:"excludes,omitempty"`
+	ExcludesImages []string `json:"excludesImages,omitempty" yaml:"excludesImages,omitempty"`
+
+	FBCImages []string `json:"fbcImages,omitempty" yaml:"fbcImages,omitempty"`
 }
 
 type OpenShift struct {
@@ -380,6 +388,8 @@ func addCandidateRelease(openshiftVersions []OpenShift) ([]OpenShift, error) {
 		semVersions = append(semVersions, ovSemVer)
 	}
 	semver.Sort(semVersions)
+
+	log.Println(semVersions)
 
 	latest := *semVersions[len(semVersions)-1]
 	latest.BumpMinor()

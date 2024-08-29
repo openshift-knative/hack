@@ -3,7 +3,7 @@ kind: Component
 metadata:
   annotations:
     build.appstudio.openshift.io/pipeline: '{"name":"docker-build","bundle":"latest"}'
-  name: {{ truncate ( sanitize ( print .ProjectDirectoryImageBuildStepConfiguration.To "-" .ReleaseBuildConfiguration.Metadata.Branch ) ) }}
+  name: {{ sanitize .ComponentName }}
 spec:
   componentName: {{ .ProjectDirectoryImageBuildStepConfiguration.To }}
   application: {{ sanitize .ApplicationName }}
