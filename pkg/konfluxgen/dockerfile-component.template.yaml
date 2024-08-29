@@ -6,7 +6,7 @@ metadata:
   name: {{ sanitize .ComponentName }}
 spec:
   componentName: {{ .ProjectDirectoryImageBuildStepConfiguration.To }}
-  application: {{ sanitize .ApplicationName }}
+  application: {{ truncate ( sanitize .ApplicationName ) }}
   {{ $nudgesN := len .Nudges }} {{ if ne $nudgesN 0 }}
   build-nudges-ref:
     {{ range $nudge := .Nudges }}

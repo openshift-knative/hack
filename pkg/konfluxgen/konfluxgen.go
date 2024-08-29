@@ -171,7 +171,7 @@ func Generate(cfg Config) error {
 			}
 
 			applications[appKey][dockerfileComponentKey(cfg.ComponentNameFunc, c.ReleaseBuildConfiguration, ib)] = DockerfileApplicationConfig{
-				ApplicationName:           Truncate(Sanitize(cfg.ApplicationName)),
+				ApplicationName:           cfg.ApplicationName,
 				ComponentName:             Truncate(Sanitize(cfg.ComponentNameFunc(c.ReleaseBuildConfiguration, ib))),
 				ReleaseBuildConfiguration: c.ReleaseBuildConfiguration,
 				Path:                      c.Path,
