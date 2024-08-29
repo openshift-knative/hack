@@ -1,6 +1,6 @@
 # DO NOT EDIT! Generated Dockerfile for cmd/discover.
 ARG GO_BUILDER=registry.ci.openshift.org/openshift/release:rhel-8-release-golang-1.21-openshift-4.17
-ARG UBI8_MINIMAL=registry.access.redhat.com/ubi8/ubi-minimal
+ARG GO_RUNTIME=registry.access.redhat.com/ubi8/ubi-minimal
 ARG VERSION=main
 
 FROM $GO_BUILDER as builder
@@ -12,9 +12,9 @@ ENV GOEXPERIMENT=strictfipsruntime
 
 RUN go build -tags strictfipsruntime -o /usr/bin/main ./cmd/discover
 
-FROM $UBI8_MINIMAL
+FROM $GO_RUNTIME
 
-# Install the missing zoneinfo to ubi-minimal
+# Install zoneinfo.
 RUN microdnf install tzdata
 
 USER 65532
