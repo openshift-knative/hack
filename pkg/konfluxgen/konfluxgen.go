@@ -485,6 +485,8 @@ func replaceTaskImagesFromExisting(existingBytes, newBytes []byte) []byte {
 
 	dataStr := string(newBytes)
 
+	const pattern = "%s:%s@%s:%s"
+
 	existingRegex := regexp.MustCompile(`.*(quay.io/konflux-ci.*):(.*)@(.*):(.*)`)
 	existingMatches := existingRegex.FindAllStringSubmatch(string(existingBytes), -1)
 	for _, existingMatch := range existingMatches {
@@ -492,6 +494,8 @@ func replaceTaskImagesFromExisting(existingBytes, newBytes []byte) []byte {
 		existingVersion := existingMatch[2]
 		existingS := existingMatch[3]
 		existingSha := existingMatch[4]
+
+		log.Printf("Found new image "+pattern, existingImg, existingVersion, existingS, existingSha)
 
 		newRegex := regexp.MustCompile(fmt.Sprintf(`.*(%s):(.*)@(.*):(.*)`, existingImg))
 		newMatches := newRegex.FindAllStringSubmatch(dataStr, -1)
@@ -501,7 +505,8 @@ func replaceTaskImagesFromExisting(existingBytes, newBytes []byte) []byte {
 			s := match[3]
 			sha := match[4]
 
-			pattern := "%s:%s@%s:%s"
+			log.Printf("Replacing "+pattern+" with "+pattern, img, v, s, sha, existingImg, existingVersion, existingS, existingSha)
+
 			dataStr = strings.ReplaceAll(dataStr, fmt.Sprintf(pattern, img, v, s, sha), fmt.Sprintf(pattern, img, existingVersion, existingS, existingSha))
 		}
 	}
