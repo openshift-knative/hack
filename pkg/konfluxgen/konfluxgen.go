@@ -418,6 +418,11 @@ func replace(input interface{}, old, new string) string {
 }
 
 func removeAllExcept(dir string, excludedFiles ...string) error {
+	if _, err := os.Stat(dir); err != nil {
+		// directory does not exist anyhow
+		return nil
+	}
+
 	return filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
