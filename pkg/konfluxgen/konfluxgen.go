@@ -58,6 +58,8 @@ type Config struct {
 }
 
 func Generate(cfg Config) error {
+	fbcBuildPipelinePath := filepath.Join(cfg.PipelinesOutputPath, "fbc-builder.yaml")
+	containerBuildPipelinePath := filepath.Join(cfg.PipelinesOutputPath, "docker-build.yaml")
 
 	if cfg.ComponentNameFunc == nil {
 		cfg.ComponentNameFunc = func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
@@ -82,8 +84,8 @@ func Generate(cfg Config) error {
 		}
 	}
 
-	if err := os.RemoveAll(cfg.PipelinesOutputPath); err != nil {
-		return fmt.Errorf("failed to remove %q directory: %w", cfg.PipelinesOutputPath, err)
+	if err := removeAllExcept(cfg.PipelinesOutputPath, fbcBuildPipelinePath, containerBuildPipelinePath); err != nil {
+		return fmt.Errorf("failed to clean %q directory: %w", cfg.PipelinesOutputPath, err)
 	}
 
 	includes, err := toRegexp(cfg.Includes)
@@ -183,8 +185,6 @@ func Generate(cfg Config) error {
 		}
 	}
 
-	fbcBuildPipelinePath := filepath.Join(cfg.PipelinesOutputPath, "fbc-builder.yaml")
-	containerBuildPipelinePath := filepath.Join(cfg.PipelinesOutputPath, "docker-build.yaml")
 	if err := os.MkdirAll(filepath.Dir(containerBuildPipelinePath), 0777); err != nil {
 		return fmt.Errorf("failed to create directory for %q: %w", containerBuildPipelinePath, err)
 	}
@@ -415,6 +415,26 @@ func Truncate(input interface{}) string {
 func replace(input interface{}, old, new string) string {
 	in := fmt.Sprintf("%s", input)
 	return strings.ReplaceAll(in, old, new)
+}
+
+func removeAllExcept(dir string, excludedFiles ...string) error {
+	return filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if path == dir && len(excludedFiles) > 0 {
+			return nil
+		}
+
+		for _, excludedFile := range excludedFiles {
+			if path == excludedFile {
+				return nil
+			}
+		}
+
+		return os.RemoveAll(path)
+	})
 }
 
 const (
