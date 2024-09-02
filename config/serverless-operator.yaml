@@ -252,7 +252,7 @@ repositories:
           cluster_profile: gcp
           test:
           - as: operator-e2e
-            commands: make HA=false test-e2e-with-kafka
+            commands: make HA=false test-e2e-with-kafka-no-tracing
             from: serverless-source-image
             resources:
               limits:
