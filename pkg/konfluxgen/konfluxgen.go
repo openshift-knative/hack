@@ -39,6 +39,7 @@ var PipelineFBCBuildTemplate embed.FS
 type Config struct {
 	OpenShiftReleasePath string
 	ApplicationName      string
+	VersionLabel         string
 	ComponentNameFunc    func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string
 
 	Includes       []string
@@ -273,7 +274,7 @@ func Generate(cfg Config) error {
 	}
 
 	buf := &bytes.Buffer{}
-	if err := pipelineDockerBuildTemplate.Execute(buf, nil); err != nil {
+	if err := pipelineDockerBuildTemplate.Execute(buf, cfg); err != nil {
 		return fmt.Errorf("failed to execute template for pipeline run PR %q: %w", containerBuildPipelinePath, err)
 	}
 	if err := WriteFileReplacingNewerTaskImages(containerBuildPipelinePath, buf.Bytes(), 0777); err != nil {

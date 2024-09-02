@@ -17,6 +17,7 @@ type Metadata struct {
 type Project struct {
 	Tag         string `json:"tag" yaml:"tag"`
 	ImagePrefix string `json:"imagePrefix" yaml:"imagePrefix"`
+	Version     string `json:"version" yaml:"version"`
 }
 
 func ReadMetadataFile(path string) (*Metadata, error) {

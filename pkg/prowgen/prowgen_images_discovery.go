@@ -22,14 +22,17 @@ const (
 )
 
 var (
-	ciRegistryRegex = regexp.MustCompile(`registry\.(|svc\.)ci\.openshift\.org/\S+`)
-
-	ubiMinimal8Regex = regexp.MustCompile(`registry\.access\.redhat\.com/ubi8-minimal:latest$`)
-	ubiMinimal9Regex = regexp.MustCompile(`registry\.access\.redhat\.com/ubi9-minimal:latest$`)
+	ciRegistryRegex   = regexp.MustCompile(`registry\.(|svc\.)ci\.openshift\.org/\S+`)
+	ubiMinimal8Regex1 = regexp.MustCompile(`registry\.access\.redhat\.com/ubi8-minimal\S*`)
+	ubiMinimal8Regex2 = regexp.MustCompile(`registry\.access\.redhat\.com/ubi8/ubi-minimal\S*`)
+	ubiMinimal9Regex1 = regexp.MustCompile(`registry\.access\.redhat\.com/ubi9-minimal\S*`)
+	ubiMinimal9Regex2 = regexp.MustCompile(`registry\.access\.redhat\.com/ubi9/ubi-minimal\S*`)
 
 	imageOverrides = map[*regexp.Regexp]orgRepoTag{
-		ubiMinimal8Regex: {Org: "ocp", Repo: "ubi-minimal", Tag: "8"},
-		ubiMinimal9Regex: {Org: "ocp", Repo: "ubi-minimal", Tag: "9"},
+		ubiMinimal8Regex1: {Org: "ocp", Repo: "ubi-minimal", Tag: "8"},
+		ubiMinimal8Regex2: {Org: "ocp", Repo: "ubi-minimal", Tag: "8"},
+		ubiMinimal9Regex1: {Org: "ocp", Repo: "ubi-minimal", Tag: "9"},
+		ubiMinimal9Regex2: {Org: "ocp", Repo: "ubi-minimal", Tag: "9"},
 	}
 
 	defaultDockerfileIncludes = []string{
@@ -171,16 +174,9 @@ func discoverInputImages(dockerfile string) (map[string]cioperatorapi.ImageStrea
 		if imagePath == srcImage {
 			inputImages[srcImage] = cioperatorapi.ImageBuildInputs{As: []string{srcImage}}
 		} else {
-			orgRepoTag, err := orgRepoTagFromPullString(imagePath)
+			orgRepoTag, err := getOrgRepoTag(imagePath)
 			if err != nil {
-				return nil, nil, fmt.Errorf("failed to parse string %s as pullspec: %w", imagePath, err)
-			}
-
-			for k, override := range imageOverrides {
-				if k.FindString(imagePath) != "" {
-					orgRepoTag = override
-					break
-				}
+				return nil, nil, err
 			}
 
 			requiredBaseImages[orgRepoTag.String()] = cioperatorapi.ImageStreamTagReference{
@@ -195,7 +191,43 @@ func discoverInputImages(dockerfile string) (map[string]cioperatorapi.ImageStrea
 		}
 	}
 
+	// Also parse args and possibly generate inputs for any pull specs defined in args.
+	args, err := getArgsWithPullSpec(dockerfile)
+	if err != nil {
+		return nil, nil, fmt.Errorf("could not get args from dockerfile: %w", err)
+	}
+	for arg, imagePath := range args {
+		orgRepoTag, err := getOrgRepoTag(imagePath)
+		if err != nil {
+			return nil, nil, err
+		}
+		requiredBaseImages[orgRepoTag.String()] = cioperatorapi.ImageStreamTagReference{
+			Namespace: orgRepoTag.Org,
+			Name:      orgRepoTag.Repo,
+			Tag:       orgRepoTag.Tag,
+		}
+		inputs := inputImages[orgRepoTag.String()]
+		// Add the arg as variable formatted as $XYZ. This allows specifying "FROM $XYZ" in Dockerfile
+		// and CI operator will still be able to replace the image.
+		inputs.As = sets.NewString(inputs.As...).Insert(fmt.Sprintf("$%s", arg)).List()
+		inputImages[orgRepoTag.String()] = inputs
+	}
+
 	return requiredBaseImages, inputImages, nil
+}
+
+func getOrgRepoTag(imagePath string) (*orgRepoTag, error) {
+	orgRepoTag, err := orgRepoTagFromPullString(imagePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse string %s as pullspec: %w", imagePath, err)
+	}
+	for k, override := range imageOverrides {
+		if k.FindString(imagePath) != "" {
+			orgRepoTag = override
+			break
+		}
+	}
+	return &orgRepoTag, nil
 }
 
 func getPullStringsFromDockerfile(filename string) ([]string, error) {
@@ -213,18 +245,8 @@ func getPullStringsFromDockerfile(filename string) ([]string, error) {
 			continue
 		}
 
-		match := ciRegistryRegex.FindString(line)
-		if match != "" {
+		if match := matchKnownPullSpec(line); match != "" {
 			images = append(images, match)
-		}
-
-		// Also include any images for which there are overrides.
-		for r := range imageOverrides {
-			match := r.FindString(line)
-			if match != "" {
-				images = append(images, match)
-				break
-			}
 		}
 
 		if line == "FROM src" {
@@ -237,6 +259,48 @@ func getPullStringsFromDockerfile(filename string) ([]string, error) {
 	}
 
 	return images, nil
+}
+
+func getArgsWithPullSpec(filename string) (map[string]string, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open Dockerfile %s: %w", filename, err)
+	}
+	defer file.Close()
+
+	args := make(map[string]string)
+	scanner := bufio.NewScanner(file)
+	prefix := "ARG "
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, prefix) {
+			argVal := strings.TrimPrefix(line, prefix)
+			split := strings.Split(argVal, "=")
+			if len(split) == 2 {
+				if match := matchKnownPullSpec(split[1]); match != "" {
+					args[split[0]] = match
+				}
+			}
+		}
+	}
+
+	return args, nil
+}
+
+func matchKnownPullSpec(line string) string {
+	var match string
+	match = ciRegistryRegex.FindString(line)
+	if match != "" {
+		return match
+	}
+	// Also include any images for which there are overrides.
+	for r := range imageOverrides {
+		match := r.FindString(line)
+		if match != "" {
+			return match
+		}
+	}
+	return ""
 }
 
 func orgRepoTagFromPullString(pullString string) (orgRepoTag, error) {

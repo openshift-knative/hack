@@ -55,10 +55,7 @@ unit-tests:
 
 	go run ./cmd/generate/ --generators dockerfile \
 		--project-file pkg/project/testdata/project.yaml \
-		--excludes ".*vendor.*" \
-		--excludes ".*konflux-gen.*" \
-		--excludes ".*generate-ci-action.*" \
-		--excludes "openshift.*" \
+		--includes ".*discover.*" \
 		--images-from "hack" \
 		--images-from-url-format "https://raw.githubusercontent.com/openshift-knative/%s/%s/pkg/project/testdata/additional-images.yaml" \
 		--output "openshift/project/testoutput/openshift"
