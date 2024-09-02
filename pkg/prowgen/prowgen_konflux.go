@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/coreos/go-semver/semver"
+	"github.com/openshift-knative/hack/pkg/project"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
 
 	"github.com/openshift-knative/hack/pkg/konfluxgen"
@@ -48,6 +50,29 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						downstreamVersion = sobranch.FromUpstreamVersion(branchName)
 					}
 
+					// Checkout s-o to get the right release version from project.yaml (e.g. 1.34.1)
+					soRepo := Repository{Org: "openshift-knative", Repo: "serverless-operator"}
+					if err := GitMirror(ctx, soRepo); err != nil {
+						return err
+					}
+
+					versionLabel := downstreamVersion
+					if err := GitCheckout(ctx, soRepo, downstreamVersion); err != nil {
+						// For non-existent branches we keep going and use downstreamVersion for versionLabel.
+						if !strings.Contains(err.Error(), "did not match any file(s) known to git") {
+							return err
+						}
+					} else {
+						soProjectYamlPath := filepath.Join(soRepo.RepositoryDirectory(),
+							"olm-catalog", "serverless-operator", "project.yaml")
+						soMetadata, err := project.ReadMetadataFile(soProjectYamlPath)
+						if err != nil {
+							return err
+						}
+						versionLabel = soMetadata.Project.Version
+					}
+					log.Println("Version label:", versionLabel)
+
 					if err := GitMirror(ctx, r); err != nil {
 						return err
 					}
@@ -68,6 +93,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 					cfg := konfluxgen.Config{
 						OpenShiftReleasePath: openshiftRelease.RepositoryDirectory(),
 						ApplicationName:      fmt.Sprintf("serverless-operator %s", downstreamVersion),
+						VersionLabel:         versionLabel,
 						Includes: []string{
 							fmt.Sprintf("ci-operator/config/%s/.*%s.*.yaml", r.RepositoryDirectory(), branchName),
 						},
@@ -180,10 +206,17 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 				return fmt.Errorf("main or %s branch configuration not found for %q", branch, r.RepositoryDirectory())
 			}
 		}
+		soProjectYamlPath := filepath.Join(r.RepositoryDirectory(),
+			"olm-catalog", "serverless-operator", "project.yaml")
+		soMetadata, err := project.ReadMetadataFile(soProjectYamlPath)
+		if err != nil {
+			return err
+		}
 
 		cfg := konfluxgen.Config{
 			OpenShiftReleasePath: openshiftRelease.RepositoryDirectory(),
 			ApplicationName:      fmt.Sprintf("serverless-operator %s", release),
+			VersionLabel:         soMetadata.Project.Version,
 			ComponentNameFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
 				return fmt.Sprintf("%s-%s", ib.To, release)
 			},
