@@ -162,7 +162,7 @@ repositories:
           env:
             BASE_DOMAIN: cspilp.interop.ccitredhat.com
             HYPERSHIFT_BASE_DOMAIN: cspilp.interop.ccitredhat.com
-            HYPERSHIFT_NODE_COUNT: "5"
+            HYPERSHIFT_NODE_COUNT: "6"
           test:
           - as: operator-e2e
             commands: make USER_MANAGEMENT_ALLOWED=false test-e2e-with-kafka
