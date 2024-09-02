@@ -186,12 +186,17 @@ func main() {
 
 		for _, p := range mainPackagesPaths.List() {
 			projectName := strings.TrimPrefix(metadata.Project.ImagePrefix, "knative-")
+			var projectWithSep, projectDashCaseWithSep string
+			if projectName != "" {
+				projectWithSep = capitalize(projectName) + " "
+				projectDashCaseWithSep = projectName + "-"
+			}
 			d := map[string]interface{}{
 				"main":               p,
 				"builder":            builderImage,
 				"version":            metadata.Project.Tag,
-				"project":            capitalize(projectName),
-				"project_dashcase":   projectName,
+				"project":            projectWithSep,
+				"project_dashcase":   projectDashCaseWithSep,
 				"component":          capitalize(p),
 				"component_dashcase": dashcase(p),
 			}
