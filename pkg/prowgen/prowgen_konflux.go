@@ -59,7 +59,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 					versionLabel := downstreamVersion
 					if err := GitCheckout(ctx, soRepo, downstreamVersion); err != nil {
 						// For non-existent branches we keep going and use downstreamVersion for versionLabel.
-						if !strings.Contains(err.Error(), "did not match any file(s) known to git") {
+						if !strings.Contains(err.Error(), "failed to run git [checkout") {
 							return err
 						}
 					} else {
