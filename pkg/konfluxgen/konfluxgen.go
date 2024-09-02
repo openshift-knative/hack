@@ -172,7 +172,7 @@ func Generate(cfg Config) error {
 				}
 			}
 
-			applications[appKey][dockerfileComponentKey(cfg.ComponentNameFunc, c.ReleaseBuildConfiguration, ib)] = DockerfileApplicationConfig{
+			r := DockerfileApplicationConfig{
 				ApplicationName:           cfg.ApplicationName,
 				ComponentName:             Truncate(Sanitize(cfg.ComponentNameFunc(c.ReleaseBuildConfiguration, ib))),
 				ReleaseBuildConfiguration: c.ReleaseBuildConfiguration,
@@ -181,7 +181,9 @@ func Generate(cfg Config) error {
 				Nudges:                        append(cfg.Nudges, cfg.NudgesFunc(c.ReleaseBuildConfiguration, ib)...),
 				Pipeline:                      pipeline,
 				AdditionalTektonCELExpression: cfg.AdditionalTektonCELExpressionFunc(c.ReleaseBuildConfiguration, ib),
+				Tags:                          []string{"latest"},
 			}
+			applications[appKey][dockerfileComponentKey(cfg.ComponentNameFunc, c.ReleaseBuildConfiguration, ib)] = r
 		}
 	}
 
@@ -348,6 +350,8 @@ type DockerfileApplicationConfig struct {
 	AdditionalTektonCELExpression string
 	Event                         PipelineEvent
 	Pipeline                      Pipeline
+
+	Tags []string
 }
 
 type PipelineEvent string
