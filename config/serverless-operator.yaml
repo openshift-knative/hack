@@ -3,6 +3,8 @@ config:
     main:
       konflux:
         enabled: true
+        excludes:
+          - ".*rosa.*"
         fbcImages:
         - .*serverless-index.*
       openShiftVersions:
