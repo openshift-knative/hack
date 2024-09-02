@@ -39,7 +39,7 @@ var PipelineFBCBuildTemplate embed.FS
 type Config struct {
 	OpenShiftReleasePath string
 	ApplicationName      string
-	VersionLabel         string
+	BuildArgs            []string
 	ComponentNameFunc    func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string
 
 	Includes       []string

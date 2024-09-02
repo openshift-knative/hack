@@ -11,13 +11,19 @@ import (
 // Every project should have a file, usually called
 // project.yaml that contains such metadata.
 type Metadata struct {
-	Project Project `json:"project" yaml:"project"`
+	Project        Project `json:"project" yaml:"project"`
+	ImageOverrides []Image `json:"imageOverrides" yaml:"imageOverrides"`
 }
 
 type Project struct {
 	Tag         string `json:"tag" yaml:"tag"`
 	ImagePrefix string `json:"imagePrefix" yaml:"imagePrefix"`
 	Version     string `json:"version" yaml:"version"`
+}
+
+type Image struct {
+	Name     string `json:"name" yaml:"name"`
+	PullSpec string `json:"pullSpec" yaml:"pullSpec"`
 }
 
 func ReadMetadataFile(path string) (*Metadata, error) {

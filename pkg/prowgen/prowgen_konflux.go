@@ -57,6 +57,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 					}
 
 					versionLabel := downstreamVersion
+					var buildArgs []string
 					if err := GitCheckout(ctx, soRepo, downstreamVersion); err != nil {
 						// For non-existent branches we keep going and use downstreamVersion for versionLabel.
 						if !strings.Contains(err.Error(), "failed to run git [checkout") {
@@ -70,8 +71,12 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 							return err
 						}
 						versionLabel = soMetadata.Project.Version
+						for _, img := range soMetadata.ImageOverrides {
+							buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", img.Name, img.PullSpec))
+						}
 					}
 					log.Println("Version label:", versionLabel)
+					buildArgs = append(buildArgs, fmt.Sprintf("VERSION=%s", versionLabel))
 
 					if err := GitMirror(ctx, r); err != nil {
 						return err
@@ -93,7 +98,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 					cfg := konfluxgen.Config{
 						OpenShiftReleasePath: openshiftRelease.RepositoryDirectory(),
 						ApplicationName:      fmt.Sprintf("serverless-operator %s", downstreamVersion),
-						VersionLabel:         versionLabel,
+						BuildArgs:            buildArgs,
 						Includes: []string{
 							fmt.Sprintf("ci-operator/config/%s/.*%s.*.yaml", r.RepositoryDirectory(), branchName),
 						},
@@ -206,17 +211,22 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 				return fmt.Errorf("main or %s branch configuration not found for %q", branch, r.RepositoryDirectory())
 			}
 		}
+
 		soProjectYamlPath := filepath.Join(r.RepositoryDirectory(),
 			"olm-catalog", "serverless-operator", "project.yaml")
 		soMetadata, err := project.ReadMetadataFile(soProjectYamlPath)
 		if err != nil {
 			return err
 		}
+		buildArgs := []string{fmt.Sprintf("VERSION=%s", soMetadata.Project.Version)}
+		for _, img := range soMetadata.ImageOverrides {
+			buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", img.Name, img.PullSpec))
+		}
 
 		cfg := konfluxgen.Config{
 			OpenShiftReleasePath: openshiftRelease.RepositoryDirectory(),
 			ApplicationName:      fmt.Sprintf("serverless-operator %s", release),
-			VersionLabel:         soMetadata.Project.Version,
+			BuildArgs:            buildArgs,
 			ComponentNameFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
 				return fmt.Sprintf("%s-%s", ib.To, release)
 			},
