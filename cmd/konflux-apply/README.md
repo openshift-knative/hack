@@ -2,7 +2,7 @@
 
 The Konflux manifests are applied automatically via the [konflux-apply](../../.github/workflows/apply-konflux-manifests.yaml) Github Workflow.
 
-For this workflow, we use a token for Konflux setup as described in [the docs](https://gitlab.cee.redhat.com/konflux/docs/users/-/blob/main/topics/getting-started/getting-access.md#logging-to-the-internal-cluster-with-a-token), with the following service account, role & rolebindings:
+For this workflow, we use a token for Konflux setup as described in [the docs](https://gitlab.cee.redhat.com/konflux/docs/users/-/blob/main/topics/getting-started/getting-access.md#logging-to-the-internal-cluster-with-a-token), with the following service account, role & rolebindings (those manifest can be found in [./manifests](./manifests) too):
 
 1. Service account `gh-action`:
     ```
