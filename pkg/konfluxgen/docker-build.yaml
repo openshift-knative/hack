@@ -108,6 +108,10 @@ spec:
     description: Path to a file with build arguments for buildah, see https://www.mankier.com/1/buildah-build#--build-arg-file
     name: build-args-file
     type: string
+  - default: []
+    description: Additional image tags
+    name: additional-tags
+    type: array
   results:
   - description: ""
     name: IMAGE_URL
@@ -400,6 +404,8 @@ spec:
     params:
     - name: IMAGE
       value: $(tasks.build-container.results.IMAGE_URL)
+    - name: ADDITIONAL_TAGS
+      value: $(params.additional-tags)
     runAfter:
     - build-container
     taskRef:

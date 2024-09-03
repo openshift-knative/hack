@@ -93,6 +93,10 @@ spec:
     description: Build a source image.
     name: build-source-image
     type: string
+  - default: []
+    description: Additional image tags
+    name: additional-tags
+    type: array
   results:
   - description: ""
     name: IMAGE_URL
@@ -232,6 +236,8 @@ spec:
     params:
     - name: IMAGE
       value: $(tasks.build-container.results.IMAGE_URL)
+    - name: ADDITIONAL_TAGS
+      value: $(params.additional-tags)
     runAfter:
     - build-container
     taskRef:

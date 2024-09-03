@@ -35,6 +35,10 @@ spec:
     {{{- end }}}
     - name: revision
       value: '{{revision}}'
+    {{{- if eq .Event "push" }}}
+    - name: additional-tags
+      value: [{{{ range $tag := .Tags }}} {{{ $tag }}}, {{{ end }}}]
+    {{{- end }}}
   pipelineRef:
     name: {{{ .Pipeline }}}
   taskRunTemplate: {}
