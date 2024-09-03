@@ -3,6 +3,9 @@ on:
   schedule:
     - cron: "0 6 * * *" # Daily at 06:00.
   workflow_dispatch: # Manual workflow trigger
+  push:
+    paths:
+      - ".konflux/**"
 defaults:
   run:
     shell: bash
