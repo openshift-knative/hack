@@ -1,0 +1,32 @@
+name: Apply Konflux Manifests
+on:
+  schedule:
+    - cron: "0 6 * * *" # Daily at 06:00.
+  workflow_dispatch: # Manual workflow trigger
+defaults:
+  run:
+    shell: bash
+jobs:
+  konflux-apply:
+    name: Apply Konflux Manifests
+    runs-on: ubuntu-latest
+    env:
+      GOPATH: ${{ github.workspace }}
+    steps:
+      - name: Checkout openshift-knative/hack
+        uses: actions/checkout@v4
+
+      - name: Setup Golang
+        uses: actions/setup-go@v5
+
+      - name: Setup kubeconfig
+        env:
+          KONFLUX_TOKEN: ${{ secrets.KONFLUX_SA_TOKEN }}
+        run: |
+          kubectl config set-credentials konflux-sa --token "$KONFLUX_TOKEN"
+          kubectl config set-cluster konflux --server=https://api.stone-prd-rh01.pg1f.p1.openshiftapps.com:6443
+          kubectl config set-context konflux-sa@konflux --user=konflux-sa --namespace=ocp-serverless-tenant --cluster=konflux
+          kubectl config use-context konflux-sa@konflux
+
+      - name: Apply Manifests
+        run: make konflux-apply
