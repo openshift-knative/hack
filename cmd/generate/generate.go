@@ -60,6 +60,7 @@ func main() {
 		registryImageFmt             string
 		imagesFromRepositories       []string
 		imagesFromRepositoriesURLFmt string
+		additionalPackages           []string
 	)
 
 	defaultIncludes := []string{
@@ -85,6 +86,7 @@ func main() {
 	pflag.StringVar(&registryImageFmt, "registry-image-fmt", "registry.ci.openshift.org/openshift/%s:%s", "Container registry image format")
 	pflag.StringArrayVar(&imagesFromRepositories, "images-from", nil, "Additional image references to be pulled from other midstream repositories matching the tag in project.yaml")
 	pflag.StringVar(&imagesFromRepositoriesURLFmt, "images-from-url-format", "https://raw.githubusercontent.com/openshift-knative/%s/%s/openshift/images.yaml", "Additional images to be pulled from other midstream repositories matching the tag in project.yaml")
+	pflag.StringArrayVar(&additionalPackages, "additional-packages", nil, "Additional packages to be installed in the image")
 	pflag.Parse()
 
 	if rootDir == "" {
@@ -192,13 +194,14 @@ func main() {
 				projectDashCaseWithSep = projectName + "-"
 			}
 			d := map[string]interface{}{
-				"main":               p,
-				"builder":            builderImage,
-				"version":            metadata.Project.Tag,
-				"project":            projectWithSep,
-				"project_dashcase":   projectDashCaseWithSep,
-				"component":          capitalize(p),
-				"component_dashcase": dashcase(p),
+				"main":                p,
+				"builder":             builderImage,
+				"version":             metadata.Project.Tag,
+				"project":             projectWithSep,
+				"project_dashcase":    projectDashCaseWithSep,
+				"component":           capitalize(p),
+				"component_dashcase":  dashcase(p),
+				"additional_packages": strings.Join(additionalPackages, " "),
 			}
 
 			t, err := template.ParseFS(DockerfileTemplate, "*.template")
