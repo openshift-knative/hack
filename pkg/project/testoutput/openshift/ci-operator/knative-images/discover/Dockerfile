@@ -16,7 +16,7 @@ FROM $GO_RUNTIME
 ARG VERSION=main
 
 # Install zoneinfo.
-RUN microdnf install tzdata 
+RUN microdnf install tzdata
 
 USER 65532
 
