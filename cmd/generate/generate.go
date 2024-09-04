@@ -61,6 +61,7 @@ func main() {
 		imagesFromRepositories       []string
 		imagesFromRepositoriesURLFmt string
 		additionalPackages           []string
+		symLinkNames                 []string
 	)
 
 	defaultIncludes := []string{
@@ -87,6 +88,7 @@ func main() {
 	pflag.StringArrayVar(&imagesFromRepositories, "images-from", nil, "Additional image references to be pulled from other midstream repositories matching the tag in project.yaml")
 	pflag.StringVar(&imagesFromRepositoriesURLFmt, "images-from-url-format", "https://raw.githubusercontent.com/openshift-knative/%s/%s/openshift/images.yaml", "Additional images to be pulled from other midstream repositories matching the tag in project.yaml")
 	pflag.StringArrayVar(&additionalPackages, "additional-packages", nil, "Additional packages to be installed in the image")
+	pflag.StringArrayVar(&symLinkNames, "sym-link-names", nil, "Symbolic link names to the binary")
 	pflag.Parse()
 
 	if rootDir == "" {
@@ -202,6 +204,18 @@ func main() {
 				"component":           capitalize(p),
 				"component_dashcase":  dashcase(p),
 				"additional_packages": strings.Join(additionalPackages, " "),
+			}
+
+			if len(symLinkNames) > 0 {
+				sb := strings.Builder{}
+				for i, name := range symLinkNames {
+					sb.WriteString(fmt.Sprintf("ln -s /usr/bin/main %s", name))
+					if i < len(symLinkNames)-1 {
+						sb.WriteString(" && \\\n\t")
+					}
+				}
+
+				d["sym_links"] = sb.String()
 			}
 
 			t, err := template.ParseFS(DockerfileTemplate, "*.template")
