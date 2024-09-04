@@ -19,6 +19,9 @@ jobs:
     env:
       GOPATH: ${{ github.workspace }}
     steps:
+      - uses: tektoncd/actions/setup-tektoncd-cli@main
+        with:
+          version: latest
 
       - name: Checkout openshift-knative/hack
         uses: actions/checkout@v3
@@ -39,6 +42,12 @@ jobs:
         working-directory: ./src/github.com/openshift-knative/hack
         run: make discover-branches ARGS="--config config/"
 
+      - name: Update Konflux pipelines
+        working-directory: ./src/github.com/openshift-knative/hack
+        run: |
+          tkn bundle list quay.io/konflux-ci/tekton-catalog/pipeline-docker-build:devel -o=yaml > pkg/konfluxgen/docker-build.yaml
+          tkn bundle list quay.io/konflux-ci/tekton-catalog/pipeline-fbc-builder:devel -o=yaml > pkg/konfluxgen/fbc-builder.yaml
+
       - name: Create Discovery Pull Request
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main'
         uses: peter-evans/create-pull-request@v5
@@ -47,8 +56,8 @@ jobs:
           path: ./src/github.com/openshift-knative/hack
           base: main
           branch: discover-serverless-ci
-          title: "Add new midstream branches"
-          commit-message: "Discover new branches"
+          title: "Add new midstream branches and update pipelines"
+          commit-message: "Discover new branches and update pipelines"
           delete-branch: true
           body: |
-            Discover new branches using openshift-knative/hack.
+            Discover new branches and update Konflux pipelines using openshift-knative/hack.
