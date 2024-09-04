@@ -183,6 +183,7 @@ func Generate(cfg Config) error {
 				Pipeline:                      pipeline,
 				AdditionalTektonCELExpression: cfg.AdditionalTektonCELExpressionFunc(c.ReleaseBuildConfiguration, ib),
 				Tags:                          []string{"latest"},
+				BuildArgs:                     cfg.BuildArgs,
 			}
 			applications[appKey][dockerfileComponentKey(cfg.ComponentNameFunc, c.ReleaseBuildConfiguration, ib)] = r
 		}
@@ -352,7 +353,8 @@ type DockerfileApplicationConfig struct {
 	Event                         PipelineEvent
 	Pipeline                      Pipeline
 
-	Tags []string
+	Tags      []string
+	BuildArgs []string
 }
 
 type PipelineEvent string
