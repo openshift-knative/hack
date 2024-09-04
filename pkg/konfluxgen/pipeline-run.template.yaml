@@ -22,6 +22,8 @@ spec:
   params:
     - name: dockerfile
       value: {{{ .ProjectDirectoryImageBuildStepConfiguration.ProjectDirectoryImageBuildInputs.DockerfilePath }}}
+    - name: build-args
+      value: [{{{ range $arg := .BuildArgs }}} {{{ $arg }}}, {{{ end }}}]
     - name: git-url
       value: '{{source_url}}'
     {{{- if eq .Event "pull_request" }}}

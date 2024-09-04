@@ -1,0 +1,53 @@
+{
+  "definitions": {
+    "v1.Pipeline": {
+      "properties": {
+        "apiVersion": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "spec": {
+          "type": "object",
+          "properties": {
+            "tasks": {
+              "type": "array",
+              "x-kubernetes-patch-merge-key": "name",
+              "x-kubernetes-patch-strategy": "merge",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "params": {
+                    "type": "array",
+                    "x-kubernetes-patch-merge-key": "name",
+                    "x-kubernetes-patch-strategy": "merge"
+                  }
+                }
+              }
+            },
+            "params": {
+              "type": "array",
+              "x-kubernetes-patch-merge-key": "name",
+              "x-kubernetes-patch-strategy": "merge",
+              "items": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      },
+      "type": "object",
+      "x-kubernetes-group-version-kind": [
+        {
+          "group": "tekton.dev",
+          "kind": "Pipeline",
+          "version": "v1"
+        }
+      ]
+    }
+  }
+}

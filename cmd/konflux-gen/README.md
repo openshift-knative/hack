@@ -25,12 +25,3 @@ go run ./cmd/konflux-gen/main.go --openshift-release-path openshift/release \
   --output konflux-gen/out \
   --pipeline-output konflux-gen/out/.tekton
 ```
-
-## Updating Docker build pipeline
-
-[//]: # (TODO automate this step)
-
-```shell
-tkn bundle list quay.io/konflux-ci/tekton-catalog/pipeline-docker-build:devel -o=yaml > pkg/konfluxgen/docker-build.yaml
-tkn bundle list quay.io/konflux-ci/tekton-catalog/pipeline-fbc-builder:devel -o=yaml > pkg/konfluxgen/fbc-builder.yaml
-```

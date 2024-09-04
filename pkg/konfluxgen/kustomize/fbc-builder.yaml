@@ -45,10 +45,6 @@ spec:
     - name: workspace
       workspace: workspace
   params:
-  - default: []
-    description: Additional image tags
-    name: additional-tags
-    type: array
   - description: Source Repository URL
     name: git-url
     type: string
@@ -111,23 +107,6 @@ spec:
     name: CHAINS-GIT_COMMIT
     value: $(tasks.clone-repository.results.commit)
   tasks:
-  - name: apply-tags
-    params:
-    - name: ADDITIONAL_TAGS
-      value: $(params.additional-tags[*])
-    - name: IMAGE
-      value: $(tasks.build-image-index.results.IMAGE_URL)
-    runAfter:
-    - build-image-index
-    taskRef:
-      params:
-      - name: name
-        value: apply-tags
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-apply-tags:0.1@sha256:e6beb161ed59d7be26317da03e172137b31b26648d3e139558e9a457bc56caff
-      - name: kind
-        value: task
-      resolver: bundles
   - name: init
     params:
     - name: image-url
@@ -256,6 +235,21 @@ spec:
       operator: in
       values:
       - "false"
+  - name: apply-tags
+    params:
+    - name: IMAGE
+      value: $(tasks.build-image-index.results.IMAGE_URL)
+    runAfter:
+    - build-image-index
+    taskRef:
+      params:
+      - name: name
+        value: apply-tags
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-apply-tags:0.1@sha256:e6beb161ed59d7be26317da03e172137b31b26648d3e139558e9a457bc56caff
+      - name: kind
+        value: task
+      resolver: bundles
   - name: inspect-image
     params:
     - name: IMAGE_URL
