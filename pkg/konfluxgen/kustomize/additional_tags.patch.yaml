@@ -1,0 +1,15 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: docker-build
+spec:
+  params:
+  - name: additional-tags
+    description: Additional image tags
+    default: []
+    type: array
+  tasks:
+    - name: apply-tags
+      params:
+        - name: ADDITIONAL_TAGS
+          value: $(params.additional-tags[*])

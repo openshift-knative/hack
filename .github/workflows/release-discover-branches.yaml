@@ -19,10 +19,6 @@ jobs:
     env:
       GOPATH: ${{ github.workspace }}
     steps:
-      - uses: tektoncd/actions/setup-tektoncd-cli@main
-        with:
-          version: latest
-
       - name: Checkout openshift-knative/hack
         uses: actions/checkout@v3
         with:
@@ -32,6 +28,13 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: ./src/github.com/openshift-knative/hack/go.mod
+
+      - uses: tektoncd/actions/setup-tektoncd-cli@main
+        with:
+          version: latest
+
+      - name: Install Kustomize
+        run: GO111MODULE=on go install sigs.k8s.io/kustomize/kustomize/v5@latest
 
       - name: Configure Git user
         run: |
@@ -44,9 +47,7 @@ jobs:
 
       - name: Update Konflux pipelines
         working-directory: ./src/github.com/openshift-knative/hack
-        run: |
-          tkn bundle list quay.io/konflux-ci/tekton-catalog/pipeline-docker-build:devel -o=yaml > pkg/konfluxgen/docker-build.yaml
-          tkn bundle list quay.io/konflux-ci/tekton-catalog/pipeline-fbc-builder:devel -o=yaml > pkg/konfluxgen/fbc-builder.yaml
+        run: make konflux-update-pipelines
 
       - name: Create Discovery Pull Request
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main'
