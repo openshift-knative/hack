@@ -21,9 +21,9 @@ USER 65532
 
 COPY --from=builder /usr/bin/main /usr/bin/main
 
-{{- if .sym_links }}
+{{- if .post_build_instructions }}
 
-CMD {{ .sym_links }}
+{{ .post_build_instructions }}
 {{- end }}
 
 LABEL \

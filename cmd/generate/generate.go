@@ -208,6 +208,7 @@ func main() {
 
 			if len(symLinkNames) > 0 {
 				sb := strings.Builder{}
+				sb.WriteString("RUN ")
 				for i, name := range symLinkNames {
 					sb.WriteString(fmt.Sprintf("ln -s /usr/bin/main %s", name))
 					if i < len(symLinkNames)-1 {
@@ -215,7 +216,7 @@ func main() {
 					}
 				}
 
-				d["sym_links"] = sb.String()
+				d["post_build_instructions"] = sb.String()
 			}
 
 			t, err := template.ParseFS(DockerfileTemplate, "*.template")
