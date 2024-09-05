@@ -21,6 +21,11 @@ USER 65532
 
 COPY --from=builder /usr/bin/main /usr/bin/main
 
+{{- if .post_build_instructions }}
+
+{{ .post_build_instructions }}
+{{- end }}
+
 LABEL \
       com.redhat.component="openshift-serverless-1-{{.project_dashcase}}{{.component_dashcase}}-rhel8-container" \
       name="openshift-serverless-1/{{.project_dashcase}}{{.component_dashcase}}-rhel8" \
