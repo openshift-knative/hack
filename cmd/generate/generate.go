@@ -28,6 +28,7 @@ import (
 
 const (
 	GenerateDockerfileOption = "dockerfile"
+	defaultAppFilename       = "main"
 )
 
 //go:embed Dockerfile.template
@@ -57,6 +58,7 @@ func main() {
 		dockerfilesSourceDir         string
 		projectFilePath              string
 		dockerfileImageBuilderFmt    string
+		appFileFmt                   string
 		registryImageFmt             string
 		imagesFromRepositories       []string
 		imagesFromRepositoriesURLFmt string
@@ -84,6 +86,7 @@ func main() {
 	pflag.StringVar(&output, "output", filepath.Join(wd, "openshift"), "Output directory")
 	pflag.StringVar(&projectFilePath, "project-file", filepath.Join(wd, "openshift", "project.yaml"), "Project metadata file path")
 	pflag.StringVar(&dockerfileImageBuilderFmt, "dockerfile-image-builder-fmt", "registry.ci.openshift.org/openshift/release:rhel-8-release-golang-%s-openshift-4.17", "Dockerfile image builder format")
+	pflag.StringVar(&appFileFmt, "app-file-fmt", "/usr/bin/%s", "Target application binary path format")
 	pflag.StringVar(&registryImageFmt, "registry-image-fmt", "registry.ci.openshift.org/openshift/%s:%s", "Container registry image format")
 	pflag.StringArrayVar(&imagesFromRepositories, "images-from", nil, "Additional image references to be pulled from other midstream repositories matching the tag in project.yaml")
 	pflag.StringVar(&imagesFromRepositoriesURLFmt, "images-from-url-format", "https://raw.githubusercontent.com/openshift-knative/%s/%s/openshift/images.yaml", "Additional images to be pulled from other midstream repositories matching the tag in project.yaml")
@@ -189,6 +192,7 @@ func main() {
 		saveDockerfile(d, DockerfileSourceImageTemplate, output, dockerfilesSourceDir)
 
 		for _, p := range mainPackagesPaths.List() {
+			appFile := fmt.Sprintf(appFileFmt, appFilename(p))
 			projectName := strings.TrimPrefix(metadata.Project.ImagePrefix, "knative-")
 			var projectWithSep, projectDashCaseWithSep string
 			if projectName != "" {
@@ -197,6 +201,7 @@ func main() {
 			}
 			d := map[string]interface{}{
 				"main":                p,
+				"app_file":            appFile,
 				"builder":             builderImage,
 				"version":             metadata.Project.Tag,
 				"project":             projectWithSep,
@@ -210,7 +215,7 @@ func main() {
 				sb := strings.Builder{}
 				sb.WriteString("RUN ")
 				for i, name := range symLinkNames {
-					sb.WriteString(fmt.Sprintf("ln -s /usr/bin/main %s", name))
+					sb.WriteString(fmt.Sprintf("ln -s %s %s", appFile, name))
 					if i < len(symLinkNames)-1 {
 						sb.WriteString(" && \\\n\t")
 					}
@@ -279,6 +284,18 @@ func main() {
 			log.Fatal("Write images mapping file ", err)
 		}
 	}
+}
+
+func appFilename(importpath string) string {
+	base := filepath.Base(importpath)
+
+	// If we fail to determine a good name from the importpath then use a
+	// safe default.
+	if base == "." || base == string(filepath.Separator) {
+		return defaultAppFilename
+	}
+
+	return base
 }
 
 func dashcase(path string) string {
