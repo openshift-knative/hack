@@ -1,16 +1,13 @@
 # DO NOT EDIT! Generated Dockerfile.
 
+FROM registry.ci.openshift.org/ocp/4.17:tools as tools
+
 # Dockerfile to bootstrap build and test in openshift-ci
 FROM registry.ci.openshift.org/openshift/release:rhel-8-release-golang-1.21-openshift-4.17 as builder
 
-RUN echo "[kubernetes]" >> /etc/yum.repos.d/kubernetes.repo && \
-    echo "name=Kubernetes" >> /etc/yum.repos.d/kubernetes.repo && \
-    echo "baseurl=https://pkgs.k8s.io/core:/stable:/v1.29/rpm/" >> /etc/yum.repos.d/kubernetes.repo && \
-    echo "enabled=1" >> /etc/yum.repos.d/kubernetes.repo && \
-    echo "gpgcheck=1" >> /etc/yum.repos.d/kubernetes.repo && \
-    echo "gpgkey=https://pkgs.k8s.io/core:/stable:/v1.29/rpm/repodata/repomd.xml.key" >> /etc/yum.repos.d/kubernetes.repo
+COPY --from=tools /usr/bin/oc /usr/bin/kubectl /usr/bin/
 
-RUN yum install -y kubectl httpd-tools
+RUN yum install -y httpd-tools
 
 RUN wget https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && \
     chmod 700 ./get-helm-3
