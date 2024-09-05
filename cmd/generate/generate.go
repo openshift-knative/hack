@@ -215,7 +215,7 @@ func main() {
 				sb := strings.Builder{}
 				sb.WriteString("RUN ")
 				for i, name := range symLinkNames {
-					sb.WriteString(fmt.Sprintf("ln -s /usr/bin/main %s", name))
+					sb.WriteString(fmt.Sprintf("ln -s %s %s", appFile, name))
 					if i < len(symLinkNames)-1 {
 						sb.WriteString(" && \\\n\t")
 					}
