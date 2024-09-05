@@ -4,6 +4,12 @@ ARG GO_RUNTIME=registry.access.redhat.com/ubi8/ubi-minimal
 
 FROM $GO_BUILDER as builder
 
+{{- if eq .use_vendor false }}
+
+COPY go.mod go.sum ./
+RUN go mod download -x
+{{- end }}
+
 COPY . .
 
 ENV CGO_ENABLED=1

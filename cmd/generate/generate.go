@@ -64,6 +64,7 @@ func main() {
 		imagesFromRepositoriesURLFmt string
 		additionalPackages           []string
 		symLinkNames                 []string
+		useVendor                    bool
 	)
 
 	defaultIncludes := []string{
@@ -92,6 +93,7 @@ func main() {
 	pflag.StringVar(&imagesFromRepositoriesURLFmt, "images-from-url-format", "https://raw.githubusercontent.com/openshift-knative/%s/%s/openshift/images.yaml", "Additional images to be pulled from other midstream repositories matching the tag in project.yaml")
 	pflag.StringArrayVar(&additionalPackages, "additional-packages", nil, "Additional packages to be installed in the image")
 	pflag.StringArrayVar(&symLinkNames, "sym-link-names", nil, "Symbolic link names to the binary")
+	pflag.BoolVar(&useVendor, "use-vendor", true, "Use vendor folder")
 	pflag.Parse()
 
 	if rootDir == "" {
@@ -209,6 +211,7 @@ func main() {
 				"component":           capitalize(p),
 				"component_dashcase":  dashcase(p),
 				"additional_packages": strings.Join(additionalPackages, " "),
+				"use_vendor":          useVendor,
 			}
 
 			if len(symLinkNames) > 0 {
