@@ -56,6 +56,8 @@ type Config struct {
 
 	NudgesFunc func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) []string
 	Nudges     []string
+
+	Tags []string
 }
 
 func Generate(cfg Config) error {
@@ -182,7 +184,7 @@ func Generate(cfg Config) error {
 				Nudges:                        append(cfg.Nudges, cfg.NudgesFunc(c.ReleaseBuildConfiguration, ib)...),
 				Pipeline:                      pipeline,
 				AdditionalTektonCELExpression: cfg.AdditionalTektonCELExpressionFunc(c.ReleaseBuildConfiguration, ib),
-				Tags:                          []string{"latest"},
+				Tags:                          append(cfg.Tags, "latest"),
 				BuildArgs:                     cfg.BuildArgs,
 			}
 			applications[appKey][dockerfileComponentKey(cfg.ComponentNameFunc, c.ReleaseBuildConfiguration, ib)] = r

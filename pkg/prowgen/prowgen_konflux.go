@@ -9,8 +9,9 @@ import (
 	"strings"
 
 	"github.com/coreos/go-semver/semver"
-	"github.com/openshift-knative/hack/pkg/project"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
+
+	"github.com/openshift-knative/hack/pkg/project"
 
 	"github.com/openshift-knative/hack/pkg/konfluxgen"
 	"github.com/openshift-knative/hack/pkg/sobranch"
@@ -108,6 +109,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						ResourcesOutputPath: fmt.Sprintf("%s/.konflux", r.RepositoryDirectory()),
 						PipelinesOutputPath: fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
 						Nudges:              nudges,
+						Tags:                []string{versionLabel},
 					}
 					if len(cfg.ExcludesImages) == 0 {
 						cfg.ExcludesImages = []string{
