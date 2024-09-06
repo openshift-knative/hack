@@ -17,14 +17,14 @@ ARG VERSION={{.version}}
 
 RUN microdnf install tzdata {{.additional_packages}}
 
-USER 65532
-
 COPY --from=builder /usr/bin/main {{.app_file}}
 
 {{- if .post_build_instructions }}
 
 {{ .post_build_instructions }}
 {{- end }}
+
+USER 65532
 
 LABEL \
       com.redhat.component="openshift-serverless-1-{{.project_dashcase}}{{.component_dashcase}}-rhel8-container" \
