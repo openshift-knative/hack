@@ -19,11 +19,6 @@ RUN microdnf install tzdata {{.additional_packages}}
 
 COPY --from=builder /usr/bin/main {{.app_file}}
 
-{{- if .post_build_instructions }}
-
-{{ .post_build_instructions }}
-{{- end }}
-
 USER 65532
 
 LABEL \

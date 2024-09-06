@@ -27,17 +27,22 @@ import (
 )
 
 const (
-	GenerateDockerfileOption = "dockerfile"
-	defaultAppFilename       = "main"
+	GenerateDockerfileOption       = "dockerfile"
+	defaultAppFilename             = "main"
+	defaultDockerfileTemplateName  = "default"
+	funcUtilDockerfileTemplateName = "func-util"
 )
 
-//go:embed Dockerfile.template
-var DockerfileTemplate embed.FS
+//go:embed dockerfile-templates/DefaultDockerfile.template
+var DockerfileDefaultTemplate embed.FS
 
-//go:embed BuildImageDockerfile.template
+//go:embed dockerfile-templates/FuncUtilDockerfile.template
+var DockerfileFuncUtilTemplate embed.FS
+
+//go:embed dockerfile-templates/BuildImageDockerfile.template
 var DockerfileBuildImageTemplate embed.FS
 
-//go:embed SourceImageDockerfile.template
+//go:embed dockerfile-templates/SourceImageDockerfile.template
 var DockerfileSourceImageTemplate embed.FS
 
 func main() {
@@ -63,7 +68,7 @@ func main() {
 		imagesFromRepositories       []string
 		imagesFromRepositoriesURLFmt string
 		additionalPackages           []string
-		symLinkNames                 []string
+		templateName                 string
 	)
 
 	defaultIncludes := []string{
@@ -91,7 +96,7 @@ func main() {
 	pflag.StringArrayVar(&imagesFromRepositories, "images-from", nil, "Additional image references to be pulled from other midstream repositories matching the tag in project.yaml")
 	pflag.StringVar(&imagesFromRepositoriesURLFmt, "images-from-url-format", "https://raw.githubusercontent.com/openshift-knative/%s/%s/openshift/images.yaml", "Additional images to be pulled from other midstream repositories matching the tag in project.yaml")
 	pflag.StringArrayVar(&additionalPackages, "additional-packages", nil, "Additional packages to be installed in the image")
-	pflag.StringArrayVar(&symLinkNames, "sym-link-names", nil, "Symbolic link names to the binary")
+	pflag.StringVar(&templateName, "template-name", defaultDockerfileTemplateName, fmt.Sprintf("Dockerfile template name to use. Supported values are [%s, %s]", defaultDockerfileTemplateName, funcUtilDockerfileTemplateName))
 	pflag.Parse()
 
 	if rootDir == "" {
@@ -211,20 +216,17 @@ func main() {
 				"additional_packages": strings.Join(additionalPackages, " "),
 			}
 
-			if len(symLinkNames) > 0 {
-				sb := strings.Builder{}
-				sb.WriteString("RUN ")
-				for i, name := range symLinkNames {
-					sb.WriteString(fmt.Sprintf("ln -s %s %s", appFile, name))
-					if i < len(symLinkNames)-1 {
-						sb.WriteString(" && \\\n\t")
-					}
-				}
-
-				d["post_build_instructions"] = sb.String()
+			var DockerfileTemplate embed.FS
+			switch templateName {
+			case defaultDockerfileTemplateName:
+				DockerfileTemplate = DockerfileDefaultTemplate
+			case funcUtilDockerfileTemplateName:
+				DockerfileTemplate = DockerfileFuncUtilTemplate
+			default:
+				log.Fatal("Unknown template name: " + templateName)
 			}
 
-			t, err := template.ParseFS(DockerfileTemplate, "*.template")
+			t, err := template.ParseFS(DockerfileTemplate, "dockerfile-templates/*.template")
 			if err != nil {
 				log.Fatal("Failed creating template ", err)
 			}
@@ -365,7 +367,7 @@ func downloadImagesFrom(r string, branch string, urlFmt string) (map[string]stri
 }
 
 func saveDockerfile(d map[string]interface{}, imageTemplate embed.FS, output string, dir string) string {
-	bt, err := template.ParseFS(imageTemplate, "*.template")
+	bt, err := template.ParseFS(imageTemplate, "dockerfile-templates/*.template")
 	if err != nil {
 		log.Fatal("Failed creating template ", err)
 	}
