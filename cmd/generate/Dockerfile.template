@@ -9,7 +9,7 @@ COPY . .
 ENV CGO_ENABLED=1
 ENV GOEXPERIMENT=strictfipsruntime
 
-RUN go build -tags strictfipsruntime -o /usr/bin/main ./{{.main}}
+RUN {{ if .go_flags }}{{.go_flags}} {{ end }}go build -tags strictfipsruntime -o /usr/bin/main ./{{.main}}
 
 FROM $GO_RUNTIME
 

@@ -64,6 +64,7 @@ func main() {
 		imagesFromRepositoriesURLFmt string
 		additionalPackages           []string
 		symLinkNames                 []string
+		goFlags                      []string
 	)
 
 	defaultIncludes := []string{
@@ -92,6 +93,7 @@ func main() {
 	pflag.StringVar(&imagesFromRepositoriesURLFmt, "images-from-url-format", "https://raw.githubusercontent.com/openshift-knative/%s/%s/openshift/images.yaml", "Additional images to be pulled from other midstream repositories matching the tag in project.yaml")
 	pflag.StringArrayVar(&additionalPackages, "additional-packages", nil, "Additional packages to be installed in the image")
 	pflag.StringArrayVar(&symLinkNames, "sym-link-names", nil, "Symbolic link names to the binary")
+	pflag.StringArrayVar(&goFlags, "go-flags", nil, "Go flags for the build")
 	pflag.Parse()
 
 	if rootDir == "" {
@@ -222,6 +224,11 @@ func main() {
 				}
 
 				d["post_build_instructions"] = sb.String()
+			}
+
+			if len(goFlags) > 0 {
+				// allow empty values too (GOFLAGS='')
+				d["go_flags"] = fmt.Sprintf("GOFLAGS='%s'", strings.Join(goFlags, " "))
 			}
 
 			t, err := template.ParseFS(DockerfileTemplate, "*.template")
