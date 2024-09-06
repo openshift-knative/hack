@@ -17,9 +17,9 @@ ARG VERSION=main
 
 RUN microdnf install tzdata 
 
-USER 65532
-
 COPY --from=builder /usr/bin/main /usr/bin/discover
+
+USER 65532
 
 LABEL \
       com.redhat.component="openshift-serverless-1-knative-discover-rhel8-container" \
