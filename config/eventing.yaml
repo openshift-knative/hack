@@ -1,8 +1,6 @@
 config:
   branches:
     release-next:
-      konflux:
-        enabled: true
       openShiftVersions:
       - version: "4.15"
       - version: "4.12"
