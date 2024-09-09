@@ -417,7 +417,8 @@ func Sanitize(input interface{}) string {
 
 func Truncate(input interface{}) string {
 	in := fmt.Sprintf("%s", input)
-	// TODO very basic name sanitizer
+	in = strings.ReplaceAll(in, "release-v", "")
+	in = strings.ReplaceAll(in, "release-", "")
 	return Name(in, "")
 }
 

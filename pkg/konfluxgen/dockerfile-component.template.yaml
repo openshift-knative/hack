@@ -5,7 +5,7 @@ metadata:
     build.appstudio.openshift.io/pipeline: '{"name":"docker-build","bundle":"latest"}'
   name: {{ sanitize .ComponentName }}
 spec:
-  componentName: {{ .ProjectDirectoryImageBuildStepConfiguration.To }}
+  componentName: {{ sanitize .ComponentName }}
   application: {{ truncate ( sanitize .ApplicationName ) }}
   {{ $nudgesN := len .Nudges }} {{ if ne $nudgesN 0 }}
   build-nudges-ref:
