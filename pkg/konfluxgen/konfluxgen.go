@@ -242,8 +242,8 @@ func Generate(cfg Config) error {
 
 			buf.Reset()
 
-			pipelineRunPRPath := filepath.Join(cfg.PipelinesOutputPath, fmt.Sprintf("%s-%s-pull-request.yaml", config.ProjectDirectoryImageBuildStepConfiguration.To, Sanitize(config.ReleaseBuildConfiguration.Metadata.Branch)))
-			pipelineRunPushPath := filepath.Join(cfg.PipelinesOutputPath, fmt.Sprintf("%s-%s-push.yaml", config.ProjectDirectoryImageBuildStepConfiguration.To, Sanitize(config.ReleaseBuildConfiguration.Metadata.Branch)))
+			pipelineRunPRPath := filepath.Join(cfg.PipelinesOutputPath, fmt.Sprintf("%s-pull-request.yaml", componentKey))
+			pipelineRunPushPath := filepath.Join(cfg.PipelinesOutputPath, fmt.Sprintf("%s-push.yaml", componentKey))
 
 			config.Event = PullRequestEvent
 			if err := pipelineRunTemplate.Execute(buf, config); err != nil {
