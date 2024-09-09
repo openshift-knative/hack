@@ -15,8 +15,10 @@ FROM $GO_RUNTIME
 
 ARG VERSION={{.version}}
 
-RUN microdnf install tzdata {{.additional_packages}}
+{{ if .additional_packages }}
+RUN microdnf install {{ .additional_packages }}
 
+{{ end }}
 COPY --from=builder /usr/bin/main {{.app_file}}
 
 USER 65532

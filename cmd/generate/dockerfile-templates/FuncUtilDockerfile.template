@@ -16,7 +16,7 @@ FROM $GO_RUNTIME
 
 ARG VERSION={{.version}}
 
-RUN microdnf install tzdata socat tar {{.additional_packages}}
+RUN microdnf install socat tar {{.additional_packages}}
 
 COPY --from=builder /usr/bin/main {{.app_file}}
 
