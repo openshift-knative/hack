@@ -154,17 +154,6 @@ jobs:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
         if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
-        name: '[eventing-istio - release-next] Create Konflux PR'
-        run: |
-          set -x
-          git remote add fork "https://github.com/serverless-qe/eventing-istio.git" || true # ignore: already exists errors
-          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/eventing-istio.git" sync-konflux/release-next:sync-konflux/release-next -f
-          gh pr create --base main --head serverless-qe:sync-konflux/release-next --title "[main] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
-        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-istio
-      - env:
-          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
-          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
-        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         name: '[eventing-istio - release-v1.15] Create Konflux PR'
         run: |
           set -x
@@ -176,17 +165,6 @@ jobs:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
         if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
-        name: '[eventing-kafka-broker - release-next] Create Konflux PR'
-        run: |
-          set -x
-          git remote add fork "https://github.com/serverless-qe/eventing-kafka-broker.git" || true # ignore: already exists errors
-          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/eventing-kafka-broker.git" sync-konflux/release-next:sync-konflux/release-next -f
-          gh pr create --base main --head serverless-qe:sync-konflux/release-next --title "[main] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
-        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-kafka-broker
-      - env:
-          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
-          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
-        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         name: '[eventing-kafka-broker - release-v1.15] Create Konflux PR'
         run: |
           set -x
@@ -194,17 +172,6 @@ jobs:
           git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/eventing-kafka-broker.git" sync-konflux/release-v1.15:sync-konflux/release-v1.15 -f
           gh pr create --base release-v1.15 --head serverless-qe:sync-konflux/release-v1.15 --title "[release-v1.15] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-kafka-broker
-      - env:
-          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
-          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
-        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
-        name: '[eventing - release-next] Create Konflux PR'
-        run: |
-          set -x
-          git remote add fork "https://github.com/serverless-qe/eventing.git" || true # ignore: already exists errors
-          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/eventing.git" sync-konflux/release-next:sync-konflux/release-next -f
-          gh pr create --base main --head serverless-qe:sync-konflux/release-next --title "[main] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
-        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -249,17 +216,6 @@ jobs:
           git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/net-kourier.git" sync-konflux/release-v1.15:sync-konflux/release-v1.15 -f
           gh pr create --base release-v1.15 --head serverless-qe:sync-konflux/release-v1.15 --title "[release-v1.15] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-kourier
-      - env:
-          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
-          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
-        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
-        name: '[serving - release-next] Create Konflux PR'
-        run: |
-          set -x
-          git remote add fork "https://github.com/serverless-qe/serving.git" || true # ignore: already exists errors
-          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/serving.git" sync-konflux/release-next:sync-konflux/release-next -f
-          gh pr create --base main --head serverless-qe:sync-konflux/release-next --title "[main] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
-        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serving
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
