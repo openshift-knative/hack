@@ -6,7 +6,7 @@ config:
       openShiftVersions:
       - version: "4.15"
       - onDemand: true
-        version: "4.12"
+        version: "4.13"
     release-v1.10:
       openShiftVersions:
       - skipCron: true
@@ -27,14 +27,14 @@ config:
       openShiftVersions:
       - version: "4.15"
       - onDemand: true
-        version: "4.12"
+        version: "4.13"
     release-v1.15:
       konflux:
         enabled: true
       openShiftVersions:
       - version: "4.15"
       - onDemand: true
-        version: "4.12"
+        version: "4.13"
 repositories:
 - dockerfiles: {}
   e2e:
