@@ -40,33 +40,85 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 			}
 
 			for branchName, b := range config.Config.Branches {
-				// Special case "release-next"
-				targetBranch := branchName
-				if branchName == "release-next" {
-					targetBranch = "main"
-				}
+				if b.Konflux != nil && b.Konflux.Enabled {
 
-				if err := GitMirror(ctx, r); err != nil {
-					return err
-				}
-
-				if err := GitCheckout(ctx, r, targetBranch); err != nil {
-					return err
-				}
-
-				resourcesOutputPath := fmt.Sprintf("%s/.konflux", r.RepositoryDirectory())
-				pipelinesOutputPath := fmt.Sprintf("%s/.tekton", r.RepositoryDirectory())
-
-				if b.Konflux == nil || !b.Konflux.Enabled {
-					// Konflux is disabled on branch
-
-					// make sure, we don't have any .konflux or .tekton folder
-					if err := os.RemoveAll(resourcesOutputPath); err != nil {
-						return fmt.Errorf("failed to remove %s: %w", resourcesOutputPath, err)
+					// Special case "release-next"
+					targetBranch := branchName
+					downstreamVersion := "release-next"
+					if branchName == "release-next" {
+						targetBranch = "main"
+					} else {
+						downstreamVersion = sobranch.FromUpstreamVersion(branchName)
 					}
 
-					if err := os.RemoveAll(pipelinesOutputPath); err != nil {
-						return fmt.Errorf("failed to remove %s: %w", pipelinesOutputPath, err)
+					// Checkout s-o to get the right release version from project.yaml (e.g. 1.34.1)
+					soRepo := Repository{Org: "openshift-knative", Repo: "serverless-operator"}
+					if err := GitMirror(ctx, soRepo); err != nil {
+						return err
+					}
+
+					versionLabel := downstreamVersion
+					var buildArgs []string
+					if err := GitCheckout(ctx, soRepo, downstreamVersion); err != nil {
+						// For non-existent branches we keep going and use downstreamVersion for versionLabel.
+						if !strings.Contains(err.Error(), "failed to run git [checkout") {
+							return err
+						}
+					} else {
+						soProjectYamlPath := filepath.Join(soRepo.RepositoryDirectory(),
+							"olm-catalog", "serverless-operator", "project.yaml")
+						soMetadata, err := project.ReadMetadataFile(soProjectYamlPath)
+						if err != nil {
+							return err
+						}
+						versionLabel = soMetadata.Project.Version
+						for _, img := range soMetadata.ImageOverrides {
+							buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", img.Name, img.PullSpec))
+						}
+					}
+					log.Println("Version label:", versionLabel)
+					buildArgs = append(buildArgs, fmt.Sprintf("VERSION=%s", versionLabel))
+
+					if err := GitMirror(ctx, r); err != nil {
+						return err
+					}
+
+					if err := GitCheckout(ctx, r, targetBranch); err != nil {
+						return err
+					}
+
+					nudges := b.Konflux.Nudges
+					if downstreamVersion != "release-next" {
+						_, ok := operatorVersions[downstreamVersion]
+						if ok {
+							nudges = append(nudges, serverlessBundleNudge(downstreamVersion))
+						}
+						log.Printf("[%s] created nudges (%v) - operatorVersions: %#v - downstreamVersion: %v): %#v", r.RepositoryDirectory(), ok, operatorVersions, downstreamVersion, nudges)
+					}
+
+					cfg := konfluxgen.Config{
+						OpenShiftReleasePath: openshiftRelease.RepositoryDirectory(),
+						ApplicationName:      fmt.Sprintf("serverless-operator %s", downstreamVersion),
+						BuildArgs:            buildArgs,
+						Includes: []string{
+							fmt.Sprintf("ci-operator/config/%s/.*%s.*.yaml", r.RepositoryDirectory(), branchName),
+						},
+						Excludes:            b.Konflux.Excludes,
+						ExcludesImages:      b.Konflux.ExcludesImages,
+						FBCImages:           b.Konflux.FBCImages,
+						ResourcesOutputPath: fmt.Sprintf("%s/.konflux", r.RepositoryDirectory()),
+						PipelinesOutputPath: fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
+						Nudges:              nudges,
+						Tags:                []string{versionLabel},
+					}
+					if len(cfg.ExcludesImages) == 0 {
+						cfg.ExcludesImages = []string{
+							".*source.*",
+						}
+					}
+
+					if err := konfluxgen.Generate(cfg); err != nil {
+						return fmt.Errorf("failed to generate Konflux configurations for %s (%s): %w", r.RepositoryDirectory(), branchName, err)
 					}
 
 					pushBranch := fmt.Sprintf("%s%s", KonfluxBranchPrefix, branchName)
@@ -75,83 +127,6 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 					if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
 						return err
 					}
-					continue
-				}
-
-				// Konflux is enabled for branch
-
-				downstreamVersion := "release-next"
-				if branchName != "release-next" {
-					downstreamVersion = sobranch.FromUpstreamVersion(branchName)
-				}
-
-				// Checkout s-o to get the right release version from project.yaml (e.g. 1.34.1)
-				soRepo := Repository{Org: "openshift-knative", Repo: "serverless-operator"}
-				if err := GitMirror(ctx, soRepo); err != nil {
-					return err
-				}
-
-				versionLabel := downstreamVersion
-				var buildArgs []string
-				if err := GitCheckout(ctx, soRepo, downstreamVersion); err != nil {
-					// For non-existent branches we keep going and use downstreamVersion for versionLabel.
-					if !strings.Contains(err.Error(), "failed to run git [checkout") {
-						return err
-					}
-				} else {
-					soProjectYamlPath := filepath.Join(soRepo.RepositoryDirectory(),
-						"olm-catalog", "serverless-operator", "project.yaml")
-					soMetadata, err := project.ReadMetadataFile(soProjectYamlPath)
-					if err != nil {
-						return err
-					}
-					versionLabel = soMetadata.Project.Version
-					for _, img := range soMetadata.ImageOverrides {
-						buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", img.Name, img.PullSpec))
-					}
-				}
-				log.Println("Version label:", versionLabel)
-				buildArgs = append(buildArgs, fmt.Sprintf("VERSION=%s", versionLabel))
-
-				nudges := b.Konflux.Nudges
-				if downstreamVersion != "release-next" {
-					_, ok := operatorVersions[downstreamVersion]
-					if ok {
-						nudges = append(nudges, serverlessBundleNudge(downstreamVersion))
-					}
-					log.Printf("[%s] created nudges (%v) - operatorVersions: %#v - downstreamVersion: %v): %#v", r.RepositoryDirectory(), ok, operatorVersions, downstreamVersion, nudges)
-				}
-
-				cfg := konfluxgen.Config{
-					OpenShiftReleasePath: openshiftRelease.RepositoryDirectory(),
-					ApplicationName:      fmt.Sprintf("serverless-operator %s", downstreamVersion),
-					BuildArgs:            buildArgs,
-					Includes: []string{
-						fmt.Sprintf("ci-operator/config/%s/.*%s.*.yaml", r.RepositoryDirectory(), branchName),
-					},
-					Excludes:            b.Konflux.Excludes,
-					ExcludesImages:      b.Konflux.ExcludesImages,
-					FBCImages:           b.Konflux.FBCImages,
-					ResourcesOutputPath: resourcesOutputPath,
-					PipelinesOutputPath: pipelinesOutputPath,
-					Nudges:              nudges,
-					Tags:                []string{versionLabel},
-				}
-				if len(cfg.ExcludesImages) == 0 {
-					cfg.ExcludesImages = []string{
-						".*source.*",
-					}
-				}
-
-				if err := konfluxgen.Generate(cfg); err != nil {
-					return fmt.Errorf("failed to generate Konflux configurations for %s (%s): %w", r.RepositoryDirectory(), branchName, err)
-				}
-
-				pushBranch := fmt.Sprintf("%s%s", KonfluxBranchPrefix, branchName)
-				commitMsg := fmt.Sprintf("[%s] Sync Konflux configurations", targetBranch)
-
-				if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
-					return err
 				}
 			}
 		}
