@@ -30,6 +30,13 @@ jobs:
           repository: openshift-knative/backstage-plugins
           token: ${{ secrets.SERVERLESS_QE_ROBOT }}
       - if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[client] Clone repository'
+        uses: actions/checkout@v4
+        with:
+          path: ./src/github.com/openshift-knative/hack/openshift-knative/client
+          repository: openshift-knative/client
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
+      - if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         name: '[eventing-hyperfoil-benchmark] Clone repository'
         uses: actions/checkout@v4
         with:
