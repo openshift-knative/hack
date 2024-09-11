@@ -7,10 +7,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/coreos/go-semver/semver"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
 
+	"github.com/openshift-knative/hack/pkg/maven"
 	"github.com/openshift-knative/hack/pkg/project"
 
 	"github.com/openshift-knative/hack/pkg/konfluxgen"
@@ -27,6 +29,16 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 	if err != nil {
 		return fmt.Errorf("failed to get konflux versions for serverless-operator: %w", err)
 	}
+
+	type r struct {
+		metadata []maven.Metadata
+		err      error
+	}
+
+	scrapeMaven := sync.OnceValue(func() r {
+		m, err := maven.ScrapRedHatMavenRegistry(maven.RedHatMavenGA)
+		return r{metadata: m, err: err}
+	})
 
 	for _, config := range configs {
 		for _, r := range config.Repositories {
@@ -146,6 +158,22 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 
 					if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
 						return err
+					}
+
+					for _, p := range r.PomFiles {
+						res := scrapeMaven()
+						if res.err != nil {
+							return fmt.Errorf("failed to scrape maven metadata: %w", res.err)
+						}
+						p = filepath.Join(r.RepositoryDirectory(), p)
+						if err := maven.UpdatePomFile(res.metadata, maven.RedHatMavenGA, p); err != nil {
+							return fmt.Errorf("failed to update pom file %q: %w", p, err)
+						}
+
+						commitMsg := fmt.Sprintf("[%s] Updated POM file %s with Red Hat dependencies", branchName, p)
+						if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
+							return err
+						}
 					}
 				}
 			}
