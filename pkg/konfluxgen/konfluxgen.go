@@ -415,6 +415,8 @@ func Truncate(input interface{}) string {
 	in := fmt.Sprintf("%s", input)
 	in = strings.ReplaceAll(in, "release-v", "")
 	in = strings.ReplaceAll(in, "release-", "")
+	in = strings.ReplaceAll(in, "knative-", "kn-")
+	in = strings.ReplaceAll(in, "eventing-kafka-broker-", "ekb-")
 	return Name(in, "")
 }
 
