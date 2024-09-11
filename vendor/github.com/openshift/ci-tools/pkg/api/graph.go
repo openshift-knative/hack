@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sirupsen/logrus"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -34,6 +35,41 @@ type Step interface {
 	Provides() ParameterMap
 	// Objects returns all objects the client for this step has seen
 	Objects() []ctrlruntimeclient.Object
+
+	IsMultiArch() bool
+	SetMultiArch(bool)
+}
+
+// ResolveMultiArch traverses the graph of StepNodes and updates the multiArch field of each node.
+// If a node has a child that is multi-arch, the node itself is marked as multi-arch.
+// This function is used to propagate the multi-arch property up the graph, ensuring that any step
+// that depends on a multi-arch step is also considered multi-arch.
+func ResolveMultiArch(nodes []*StepNode) {
+	for _, node := range nodes {
+		setMultiArchForChildren(node)
+		ResolveMultiArch(node.Children)
+	}
+
+	for _, node := range nodes {
+		if len(node.MultiArchReasons) == 0 {
+			continue
+		}
+		reasons := sets.New[string]()
+		for _, r := range node.MultiArchReasons {
+			reasons.Insert(r)
+		}
+		logrus.WithField("reasons", strings.Join(reasons.UnsortedList(), ", ")).Infof("Setting multi-arch for %s", node.Step.Name())
+	}
+}
+
+func setMultiArchForChildren(node *StepNode) {
+	for _, child := range node.Children {
+		if child.Step.IsMultiArch() {
+			node.MultiArchReasons = append(node.MultiArchReasons, child.Step.Name())
+			node.Step.SetMultiArch(true)
+		}
+		setMultiArchForChildren(child)
+	}
 }
 
 type InputDefinition []string
@@ -275,8 +311,9 @@ func IsReleasePayloadStream(stream string) bool {
 
 // +k8s:deepcopy-gen=false
 type StepNode struct {
-	Step     Step
-	Children []*StepNode
+	Step             Step
+	Children         []*StepNode
+	MultiArchReasons []string
 }
 
 // GraphConfiguration contains step data used to build the execution graph.
