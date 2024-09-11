@@ -42,41 +42,13 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 			for branchName, b := range config.Config.Branches {
 				if b.Konflux != nil && b.Konflux.Enabled {
 
-					if err := GitMirror(ctx, r); err != nil {
-						return err
-					}
-
-					resourcesOutputPath := fmt.Sprintf("%s/.konflux", r.RepositoryDirectory())
-					pipelinesOutputPath := fmt.Sprintf("%s/.tekton", r.RepositoryDirectory())
-
+					// Special case "release-next"
+					targetBranch := branchName
+					downstreamVersion := "release-next"
 					if branchName == "release-next" {
-						// tmp: remove .tekton and .konflux folders on release next
-						if err := GitCheckout(ctx, r, "main"); err != nil {
-							return err
-						}
-
-						if err := os.RemoveAll(resourcesOutputPath); err != nil {
-							return fmt.Errorf("failed to remove konflux resources output directory: %w", err)
-						}
-
-						if err := os.RemoveAll(pipelinesOutputPath); err != nil {
-							return fmt.Errorf("failed to remove tekton resources output directory: %w", err)
-						}
-
-						pushBranch := fmt.Sprintf("%s%s", KonfluxBranchPrefix, branchName)
-						commitMsg := "[main] Sync Konflux configurations"
-
-						if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
-							return err
-						}
-
-						continue
-					}
-
-					downstreamVersion := sobranch.FromUpstreamVersion(branchName)
-
-					if err := GitCheckout(ctx, r, branchName); err != nil {
-						return err
+						targetBranch = "main"
+					} else {
+						downstreamVersion = sobranch.FromUpstreamVersion(branchName)
 					}
 
 					// Checkout s-o to get the right release version from project.yaml (e.g. 1.34.1)
@@ -107,6 +79,14 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 					log.Println("Version label:", versionLabel)
 					buildArgs = append(buildArgs, fmt.Sprintf("VERSION=%s", versionLabel))
 
+					if err := GitMirror(ctx, r); err != nil {
+						return err
+					}
+
+					if err := GitCheckout(ctx, r, targetBranch); err != nil {
+						return err
+					}
+
 					nudges := b.Konflux.Nudges
 					if downstreamVersion != "release-next" {
 						_, ok := operatorVersions[downstreamVersion]
@@ -126,8 +106,8 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						Excludes:            b.Konflux.Excludes,
 						ExcludesImages:      b.Konflux.ExcludesImages,
 						FBCImages:           b.Konflux.FBCImages,
-						ResourcesOutputPath: resourcesOutputPath,
-						PipelinesOutputPath: pipelinesOutputPath,
+						ResourcesOutputPath: fmt.Sprintf("%s/.konflux", r.RepositoryDirectory()),
+						PipelinesOutputPath: fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
 						Nudges:              nudges,
 						Tags:                []string{versionLabel},
 					}
@@ -142,7 +122,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 					}
 
 					pushBranch := fmt.Sprintf("%s%s", KonfluxBranchPrefix, branchName)
-					commitMsg := fmt.Sprintf("[%s] Sync Konflux configurations", branchName)
+					commitMsg := fmt.Sprintf("[%s] Sync Konflux configurations", targetBranch)
 
 					if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
 						return err
