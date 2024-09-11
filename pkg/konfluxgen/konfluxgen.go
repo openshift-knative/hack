@@ -187,7 +187,7 @@ func Generate(cfg Config) error {
 				Tags:                          append(cfg.Tags, "latest"),
 				BuildArgs:                     cfg.BuildArgs,
 			}
-			applications[appKey][dockerfileComponentKey(cfg.ComponentNameFunc, c.ReleaseBuildConfiguration, ib)] = r
+			applications[appKey][Truncate(Sanitize(cfg.ComponentNameFunc(c.ReleaseBuildConfiguration, ib)))] = r
 		}
 	}
 
@@ -403,10 +403,6 @@ func toRegexp(rawRegexps []string) ([]*regexp.Regexp, error) {
 		regexps = append(regexps, r)
 	}
 	return regexps, nil
-}
-
-func dockerfileComponentKey(componentNameFunc func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string, cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
-	return fmt.Sprintf("%s-%s-%s", cfg.Metadata.Org, cfg.Metadata.Repo, Truncate(Sanitize(componentNameFunc(cfg, ib))))
 }
 
 func Sanitize(input interface{}) string {
