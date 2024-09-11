@@ -187,6 +187,9 @@ func parseMavenMetadata(u string, retry int) (Metadata, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
+		if retry < 10 {
+			return parseMavenMetadata(u, retry+1)
+		}
 		return metadata, fmt.Errorf("GET %s returned %v: %w", u, resp.StatusCode, err)
 	}
 
