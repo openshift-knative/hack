@@ -10,8 +10,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
 	"k8s.io/apimachinery/pkg/api/equality"
-	prowapi "k8s.io/test-infra/prow/apis/prowjobs/v1"
 	"k8s.io/utils/pointer"
+	prowapi "sigs.k8s.io/prow/pkg/apis/prowjobs/v1"
 )
 
 func TestDiscoverTestsServing(t *testing.T) {

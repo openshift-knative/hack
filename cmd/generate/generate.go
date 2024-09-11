@@ -31,6 +31,12 @@ const (
 	defaultAppFilename             = "main"
 	defaultDockerfileTemplateName  = "default"
 	funcUtilDockerfileTemplateName = "func-util"
+
+	// builderImageFmt defines the default pattern for the builder image.
+	// At the given places, the Go version from the projects go.mod will be inserted.
+	// Keep in mind to also update the tools image in the ImageBuilderDockerfile, when the OCP / RHEL
+	// version in the pattern gets updated (line 3 and 10).
+	builderImageFmt = "registry.ci.openshift.org/openshift/release:rhel-8-release-golang-%s-openshift-4.17"
 )
 
 //go:embed dockerfile-templates/DefaultDockerfile.template
@@ -90,7 +96,7 @@ func main() {
 	pflag.StringVar(&dockerfilesTestDir, "dockerfile-test-dir", "ci-operator/knative-test-images", "Dockerfiles output directory for test images relative to output flag")
 	pflag.StringVar(&output, "output", filepath.Join(wd, "openshift"), "Output directory")
 	pflag.StringVar(&projectFilePath, "project-file", filepath.Join(wd, "openshift", "project.yaml"), "Project metadata file path")
-	pflag.StringVar(&dockerfileImageBuilderFmt, "dockerfile-image-builder-fmt", "registry.ci.openshift.org/openshift/release:rhel-8-release-golang-%s-openshift-4.17", "Dockerfile image builder format")
+	pflag.StringVar(&dockerfileImageBuilderFmt, "dockerfile-image-builder-fmt", builderImageFmt, "Dockerfile image builder format")
 	pflag.StringVar(&appFileFmt, "app-file-fmt", "/usr/bin/%s", "Target application binary path format")
 	pflag.StringVar(&registryImageFmt, "registry-image-fmt", "registry.ci.openshift.org/openshift/%s:%s", "Container registry image format")
 	pflag.StringArrayVar(&imagesFromRepositories, "images-from", nil, "Additional image references to be pulled from other midstream repositories matching the tag in project.yaml")
