@@ -1,11 +1,15 @@
 # DO NOT EDIT! Generated Dockerfile.
 
-FROM registry.ci.openshift.org/ocp/4.17:tools as tools
+FROM registry.ci.openshift.org/ocp/4.17:cli-artifacts as tools
 
 # Dockerfile to bootstrap build and test in openshift-ci
 FROM registry.ci.openshift.org/openshift/release:rhel-8-release-golang-1.21-openshift-4.17 as builder
 
-COPY --from=tools /usr/bin/oc /usr/bin/kubectl /usr/bin/
+ARG TARGETARCH
+
+COPY --from=tools /usr/share/openshift/linux_$TARGETARCH/oc.rhel8 /usr/bin/oc
+
+RUN ln -s /usr/bin/oc /usr/bin/kubectl
 
 RUN yum install -y httpd-tools
 

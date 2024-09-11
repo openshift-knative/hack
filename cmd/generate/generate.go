@@ -32,10 +32,10 @@ const (
 	defaultDockerfileTemplateName  = "default"
 	funcUtilDockerfileTemplateName = "func-util"
 
-	ocpToolsImage = "registry.ci.openshift.org/ocp/4.17:tools"
 	// builderImageFmt defines the default pattern for the builder image.
 	// At the given places, the Go version from the projects go.mod will be inserted.
-	// Keep in mind to also update the ocpToolsImage, when the OCP version in the pattern gets updated.
+	// Keep in mind to also update the tools image in the ImageBuilderDockerfile, when the OCP / RHEL
+	// version in the pattern gets updated (line 3 and 10).
 	builderImageFmt = "registry.ci.openshift.org/openshift/release:rhel-8-release-golang-%s-openshift-4.17"
 )
 
@@ -197,8 +197,7 @@ func main() {
 		}
 
 		d := map[string]interface{}{
-			"builder":       builderImage,
-			"ocpToolsImage": ocpToolsImage,
+			"builder": builderImage,
 		}
 		saveDockerfile(d, DockerfileBuildImageTemplate, output, dockerfilesBuildDir)
 		saveDockerfile(d, DockerfileSourceImageTemplate, output, dockerfilesSourceDir)
