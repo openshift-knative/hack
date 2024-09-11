@@ -1,6 +1,6 @@
 # DO NOT EDIT! Generated Dockerfile.
 
-FROM registry.ci.openshift.org/ocp/4.17:tools as tools
+FROM {{.ocpToolsImage}} as tools
 
 # Dockerfile to bootstrap build and test in openshift-ci
 FROM {{.builder}} as builder
