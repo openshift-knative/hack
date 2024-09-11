@@ -12,7 +12,7 @@ import (
 
 	"github.com/coreos/go-semver/semver"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
-	prowapi "k8s.io/test-infra/prow/apis/prowjobs/v1"
+	prowapi "sigs.k8s.io/prow/pkg/apis/prowjobs/v1"
 )
 
 type Repository struct {

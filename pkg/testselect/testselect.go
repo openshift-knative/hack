@@ -12,7 +12,7 @@ import (
 
 	"github.com/openshift-knative/hack/pkg/prowgen"
 	"gopkg.in/yaml.v2"
-	"k8s.io/test-infra/prow/clonerefs"
+	"sigs.k8s.io/prow/pkg/clonerefs"
 )
 
 const (
