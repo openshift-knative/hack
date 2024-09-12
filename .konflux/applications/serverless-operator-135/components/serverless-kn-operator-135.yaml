@@ -1,0 +1,21 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Component
+metadata:
+  annotations:
+    build.appstudio.openshift.io/pipeline: '{"name":"docker-build","bundle":"latest"}'
+  name: serverless-kn-operator-135
+spec:
+  componentName: serverless-kn-operator-135
+  application: serverless-operator-135
+   
+  build-nudges-ref:
+    
+    - "serverless-bundle-135"
+    
+  
+  source:
+    git:
+      url: https://github.com/openshift-knative/serverless-operator.git
+      context: 
+      dockerfileUrl: knative-operator/Dockerfile
+      revision: main
