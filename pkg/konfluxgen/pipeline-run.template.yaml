@@ -30,10 +30,10 @@ spec:
     - name: image-expires-after
       value: 5d
     - name: output-image
-      value: quay.io/redhat-user-workloads/ocp-serverless-tenant/{{{ truncate ( sanitize .ApplicationName ) }}}/{{{ .ProjectDirectoryImageBuildStepConfiguration.To }}}:on-pr-{{revision}}
+      value: quay.io/redhat-user-workloads/ocp-serverless-tenant/{{{ truncate ( sanitize .ApplicationName ) }}}/{{{ truncate ( sanitize .ProjectDirectoryImageBuildStepConfiguration.To ) }}}:on-pr-{{revision}}
     {{{- else }}}
     - name: output-image
-      value: quay.io/redhat-user-workloads/ocp-serverless-tenant/{{{ truncate ( sanitize .ApplicationName ) }}}/{{{ .ProjectDirectoryImageBuildStepConfiguration.To }}}:{{revision}}
+      value: quay.io/redhat-user-workloads/ocp-serverless-tenant/{{{ truncate ( sanitize .ApplicationName ) }}}/{{{ truncate ( sanitize .ProjectDirectoryImageBuildStepConfiguration.To ) }}}:{{revision}}
     {{{- end }}}
     - name: revision
       value: '{{revision}}'

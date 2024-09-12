@@ -9,5 +9,5 @@ metadata:
   name: {{ sanitize .ComponentName }}
 spec:
   image:
-    name: {{ truncate ( sanitize .ApplicationName ) }}/{{ .ProjectDirectoryImageBuildStepConfiguration.To }}
+    name: {{ truncate ( sanitize .ApplicationName ) }}/{{ truncate ( sanitize .ProjectDirectoryImageBuildStepConfiguration.To ) }}
     visibility: public
