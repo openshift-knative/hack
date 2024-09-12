@@ -1,0 +1,22 @@
+apiVersion: appstudio.redhat.com/v1beta2
+kind: IntegrationTestScenario
+metadata:
+  name: {{{ truncate ( sanitize .ApplicationName ) }}}-enterprise-contract
+  namespace: ocp-serverless-tenant
+spec:
+  params: 
+    - name: POLICY_CONFIGURATION
+      value: rhtap-releng-tenant/tmp-onboard-policy
+  application: {{{ .ApplicationName }}}
+  contexts:
+    - description: Application testing
+      name: application
+  resolverRef:
+    params:
+      - name: url
+        value: 'https://github.com/redhat-appstudio/build-definitions'
+      - name: revision
+        value: main
+      - name: pathInRepo
+        value: pipelines/enterprise-contract.yaml
+    resolver: git

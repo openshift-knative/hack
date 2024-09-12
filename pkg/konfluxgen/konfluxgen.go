@@ -36,6 +36,9 @@ var PipelineDockerBuildTemplate embed.FS
 //go:embed fbc-builder.yaml
 var PipelineFBCBuildTemplate embed.FS
 
+//go:embed integration-test-scenario.template.yaml
+var IntegrationTestScenarioTemplate embed.FS
+
 type Config struct {
 	OpenShiftReleasePath string
 	ApplicationName      string
@@ -142,6 +145,10 @@ func Generate(cfg Config) error {
 	pipelineFBCBuildTemplate, err := template.New("fbc-builder.yaml").Delims("{{{", "}}}").Funcs(funcs).ParseFS(PipelineFBCBuildTemplate, "*.yaml")
 	if err != nil {
 		return fmt.Errorf("failed to parse pipeline run push template: %w", err)
+	}
+	integrationTestScenarioTemplate, err := template.New("integration-test-scenario.template.yaml").Delims("{{{", "}}}").Funcs(funcs).ParseFS(IntegrationTestScenarioTemplate, "*.yaml")
+	if err != nil {
+		return fmt.Errorf("failed to parse integration test scenario template: %w", err)
 	}
 
 	applications := make(map[string]map[string]DockerfileApplicationConfig, 8)
@@ -262,6 +269,18 @@ func Generate(cfg Config) error {
 			}
 
 			buf.Reset()
+
+			ecTestPath := filepath.Join(cfg.ResourcesOutputPath, "tests", appKey, "ec-test.yaml")
+			if err := os.MkdirAll(filepath.Dir(ecTestPath), 0777); err != nil {
+				return fmt.Errorf("failed to create directory for %q: %w", appPath, err)
+			}
+
+			if err := integrationTestScenarioTemplate.Execute(buf, config); err != nil {
+				return fmt.Errorf("failed to execute template for EC test: %w", err)
+			}
+			if err := WriteFileReplacingNewerTaskImages(appPath, buf.Bytes(), 0777); err != nil {
+				return fmt.Errorf("failed to write application file %q: %w", ecTestPath, err)
+			}
 
 			if config.Pipeline == FBCBuild {
 
