@@ -148,7 +148,7 @@ func Generate(cfg Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to parse pipeline run push template: %w", err)
 	}
-	integrationTestScenarioTemplate, err := template.New("integration-test-scenario.template.yaml").Delims("{{{", "}}}").Funcs(funcs).ParseFS(EnterpriseContractTestScenarioTemplate, "*.yaml")
+	enterpriseContractTestScenarioTemplate, err := template.New("integration-test-scenario.template.yaml").Delims("{{{", "}}}").Funcs(funcs).ParseFS(EnterpriseContractTestScenarioTemplate, "*.yaml")
 	if err != nil {
 		return fmt.Errorf("failed to parse integration test scenario template: %w", err)
 	}
@@ -277,7 +277,7 @@ func Generate(cfg Config) error {
 				return fmt.Errorf("failed to create directory for %q: %w", appPath, err)
 			}
 
-			if err := integrationTestScenarioTemplate.Execute(buf, config); err != nil {
+			if err := enterpriseContractTestScenarioTemplate.Execute(buf, config); err != nil {
 				return fmt.Errorf("failed to execute template for EC test: %w", err)
 			}
 			if err := WriteFileReplacingNewerTaskImages(ecTestPath, buf.Bytes(), 0777); err != nil {
