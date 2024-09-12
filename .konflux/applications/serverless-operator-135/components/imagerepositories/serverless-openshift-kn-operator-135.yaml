@@ -9,5 +9,5 @@ metadata:
   name: serverless-openshift-kn-operator-135
 spec:
   image:
-    name: serverless-operator-135/serverless-openshift-knative-operator
+    name: serverless-operator-135/serverless-openshift-kn-operator
     visibility: public
