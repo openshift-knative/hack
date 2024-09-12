@@ -4,10 +4,10 @@ metadata:
   annotations:
     image-controller.appstudio.redhat.com/update-component-image: "true"
   labels:
-    appstudio.redhat.com/application: serverless-operator-release-135
+    appstudio.redhat.com/application: serverless-operator-135
     appstudio.redhat.com/component: serverless-openshift-kn-operator-135
   name: serverless-openshift-kn-operator-135
 spec:
   image:
-    name: serverless-operator-release-135/serverless-openshift-knative-operator
+    name: serverless-operator-135/serverless-openshift-knative-operator
     visibility: public
