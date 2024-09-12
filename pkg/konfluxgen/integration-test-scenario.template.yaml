@@ -2,12 +2,11 @@ apiVersion: appstudio.redhat.com/v1beta2
 kind: IntegrationTestScenario
 metadata:
   name: {{{ truncate ( sanitize .ApplicationName ) }}}-enterprise-contract
-  namespace: ocp-serverless-tenant
 spec:
   params: 
     - name: POLICY_CONFIGURATION
       value: rhtap-releng-tenant/tmp-onboard-policy
-  application: {{{ .ApplicationName }}}
+  application: {{{ truncate ( sanitize .ApplicationName ) }}}
   contexts:
     - description: Application testing
       name: application
