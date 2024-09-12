@@ -27,17 +27,28 @@ import (
 )
 
 const (
-	GenerateDockerfileOption = "dockerfile"
-	defaultAppFilename       = "main"
+	GenerateDockerfileOption       = "dockerfile"
+	defaultAppFilename             = "main"
+	defaultDockerfileTemplateName  = "default"
+	funcUtilDockerfileTemplateName = "func-util"
+
+	// builderImageFmt defines the default pattern for the builder image.
+	// At the given places, the Go version from the projects go.mod will be inserted.
+	// Keep in mind to also update the tools image in the ImageBuilderDockerfile, when the OCP / RHEL
+	// version in the pattern gets updated (line 3 and 10).
+	builderImageFmt = "registry.ci.openshift.org/openshift/release:rhel-8-release-golang-%s-openshift-4.17"
 )
 
-//go:embed Dockerfile.template
-var DockerfileTemplate embed.FS
+//go:embed dockerfile-templates/DefaultDockerfile.template
+var DockerfileDefaultTemplate embed.FS
 
-//go:embed BuildImageDockerfile.template
+//go:embed dockerfile-templates/FuncUtilDockerfile.template
+var DockerfileFuncUtilTemplate embed.FS
+
+//go:embed dockerfile-templates/BuildImageDockerfile.template
 var DockerfileBuildImageTemplate embed.FS
 
-//go:embed SourceImageDockerfile.template
+//go:embed dockerfile-templates/SourceImageDockerfile.template
 var DockerfileSourceImageTemplate embed.FS
 
 func main() {
@@ -63,7 +74,7 @@ func main() {
 		imagesFromRepositories       []string
 		imagesFromRepositoriesURLFmt string
 		additionalPackages           []string
-		symLinkNames                 []string
+		templateName                 string
 	)
 
 	defaultIncludes := []string{
@@ -85,13 +96,13 @@ func main() {
 	pflag.StringVar(&dockerfilesTestDir, "dockerfile-test-dir", "ci-operator/knative-test-images", "Dockerfiles output directory for test images relative to output flag")
 	pflag.StringVar(&output, "output", filepath.Join(wd, "openshift"), "Output directory")
 	pflag.StringVar(&projectFilePath, "project-file", filepath.Join(wd, "openshift", "project.yaml"), "Project metadata file path")
-	pflag.StringVar(&dockerfileImageBuilderFmt, "dockerfile-image-builder-fmt", "registry.ci.openshift.org/openshift/release:rhel-8-release-golang-%s-openshift-4.17", "Dockerfile image builder format")
+	pflag.StringVar(&dockerfileImageBuilderFmt, "dockerfile-image-builder-fmt", builderImageFmt, "Dockerfile image builder format")
 	pflag.StringVar(&appFileFmt, "app-file-fmt", "/usr/bin/%s", "Target application binary path format")
 	pflag.StringVar(&registryImageFmt, "registry-image-fmt", "registry.ci.openshift.org/openshift/%s:%s", "Container registry image format")
 	pflag.StringArrayVar(&imagesFromRepositories, "images-from", nil, "Additional image references to be pulled from other midstream repositories matching the tag in project.yaml")
 	pflag.StringVar(&imagesFromRepositoriesURLFmt, "images-from-url-format", "https://raw.githubusercontent.com/openshift-knative/%s/%s/openshift/images.yaml", "Additional images to be pulled from other midstream repositories matching the tag in project.yaml")
 	pflag.StringArrayVar(&additionalPackages, "additional-packages", nil, "Additional packages to be installed in the image")
-	pflag.StringArrayVar(&symLinkNames, "sym-link-names", nil, "Symbolic link names to the binary")
+	pflag.StringVar(&templateName, "template-name", defaultDockerfileTemplateName, fmt.Sprintf("Dockerfile template name to use. Supported values are [%s, %s]", defaultDockerfileTemplateName, funcUtilDockerfileTemplateName))
 	pflag.Parse()
 
 	if rootDir == "" {
@@ -211,20 +222,17 @@ func main() {
 				"additional_packages": strings.Join(additionalPackages, " "),
 			}
 
-			if len(symLinkNames) > 0 {
-				sb := strings.Builder{}
-				sb.WriteString("RUN ")
-				for i, name := range symLinkNames {
-					sb.WriteString(fmt.Sprintf("ln -s %s %s", appFile, name))
-					if i < len(symLinkNames)-1 {
-						sb.WriteString(" && \\\n\t")
-					}
-				}
-
-				d["post_build_instructions"] = sb.String()
+			var DockerfileTemplate embed.FS
+			switch templateName {
+			case defaultDockerfileTemplateName:
+				DockerfileTemplate = DockerfileDefaultTemplate
+			case funcUtilDockerfileTemplateName:
+				DockerfileTemplate = DockerfileFuncUtilTemplate
+			default:
+				log.Fatal("Unknown template name: " + templateName)
 			}
 
-			t, err := template.ParseFS(DockerfileTemplate, "*.template")
+			t, err := template.ParseFS(DockerfileTemplate, "dockerfile-templates/*.template")
 			if err != nil {
 				log.Fatal("Failed creating template ", err)
 			}
@@ -365,7 +373,7 @@ func downloadImagesFrom(r string, branch string, urlFmt string) (map[string]stri
 }
 
 func saveDockerfile(d map[string]interface{}, imageTemplate embed.FS, output string, dir string) string {
-	bt, err := template.ParseFS(imageTemplate, "*.template")
+	bt, err := template.ParseFS(imageTemplate, "dockerfile-templates/*.template")
 	if err != nil {
 		log.Fatal("Failed creating template ", err)
 	}

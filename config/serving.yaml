@@ -1,12 +1,10 @@
 config:
   branches:
     release-next:
-      konflux:
-        enabled: true
       openShiftVersions:
       - version: "4.15"
       - onDemand: true
-        version: "4.12"
+        version: "4.13"
       skipDockerFilesMatches:
       - openshift/ci-operator/knative-perf-images.*
       skipE2EMatches:
@@ -30,14 +28,14 @@ config:
       openShiftVersions:
       - version: "4.15"
       - onDemand: true
-        version: "4.12"
+        version: "4.13"
     release-v1.15:
       konflux:
         enabled: true
       openShiftVersions:
       - version: "4.15"
       - onDemand: true
-        version: "4.12"
+        version: "4.13"
 repositories:
 - dockerfiles:
     matches:

@@ -1,5 +1,5 @@
 # DO NOT EDIT! Generated Dockerfile for cmd/discover.
-ARG GO_BUILDER=registry.ci.openshift.org/openshift/release:rhel-8-release-golang-1.21-openshift-4.17
+ARG GO_BUILDER=registry.ci.openshift.org/openshift/release:rhel-8-release-golang-1.22-openshift-4.17
 ARG GO_RUNTIME=registry.access.redhat.com/ubi8/ubi-minimal
 
 FROM $GO_BUILDER as builder
@@ -15,11 +15,9 @@ FROM $GO_RUNTIME
 
 ARG VERSION=main
 
-RUN microdnf install tzdata 
+COPY --from=builder /usr/bin/main /usr/bin/discover
 
 USER 65532
-
-COPY --from=builder /usr/bin/main /usr/bin/discover
 
 LABEL \
       com.redhat.component="openshift-serverless-1-knative-discover-rhel8-container" \

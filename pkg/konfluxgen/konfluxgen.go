@@ -59,6 +59,8 @@ type Config struct {
 
 	NudgesFunc func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) []string
 	Nudges     []string
+
+	Tags []string
 }
 
 func Generate(cfg Config) error {
@@ -189,10 +191,10 @@ func Generate(cfg Config) error {
 				Nudges:                        append(cfg.Nudges, cfg.NudgesFunc(c.ReleaseBuildConfiguration, ib)...),
 				Pipeline:                      pipeline,
 				AdditionalTektonCELExpression: cfg.AdditionalTektonCELExpressionFunc(c.ReleaseBuildConfiguration, ib),
-				Tags:                          []string{"latest"},
+				Tags:                          append(cfg.Tags, "latest"),
 				BuildArgs:                     cfg.BuildArgs,
 			}
-			applications[appKey][dockerfileComponentKey(cfg.ComponentNameFunc, c.ReleaseBuildConfiguration, ib)] = r
+			applications[appKey][Truncate(Sanitize(cfg.ComponentNameFunc(c.ReleaseBuildConfiguration, ib)))] = r
 		}
 	}
 
@@ -247,8 +249,8 @@ func Generate(cfg Config) error {
 
 			buf.Reset()
 
-			pipelineRunPRPath := filepath.Join(cfg.PipelinesOutputPath, fmt.Sprintf("%s-%s-pull-request.yaml", config.ProjectDirectoryImageBuildStepConfiguration.To, Sanitize(config.ReleaseBuildConfiguration.Metadata.Branch)))
-			pipelineRunPushPath := filepath.Join(cfg.PipelinesOutputPath, fmt.Sprintf("%s-%s-push.yaml", config.ProjectDirectoryImageBuildStepConfiguration.To, Sanitize(config.ReleaseBuildConfiguration.Metadata.Branch)))
+			pipelineRunPRPath := filepath.Join(cfg.PipelinesOutputPath, fmt.Sprintf("%s-pull-request.yaml", componentKey))
+			pipelineRunPushPath := filepath.Join(cfg.PipelinesOutputPath, fmt.Sprintf("%s-push.yaml", componentKey))
 
 			config.Event = PullRequestEvent
 			if err := pipelineRunTemplate.Execute(buf, config); err != nil {
@@ -422,10 +424,6 @@ func toRegexp(rawRegexps []string) ([]*regexp.Regexp, error) {
 	return regexps, nil
 }
 
-func dockerfileComponentKey(componentNameFunc func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string, cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
-	return fmt.Sprintf("%s-%s-%s", cfg.Metadata.Org, cfg.Metadata.Repo, Truncate(Sanitize(componentNameFunc(cfg, ib))))
-}
-
 func Sanitize(input interface{}) string {
 	in := fmt.Sprintf("%s", input)
 	// TODO very basic name sanitizer
@@ -434,7 +432,10 @@ func Sanitize(input interface{}) string {
 
 func Truncate(input interface{}) string {
 	in := fmt.Sprintf("%s", input)
-	// TODO very basic name sanitizer
+	in = strings.ReplaceAll(in, "release-v", "")
+	in = strings.ReplaceAll(in, "release-", "")
+	in = strings.ReplaceAll(in, "knative-", "kn-")
+	in = strings.ReplaceAll(in, "eventing-kafka-broker-", "ekb-")
 	return Name(in, "")
 }
 

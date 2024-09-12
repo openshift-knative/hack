@@ -25,8 +25,8 @@ import (
 	"github.com/coreos/go-semver/semver"
 	gyaml "github.com/ghodss/yaml"
 	"golang.org/x/sync/errgroup"
-	prowapi "k8s.io/test-infra/prow/apis/prowjobs/v1"
-	prowconfig "k8s.io/test-infra/prow/config"
+	prowapi "sigs.k8s.io/prow/pkg/apis/prowjobs/v1"
+	prowconfig "sigs.k8s.io/prow/pkg/config"
 )
 
 // Config is the prowgen configuration file struct.

@@ -4,10 +4,10 @@ metadata:
   annotations:
     image-controller.appstudio.redhat.com/update-component-image: "true"
   labels:
-    appstudio.redhat.com/application: {{ sanitize .ApplicationName }}
+    appstudio.redhat.com/application: {{ truncate ( sanitize .ApplicationName ) }}
     appstudio.redhat.com/component: {{ sanitize .ComponentName }}
   name: {{ sanitize .ComponentName }}
 spec:
   image:
-    name: {{ sanitize .ApplicationName }}/{{ .ProjectDirectoryImageBuildStepConfiguration.To }}
+    name: {{ truncate ( sanitize .ApplicationName ) }}/{{ .ProjectDirectoryImageBuildStepConfiguration.To }}
     visibility: public
