@@ -9,5 +9,5 @@ metadata:
   name: serverless-kn-operator-135
 spec:
   image:
-    name: serverless-operator-135/serverless-knative-operator
+    name: serverless-operator-135/serverless-kn-operator
     visibility: public
