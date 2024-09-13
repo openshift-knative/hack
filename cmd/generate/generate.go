@@ -37,6 +37,9 @@ const (
 	// Keep in mind to also update the tools image in the ImageBuilderDockerfile, when the OCP / RHEL
 	// version in the pattern gets updated (line 3 and 10).
 	builderImageFmt = "registry.ci.openshift.org/openshift/release:rhel-8-release-golang-%s-openshift-4.17"
+
+	// See https://github.com/containerbuildsystem/cachi2/blob/3c562a5410ddd5f1043e7613b240bb5811682f7f/cachi2/core/package_managers/rpm/main.py#L29
+	cachi2DefaultRPMsLockFilePath = "rpms.lock.yaml"
 )
 
 //go:embed dockerfile-templates/DefaultDockerfile.template
@@ -50,6 +53,9 @@ var DockerfileBuildImageTemplate embed.FS
 
 //go:embed dockerfile-templates/SourceImageDockerfile.template
 var DockerfileSourceImageTemplate embed.FS
+
+//go:embed rpms.lock.yaml
+var RPMsLockTemplate embed.FS
 
 func main() {
 	wd, err := os.Getwd()
@@ -202,6 +208,7 @@ func main() {
 		saveDockerfile(d, DockerfileBuildImageTemplate, output, dockerfilesBuildDir)
 		saveDockerfile(d, DockerfileSourceImageTemplate, output, dockerfilesSourceDir)
 
+		rpmsLockFileWritten := false
 		for _, p := range mainPackagesPaths.List() {
 			appFile := fmt.Sprintf(appFileFmt, appFilename(p))
 			projectName := strings.TrimPrefix(metadata.Project.ImagePrefix, "knative-")
@@ -223,11 +230,13 @@ func main() {
 			}
 
 			var DockerfileTemplate embed.FS
+			var rpmsLockTemplate *embed.FS
 			switch templateName {
 			case defaultDockerfileTemplateName:
 				DockerfileTemplate = DockerfileDefaultTemplate
 			case funcUtilDockerfileTemplateName:
 				DockerfileTemplate = DockerfileFuncUtilTemplate
+				rpmsLockTemplate = &RPMsLockTemplate
 			default:
 				log.Fatal("Unknown template name: " + templateName)
 			}
@@ -251,28 +260,43 @@ func main() {
 
 			dockerfilePath := saveDockerfile(d, DockerfileTemplate, out, "")
 
-			if metadata != nil {
-				v, err := prowgen.ProjectDirectoryImageBuildStepConfigurationFuncFromImageInput(
-					prowgen.Repository{
-						ImagePrefix: metadata.Project.ImagePrefix,
-					},
-					prowgen.ImageInput{
-						Context:        context,
-						DockerfilePath: dockerfilePath,
-					},
-				)()
+			v, err := prowgen.ProjectDirectoryImageBuildStepConfigurationFuncFromImageInput(
+				prowgen.Repository{
+					ImagePrefix: metadata.Project.ImagePrefix,
+				},
+				prowgen.ImageInput{
+					Context:        context,
+					DockerfilePath: dockerfilePath,
+				},
+			)()
+			if err != nil {
+				log.Fatal("Failed to derive image name ", err)
+			}
+			image := fmt.Sprintf(registryImageFmt, v.To, metadata.Project.Tag)
+			if imageEnv := os.Getenv(strings.ToUpper(strings.ReplaceAll(string(v.To), "-", "_"))); imageEnv != "" {
+				image = imageEnv
+			}
+			if strings.HasPrefix(p, "vendor/") {
+				goPackageToImageMapping[strings.Replace(p, "vendor/", "", 1)] = image
+			} else {
+				goPackageToImageMapping[filepath.Join(goMod.Module.Mod.Path, p)] = image
+			}
+
+			if rpmsLockTemplate != nil && !rpmsLockFileWritten {
+				t, err := template.ParseFS(rpmsLockTemplate, "rpms.lock.yaml")
 				if err != nil {
-					log.Fatal("Failed to derive image name ", err)
+					log.Fatal("Failed creating RPM template ", err)
 				}
-				image := fmt.Sprintf(registryImageFmt, v.To, metadata.Project.Tag)
-				if imageEnv := os.Getenv(strings.ToUpper(strings.ReplaceAll(string(v.To), "-", "_"))); imageEnv != "" {
-					image = imageEnv
+
+				bf := &buffer.Buffer{}
+				if err := t.Execute(bf, nil); err != nil {
+					log.Fatal("Failed to execute RPM template", err)
 				}
-				if strings.HasPrefix(p, "vendor/") {
-					goPackageToImageMapping[strings.Replace(p, "vendor/", "", 1)] = image
-				} else {
-					goPackageToImageMapping[filepath.Join(goMod.Module.Mod.Path, p)] = image
+
+				if err := os.WriteFile(filepath.Join(rootDir, cachi2DefaultRPMsLockFilePath), bf.Bytes(), 0644); err != nil {
+					log.Fatal("Failed to write RPM lock file", err)
 				}
+				rpmsLockFileWritten = true
 			}
 		}
 
