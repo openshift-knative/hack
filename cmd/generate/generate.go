@@ -183,7 +183,11 @@ func main() {
 			goVersion = strings.Join(strings.Split(goVersion, ".")[0:2], ".")
 		}
 
-		builderImage := fmt.Sprintf(dockerfileImageBuilderFmt, goVersion)
+		// Builder image might be provided without formatting '%s' string as plain value
+		builderImage := dockerfileImageBuilderFmt
+		if strings.Count(dockerfileImageBuilderFmt, "%s") == 1 {
+			builderImage = fmt.Sprintf(dockerfileImageBuilderFmt, goVersion)
+		}
 
 		goPackageToImageMapping := map[string]string{}
 
