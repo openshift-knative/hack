@@ -41,6 +41,14 @@ spec:
     - name: additional-tags
       value: [{{{ range $tag := .Tags }}} {{{ $tag }}}, {{{ end }}}]
     {{{- end }}}
+    {{{- if .PrefetchDeps.PrefetchInput }}}
+    - name: prefetch-input
+      value: "{{{ .PrefetchDeps.PrefetchInput }}}"
+    {{{- end }}}
+    {{{- if .PrefetchDeps.DevPackageManagers }}}
+    - name: prefetch-input-dev-package-managers
+      value: "{{{ .PrefetchInput.DevPackageManagers }}}"
+    {{{- end }}}
   pipelineRef:
     name: {{{ .Pipeline }}}
   taskRunTemplate: {}
