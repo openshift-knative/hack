@@ -9,6 +9,10 @@ generate-ci-no-clean:
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/
 .PHONY: generate-ci-no-clean
 
+generate-client-ci:
+	go run github.com/openshift-knative/hack/cmd/prowgen --config config/client.yaml $(ARGS)
+.PHONY: generate-client-ci
+
 generate-eventing-ci:
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing.yaml $(ARGS)
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/backstage-plugins.yaml $(ARGS)

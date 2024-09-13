@@ -1,0 +1,25 @@
+config:
+  branches:
+    release-v1.15:
+      openShiftVersions:
+        - version: "4.15"
+          skipCron: true
+repositories:
+  - dockerfiles: {}
+    e2e:
+      - match: .*e2e$
+        skipCron: true
+        skipImages:
+            - knative-client-kn
+            - knative-client-cli-artifacts
+    ignoreConfigs:
+      matches:
+        - .*release-next*
+        - .*release-v1.*.yaml$
+    imagePrefix: knative-client
+    org: openshift-knative
+    promotion:
+      namespace: openshift
+    repo: client
+    canonicalGoRepository: github.com/knative/client
+    slackChannel: '#serverless-ci'
