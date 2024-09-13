@@ -81,6 +81,7 @@ func main() {
 		imagesFromRepositoriesURLFmt string
 		additionalPackages           []string
 		templateName                 string
+		rpmsLockFileEnabled          bool
 	)
 
 	defaultIncludes := []string{
@@ -109,6 +110,7 @@ func main() {
 	pflag.StringVar(&imagesFromRepositoriesURLFmt, "images-from-url-format", "https://raw.githubusercontent.com/openshift-knative/%s/%s/openshift/images.yaml", "Additional images to be pulled from other midstream repositories matching the tag in project.yaml")
 	pflag.StringArrayVar(&additionalPackages, "additional-packages", nil, "Additional packages to be installed in the image")
 	pflag.StringVar(&templateName, "template-name", defaultDockerfileTemplateName, fmt.Sprintf("Dockerfile template name to use. Supported values are [%s, %s]", defaultDockerfileTemplateName, funcUtilDockerfileTemplateName))
+	pflag.BoolVar(&rpmsLockFileEnabled, "generate-rpms-lock-file", false, "Enable the creation of the rpms.lock.yaml file")
 	pflag.Parse()
 
 	if rootDir == "" {
@@ -231,6 +233,9 @@ func main() {
 
 			var DockerfileTemplate embed.FS
 			var rpmsLockTemplate *embed.FS
+			if rpmsLockFileEnabled {
+				rpmsLockTemplate = &RPMsLockTemplate
+			}
 			switch templateName {
 			case defaultDockerfileTemplateName:
 				DockerfileTemplate = DockerfileDefaultTemplate
