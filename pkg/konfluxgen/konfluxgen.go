@@ -61,6 +61,51 @@ type Config struct {
 	Nudges     []string
 
 	Tags []string
+
+	PrefetchDeps PrefetchDeps
+}
+
+type PrefetchDeps struct {
+	DevPackageManagers string
+	/*
+		Example: '[{ "type": "rpm" }, {"type": "gomod", "path": "."}]'
+	*/
+	PrefetchInput string
+}
+
+func (pd *PrefetchDeps) WithRPMs() {
+	types := make([]map[string]interface{}, 0)
+	if pd.PrefetchInput != "" {
+		if err := json.Unmarshal([]byte(pd.PrefetchInput), &types); err != nil {
+			log.Fatal("Failed to unmarshal prefetch input: ", err)
+		}
+	}
+	types = append(types, map[string]interface{}{
+		"type": "rpm",
+	})
+	b, err := json.Marshal(types)
+	if err != nil {
+		log.Fatal("Failed to marshal prefetch input: ", err)
+	}
+	pd.PrefetchInput = string(b)
+}
+
+func (pd *PrefetchDeps) WithUnvendoredGo(path string) {
+	types := make([]map[string]interface{}, 0)
+	if pd.PrefetchInput != "" {
+		if err := json.Unmarshal([]byte(pd.PrefetchInput), &types); err != nil {
+			log.Fatal("Failed to unmarshal prefetch input: ", err)
+		}
+	}
+	types = append(types, map[string]interface{}{
+		"type": "gomod",
+		"path": path,
+	})
+	b, err := json.Marshal(types)
+	if err != nil {
+		log.Fatal("Failed to marshal prefetch input: ", err)
+	}
+	pd.PrefetchInput = string(b)
 }
 
 func Generate(cfg Config) error {
@@ -193,6 +238,7 @@ func Generate(cfg Config) error {
 				AdditionalTektonCELExpression: cfg.AdditionalTektonCELExpressionFunc(c.ReleaseBuildConfiguration, ib),
 				Tags:                          append(cfg.Tags, "latest"),
 				BuildArgs:                     cfg.BuildArgs,
+				PrefetchDeps:                  cfg.PrefetchDeps,
 			}
 			applications[appKey][Truncate(Sanitize(cfg.ComponentNameFunc(c.ReleaseBuildConfiguration, ib)))] = r
 		}
@@ -378,6 +424,8 @@ type DockerfileApplicationConfig struct {
 
 	Tags      []string
 	BuildArgs []string
+
+	PrefetchDeps PrefetchDeps
 }
 
 type PipelineEvent string

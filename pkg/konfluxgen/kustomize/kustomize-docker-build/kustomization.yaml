@@ -7,5 +7,8 @@ patches:
   - path: ../additional_tags.patch.yaml
     target:
       name: docker-build
+  - path: ../prefetch-input_dev-package-managers.yaml
+    target:
+      name: docker-build
 openapi:
   path: ../pipeline_schema.json

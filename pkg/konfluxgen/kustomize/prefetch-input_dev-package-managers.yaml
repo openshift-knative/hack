@@ -1,0 +1,14 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: docker-build
+spec:
+  params:
+    - name: prefetch-input-dev-package-managers
+      description: "Enable in-development package managers. WARNING: the behavior may change at any time without notice. Use at your own risk."
+      default: "false"
+  tasks:
+    - name: prefetch-dependencies
+      params:
+        - name: dev-package-managers
+          value: $(params.prefetch-input-dev-package-managers)
