@@ -2,7 +2,9 @@ package prowgen
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -102,7 +104,11 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						prefetchDeps.DevPackageManagers = "true"
 						prefetchDeps.WithRPMs()
 					}
-					if _, err := os.Stat(filepath.Join(r.RepositoryDirectory(), "vendor")); err != nil {
+					_, err := os.Stat(filepath.Join(r.RepositoryDirectory(), "vendor"))
+					if err != nil {
+						if !errors.Is(err, fs.ErrNotExist) {
+							return fmt.Errorf("[%s - %s] failed to verify if the project uses Go vendoring: %w", r.RepositoryDirectory(), targetBranch, err)
+						}
 						if _, err := os.Stat(filepath.Join(r.RepositoryDirectory(), "go.mod")); err == nil {
 							// If it's a Go project and no vendor dir is present enable Go caching
 							prefetchDeps.WithUnvendoredGo("." /* root of the repository */)
