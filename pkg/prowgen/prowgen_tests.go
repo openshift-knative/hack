@@ -115,7 +115,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 							LiteralTestStep: &cioperatorapi.LiteralTestStep{
 								As:       "test",
 								From:     sourceImageName,
-								Commands: fmt.Sprintf("SKIP_MESH_AUTH_POLICY_GENERATION=true make %s", test.Command),
+								Commands: fmt.Sprintf("GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true make %s", test.Command),
 								Resources: cioperatorapi.ResourceRequirements{
 									Requests: cioperatorapi.ResourceList{
 										"cpu": "100m",
