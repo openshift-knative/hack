@@ -26,6 +26,8 @@ LABEL \
       summary="Red Hat OpenShift Serverless 1 Knative Discover" \
       maintainer="serverless-support@redhat.com" \
       description="Red Hat OpenShift Serverless 1 Knative Discover" \
-      io.k8s.display-name="Red Hat OpenShift Serverless 1 Knative Discover"
+      io.k8s.display-name="Red Hat OpenShift Serverless 1 Knative Discover" \
+      io.k8s.description="Red Hat OpenShift Serverless Knative Discover" \
+      io.openshift.tags=Discover
 
 ENTRYPOINT ["/usr/bin/discover"]
