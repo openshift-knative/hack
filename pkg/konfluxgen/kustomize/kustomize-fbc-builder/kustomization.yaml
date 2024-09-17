@@ -4,10 +4,13 @@ kind: Kustomization
 resources:
   - ../fbc-builder.yaml
 patches:
-  - path: ../additional_tags.patch.yaml
+  - path: ../patch_additional_tags.patch.yaml
     target:
       name: fbc-builder
-  - path: use_hermetic_param.yaml
+  - path: patch_use_hermetic_param.patch.yaml
+    target:
+      name: fbc-builder
+  - path: ../patch_source_image.patch.yaml
     target:
       name: fbc-builder
 openapi:

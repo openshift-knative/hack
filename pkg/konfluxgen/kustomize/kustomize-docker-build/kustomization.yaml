@@ -4,10 +4,13 @@ kind: Kustomization
 resources:
   - ../docker-build.yaml
 patches:
-  - path: ../additional_tags.patch.yaml
+  - path: ../patch_additional_tags.patch.yaml
     target:
       name: docker-build
-  - path: ../prefetch-input_dev-package-managers.yaml
+  - path: ../patch_prefetch-input_dev-package-managers.patch.yaml
+    target:
+      name: docker-build
+  - path: ../patch_source_image.patch.yaml
     target:
       name: docker-build
 openapi:
