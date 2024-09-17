@@ -728,5 +728,5 @@ func mustGatherSteps(sourceImage string, optionalOnSuccess bool) []cioperatorapi
 }
 
 func formatCommand(cmd string) string {
-	return fmt.Sprintf("SKIP_MESH_AUTH_POLICY_GENERATION=true %s", cmd)
+	return fmt.Sprintf("GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true %s", cmd)
 }
