@@ -28,6 +28,6 @@ LABEL \
       description="Red Hat OpenShift Serverless 1 Knative Discover" \
       io.k8s.display-name="Red Hat OpenShift Serverless 1 Knative Discover" \
       io.k8s.description="Red Hat OpenShift Serverless Knative Discover" \
-      io.openshift.tags=Discover
+      io.openshift.tags="discover"
 
 ENTRYPOINT ["/usr/bin/discover"]
