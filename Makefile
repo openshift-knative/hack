@@ -32,7 +32,7 @@ generate-serverless-operator-ci:
 .PHONY: generate-serverless-operator-ci
 
 generate-functions-ci:
-	go run github.com/openshift-knative/hack/cmd/prowgen --config config/functions.yaml $(ARGS)
+	go run github.com/openshift-knative/hack/cmd/prowgen --config config/kn-plugin-func.yaml $(ARGS)
 .PHONY: generate-functions-ci
 
 discover-branches:
