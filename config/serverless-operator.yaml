@@ -16,7 +16,6 @@ config:
       prowgen:
         enabled: false
       konflux:
-        enabled: false
         imageOverrides:
           - name: GO_BUILDER
             pullSpec: "brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.22"

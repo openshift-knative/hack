@@ -85,20 +85,22 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						versionLabel = soMetadata.Project.Version
 					}
 					log.Println("Version label:", versionLabel)
+					buildArgs = append(buildArgs, fmt.Sprintf("VERSION=%s", versionLabel))
 
 					soConfig, loadErr := LoadConfig("config/serverless-operator.yaml")
 					if loadErr != nil {
 						return fmt.Errorf("failed to load config for serverless-operator: %w", loadErr)
 					}
-					for soConfigBranchName, br := range soConfig.Config.Branches {
-						if soBranchName == soConfigBranchName {
-							for _, img := range br.Konflux.ImageOverrides {
-								buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", img.Name, img.PullSpec))
-							}
+					br, ok := soConfig.Config.Branches[soBranchName]
+					if !ok {
+						br, ok = soConfig.Config.Branches["main"]
+						if !ok {
+							return fmt.Errorf("main or %s branch configuration not found for serverless-operator", soBranchName)
 						}
 					}
-
-					buildArgs = append(buildArgs, fmt.Sprintf("VERSION=%s", versionLabel))
+					for _, img := range br.Konflux.ImageOverrides {
+						buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", img.Name, img.PullSpec))
+					}
 
 					if err := GitMirror(ctx, r); err != nil {
 						return err
