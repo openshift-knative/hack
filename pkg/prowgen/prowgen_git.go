@@ -39,10 +39,12 @@ func Branches(ctx context.Context, r Repository) ([]string, error) {
 
 	branchesList := string(branchesBytes)
 
-	sortedBranches := strings.Split(branchesList, "\n")
-	for i, b := range sortedBranches {
-		b = strings.TrimSpace(b)
-		sortedBranches[i] = b
+	var sortedBranches []string
+	for _, branch := range strings.Split(branchesList, "\n") {
+		branch = strings.TrimSpace(branch)
+		if branch != "" {
+			sortedBranches = append(sortedBranches, branch)
+		}
 	}
 	slices.SortFunc(sortedBranches, CmpBranches)
 
