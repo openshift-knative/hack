@@ -1,4 +1,4 @@
-package sobranch
+package soversion
 
 import (
 	"fmt"
@@ -7,8 +7,7 @@ import (
 	"github.com/coreos/go-semver/semver"
 )
 
-func FromUpstreamVersion(upstream string) string {
-
+func FromUpstreamVersion(upstream string) *semver.Version {
 	upstream = strings.Replace(upstream, "release-v", "", 1)
 	upstream = strings.Replace(upstream, "release-", "", 1)
 	upstream = strings.Replace(upstream, "v", "", 1)
@@ -30,5 +29,9 @@ func FromUpstreamVersion(upstream string) string {
 		soVersion.Minor -= 1
 	}
 
+	return soVersion
+}
+
+func BranchName(soVersion *semver.Version) string {
 	return fmt.Sprintf("release-%d.%d", soVersion.Major, soVersion.Minor)
 }
