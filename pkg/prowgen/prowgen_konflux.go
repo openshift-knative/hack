@@ -83,11 +83,13 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 							return err
 						}
 						versionLabel = soMetadata.Project.Version
-						for _, img := range soMetadata.ImageOverrides {
-							buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", img.Name, img.PullSpec))
-						}
 					}
 					log.Println("Version label:", versionLabel)
+
+					for _, img := range b.Konflux.ImageOverrides {
+						buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", img.Name, img.PullSpec))
+					}
+
 					buildArgs = append(buildArgs, fmt.Sprintf("VERSION=%s", versionLabel))
 
 					if err := GitMirror(ctx, r); err != nil {
@@ -250,7 +252,8 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			return err
 		}
 		buildArgs := []string{fmt.Sprintf("VERSION=%s", soMetadata.Project.Version)}
-		for _, img := range soMetadata.ImageOverrides {
+
+		for _, img := range b.Konflux.ImageOverrides {
 			buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", img.Name, img.PullSpec))
 		}
 

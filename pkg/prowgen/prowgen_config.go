@@ -86,6 +86,8 @@ type Konflux struct {
 	ExcludesImages []string `json:"excludesImages,omitempty" yaml:"excludesImages,omitempty"`
 
 	FBCImages []string `json:"fbcImages,omitempty" yaml:"fbcImages,omitempty"`
+
+	ImageOverrides []Image `json:"imageOverrides" yaml:"imageOverrides"`
 }
 
 type OpenShift struct {
@@ -96,6 +98,11 @@ type OpenShift struct {
 	OnDemand              bool `json:"onDemand,omitempty" yaml:"onDemand,omitempty"`
 	GenerateCustomConfigs bool `json:"generateCustomConfigs,omitempty" yaml:"generateCustomConfigs,omitempty"`
 	CandidateRelease      bool `json:"candidateRelease,omitempty" yaml:"candidateRelease,omitempty"`
+}
+
+type Image struct {
+	Name     string `json:"name" yaml:"name"`
+	PullSpec string `json:"pullSpec" yaml:"pullSpec"`
 }
 
 type CommonConfig struct {
