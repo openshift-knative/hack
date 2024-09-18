@@ -86,8 +86,16 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 					}
 					log.Println("Version label:", versionLabel)
 
-					for _, img := range b.Konflux.ImageOverrides {
-						buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", img.Name, img.PullSpec))
+					soConfig, loadErr := LoadConfig("config/serverless-operator.yaml")
+					if loadErr != nil {
+						return fmt.Errorf("failed to load config for serverless-operator: %w", loadErr)
+					}
+					for soConfigBranchName, br := range soConfig.Config.Branches {
+						if soBranchName == soConfigBranchName {
+							for _, img := range br.Konflux.ImageOverrides {
+								buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", img.Name, img.PullSpec))
+							}
+						}
 					}
 
 					buildArgs = append(buildArgs, fmt.Sprintf("VERSION=%s", versionLabel))

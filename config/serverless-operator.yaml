@@ -14,12 +14,12 @@ config:
         version: "4.13"
     release-1.35:
       konflux:
-        enabled: true
-      imageOverrides:
-        - name: GO_BUILDER
-          pullSpec: "brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.22"
-        - name: GO_RUNTIME
-          pullSpec: "registry.access.redhat.com/ubi8/ubi-minimal"
+        enabled: false
+        imageOverrides:
+          - name: GO_BUILDER
+            pullSpec: "brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.22"
+          - name: GO_RUNTIME
+            pullSpec: "registry.access.redhat.com/ubi8/ubi-minimal"
 repositories:
 - customConfigs:
   - name: aws-ovn
