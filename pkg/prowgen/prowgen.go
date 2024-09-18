@@ -121,7 +121,10 @@ func Main() {
 				}
 
 				// Delete existing configuration for each configured branch.
-				for branch := range inConfig.Config.Branches {
+				for branch, b := range inConfig.Config.Branches {
+					if b.Prowgen != nil && !b.Prowgen.Enabled {
+						continue
+					}
 					if err := DeleteExistingReleaseBuildConfigurationForBranch(outConfig, repository, branch); err != nil {
 						return err
 					}
