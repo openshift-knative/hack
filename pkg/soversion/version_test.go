@@ -41,3 +41,32 @@ func TestFromUpstreamVersion(t *testing.T) {
 		})
 	}
 }
+
+func TestToUpstreamVersion(t *testing.T) {
+	tests := []struct {
+		soVersion string
+		want      string
+	}{
+		{
+			soVersion: "1.32.0",
+			want:      "1.11.0",
+		}, {
+			soVersion: "1.33.0",
+			want:      "1.12.0",
+		}, {
+			soVersion: "1.33.1",
+			want:      "1.12.0",
+		}, {
+			soVersion: "1.34.0",
+			want:      "1.14.0",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%q -> %q", tt.soVersion, tt.want), func(t *testing.T) {
+			if got := ToUpstreamVersion(tt.soVersion); got.String() != semver.New(tt.want).String() {
+				t.Errorf("ToUpstreamVersion() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

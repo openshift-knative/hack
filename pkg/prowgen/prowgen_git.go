@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/openshift-knative/hack/pkg/soversion"
 	"log"
 	"os"
 	"path/filepath"
@@ -67,26 +68,38 @@ func CmpBranches(a string, b string) int {
 		}
 	}
 
-	a = strings.ReplaceAll(a, "release-v", "")
-	a = strings.ReplaceAll(a, "release-", "")
-	b = strings.ReplaceAll(b, "release-v", "")
-	b = strings.ReplaceAll(b, "release-", "")
-	if strings.Count(a, ".") == 1 {
-		a += ".0"
+	var av, bv *semver.Version
+	var err error
+
+	if strings.HasPrefix(a, "serverless-") {
+		av = soversion.ToUpstreamVersion(a)
+	} else {
+		av, err = semverFromReleaseBranch(a)
+		if err != nil {
+			return -1 // this is equivalent to ignoring branches that aren't parseable
+		}
 	}
-	if strings.Count(b, ".") == 1 {
-		b += ".0"
-	}
-	av, err := semver.NewVersion(a)
-	if err != nil {
-		return -1 // this is equivalent to ignoring branches that aren't parseable
-	}
-	bv, err := semver.NewVersion(b)
-	if err != nil {
-		return 1 // this is equivalent to ignoring branches that aren't parseable
+
+	if strings.HasPrefix(b, "serverless-") {
+		bv = soversion.ToUpstreamVersion(b)
+	} else {
+		bv, err = semverFromReleaseBranch(b)
+		if err != nil {
+			return 1 // this is equivalent to ignoring branches that aren't parseable
+		}
 	}
 
 	return av.Compare(*bv)
+}
+
+func semverFromReleaseBranch(b string) (*semver.Version, error) {
+	b = strings.ReplaceAll(b, "release-v", "")
+	b = strings.ReplaceAll(b, "release-", "")
+	if strings.Count(b, ".") == 1 {
+		b += ".0"
+	}
+
+	return semver.NewVersion(b)
 }
 
 func gitClone(ctx context.Context, r Repository, mirror bool) error {
