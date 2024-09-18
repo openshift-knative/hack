@@ -486,6 +486,10 @@ func Truncate(input interface{}) string {
 	in = strings.ReplaceAll(in, "release-", "")
 	in = strings.ReplaceAll(in, "knative-", "kn-")
 	in = strings.ReplaceAll(in, "eventing-kafka-broker-", "ekb-")
+	if strings.HasPrefix(in, "kn-kn-") {
+		// avoid kn-kn-plugin-xyz names
+		in = strings.TrimPrefix(in, "kn-")
+	}
 	return Name(in, "")
 }
 

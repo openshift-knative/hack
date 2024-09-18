@@ -10,13 +10,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/openshift-knative/hack/pkg/soversion"
+
 	"github.com/coreos/go-semver/semver"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
 
 	"github.com/openshift-knative/hack/pkg/project"
 
 	"github.com/openshift-knative/hack/pkg/konfluxgen"
-	"github.com/openshift-knative/hack/pkg/sobranch"
 )
 
 const (
@@ -46,11 +47,19 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 
 					// Special case "release-next"
 					targetBranch := branchName
-					downstreamVersion := "release-next"
+					soBranchName := "release-next"
 					if branchName == "release-next" {
 						targetBranch = "main"
 					} else {
-						downstreamVersion = sobranch.FromUpstreamVersion(branchName)
+						soVersion := soversion.FromUpstreamVersion(branchName)
+
+						if r.Org == "openshift-knative" && r.Repo == "kn-plugin-func" {
+							// functions is one minor ahead the others (with client 1.15 comes func 1.16)
+							soVersion.Minor--
+							soBranchName = soversion.BranchName(soVersion)
+						} else {
+							soBranchName = soversion.BranchName(soVersion)
+						}
 					}
 
 					// Checkout s-o to get the right release version from project.yaml (e.g. 1.34.1)
@@ -59,9 +68,9 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						return err
 					}
 
-					versionLabel := downstreamVersion
+					versionLabel := soBranchName
 					var buildArgs []string
-					if err := GitCheckout(ctx, soRepo, downstreamVersion); err != nil {
+					if err := GitCheckout(ctx, soRepo, soBranchName); err != nil {
 						// For non-existent branches we keep going and use downstreamVersion for versionLabel.
 						if !strings.Contains(err.Error(), "failed to run git [checkout") {
 							return err
@@ -90,12 +99,12 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 					}
 
 					nudges := b.Konflux.Nudges
-					if downstreamVersion != "release-next" {
-						_, ok := operatorVersions[downstreamVersion]
+					if soBranchName != "release-next" {
+						_, ok := operatorVersions[soBranchName]
 						if ok {
-							nudges = append(nudges, serverlessBundleNudge(downstreamVersion))
+							nudges = append(nudges, serverlessBundleNudge(soBranchName))
 						}
-						log.Printf("[%s] created nudges (%v) - operatorVersions: %#v - downstreamVersion: %v): %#v", r.RepositoryDirectory(), ok, operatorVersions, downstreamVersion, nudges)
+						log.Printf("[%s] created nudges (%v) - operatorVersions: %#v - downstreamVersion: %v): %#v", r.RepositoryDirectory(), ok, operatorVersions, soBranchName, nudges)
 					}
 
 					prefetchDeps := konfluxgen.PrefetchDeps{}
@@ -117,7 +126,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 
 					cfg := konfluxgen.Config{
 						OpenShiftReleasePath: openshiftRelease.RepositoryDirectory(),
-						ApplicationName:      fmt.Sprintf("serverless-operator %s", downstreamVersion),
+						ApplicationName:      fmt.Sprintf("serverless-operator %s", soBranchName),
 						BuildArgs:            buildArgs,
 						Includes: []string{
 							fmt.Sprintf("ci-operator/config/%s/.*%s.*.yaml", r.RepositoryDirectory(), branchName),

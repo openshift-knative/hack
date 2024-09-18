@@ -65,6 +65,13 @@ jobs:
           repository: openshift-knative/eventing
           token: ${{ secrets.SERVERLESS_QE_ROBOT }}
       - if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[kn-plugin-func] Clone repository'
+        uses: actions/checkout@v4
+        with:
+          path: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-func
+          repository: openshift-knative/kn-plugin-func
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
+      - if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         name: '[serverless-operator] Clone repository'
         uses: actions/checkout@v4
         with:

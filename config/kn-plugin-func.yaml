@@ -1,0 +1,56 @@
+config:
+  branches:
+    release-next:
+      openShiftVersions:
+      - version: "4.15"
+        skipCron: true
+    serverless-1.34:
+      openShiftVersions:
+      - version: "4.15"
+        skipCron: true
+repositories:
+- dockerfiles: {}
+  ignoreConfigs: {}
+  imagePrefix: knative-kn-plugin-func
+  org: openshift-knative
+  promotion:
+    namespace: openshift
+  repo: kn-plugin-func
+  slackChannel: '#knative-functions'
+  tests:
+    - as: unit
+      commands: GOPATH=/tmp/go GOFLAGS="" make test
+      container:
+        from: src
+    - as: e2e-oncluster-test
+      cluster_claim:
+        architecture: amd64
+        cloud: aws
+        owner: serverless-ci
+        product: ocp
+        timeout: 1h0m0s
+        version: "4.15"
+      steps:
+        test:
+          - as: test
+            commands: |
+              export GOPATH=/tmp/go
+              export GOFLAGS=""
+              openshift/cluster-prepare.sh
+              openshift/e2e_oncluster_tests.sh
+            dependencies:
+              - env: FUNC_UTILS_IMG
+                name: knative-kn-plugin-func-func-util
+            from: src
+            resources:
+              requests:
+                cpu: 100m
+            timeout: 1h0m0s
+        workflow: generic-claim
+  resources:
+    '*':
+      limits:
+        memory: 4Gi
+      requests:
+        cpu: 100m
+        memory: 200Mi
