@@ -88,7 +88,7 @@ type Konflux struct {
 
 	FBCImages []string `json:"fbcImages,omitempty" yaml:"fbcImages,omitempty"`
 
-	ImageOverrides []Image `json:"imageOverrides" yaml:"imageOverrides"`
+	ImageOverrides []Image `json:"imageOverrides,omitempty" yaml:"imageOverrides,omitempty"`
 }
 
 type Prowgen struct {
