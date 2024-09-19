@@ -635,7 +635,7 @@ func replaceTaskImagesFromExisting(existingBytes, newBytes []byte) []byte {
 }
 
 func defaultIsHermetic(_ cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) bool {
-	return isJavaBuild(ib) || isIndex(ib)
+	return !isJavaBuild(ib) && !isIndex(ib)
 }
 
 func isJavaBuild(ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) bool {
