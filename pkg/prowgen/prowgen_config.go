@@ -92,7 +92,7 @@ type Konflux struct {
 }
 
 type Prowgen struct {
-	Enabled bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Disabled bool `json:"disabled,omitempty" yaml:"disabled,omitempty"`
 }
 
 type OpenShift struct {
@@ -147,7 +147,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 
 	for _, branchName := range branches {
 		branch := cc.Branches[branchName]
-		if branch.Prowgen != nil && !branch.Prowgen.Enabled {
+		if branch.Prowgen != nil && branch.Prowgen.Disabled {
 			continue
 		}
 
