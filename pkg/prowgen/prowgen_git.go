@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/openshift-knative/hack/pkg/soversion"
 	"log"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
+
+	"github.com/openshift-knative/hack/pkg/soversion"
 
 	"github.com/coreos/go-semver/semver"
 )

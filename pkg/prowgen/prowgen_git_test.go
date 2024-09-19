@@ -1,9 +1,10 @@
 package prowgen
 
 import (
-	"github.com/google/go-cmp/cmp"
 	"slices"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestCmpBranches(t *testing.T) {
