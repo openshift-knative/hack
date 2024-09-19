@@ -71,6 +71,7 @@ func (r Repository) RepositoryDirectory() string {
 }
 
 type Branch struct {
+	Prowgen                *Prowgen    `json:"prowgen,omitempty" yaml:"prowgen,omitempty"`
 	OpenShiftVersions      []OpenShift `json:"openShiftVersions,omitempty" yaml:"openShiftVersions,omitempty"`
 	SkipE2EMatches         []string    `json:"skipE2EMatches,omitempty" yaml:"skipE2EMatches,omitempty"`
 	SkipDockerFilesMatches []string    `json:"skipDockerFilesMatches,omitempty" yaml:"skipDockerFilesMatches,omitempty"`
@@ -86,6 +87,12 @@ type Konflux struct {
 	ExcludesImages []string `json:"excludesImages,omitempty" yaml:"excludesImages,omitempty"`
 
 	FBCImages []string `json:"fbcImages,omitempty" yaml:"fbcImages,omitempty"`
+
+	ImageOverrides []Image `json:"imageOverrides" yaml:"imageOverrides"`
+}
+
+type Prowgen struct {
+	Enabled bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 }
 
 type OpenShift struct {
@@ -96,6 +103,11 @@ type OpenShift struct {
 	OnDemand              bool `json:"onDemand,omitempty" yaml:"onDemand,omitempty"`
 	GenerateCustomConfigs bool `json:"generateCustomConfigs,omitempty" yaml:"generateCustomConfigs,omitempty"`
 	CandidateRelease      bool `json:"candidateRelease,omitempty" yaml:"candidateRelease,omitempty"`
+}
+
+type Image struct {
+	Name     string `json:"name" yaml:"name"`
+	PullSpec string `json:"pullSpec" yaml:"pullSpec"`
 }
 
 type CommonConfig struct {
@@ -135,6 +147,9 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 
 	for _, branchName := range branches {
 		branch := cc.Branches[branchName]
+		if branch.Prowgen != nil && !branch.Prowgen.Enabled {
+			continue
+		}
 
 		if err := GitCheckout(ctx, r, branchName); err != nil {
 			return nil, fmt.Errorf("[%s] failed to checkout branch %s", r.RepositoryDirectory(), branchName)
