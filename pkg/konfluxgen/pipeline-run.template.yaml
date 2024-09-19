@@ -26,6 +26,8 @@ spec:
       value: [{{{ range $arg := .BuildArgs }}} {{{ $arg }}}, {{{ end }}}]
     - name: git-url
       value: '{{source_url}}'
+    - name: hermetic
+      value: "{{{ .Hermetic }}}"
     {{{- if eq .Event "pull_request" }}}
     - name: image-expires-after
       value: 5d

@@ -63,6 +63,8 @@ type Config struct {
 	Tags []string
 
 	PrefetchDeps PrefetchDeps
+
+	IsHermetic func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) bool
 }
 
 type PrefetchDeps struct {
@@ -127,6 +129,9 @@ func Generate(cfg Config) error {
 		cfg.NudgesFunc = func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) []string {
 			return []string{}
 		}
+	}
+	if cfg.IsHermetic == nil {
+		cfg.IsHermetic = defaultIsHermetic
 	}
 
 	if !cfg.ResourcesOutputPathSkipRemove {
@@ -240,6 +245,13 @@ func Generate(cfg Config) error {
 				BuildArgs:                     cfg.BuildArgs,
 				PrefetchDeps:                  cfg.PrefetchDeps,
 			}
+
+			if cfg.IsHermetic(c.ReleaseBuildConfiguration, ib) {
+				r.Hermetic = "true"
+			} else {
+				r.Hermetic = "false"
+			}
+
 			applications[appKey][Truncate(Sanitize(cfg.ComponentNameFunc(c.ReleaseBuildConfiguration, ib)))] = r
 		}
 	}
@@ -426,6 +438,8 @@ type DockerfileApplicationConfig struct {
 	BuildArgs []string
 
 	PrefetchDeps PrefetchDeps
+
+	Hermetic string
 }
 
 type PipelineEvent string
@@ -618,4 +632,17 @@ func replaceTaskImagesFromExisting(existingBytes, newBytes []byte) []byte {
 	}
 
 	return []byte(dataStr)
+}
+
+func defaultIsHermetic(_ cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) bool {
+	return isJavaBuild(ib) || isIndex(ib)
+}
+
+func isJavaBuild(ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) bool {
+	return strings.HasSuffix(string(ib.To), "eventing-kafka-broker-receiver") ||
+		strings.HasSuffix(string(ib.To), "eventing-kafka-broker-dispatcher")
+}
+
+func isIndex(ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) bool {
+	return string(ib.To) == "serverless-index"
 }
