@@ -9,8 +9,8 @@ config:
         - .*serverless-index.*
       openShiftVersions:
       - generateCustomConfigs: true
-        version: "4.16"
         useClusterPool: true
+        version: "4.16"
       - onDemand: true
         version: "4.13"
     release-1.35:

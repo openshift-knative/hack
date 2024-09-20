@@ -2,8 +2,8 @@ config:
   branches:
     release-next:
       openShiftVersions:
-      - version: "4.16"
-        useClusterPool: true
+      - useClusterPool: true
+        version: "4.16"
       - onDemand: true
         version: "4.13"
       skipDockerFilesMatches:
@@ -14,31 +14,31 @@ config:
     release-v1.11:
       openShiftVersions:
       - skipCron: true
-        version: "4.16"
         useClusterPool: true
+        version: "4.16"
       - onDemand: true
         skipCron: true
         version: "4.12"
     release-v1.12:
       openShiftVersions:
-      - version: "4.16"
-        useClusterPool: true
+      - useClusterPool: true
+        version: "4.16"
       - onDemand: true
         version: "4.12"
       skipE2EMatches:
       - .*e2e-tls$
     release-v1.14:
       openShiftVersions:
-      - version: "4.16"
-        useClusterPool: true
+      - useClusterPool: true
+        version: "4.16"
       - onDemand: true
         version: "4.13"
     release-v1.15:
       konflux:
         enabled: true
       openShiftVersions:
-      - version: "4.16"
-        useClusterPool: true
+      - useClusterPool: true
+        version: "4.16"
       - onDemand: true
         version: "4.13"
 repositories:
