@@ -9,7 +9,8 @@ config:
         - .*serverless-index.*
       openShiftVersions:
       - generateCustomConfigs: true
-        version: "4.15"
+        version: "4.16"
+        useClusterPool: true
       - onDemand: true
         version: "4.13"
     release-1.35:
@@ -150,18 +151,18 @@ repositories:
     releaseBuildConfiguration:
       base_images:
         hypershift-operator:
-          name: "4.15"
+          name: "4.16"
           namespace: ocp
           tag: hypershift-operator
         upi-installer:
-          name: "4.15"
+          name: "4.16"
           namespace: ocp
           tag: upi-installer
       releases:
         latest:
           integration:
             include_built_images: true
-            name: "4.15"
+            name: "4.16"
             namespace: ocp
       tests:
       - as: e2e-hypershift-continuous
@@ -220,7 +221,7 @@ repositories:
           cluster_profile: osd-ephemeral
           env:
             CLUSTER_DURATION: "10800"
-            CLUSTER_VERSION: "4.15"
+            CLUSTER_VERSION: "4.16"
             COMPUTE_NODES: "4"
           post:
           - chain: gather
@@ -279,7 +280,7 @@ repositories:
     releaseBuildConfiguration:
       base_images:
         upi-installer:
-          name: "4.15"
+          name: "4.16"
           namespace: ocp
           tag: upi-installer
       tests:

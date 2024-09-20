@@ -3,11 +3,13 @@ config:
     release-next:
       openShiftVersions:
       - skipCron: true
-        version: "4.15"
+        version: "4.16"
+        useClusterPool: true
     serverless-1.34:
       openShiftVersions:
       - skipCron: true
-        version: "4.15"
+        version: "4.16"
+        useClusterPool: true
 repositories:
 - dockerfiles: {}
   ignoreConfigs: {}
@@ -36,7 +38,7 @@ repositories:
       owner: serverless-ci
       product: ocp
       timeout: 1h0m0s
-      version: "4.15"
+      version: "4.16"
     steps:
       test:
       - as: test
