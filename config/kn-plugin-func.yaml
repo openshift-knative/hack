@@ -3,13 +3,13 @@ config:
     release-next:
       openShiftVersions:
       - skipCron: true
-        version: "4.16"
         useClusterPool: true
+        version: "4.16"
     serverless-1.34:
       openShiftVersions:
       - skipCron: true
-        version: "4.16"
         useClusterPool: true
+        version: "4.16"
 repositories:
 - dockerfiles: {}
   ignoreConfigs: {}
