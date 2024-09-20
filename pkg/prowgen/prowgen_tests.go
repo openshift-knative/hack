@@ -31,9 +31,6 @@ const (
 	// in AWS under rh-serverless account. The cluster profile defined earlier has permissions
 	// to create subdomains for new clusters.
 	devclusterBaseDomain = "serverless.devcluster.openshift.com"
-	// Holds version of the existing cluster pool dedicated to OpenShift Serverless in CI.
-	// See https://docs.ci.openshift.org/docs/how-tos/cluster-claim/#existing-cluster-pools
-	clusterPoolVersion = "4.15"
 	// Name of the owner for the existing cluster pool.
 	// Introduced in https://github.com/openshift/release/pull/49904
 	clusterPoolOwner = "serverless-ci"
@@ -76,9 +73,8 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				env            cioperatorapi.TestEnvironment
 			)
 
-			useClusterPool := openShift.Version == clusterPoolVersion
 			// Make sure to use the existing cluster pool if available for the given OpenShift version.
-			if useClusterPool {
+			if openShift.UseClusterPool {
 				// ClusterClaim references the existing cluster pool.
 				// Mutually exclusive with ClusterProfile.
 				clusterClaim = &cioperatorapi.ClusterClaim{
@@ -183,7 +179,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				},
 			}
 
-			if !useClusterPool {
+			if !openShift.UseClusterPool {
 				testConfiguration.MultiStageTestConfiguration.Post =
 					append(testConfiguration.MultiStageTestConfiguration.Post,
 						cioperatorapi.TestStep{

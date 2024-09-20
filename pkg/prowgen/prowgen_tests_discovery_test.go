@@ -315,7 +315,7 @@ func TestDiscoverTestsServingClusterClaim(t *testing.T) {
 	servingSourceImage := "knative-serving-source-image"
 	options := []ReleaseBuildConfigurationOption{
 		DiscoverImages(r, []string{"skip-images/.*"}),
-		DiscoverTests(r, OpenShift{Version: clusterPoolVersion, Cron: *cron}, servingSourceImage, []string{"skip-e2e$"}, random),
+		DiscoverTests(r, OpenShift{Version: "4.16", UseClusterPool: true, Cron: *cron}, servingSourceImage, []string{"skip-e2e$"}, random),
 	}
 
 	perfDependencies := []cioperatorapi.StepDependency{
@@ -331,10 +331,10 @@ func TestDiscoverTestsServingClusterClaim(t *testing.T) {
 
 	expectedTests := []cioperatorapi.TestStepConfiguration{
 		{
-			As: fmt.Sprintf("perf-tests-aws-%s", strings.ReplaceAll(clusterPoolVersion, ".", "")),
+			As: fmt.Sprintf("perf-tests-aws-%s", strings.ReplaceAll("4.16", ".", "")),
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
-				Version:      clusterPoolVersion,
+				Version:      "4.16",
 				Architecture: cioperatorapi.ReleaseArchitectureAMD64,
 				Cloud:        cioperatorapi.CloudAWS,
 				Owner:        "serverless-ci",

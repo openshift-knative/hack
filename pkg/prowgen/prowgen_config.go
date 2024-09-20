@@ -96,8 +96,9 @@ type Prowgen struct {
 }
 
 type OpenShift struct {
-	Version string `json:"version,omitempty" yaml:"version,omitempty"`
-	Cron    string `json:"cron,omitempty" yaml:"cron,omitempty"`
+	Version        string `json:"version,omitempty" yaml:"version,omitempty"`
+	UseClusterPool bool   `json:"useClusterPool,omitempty" yaml:"useClusterPool,omitempty"`
+	Cron           string `json:"cron,omitempty" yaml:"cron,omitempty"`
 	// SkipCron ensures that no periodic jobs are generated for tests running on the given OpenShift version.
 	SkipCron              bool `json:"skipCron,omitempty" yaml:"skipCron,omitempty"`
 	OnDemand              bool `json:"onDemand,omitempty" yaml:"onDemand,omitempty"`
