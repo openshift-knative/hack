@@ -134,16 +134,27 @@ func updateAction(inConfig *prowgen.Config) ([]interface{}, []interface{}) {
 					},
 					"working-directory": fmt.Sprintf("./src/github.com/openshift-knative/hack/%s", r.RepositoryDirectory()),
 					"run": fmt.Sprintf(`set -x
-git remote add fork "https://github.com/serverless-qe/%s.git" || true # ignore: already exists errors
-git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/%s.git" %s:%s -f
-gh pr create --base %s --head %s --title "[%s] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
+repo="%s"
+branch="%s"
+target_branch="%s"
+git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+remote_exists=$(git ls-remote --heads fork "$branch")
+if [ -z "$remote_exists" ]; then
+  # remote doesn't exist.
+  git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+  exit $?
+fi
+git fetch fork "$branch"
+if git diff --quiet "fork/$branch" "$branch"; then
+  echo "Branches are identical. No need to force push."
+else
+  git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+fi
+git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
 `,
 						r.Repo,
-						r.Repo,
 						localBranch,
-						localBranch,
-						targetBranch,
-						fmt.Sprintf("serverless-qe:%s", localBranch),
 						targetBranch,
 					),
 				})
