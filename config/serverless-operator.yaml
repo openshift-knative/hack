@@ -332,7 +332,7 @@ repositories:
     onDemand: true
     runIfChanged: test/ui
   - ignoreError: true
-    match: ^soak-e2e$
+    match: ^test-soak$
     onDemand: true
     runIfChanged: test/soak
   - ignoreError: true
