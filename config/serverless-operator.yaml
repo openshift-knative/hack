@@ -332,6 +332,10 @@ repositories:
     onDemand: true
     runIfChanged: test/ui
   - ignoreError: true
+    match: ^soak-e2e$
+    onDemand: true
+    runIfChanged: test/soak
+  - ignoreError: true
     match: ^kitchensink-e2e$
     onDemand: true
   - ignoreError: true
