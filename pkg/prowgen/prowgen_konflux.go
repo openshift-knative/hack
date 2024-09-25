@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	KonfluxBranchPrefix = "sync-konflux/"
+	KonfluxBranchPrefix = "sync-konflux-"
 )
 
 func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs []*Config) error {

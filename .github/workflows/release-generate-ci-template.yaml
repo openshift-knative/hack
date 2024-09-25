@@ -85,8 +85,20 @@ jobs:
         run: |
           set -x
           git remote add fork "https://github.com/serverless-qe/release.git"
-          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/release.git" sync-serverless-ci:sync-serverless-ci -f
-          gh pr create --base master --head serverless-qe:sync-serverless-ci --fill-verbose || true
+          branch="sync-serverless-ci"
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/release.git" "$branch:$branch" -f
+            exit $?
+          fi
+          git fetch fork "$branch"
+          if git diff --quiet "fork/$branch" "$branch"; then
+            echo "Branches are identical. No need to force push."
+          else
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/release.git" "$branch:$branch" -f
+          fi
+          gh pr create --base master --head "serverless-qe:$branch" --fill-verbose || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift/release
 
       - name: Create Pull Request - openshift-knative/hack
@@ -97,7 +109,19 @@ jobs:
         run: |
           set -x
           git remote add fork "https://github.com/serverless-qe/hack.git"
-          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/hack.git" sync-konflux/main:sync-konflux/main -f
-          gh pr create --base main --head serverless-qe:sync-konflux/main --title "[main] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
+          branch="sync-konflux-main"
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/hack.git" "$branch:$branch" -f
+            exit $?
+          fi
+          git fetch fork "$branch"
+          if git diff --quiet "fork/$branch" "$branch"; then
+            echo "Branches are identical. No need to force push."
+          else
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/hack.git" "$branch:$branch" -f
+          fi
+          gh pr create --base main --head "serverless-qe:$branch" --title "[main] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
         # Use the repository cloned by the prowgen tool
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/hack
