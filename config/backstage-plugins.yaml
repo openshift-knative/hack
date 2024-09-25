@@ -10,6 +10,13 @@ config:
       - version: "4.15"
       - onDemand: true
         version: "4.13"
+    release-v1.15:
+      konflux:
+        enabled: true
+      openShiftVersions:
+      - version: "4.15"
+      - onDemand: true
+        version: "4.13"
 repositories:
 - dockerfiles: {}
   e2e:
