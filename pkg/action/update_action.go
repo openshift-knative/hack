@@ -150,7 +150,6 @@ if git diff --quiet "fork/$branch" "$branch"; then
 else
   git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
 fi
-git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
 gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
 `,
 						r.Repo,

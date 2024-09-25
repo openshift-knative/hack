@@ -211,7 +211,6 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-istio
       - env:
@@ -237,7 +236,6 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-kafka-broker
       - env:
@@ -263,7 +261,6 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
       - env:
@@ -289,7 +286,6 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serverless-operator
       - env:
@@ -315,7 +311,6 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-istio
       - env:
@@ -341,7 +336,6 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-kourier
       - env:
@@ -367,6 +361,5 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serving
