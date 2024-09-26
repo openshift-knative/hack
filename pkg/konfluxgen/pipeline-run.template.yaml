@@ -20,8 +20,13 @@ metadata:
   namespace: ocp-serverless-tenant
 spec:
   params:
+    {{{- if .DockerfilePath }}}
+    - name: dockerfile
+      value: {{{ .DockerfilePath }}}
+    {{{- else }}}
     - name: dockerfile
       value: {{{ .ProjectDirectoryImageBuildStepConfiguration.ProjectDirectoryImageBuildInputs.DockerfilePath }}}
+    {{{- end }}}
     - name: build-args
       value: [{{{ range $arg := .BuildArgs }}} {{{ $arg }}}, {{{ end }}}]
     - name: git-url

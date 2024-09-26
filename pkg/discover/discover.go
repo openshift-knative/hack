@@ -99,12 +99,18 @@ func discover(ctx context.Context, path string) error {
 				for ; i < len(availableBranches); i++ {
 					if _, ok := inConfig.Config.Branches[availableBranches[i]]; !ok {
 						branchConfig := inConfig.Config.Branches[latest]
+
 						// enable Konflux for all new branches
-						branchConfig.Konflux = &prowgen.Konflux{
-							Enabled: true,
+						other := branchConfig
+						if other.Konflux == nil {
+							other.Konflux = &prowgen.Konflux{
+								Enabled: true,
+							}
+						} else {
+							other.Konflux.Enabled = true
 						}
 
-						inConfig.Config.Branches[availableBranches[i]] = branchConfig
+						inConfig.Config.Branches[availableBranches[i]] = other
 					}
 				}
 			}

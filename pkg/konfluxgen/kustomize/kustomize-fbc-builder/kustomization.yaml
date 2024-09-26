@@ -7,9 +7,6 @@ patches:
   - path: ../patch_additional_tags.patch.yaml
     target:
       name: fbc-builder
-  - path: patch_use_hermetic_param.patch.yaml
-    target:
-      name: fbc-builder
   - path: ../patch_source_image.patch.yaml
     target:
       name: fbc-builder
