@@ -78,7 +78,7 @@ spec:
     description: Skip checks against built image
     name: skip-checks
     type: string
-  - default: "false"
+  - default: "true"
     description: Execute the build with network isolation
     name: hermetic
     type: string
@@ -165,7 +165,7 @@ spec:
     - name: CONTEXT
       value: $(params.path-context)
     - name: HERMETIC
-      value: "true"
+      value: $(params.hermetic)
     - name: IMAGE_EXPIRES_AFTER
       value: $(params.image-expires-after)
     - name: COMMIT_SHA
@@ -295,7 +295,7 @@ spec:
       - name: name
         value: fbc-validation
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-fbc-validation:0.1@sha256:9c82f5490f446cbf609606e4009463eb9b25ec42e39afa08925f9a56d34c8492
+        value: quay.io/konflux-ci/tekton-catalog/task-fbc-validation:0.1@sha256:1518a7b6e46e5f11c302c07ea1236002370dda9a3f989467a931afd243d357b7
       - name: kind
         value: task
       resolver: bundles

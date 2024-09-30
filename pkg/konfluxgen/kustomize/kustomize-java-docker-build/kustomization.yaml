@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../docker-build.yaml
+patches:
+  - path: ../patch_additional_tags.patch.yaml
+    target:
+      name: docker-build
+  - path: ../patch_prefetch-input_dev-package-managers.patch.yaml
+    target:
+      name: docker-build
+  - path: ../patch_source_image.patch.yaml
+    target:
+      name: docker-build
+  - path: patch_java_build.patch.yaml
+    target:
+      name: docker-build
+  - patch: |-
+      - op: replace
+        path: /metadata/name
+        value: docker-java-build
+    target:
+      kind: Pipeline
+replacements:
+  - source:
+      kind: Pipeline
+      fieldPath: spec.tasks.[name=build-container].taskRef.params.[name=bundle].value
+    targets:
+      - select:
+          kind: Pipeline
+        fieldPaths:
+          - spec.tasks.[name=build-container-deps].taskRef.params.[name=bundle].value
+openapi:
+  path: ../pipeline_schema.json

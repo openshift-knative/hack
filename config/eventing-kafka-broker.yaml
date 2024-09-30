@@ -1,6 +1,10 @@
 config:
   branches:
     release-next:
+      konflux:
+        javaImages:
+        - .*eventing-kafka-broker-receiver
+        - .*eventing-kafka-broker-dispatcher
       openShiftVersions:
       - useClusterPool: true
         version: "4.16"
