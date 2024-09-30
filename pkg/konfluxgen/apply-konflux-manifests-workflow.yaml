@@ -1,0 +1,12 @@
+name: Apply Konflux Manifests
+on:
+  workflow_dispatch: # Manual workflow trigger
+  push:
+    paths:
+      - ".konflux/**"
+    branches:
+    - 'main',
+    - 'release-v*'
+jobs:
+  konflux-apply:
+    uses: openshift-knative/hack/.github/workflows/reusable-apply-konflux-manifests.yaml@main

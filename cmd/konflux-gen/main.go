@@ -18,6 +18,7 @@ const (
 	fbcBuilderImagesFlag     = "fbc-images"
 	outputFlag               = "output"
 	pipelineOutputFlag       = "pipeline-output"
+	workflowsPathFlag        = "workflows-path"
 )
 
 func main() {
@@ -34,6 +35,7 @@ func run() error {
 	pflag.StringVar(&cfg.ApplicationName, applicationNameFlag, "", "Konflux application name")
 	pflag.StringVar(&cfg.ResourcesOutputPath, outputFlag, "", "output path")
 	pflag.StringVar(&cfg.PipelinesOutputPath, pipelineOutputFlag, ".tekton", "output path for pipelines")
+	pflag.StringVar(&cfg.WorkflowsPath, workflowsPathFlag, ".github/workflows", "output path for Github workflows")
 	pflag.StringArrayVar(&cfg.Includes, includesFlag, nil, "Regex to select CI config files to include")
 	pflag.StringArrayVar(&cfg.Excludes, excludesFlag, nil, "Regex to select CI config files to exclude")
 	pflag.StringArrayVar(&cfg.ExcludesImages, excludeImagesFlag, nil, "Regex to select CI config images to exclude")

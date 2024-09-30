@@ -150,6 +150,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						JavaImages:          b.Konflux.JavaImages,
 						ResourcesOutputPath: fmt.Sprintf("%s/.konflux", r.RepositoryDirectory()),
 						PipelinesOutputPath: fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
+						WorkflowsPath:       fmt.Sprintf("%s/.github/workflows", r.RepositoryDirectory()),
 						Nudges:              nudges,
 						// Preserve the version tag as first tag in any instance since SO, when bumping the patch version
 						// will change it before merging the PR.
@@ -304,6 +305,7 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			ResourcesOutputPathSkipRemove: true,
 			ResourcesOutputPath:           resourceOutputPath,
 			PipelinesOutputPath:           fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
+			WorkflowsPath:                 fmt.Sprintf("%s/.github/workflows", r.RepositoryDirectory()),
 			Nudges:                        b.Konflux.Nudges,
 			NudgesFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) []string {
 				if strings.Contains(string(ib.To), "serverless-bundle") {

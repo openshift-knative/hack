@@ -40,6 +40,10 @@ const (
 	stageRegistry     = stageRegistryHost + "/" + registryRepoName
 )
 
+const (
+	APPLY_KONFLUX_MANIFESTS_WORKFLOW_FILE = "apply-konflux-manifests.yaml"
+)
+
 //go:embed application.template.yaml
 var ApplicationTemplate embed.FS
 
@@ -63,6 +67,9 @@ var PipelineFBCBuildTemplate embed.FS
 
 //go:embed integration-test-scenario.template.yaml
 var EnterpriseContractTestScenarioTemplate embed.FS
+
+//go:embed apply-konflux-manifests-workflow.yaml
+var ApplyKonfluxManifestsWorkflow []byte
 
 //go:embed releaseplanadmission-component.template.yaml
 var ComponentReleasePlanAdmissionsTemplate embed.FS
@@ -91,6 +98,7 @@ type Config struct {
 
 	PipelinesOutputPathSkipRemove bool
 	PipelinesOutputPath           string
+	WorkflowsPath                 string
 
 	AdditionalTektonCELExpressionFunc func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string
 	NudgesFunc                        func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) []string
@@ -473,7 +481,19 @@ func Generate(cfg Config) error {
 		}
 	}
 
+	if err := addApplyKonfluxManifestsWorkflow(cfg); err != nil {
+		return fmt.Errorf("failed to set apply-konflux-manifests workflow: %w", err)
+	}
+
 	return nil
+}
+
+func addApplyKonfluxManifestsWorkflow(cfg Config) error {
+	if err := os.MkdirAll(cfg.WorkflowsPath, 0755); err != nil {
+		return fmt.Errorf("failed to create %s: %w", cfg.WorkflowsPath, err)
+	}
+
+	return os.WriteFile(filepath.Join(cfg.WorkflowsPath, APPLY_KONFLUX_MANIFESTS_WORKFLOW_FILE), ApplyKonfluxManifestsWorkflow, 0644)
 }
 
 func collectConfigurations(openshiftReleasePath string, includes []*regexp.Regexp, excludes []*regexp.Regexp, additionalConfigs []TemplateConfig) ([]TemplateConfig, error) {
