@@ -107,6 +107,11 @@ func discoverDockerfiles(r Repository, skipDockerFiles []string) ([]string, erro
 	if len(r.Dockerfiles.Matches) != 0 {
 		dockerFilesToInclude = r.Dockerfiles.Matches
 	}
+	skips := make([]*regexp.Regexp, 0, len(skipDockerFiles))
+	for _, dockerfile := range skipDockerFiles {
+		skips = append(skips, regexp.MustCompile(dockerfile))
+	}
+
 	filteredDockerFiles := slices.Filter(nil, dockerFilesToInclude, func(s string) bool {
 		return !slices.Contains(skipDockerFiles, s)
 	})
@@ -131,6 +136,11 @@ func discoverDockerfiles(r Repository, skipDockerFiles []string) ([]string, erro
 		}
 		if !include {
 			return nil
+		}
+		for _, s := range skips {
+			if s.MatchString(path) {
+				return nil
+			}
 		}
 		dockerfiles.Insert(filepath.Join(rootDir, path))
 		return nil
