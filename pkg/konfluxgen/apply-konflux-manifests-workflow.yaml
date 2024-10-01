@@ -10,3 +10,4 @@ on:
 jobs:
   konflux-apply:
     uses: openshift-knative/hack/.github/workflows/reusable-apply-konflux-manifests.yaml@main
+    secrets: inherit
