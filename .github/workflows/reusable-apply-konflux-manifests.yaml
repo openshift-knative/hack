@@ -1,14 +1,6 @@
 name: Reusable Apply Konflux Manifests
 on:
-  schedule:
-    - cron: "0 6 * * *" # Daily at 06:00.
-  workflow_dispatch: # Manual workflow trigger
-  push:
-    paths:
-      - ".konflux/**"
-    branches:
-      - 'main',
-      - 'release-v*'
+  workflow_call:
 defaults:
   run:
     shell: bash
