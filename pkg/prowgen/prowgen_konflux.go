@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/openshift-knative/hack/pkg/project/serverlessoperator"
 	"io/fs"
 	"log"
 	"os"
@@ -256,11 +257,15 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 
 		soProjectYamlPath := filepath.Join(r.RepositoryDirectory(),
 			"olm-catalog", "serverless-operator", "project.yaml")
-		soMetadata, err := project.ReadMetadataFile(soProjectYamlPath)
+		soMetadata, err := serverlessoperator.ReadMetadataFile(soProjectYamlPath)
 		if err != nil {
 			return err
 		}
-		buildArgs := []string{fmt.Sprintf("VERSION=%s", soMetadata.Project.Version)}
+
+		buildArgs := []string{
+			fmt.Sprintf("VERSION=%s", soMetadata.Project.Version),
+			fmt.Sprintf("OPM_IMAGE=registry.redhat.io/openshift4/ose-operator-registry-rhel9:%s", soMetadata.Requirements.OcpVersion.Label),
+		}
 
 		for _, img := range b.Konflux.ImageOverrides {
 			buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", img.Name, img.PullSpec))
