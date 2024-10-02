@@ -141,8 +141,7 @@ git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignor
 remote_exists=$(git ls-remote --heads fork "$branch")
 if [ -z "$remote_exists" ]; then
   # remote doesn't exist.
-  git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-  exit $?
+  git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
 fi
 git fetch fork "$branch"
 if git diff --quiet "fork/$branch" "$branch"; then
