@@ -45,13 +45,14 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 			for branchName, b := range config.Config.Branches {
 				if b.Konflux != nil && b.Konflux.Enabled {
 
+					var soVersion *semver.Version
 					// Special case "release-next"
 					targetBranch := branchName
-					soBranchName := "release-next"
+					soBranchName := "main"
 					if branchName == "release-next" {
 						targetBranch = "main"
 					} else {
-						soVersion := soversion.FromUpstreamVersion(branchName)
+						soVersion = soversion.FromUpstreamVersion(branchName)
 
 						if r.Org == "openshift-knative" && r.Repo == "kn-plugin-func" {
 							// functions is one minor ahead the others (with client 1.15 comes func 1.16)
@@ -71,10 +72,14 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 					versionLabel := soBranchName
 					var buildArgs []string
 					if err := GitCheckout(ctx, soRepo, soBranchName); err != nil {
-						// For non-existent branches we keep going and use downstreamVersion for versionLabel.
 						if !strings.Contains(err.Error(), "failed to run git [checkout") {
 							return err
 						}
+						// For non-existent branches we use the `.0` patch version if soVersion is set.
+						if soVersion != nil {
+							versionLabel = soVersion.String()
+						}
+						// For non-existent branches we keep going and use downstreamVersion for versionLabel.
 					} else {
 						soProjectYamlPath := filepath.Join(soRepo.RepositoryDirectory(),
 							"olm-catalog", "serverless-operator", "project.yaml")
