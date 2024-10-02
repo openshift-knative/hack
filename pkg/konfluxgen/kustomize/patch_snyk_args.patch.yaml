@@ -1,0 +1,15 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: docker-build
+spec:
+  params:
+  - name: snyk-args
+    description: Append arguments to Snyk code command.
+    default: "--all-projects --org=3e1a4cca-ebfb-495f-b64c-3cc960d566b4 --exclude=test*,vendor,third_party"
+    type: string
+  tasks:
+    - name: sast-snyk-check
+      params:
+        - name: ARGS
+          value: $(params.snyk-args)
