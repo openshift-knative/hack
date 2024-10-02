@@ -144,6 +144,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						Excludes:            b.Konflux.Excludes,
 						ExcludesImages:      b.Konflux.ExcludesImages,
 						FBCImages:           b.Konflux.FBCImages,
+						JavaImages:          b.Konflux.JavaImages,
 						ResourcesOutputPath: fmt.Sprintf("%s/.konflux", r.RepositoryDirectory()),
 						PipelinesOutputPath: fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
 						Nudges:              nudges,
