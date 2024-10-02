@@ -1,8 +1,6 @@
 config:
   branches:
     release-next:
-      skipDockerFilesMatches:
-      - .*hermetic.*
       konflux:
         javaImages:
         - .*eventing-kafka-broker-receiver
@@ -12,6 +10,8 @@ config:
         version: "4.16"
       - onDemand: true
         version: "4.13"
+      skipDockerFilesMatches:
+      - .*hermetic.*
     release-v1.10:
       openShiftVersions:
       - skipCron: true
@@ -37,8 +37,6 @@ config:
       - onDemand: true
         version: "4.13"
     release-v1.15:
-      skipDockerFilesMatches:
-      - .*hermetic.*
       konflux:
         enabled: true
       openShiftVersions:
@@ -46,6 +44,8 @@ config:
         version: "4.16"
       - onDemand: true
         version: "4.13"
+      skipDockerFilesMatches:
+      - .*hermetic.*
 repositories:
 - dockerfiles: {}
   e2e:

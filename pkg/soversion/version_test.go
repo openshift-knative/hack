@@ -70,3 +70,23 @@ func TestToUpstreamVersion(t *testing.T) {
 		})
 	}
 }
+
+func TestIncrementBranchName(t *testing.T) {
+	tests := []struct {
+		soVersion string
+		want      string
+	}{
+		{
+			soVersion: "release-1.34",
+			want:      "release-1.35",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(fmt.Sprintf("%q -> %q", tt.soVersion, tt.want), func(t *testing.T) {
+			if got := IncrementBranchName(tt.soVersion); got != tt.want {
+				t.Errorf("ToUpstreamVersion() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

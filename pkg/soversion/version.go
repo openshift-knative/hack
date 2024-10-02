@@ -61,3 +61,12 @@ func ToUpstreamVersion(soversion string) *semver.Version {
 func BranchName(soVersion *semver.Version) string {
 	return fmt.Sprintf("release-%d.%d", soVersion.Major, soVersion.Minor)
 }
+
+func IncrementBranchName(branch string) string {
+	var major, minor int
+	n, err := fmt.Sscanf(branch, "release-%d.%d", &major, &minor)
+	if err != nil && n != 2 {
+		panic(fmt.Errorf("failed to parse branch name %q: err %v or unexpected format", branch, err))
+	}
+	return fmt.Sprintf("release-%d.%d", major, minor+1)
+}

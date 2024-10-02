@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 
@@ -22,7 +23,7 @@ type Config struct {
 	OutputAction    string
 }
 
-func UpdateAction(cfg Config) error {
+func UpdateAction(ctx context.Context, cfg Config) error {
 	var steps []interface{}
 	var cloneSteps []interface{}
 
@@ -39,14 +40,6 @@ func UpdateAction(cfg Config) error {
 		return fmt.Errorf("failed to add steps: %w", err)
 	}
 
-	// For serverless-operator, release branches are not configured in the config/serverless-operator.yaml
-	// file, so we need to add them "manually".
-	s, err := getServerlessOperatorReleaseBranchesSteps()
-	if err != nil {
-		return fmt.Errorf("failed to get serverless operator release branches: %w", err)
-	}
-	steps = append(steps, s...)
-
 	err = filepath.Walk(cfg.InputConfigPath, func(path string, info fs.FileInfo, err error) error {
 		if info.IsDir() {
 			return nil
@@ -57,7 +50,10 @@ func UpdateAction(cfg Config) error {
 			return err
 		}
 
-		cs, s := updateAction(inConfig)
+		cs, s, err := updateAction(ctx, inConfig)
+		if err != nil {
+			return fmt.Errorf("failed to update action: %w", err)
+		}
 		cloneSteps = append(cloneSteps, cs...)
 		steps = append(steps, s...)
 
@@ -90,10 +86,14 @@ func UpdateAction(cfg Config) error {
 	return nil
 }
 
-func updateAction(inConfig *prowgen.Config) ([]interface{}, []interface{}) {
+func updateAction(ctx context.Context, inConfig *prowgen.Config) ([]interface{}, []interface{}, error) {
 	var cloneSteps []interface{}
 	var steps []interface{}
 	for _, r := range inConfig.Repositories {
+
+		if err := prowgen.GitMirror(ctx, r); err != nil {
+			return nil, nil, err
+		}
 
 		log.Println(r.RepositoryDirectory(), "update action")
 
@@ -122,6 +122,15 @@ func updateAction(inConfig *prowgen.Config) ([]interface{}, []interface{}) {
 				targetBranch := branchName
 				if branchName == "release-next" {
 					targetBranch = "main"
+				}
+
+				if err := prowgen.GitCheckout(ctx, r, targetBranch); err != nil {
+					if !strings.Contains(err.Error(), "failed to run git [checkout") {
+						return nil, nil, err
+					}
+					// Skip non-existing branches
+					log.Println(r.RepositoryDirectory(), "Skipping non existing branch", branchName)
+					continue
 				}
 
 				localBranch := fmt.Sprintf("%s%s", prowgen.KonfluxBranchPrefix, branchName)
@@ -160,7 +169,7 @@ gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$t
 			}
 		}
 	}
-	return cloneSteps, steps
+	return cloneSteps, steps, nil
 }
 
 func AddNestedField(node *yaml.Node, value interface{}, prepend bool, fields ...string) error {
@@ -216,33 +225,4 @@ func sortedKeys[K cmp.Ordered, V any](m map[K]V) []K {
 	}
 	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
 	return keys
-}
-
-func getServerlessOperatorReleaseBranchesSteps() ([]interface{}, error) {
-	konfluxVersions, err := prowgen.ServerlessOperatorKonfluxVersions(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("failed to get serverless operator versions: %w", err)
-	}
-
-	soConfig := &prowgen.Config{
-		Repositories: []prowgen.Repository{
-			{Org: "openshift-knative", Repo: "serverless-operator"},
-		},
-	}
-	for _, release := range sortedKeys(konfluxVersions) {
-		branch := konfluxVersions[release]
-		if branch == "main" {
-			continue
-		}
-		if soConfig.Config.Branches == nil {
-			soConfig.Config.Branches = map[string]prowgen.Branch{}
-		}
-		soConfig.Config.Branches[branch] = prowgen.Branch{
-			Konflux: &prowgen.Konflux{
-				Enabled: true,
-			},
-		}
-	}
-	_, s := updateAction(soConfig)
-	return s, nil
 }
