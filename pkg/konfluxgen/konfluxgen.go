@@ -42,6 +42,9 @@ var PipelineFBCBuildTemplate embed.FS
 //go:embed integration-test-scenario.template.yaml
 var EnterpriseContractTestScenarioTemplate embed.FS
 
+//go:embed docker-build-oci-ta.yaml
+var PipelineDockerBuildOciTaTemplate embed.FS
+
 type Config struct {
 	OpenShiftReleasePath string
 	ApplicationName      string
@@ -118,6 +121,7 @@ func Generate(cfg Config) error {
 	fbcBuildPipelinePath := filepath.Join(cfg.PipelinesOutputPath, "fbc-builder.yaml")
 	containerBuildPipelinePath := filepath.Join(cfg.PipelinesOutputPath, "docker-build.yaml")
 	containerJavaBuildPipelinePath := filepath.Join(cfg.PipelinesOutputPath, "docker-java-build.yaml")
+	// containerMultiArchBuildPipelinePath := filepath.Join(cfg.PipelinesOutputPath, "docker-build-oci-ta.yaml")
 
 	if cfg.ComponentNameFunc == nil {
 		cfg.ComponentNameFunc = func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
@@ -215,7 +219,10 @@ func Generate(cfg Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to parse integration test scenario template: %w", err)
 	}
-
+	pipelineDockerBuildOciTaTemplate, err := template.New("docker-build-oci-ta.yaml").Delims("{{{", "}}}").Funcs(funcs).ParseFS(PipelineDockerBuildOciTaTemplate, "*.yaml")
+	if err != nil {
+		return fmt.Errorf("failed to parse docker build oci ta template: %w", err)
+	}
 	applications := make(map[string]map[string]DockerfileApplicationConfig, 8)
 	for _, c := range configs {
 		appKey := Truncate(Sanitize(cfg.ApplicationName))
