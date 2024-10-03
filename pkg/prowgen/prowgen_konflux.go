@@ -274,13 +274,22 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 				return fmt.Sprintf("%s-%s", ib.To, release)
 			},
 			AdditionalTektonCELExpressionFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
-				if string(ib.To) == "serverless-openshift-knative-operator" {
-					return "&& files.all.exists(x, !x.matches('^olm-catalog/|^knative-operator/'))"
+				if string(ib.To) == "serverless-index" {
+					return "&& ( " +
+						"files.all.exists(x, x.matches('^olm-catalog/serverless-operator/index/') ||" +
+						"files.all.exists(x, x.matches('^.tekton/.*serverless-index.*') " +
+						")"
 				}
-				if string(ib.To) == "serverless-knative-operator" {
-					return "&& files.all.exists(x, !x.matches('^olm-catalog/|^openshift-knative-operator/'))"
+				if string(ib.To) == "serverless-bundle" {
+					return "&& ( " +
+						"files.all.exists(x, x.matches('^olm-catalog/serverless-operator/manifests/')) || " +
+						"files.all.exists(x, x.matches('^olm-catalog/serverless-operator/metadata/')) || " +
+						"files.all.exists(x, x.matches('^olm-catalog/serverless-operator/Dockerfile')) ||" +
+						"files.all.exists(x, x.matches('^.tekton/.*serverless-bundle.*') " +
+						")"
 				}
-				return ""
+				nonCatalog := "&& files.all.exists(x, !x.matches('^olm-catalog/'))"
+				return nonCatalog
 			},
 			Includes: []string{
 				fmt.Sprintf("ci-operator/config/%s/.*%s.*.yaml", r.RepositoryDirectory(), branch),
