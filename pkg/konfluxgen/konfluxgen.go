@@ -244,7 +244,7 @@ func Generate(cfg Config) error {
 					break
 				}
 			}
-			dockerfilePath := ""
+			dockerfilePath := ib.ProjectDirectoryImageBuildInputs.DockerfilePath
 			for _, r := range javaImages {
 				if r.MatchString(string(ib.To)) {
 					pipeline = DockerJavaBuild
@@ -267,6 +267,7 @@ func Generate(cfg Config) error {
 				Tags:                          append(cfg.Tags, "latest"),
 				BuildArgs:                     cfg.BuildArgs,
 				PrefetchDeps:                  cfg.PrefetchDeps,
+				DockerfilePath:                dockerfilePath,
 			}
 
 			if cfg.IsHermetic(c.ReleaseBuildConfiguration, ib) {
@@ -380,7 +381,7 @@ func Generate(cfg Config) error {
 
 			buf.Reset()
 
-			if config.Pipeline == FBCBuild {
+			if config.Pipeline == DockerJavaBuild {
 
 				if err := pipelineDockerJavaBuildTemplate.Execute(buf, nil); err != nil {
 					return fmt.Errorf("failed to execute template for pipeline %q: %w", containerJavaBuildPipelinePath, err)

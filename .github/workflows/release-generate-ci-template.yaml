@@ -89,8 +89,7 @@ jobs:
           remote_exists=$(git ls-remote --heads fork "$branch")
           if [ -z "$remote_exists" ]; then
             # remote doesn't exist.
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/release.git" "$branch:$branch" -f
-            exit $?
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/release.git" "$branch:$branch" -f || exit 1
           fi
           git fetch fork "$branch"
           if git diff --quiet "fork/$branch" "$branch"; then
@@ -113,8 +112,7 @@ jobs:
           remote_exists=$(git ls-remote --heads fork "$branch")
           if [ -z "$remote_exists" ]; then
             # remote doesn't exist.
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/hack.git" "$branch:$branch" -f
-            exit $?
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/hack.git" "$branch:$branch" -f || exit 1
           fi
           git fetch fork "$branch"
           if git diff --quiet "fork/$branch" "$branch"; then

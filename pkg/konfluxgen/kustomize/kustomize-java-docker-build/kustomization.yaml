@@ -13,6 +13,9 @@ patches:
   - path: ../patch_source_image.patch.yaml
     target:
       name: docker-build
+  - path: ../patch_snyk_args.patch.yaml
+    target:
+      name: docker-build
   - path: patch_java_build.patch.yaml
     target:
       name: docker-build
