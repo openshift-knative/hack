@@ -21,8 +21,8 @@ arches:
     packages:
       - repoid: ubi-8-appstream-rpms
         url: "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/aarch64/appstream/os/Packages/s/socat-1.7.4.1-1.el8.aarch64.rpm"
-        size: 320544
-        checksum: "sha256:4e8380ed4b4570663136b8b499bfe343b688bda676028ef5172d2155ac80e6ae"
+        size: 324364
+        checksum: "sha256:eb27326c2f3f7c813f0f21e15177ab3f4c74778e2ef8029de51aafb09445c515"
       - repoid: ubi-8-baseos-rpms
         url: "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/aarch64/baseos/os/Packages/t/tar-1.30-9.el8.aarch64.rpm"
         size: 849892
