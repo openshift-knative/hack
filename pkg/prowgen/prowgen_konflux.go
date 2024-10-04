@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/openshift-knative/hack/pkg/project/serverlessoperator"
 	"io/fs"
 	"log"
 	"os"
@@ -257,7 +256,7 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 
 		soProjectYamlPath := filepath.Join(r.RepositoryDirectory(),
 			"olm-catalog", "serverless-operator", "project.yaml")
-		soMetadata, err := serverlessoperator.ReadMetadataFile(soProjectYamlPath)
+		soMetadata, err := project.ReadMetadataFile(soProjectYamlPath)
 		if err != nil {
 			return err
 		}
