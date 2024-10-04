@@ -263,7 +263,7 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 
 		buildArgs := []string{
 			fmt.Sprintf("VERSION=%s", soMetadata.Project.Version),
-			fmt.Sprintf("OPM_IMAGE=registry.redhat.io/openshift4/ose-operator-registry-rhel9:%s", soMetadata.Requirements.OcpVersion.Label),
+			fmt.Sprintf("OPM_IMAGE=registry.redhat.io/openshift4/ose-operator-registry-rhel9:v%s", soMetadata.Requirements.OcpVersion.Max),
 		}
 
 		for _, img := range b.Konflux.ImageOverrides {
