@@ -365,6 +365,7 @@ repositories:
     - .*rosa-classic.*
   imageNameOverrides:
     serverless-operator: bundle
+    serverless-operator-index: index
   imagePrefix: serverless
   org: openshift-knative
   promotion:
