@@ -428,3 +428,7 @@ func applyOptions(cfg *cioperatorapi.ReleaseBuildConfiguration, opts ...ReleaseB
 	}
 	return nil
 }
+
+func (r Repository) IsServerlessOperator() bool {
+	return r.Org == "openshift-knative" && r.Repo == "serverless-operator"
+}

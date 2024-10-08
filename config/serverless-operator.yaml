@@ -7,6 +7,11 @@ config:
         - .*rosa.*
         fbcImages:
         - .*serverless-index.*
+        imageOverrides:
+        - name: GO_BUILDER
+          pullSpec: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.22
+        - name: GO_RUNTIME
+          pullSpec: registry.access.redhat.com/ubi8/ubi-minimal
       openShiftVersions:
       - generateCustomConfigs: true
         useClusterPool: true
@@ -15,11 +20,22 @@ config:
         version: "4.13"
     release-1.35:
       konflux:
+        enabled: true
+        excludes:
+        - .*rosa.*
+        fbcImages:
+        - .*serverless-index.*
         imageOverrides:
         - name: GO_BUILDER
           pullSpec: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.22
         - name: GO_RUNTIME
           pullSpec: registry.access.redhat.com/ubi8/ubi-minimal
+      openShiftVersions:
+      - generateCustomConfigs: true
+        useClusterPool: true
+        version: "4.16"
+      - onDemand: true
+        version: "4.13"
       prowgen:
         disabled: true
 repositories:

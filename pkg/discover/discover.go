@@ -16,6 +16,7 @@ import (
 
 	"github.com/openshift-knative/hack/pkg/action"
 	"github.com/openshift-knative/hack/pkg/prowgen"
+	"github.com/openshift-knative/hack/pkg/soversion"
 )
 
 func Main() {
@@ -43,7 +44,7 @@ func Main() {
 		log.Fatalln("Failed to walk path", *inputConfig, err)
 	}
 
-	err = action.UpdateAction(action.Config{
+	err = action.UpdateAction(ctx, action.Config{
 		InputAction:     *inputAction,
 		InputConfigPath: *inputConfig,
 		OutputAction:    *outputAction,
@@ -91,8 +92,12 @@ func discover(ctx context.Context, path string) error {
 		if err != nil {
 			return err
 		}
+		latestAvailable := ""
+		if len(availableBranches) > 0 {
+			latestAvailable = availableBranches[len(availableBranches)-1]
+		}
 
-		log.Println(r.RepositoryDirectory(), "Latest branch", latest)
+		log.Println(r.RepositoryDirectory(), "Latest branch", latest, ", latest available", latestAvailable, ", latest configured", latestConfigured)
 
 		for i := 0; i < len(availableBranches); i++ {
 			if latestConfigured == availableBranches[i] {
@@ -113,6 +118,30 @@ func discover(ctx context.Context, path string) error {
 						inConfig.Config.Branches[availableBranches[i]] = other
 					}
 				}
+			}
+		}
+		if r.IsServerlessOperator() {
+			if latestAvailable == latestConfigured || latestConfigured == "main" {
+				branchConfig := inConfig.Config.Branches[latest]
+
+				// enable Konflux for all new branches
+				other := branchConfig
+				if other.Konflux == nil {
+					other.Konflux = &prowgen.Konflux{
+						Enabled: true,
+					}
+				} else {
+					other.Konflux.Enabled = true
+				}
+				if other.Prowgen == nil {
+					other.Prowgen = &prowgen.Prowgen{Disabled: true}
+				} else {
+					other.Prowgen.Disabled = true
+				}
+
+				next := soversion.IncrementBranchName(latestAvailable)
+
+				inConfig.Config.Branches[next] = other
 			}
 		}
 	}
