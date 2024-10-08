@@ -1,0 +1,9 @@
+# Temporary fix for https://issues.redhat.com/browse/KFLUXBUGS-1699
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: docker-build
+spec:
+  tasks:
+  - name: rpms-signature-scan
+    $patch: delete

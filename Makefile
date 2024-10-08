@@ -51,7 +51,7 @@ konflux-apply-no-clean:
 .PHONY: konflux-apply-no-clean
 
 konflux-update-pipelines:
-	tkn bundle list quay.io/konflux-ci/tekton-catalog/pipeline-docker-build:devel -o=yaml > pkg/konfluxgen/kustomize/docker-build.yaml
+	tkn bundle list quay.io/konflux-ci/tekton-catalog/pipeline-docker-build-multi-platform-oci-ta:devel -o=yaml > pkg/konfluxgen/kustomize/docker-build.yaml
 	tkn bundle list quay.io/konflux-ci/tekton-catalog/pipeline-fbc-builder:devel -o=yaml > pkg/konfluxgen/kustomize/fbc-builder.yaml
 	kustomize build pkg/konfluxgen/kustomize/kustomize-docker-build/ --output pkg/konfluxgen/docker-build.yaml --load-restrictor LoadRestrictionsNone
 	kustomize build pkg/konfluxgen/kustomize/kustomize-java-docker-build/ --output pkg/konfluxgen/docker-java-build.yaml --load-restrictor LoadRestrictionsNone

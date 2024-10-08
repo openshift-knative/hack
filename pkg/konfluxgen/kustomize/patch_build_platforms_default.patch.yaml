@@ -1,0 +1,12 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: docker-build
+spec:
+  params:
+  - name: build-platforms
+    default:
+    - linux/x86_64
+    - linux/arm64
+    - linux/ppc64le
+    - linux/s390x
