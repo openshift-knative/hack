@@ -266,9 +266,10 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", img.Name, img.PullSpec))
 		}
 
+		appName := fmt.Sprintf("serverless-operator %s", release)
 		cfg := konfluxgen.Config{
 			OpenShiftReleasePath: openshiftRelease.RepositoryDirectory(),
-			ApplicationName:      fmt.Sprintf("serverless-operator %s", release),
+			ApplicationName:      appName,
 			BuildArgs:            buildArgs,
 			ComponentNameFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
 				return fmt.Sprintf("%s-%s", ib.To, release)
@@ -322,6 +323,11 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 
 		if err := konfluxgen.Generate(cfg); err != nil {
 			return fmt.Errorf("failed to generate Konflux configurations for %s (%s): %w", r.RepositoryDirectory(), branch, err)
+		}
+
+		csvPath := filepath.Join(r.RepositoryDirectory(), "olm-catalog", "serverless-operator", "manifests", "serverless-operator.clusterserviceversion.yaml")
+		if err := konfluxgen.GenerateReleasePlanAdmission(csvPath, resourceOutputPath, appName, semver.New(soMetadata.Project.Version)); err != nil {
+			return fmt.Errorf("failed to generate ReleasePlanAdmission: %w", err)
 		}
 
 		pushBranch := fmt.Sprintf("%s%s", KonfluxBranchPrefix, branch)
