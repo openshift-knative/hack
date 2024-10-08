@@ -326,7 +326,7 @@ repositories:
     - serving/metadata-webhook/.*
     - serving/ingress/.*
     - olm-catalog/serverless-operator/Dockerfile
-    - olm-catalog/serverless-operator/index/Dockerfile
+    - olm-catalog/serverless-operator-index/Dockerfile
   e2e:
   - match: ^operator-e2e$
   - match: ^test-upgrade$
