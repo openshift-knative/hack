@@ -12,6 +12,9 @@ patches:
       name: fbc-builder
   - path: ../patch_snyk_args.patch.yaml
     target:
-      name: docker-build
+      name: fbc-builder
+  - path: ./patch_build_args.patch.yaml
+    target:
+      name: fbc-builder
 openapi:
   path: ../pipeline_schema.json
