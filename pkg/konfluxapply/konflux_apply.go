@@ -108,7 +108,8 @@ func apply(ctx context.Context, cfg ApplyConfig, config *prowgen.Config) error {
 					}
 				}
 
-				if _, err := prowgen.Run(ctx, r, "oc", "apply", "-f", path); err != nil {
+				inRepoPath := strings.TrimPrefix(path, r.RepositoryDirectory()+"/")
+				if _, err := prowgen.Run(ctx, r, "oc", "apply", "-f", inRepoPath); err != nil {
 					return fmt.Errorf("failed to apply konflux manifest %q: %w", path, err)
 				}
 
