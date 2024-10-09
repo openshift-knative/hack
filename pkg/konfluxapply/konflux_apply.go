@@ -103,7 +103,7 @@ func apply(ctx context.Context, cfg ApplyConfig, config *prowgen.Config) error {
 
 				for _, exclude := range cfg.ExcludePatterns {
 					if exclude.MatchString(path) {
-						fmt.Printf("skipping excluded file %q\n", path)
+						log.Printf("skipping excluded file %q\n", path)
 						return nil
 					}
 				}
