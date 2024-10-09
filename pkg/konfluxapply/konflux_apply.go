@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/openshift-knative/hack/pkg/prowgen"
@@ -15,8 +16,8 @@ import (
 
 type ApplyConfig struct {
 	InputConfigPath string
-
-	KonfluxDir string // default: `.konflux`
+	ExcludePatterns []*regexp.Regexp
+	KonfluxDir      string // default: `.konflux`
 }
 
 func Apply(ctx context.Context, cfg ApplyConfig) error {
@@ -83,14 +84,38 @@ func apply(ctx context.Context, cfg ApplyConfig, config *prowgen.Config) error {
 				continue
 			}
 
-			if _, err := os.Stat(filepath.Join(r.RepositoryDirectory(), cfg.KonfluxDir)); err != nil {
+			repoKonfluxDir := filepath.Join(r.RepositoryDirectory(), cfg.KonfluxDir)
+			if _, err := os.Stat(repoKonfluxDir); err != nil {
 				if errors.Is(err, os.ErrNotExist) {
 					continue // Skip repositories without Konflux components directory
 				}
 				return fmt.Errorf("[%s] failed to stat Konflux directory %q for branch %q: %w", r.RepositoryDirectory(), cfg.KonfluxDir, bn, err)
 			}
 
-			if _, err := prowgen.Run(ctx, r, "oc", "apply", "-Rf", cfg.KonfluxDir); err != nil {
+			err := filepath.WalkDir(repoKonfluxDir, func(path string, d fs.DirEntry, err error) error {
+				if err != nil {
+					return fmt.Errorf("failed to walk directory %q: %w", path, err)
+				}
+
+				if d.IsDir() {
+					return nil
+				}
+
+				for _, exclude := range cfg.ExcludePatterns {
+					if exclude.MatchString(path) {
+						fmt.Printf("skipping excluded file %q\n", path)
+						return nil
+					}
+				}
+
+				if _, err := prowgen.Run(ctx, r, "oc", "apply", "-f", path); err != nil {
+					return fmt.Errorf("failed to apply konflux manifest %q: %w", path, err)
+				}
+
+				return nil
+			})
+
+			if err != nil {
 				return fmt.Errorf("[%s] failed to apply branch %q: %w", r.RepositoryDirectory(), bn, err)
 			}
 		}
