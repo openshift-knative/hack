@@ -6,19 +6,25 @@ resources:
 patches:
   - path: ../patch_additional_tags.patch.yaml
     target:
-      name: docker-build
+      kind: Pipeline
   - path: ../patch_prefetch-input_dev-package-managers.patch.yaml
     target:
-      name: docker-build
+      kind: Pipeline
   - path: ../patch_source_image.patch.yaml
     target:
-      name: docker-build
+      kind: Pipeline
   - path: ../patch_snyk_args.patch.yaml
     target:
-      name: docker-build
+      kind: Pipeline
   - path: patch_java_build.patch.yaml
     target:
-      name: docker-build
+      kind: Pipeline
+  - path: ../patch_build_platforms_default.patch.yaml
+    target:
+      kind: Pipeline
+  - path: ../patch_rpms_scan_remove.patch.yaml
+    target:
+      kind: Pipeline
   - patch: |-
       - op: replace
         path: /metadata/name
@@ -28,11 +34,19 @@ patches:
 replacements:
   - source:
       kind: Pipeline
-      fieldPath: spec.tasks.[name=build-container].taskRef.params.[name=bundle].value
+      fieldPath: spec.tasks.[name=build-images].taskRef.params.[name=bundle].value
     targets:
       - select:
           kind: Pipeline
         fieldPaths:
-          - spec.tasks.[name=build-container-deps].taskRef.params.[name=bundle].value
+          - spec.tasks.[name=build-images-deps].taskRef.params.[name=bundle].value
+  - source:
+      kind: Pipeline
+      fieldPath: spec.tasks.[name=build-image-index].taskRef.params.[name=bundle].value
+    targets:
+      - select:
+          kind: Pipeline
+        fieldPaths:
+          - spec.tasks.[name=build-image-index-deps].taskRef.params.[name=bundle].value
 openapi:
   path: ../pipeline_schema.json
