@@ -24,6 +24,10 @@ import (
 	operatorsv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 )
 
+const (
+	ReleasePlanAdmissionsDirectoryName = "releaseplanadmissions"
+)
+
 //go:embed application.template.yaml
 var ApplicationTemplate embed.FS
 
@@ -693,7 +697,7 @@ func GenerateReleasePlanAdmission(csvPath string, resourceOutputPath string, app
 		return fmt.Errorf("failed to load ClusterServiceVersion: %w", err)
 	}
 
-	outputDir := filepath.Join(resourceOutputPath, "applications", Truncate(Sanitize(appName)), "releaseplanadmissions")
+	outputDir := filepath.Join(resourceOutputPath, "applications", Truncate(Sanitize(appName)), ReleasePlanAdmissionsDirectoryName)
 	if err := os.MkdirAll(outputDir, 0777); err != nil {
 		return fmt.Errorf("failed to create release plan admissions directory: %w", err)
 	}
