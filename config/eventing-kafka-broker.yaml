@@ -62,3 +62,5 @@ repositories:
     namespace: openshift
   repo: eventing-kafka-broker
   slackChannel: '#knative-eventing-ci'
+  pomFiles:
+  - data-plane/pom.xml

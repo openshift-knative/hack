@@ -30,6 +30,7 @@ type Repository struct {
 	Images                []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration `json:"images,omitempty" yaml:"images,omitempty"`
 	Tests                 []cioperatorapi.TestStepConfiguration                       `json:"tests,omitempty" yaml:"tests,omitempty"`
 	Resources             cioperatorapi.ResourceConfiguration                         `json:"resources,omitempty" yaml:"resources,omitempty"`
+	PomFiles              []string                                                    `json:"pomFiles,omitempty" yaml:"pomFiles,omitempty"`
 }
 
 type E2ETest struct {
