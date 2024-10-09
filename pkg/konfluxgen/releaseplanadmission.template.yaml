@@ -1,0 +1,22 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: ReleasePlanAdmission
+metadata:
+  name: {{{ truncate ( sanitize .ApplicationName ) }}}
+  namespace: rhtap-releng-tenant
+spec:
+  applications: [{{{ truncate ( sanitize .ApplicationName ) }}}]
+  origin: ocp-serverless-tenant
+  policy: registry-standard
+  data:
+    mapping:
+      components:
+      {{{- range $component := .Components }}}
+        - name: {{{ $component.ComponentName }}}
+          repository: {{{ $component.ImageRepository }}}
+          pushSourceContainer: true
+      {{{- end }}}
+    defaults:
+      tags:
+        - "{{ git_sha }}"
+        - "{{ git_short_sha }}"
+        - "v{{{ .Version }}}"

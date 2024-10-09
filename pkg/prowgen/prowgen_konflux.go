@@ -312,6 +312,7 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 				}
 				return []string{serverlessBundleNudge(release)}
 			},
+			ClusterServiceVersionPath: filepath.Join(r.RepositoryDirectory(), "olm-catalog", "serverless-operator", "manifests", "serverless-operator.clusterserviceversion.yaml"),
 		}
 		if len(cfg.ExcludesImages) == 0 {
 			cfg.ExcludesImages = []string{

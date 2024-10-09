@@ -12,6 +12,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/openshift-knative/hack/pkg/util"
+
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/strings/slices"
@@ -115,10 +117,15 @@ func discoverDockerfiles(r Repository, skipDockerFiles []string) ([]string, erro
 	filteredDockerFiles := slices.Filter(nil, dockerFilesToInclude, func(s string) bool {
 		return !slices.Contains(skipDockerFiles, s)
 	})
-	includePathRegex := ToRegexp(filteredDockerFiles)
+
+	includePathRegex, err := util.ToRegexp(filteredDockerFiles)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse filtered dockerfile regexp: %v", err)
+	}
+
 	dockerfiles := sets.NewString()
 	rootDir := r.RepositoryDirectory()
-	err := filepath.Walk(rootDir, func(path string, info fs.FileInfo, err error) error {
+	err = filepath.Walk(rootDir, func(path string, info fs.FileInfo, err error) error {
 		if info.IsDir() || !strings.HasSuffix(info.Name(), "Dockerfile") {
 			return nil
 		}
@@ -335,16 +342,4 @@ func orgRepoTagFromPullString(pullString string) (orgRepoTag, error) {
 	}
 
 	return res, nil
-}
-
-func ToRegexp(s []string) []*regexp.Regexp {
-	includesRegex := make([]*regexp.Regexp, 0, len(s))
-	for _, i := range s {
-		r, err := regexp.Compile(i)
-		if err != nil {
-			log.Fatal("Regex", i, "doesn't compile", err)
-		}
-		includesRegex = append(includesRegex, r)
-	}
-	return includesRegex
 }

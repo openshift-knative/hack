@@ -14,8 +14,14 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/operator-framework/api/pkg/lib/version"
+
+	"github.com/openshift-knative/hack/pkg/soversion"
+	"github.com/openshift-knative/hack/pkg/util"
+
 	gyaml "github.com/ghodss/yaml"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
+	operatorsv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 )
 
 //go:embed application.template.yaml
@@ -41,6 +47,9 @@ var PipelineFBCBuildTemplate embed.FS
 
 //go:embed integration-test-scenario.template.yaml
 var EnterpriseContractTestScenarioTemplate embed.FS
+
+//go:embed releaseplanadmission.template.yaml
+var ReleasePlanAdmissionsTemplate embed.FS
 
 type Config struct {
 	OpenShiftReleasePath string
@@ -69,6 +78,8 @@ type Config struct {
 	PrefetchDeps PrefetchDeps
 
 	IsHermetic func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) bool
+
+	ClusterServiceVersionPath string
 }
 
 type PrefetchDeps struct {
@@ -149,23 +160,23 @@ func Generate(cfg Config) error {
 		return fmt.Errorf("failed to clean %q directory: %w", cfg.PipelinesOutputPath, err)
 	}
 
-	includes, err := toRegexp(cfg.Includes)
+	includes, err := util.ToRegexp(cfg.Includes)
 	if err != nil {
 		return fmt.Errorf("failed to create regular expressions for %+v: %w", cfg.Includes, err)
 	}
-	excludes, err := toRegexp(cfg.Excludes)
+	excludes, err := util.ToRegexp(cfg.Excludes)
 	if err != nil {
 		return fmt.Errorf("failed to create regular expressions for %+v: %w", cfg.Excludes, err)
 	}
-	excludeImages, err := toRegexp(cfg.ExcludesImages)
+	excludeImages, err := util.ToRegexp(cfg.ExcludesImages)
 	if err != nil {
 		return fmt.Errorf("failed to create regular expressions for %+v: %w", cfg.ExcludesImages, err)
 	}
-	fbcImages, err := toRegexp(cfg.FBCImages)
+	fbcImages, err := util.ToRegexp(cfg.FBCImages)
 	if err != nil {
 		return fmt.Errorf("failed to create regular expressions for %+v: %w", cfg.FBCImages, err)
 	}
-	javaImages, err := toRegexp(cfg.JavaImages)
+	javaImages, err := util.ToRegexp(cfg.JavaImages)
 	if err != nil {
 		return fmt.Errorf("failed to create regular expressions for %+v: %w", cfg.JavaImages, err)
 	}
@@ -404,6 +415,12 @@ func Generate(cfg Config) error {
 
 	buf.Reset()
 
+	if cfg.ClusterServiceVersionPath != "" {
+		if err := GenerateReleasePlanAdmission(cfg.ClusterServiceVersionPath, cfg.ResourcesOutputPath, cfg.ApplicationName); err != nil {
+			return fmt.Errorf("failed to generate ReleasePlanAdmission: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -514,18 +531,6 @@ func parseConfig(path string) (*cioperatorapi.ReleaseBuildConfiguration, error) 
 	}
 
 	return jobConfig, err
-}
-
-func toRegexp(rawRegexps []string) ([]*regexp.Regexp, error) {
-	regexps := make([]*regexp.Regexp, 0, len(rawRegexps))
-	for _, i := range rawRegexps {
-		r, err := regexp.Compile(i)
-		if err != nil {
-			return regexps, fmt.Errorf("regex %q doesn't compile: %w", i, err)
-		}
-		regexps = append(regexps, r)
-	}
-	return regexps, nil
 }
 
 func Sanitize(input interface{}) string {
@@ -680,4 +685,125 @@ func defaultIsHermetic(_ cioperatorapi.ReleaseBuildConfiguration, ib cioperatora
 
 func isIndex(ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) bool {
 	return string(ib.To) == "serverless-index"
+}
+
+func GenerateReleasePlanAdmission(csvPath string, resourceOutputPath string, appName string) error {
+	csv, err := loadClusterServiceVerion(csvPath)
+	if err != nil {
+		return fmt.Errorf("failed to load ClusterServiceVersion: %w", err)
+	}
+
+	outputDir := filepath.Join(resourceOutputPath, "applications", Truncate(Sanitize(appName)), "releaseplanadmission")
+	if err := os.MkdirAll(outputDir, 0777); err != nil {
+		return fmt.Errorf("failed to create release plan admissions directory: %w", err)
+	}
+	outputFilePath := filepath.Join(outputDir, "prod.yaml")
+
+	components, err := getComponentImageRefs(csv)
+	if err != nil {
+		return fmt.Errorf("failed to get component image refs: %w", err)
+	}
+
+	soVersion := csv.Spec.Version
+	if err := executeReleasePlanAdmissionTemplate(components, outputFilePath, appName, soVersion); err != nil {
+		return fmt.Errorf("failed to execute release plan admission template: %w", err)
+	}
+
+	// create RPA for stage ENV
+	componentWithStageRepoRef := make([]ComponentImageRepoRef, 0, len(components))
+	for _, component := range components {
+		componentWithStageRepoRef = append(componentWithStageRepoRef, ComponentImageRepoRef{
+			ComponentName:   component.ComponentName,
+			ImageRepository: strings.ReplaceAll(component.ImageRepository, "registry.redhat.io", "registry.stage.redhat.io"),
+		})
+	}
+
+	outputFilePath = filepath.Join(outputDir, "stage.yaml")
+	if err := executeReleasePlanAdmissionTemplate(componentWithStageRepoRef, outputFilePath, appName, soVersion); err != nil {
+		return fmt.Errorf("failed to execute release plan admission template: %w", err)
+	}
+
+	return nil
+}
+
+func executeReleasePlanAdmissionTemplate(components []ComponentImageRepoRef, outputFilePath string, appName string, soVersion version.OperatorVersion) error {
+	funcs := template.FuncMap{
+		"sanitize": Sanitize,
+		"truncate": Truncate,
+		"replace":  replace,
+	}
+
+	rpaTemplate, err := template.New("releaseplanadmission.template.yaml").Delims("{{{", "}}}").Funcs(funcs).ParseFS(ReleasePlanAdmissionsTemplate, "*.yaml")
+	if err != nil {
+		return fmt.Errorf("failed to parse pipeline run push template: %w", err)
+	}
+
+	data := map[string]interface{}{
+		"ApplicationName": appName,
+		"Components":      components,
+		"Version":         soVersion.String(),
+	}
+
+	buf := &bytes.Buffer{}
+	if err := rpaTemplate.Execute(buf, data); err != nil {
+		return fmt.Errorf("failed to execute template for ReleasePlanAdmission: %w", err)
+	}
+	if err := os.WriteFile(outputFilePath, buf.Bytes(), 0777); err != nil {
+		return fmt.Errorf("failed to write ReleasPlanAdmission file %q: %w", outputFilePath, err)
+	}
+
+	return nil
+}
+
+type ComponentImageRepoRef struct {
+	ComponentName   string
+	ImageRepository string
+}
+
+func getComponentImageRefs(csv *operatorsv1alpha1.ClusterServiceVersion) ([]ComponentImageRepoRef, error) {
+	var refs []ComponentImageRepoRef
+
+	soVersion := csv.Spec.Version.Version
+	componentVersion := soversion.ToUpstreamVersion(soVersion.String())
+	for _, relatedImage := range csv.Spec.RelatedImages {
+		if !strings.HasPrefix(relatedImage.Image, "registry.redhat.io/openshift-serverless-1") {
+			continue
+		}
+
+		repoRef, _, _ := strings.Cut(relatedImage.Image, "@sha")
+		componentName := strings.TrimPrefix(repoRef, "registry.redhat.io/openshift-serverless-1/")
+
+		if strings.HasPrefix(componentName, "serverless-") {
+			// SO component image
+			componentName = fmt.Sprintf("%s-%d%d", componentName, soVersion.Major, soVersion.Minor)
+		} else {
+			// upstream component image
+			componentName = fmt.Sprintf("%s-%d%d", componentName, componentVersion.Major, componentVersion.Minor)
+		}
+
+		refs = append(refs, ComponentImageRepoRef{
+			ComponentName:   componentName,
+			ImageRepository: repoRef,
+		})
+	}
+
+	return refs, nil
+}
+
+func loadClusterServiceVerion(path string) (*operatorsv1alpha1.ClusterServiceVersion, error) {
+	// Going directly from YAML raw input produces unexpected configs (due to missing YAML tags),
+	// so we convert YAML to JSON and unmarshal the struct from the JSON object.
+	y, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	j, err := gyaml.YAMLToJSON(y)
+	if err != nil {
+		return nil, err
+	}
+	csv := &operatorsv1alpha1.ClusterServiceVersion{}
+	if err := json.Unmarshal(j, csv); err != nil {
+		return nil, fmt.Errorf("failed to unmarshall CSV: %w", err)
+	}
+	return csv, nil
 }
