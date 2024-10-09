@@ -13,7 +13,7 @@ spec:
       {{{- range $component := .Components }}}
         - name: {{{ $component.ComponentName }}}
           repository: {{{ $component.ImageRepository }}}
-          pushSourceContainer: false
+          pushSourceContainer: true
       {{{- end }}}
     defaults:
       tags:
