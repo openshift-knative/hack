@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/openshift-knative/hack/pkg/prowgen"
 )
@@ -72,7 +74,13 @@ func apply(ctx context.Context, cfg ApplyConfig, config *prowgen.Config) error {
 			}
 
 			if err := prowgen.GitCheckout(ctx, r, bn); err != nil {
-				return fmt.Errorf("[%s] failed to checkout branch %q: %w", r.RepositoryDirectory(), bn, err)
+				if !strings.Contains(err.Error(), "failed to run git [checkout") {
+					return fmt.Errorf("[%s] failed to checkout branch %q: %w", r.RepositoryDirectory(), bn, err)
+				}
+
+				// Skip non-existing branches
+				log.Println(r.RepositoryDirectory(), "Skipping non existing branch", bn)
+				continue
 			}
 
 			if _, err := os.Stat(filepath.Join(r.RepositoryDirectory(), cfg.KonfluxDir)); err != nil {
