@@ -14,7 +14,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/coreos/go-semver/semver"
+	"github.com/operator-framework/api/pkg/lib/version"
+
 	"github.com/openshift-knative/hack/pkg/soversion"
 	"github.com/openshift-knative/hack/pkg/util"
 
@@ -77,6 +78,8 @@ type Config struct {
 	PrefetchDeps PrefetchDeps
 
 	IsHermetic func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) bool
+
+	ClusterServiceVersionPath string
 }
 
 type PrefetchDeps struct {
@@ -412,6 +415,12 @@ func Generate(cfg Config) error {
 
 	buf.Reset()
 
+	if cfg.ClusterServiceVersionPath != "" {
+		if err := GenerateReleasePlanAdmission(cfg.ClusterServiceVersionPath, cfg.ResourcesOutputPath, cfg.ApplicationName); err != nil {
+			return fmt.Errorf("failed to generate ReleasePlanAdmission: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -678,18 +687,24 @@ func isIndex(ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) bool 
 	return string(ib.To) == "serverless-index"
 }
 
-func GenerateReleasePlanAdmission(csvPath string, resourceOutputPath string, appName string, soVersion *semver.Version) error {
+func GenerateReleasePlanAdmission(csvPath string, resourceOutputPath string, appName string) error {
+	csv, err := loadClusterServiceVerion(csvPath)
+	if err != nil {
+		return fmt.Errorf("failed to load ClusterServiceVersion: %w", err)
+	}
+
 	outputDir := filepath.Join(resourceOutputPath, "applications", Truncate(Sanitize(appName)), "releaseplanadmission")
 	if err := os.MkdirAll(outputDir, 0777); err != nil {
 		return fmt.Errorf("failed to create release plan admissions directory: %w", err)
 	}
 	outputFilePath := filepath.Join(outputDir, "prod.yaml")
 
-	components, err := getComponentImageRefs(csvPath, soVersion)
+	components, err := getComponentImageRefs(csv)
 	if err != nil {
 		return fmt.Errorf("failed to get component image refs: %w", err)
 	}
 
+	soVersion := csv.Spec.Version
 	if err := executeReleasePlanAdmissionTemplate(components, outputFilePath, appName, soVersion); err != nil {
 		return fmt.Errorf("failed to execute release plan admission template: %w", err)
 	}
@@ -711,7 +726,7 @@ func GenerateReleasePlanAdmission(csvPath string, resourceOutputPath string, app
 	return nil
 }
 
-func executeReleasePlanAdmissionTemplate(components []ComponentImageRepoRef, outputFilePath string, appName string, soVersion *semver.Version) error {
+func executeReleasePlanAdmissionTemplate(components []ComponentImageRepoRef, outputFilePath string, appName string, soVersion version.OperatorVersion) error {
 	funcs := template.FuncMap{
 		"sanitize": Sanitize,
 		"truncate": Truncate,
@@ -745,14 +760,10 @@ type ComponentImageRepoRef struct {
 	ImageRepository string
 }
 
-func getComponentImageRefs(csvPath string, soVersion *semver.Version) ([]ComponentImageRepoRef, error) {
-	csv, err := loadClusterServiceVerion(csvPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load ClusterServiceVersion: %w", err)
-	}
-
+func getComponentImageRefs(csv *operatorsv1alpha1.ClusterServiceVersion) ([]ComponentImageRepoRef, error) {
 	var refs []ComponentImageRepoRef
 
+	soVersion := csv.Spec.Version.Version
 	componentVersion := soversion.ToUpstreamVersion(soVersion.String())
 	for _, relatedImage := range csv.Spec.RelatedImages {
 		if !strings.HasPrefix(relatedImage.Image, "registry.redhat.io/openshift-serverless-1") {
