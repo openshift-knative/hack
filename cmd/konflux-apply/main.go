@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
+
+	"github.com/openshift-knative/hack/pkg/konfluxgen"
 
 	"github.com/openshift-knative/hack/pkg/util"
 	"github.com/spf13/pflag"
@@ -25,7 +28,7 @@ func main() {
 	)
 
 	defaultExcludes := []string{
-		".*releaseplanadmissions.*",
+		fmt.Sprintf(".*%s.*", konfluxgen.ReleasePlanAdmissionsDirectoryName),
 	}
 
 	pflag.StringVar(&inputConfig, "config", filepath.Join("config"), "Specify repositories config")
