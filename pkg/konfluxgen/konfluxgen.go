@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/coreos/go-semver/semver"
 	"github.com/openshift-knative/hack/pkg/soversion"
+	"github.com/openshift-knative/hack/pkg/util"
 	"io/fs"
 	"log"
 	"os"
@@ -155,23 +156,23 @@ func Generate(cfg Config) error {
 		return fmt.Errorf("failed to clean %q directory: %w", cfg.PipelinesOutputPath, err)
 	}
 
-	includes, err := toRegexp(cfg.Includes)
+	includes, err := util.ToRegexp(cfg.Includes)
 	if err != nil {
 		return fmt.Errorf("failed to create regular expressions for %+v: %w", cfg.Includes, err)
 	}
-	excludes, err := toRegexp(cfg.Excludes)
+	excludes, err := util.ToRegexp(cfg.Excludes)
 	if err != nil {
 		return fmt.Errorf("failed to create regular expressions for %+v: %w", cfg.Excludes, err)
 	}
-	excludeImages, err := toRegexp(cfg.ExcludesImages)
+	excludeImages, err := util.ToRegexp(cfg.ExcludesImages)
 	if err != nil {
 		return fmt.Errorf("failed to create regular expressions for %+v: %w", cfg.ExcludesImages, err)
 	}
-	fbcImages, err := toRegexp(cfg.FBCImages)
+	fbcImages, err := util.ToRegexp(cfg.FBCImages)
 	if err != nil {
 		return fmt.Errorf("failed to create regular expressions for %+v: %w", cfg.FBCImages, err)
 	}
-	javaImages, err := toRegexp(cfg.JavaImages)
+	javaImages, err := util.ToRegexp(cfg.JavaImages)
 	if err != nil {
 		return fmt.Errorf("failed to create regular expressions for %+v: %w", cfg.JavaImages, err)
 	}
@@ -520,18 +521,6 @@ func parseConfig(path string) (*cioperatorapi.ReleaseBuildConfiguration, error) 
 	}
 
 	return jobConfig, err
-}
-
-func toRegexp(rawRegexps []string) ([]*regexp.Regexp, error) {
-	regexps := make([]*regexp.Regexp, 0, len(rawRegexps))
-	for _, i := range rawRegexps {
-		r, err := regexp.Compile(i)
-		if err != nil {
-			return regexps, fmt.Errorf("regex %q doesn't compile: %w", i, err)
-		}
-		regexps = append(regexps, r)
-	}
-	return regexps, nil
 }
 
 func Sanitize(input interface{}) string {

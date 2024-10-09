@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/openshift-knative/hack/pkg/util"
 	"io/fs"
 	"log"
 	"os"
@@ -233,7 +234,11 @@ func DeleteExistingReleaseBuildConfigurationForBranch(outConfig *string, r Repos
 }
 
 func deleteConfigsIfNeeded(ignoreConfigs []string, paths []string, branch string) error {
-	excludeFilePattern := ToRegexp(ignoreConfigs)
+	excludeFilePattern, err := util.ToRegexp(ignoreConfigs)
+	if err != nil {
+		return fmt.Errorf("failed to parse ignore configs regex: %w", err)
+	}
+
 	for _, path := range paths {
 		include := true
 		for _, r := range excludeFilePattern {
@@ -342,7 +347,7 @@ func slackInjector() JobConfigInjector {
 }
 
 func shouldIgnoreJob(r *Repository, jobName string) bool {
-	for _, r := range ToRegexp(r.IgnoreConfigs.Matches) {
+	for _, r := range util.MustToRegexp(r.IgnoreConfigs.Matches) {
 		if r.MatchString(jobName) {
 			return true
 		}

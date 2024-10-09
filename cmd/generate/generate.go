@@ -4,6 +4,7 @@ import (
 	"embed"
 	"errors"
 	"fmt"
+	"github.com/openshift-knative/hack/pkg/util"
 	"go/parser"
 	"go/token"
 	"io"
@@ -126,8 +127,8 @@ func main() {
 		log.Fatal("Getwd", err, string(debug.Stack()))
 	}
 
-	includesRegex := prowgen.ToRegexp(includes)
-	excludesRegex := prowgen.ToRegexp(excludes)
+	includesRegex := util.MustToRegexp(includes)
+	excludesRegex := util.MustToRegexp(excludes)
 
 	mainPackagesPaths := sets.NewString()
 
