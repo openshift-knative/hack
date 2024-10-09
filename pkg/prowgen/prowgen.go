@@ -15,13 +15,14 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/openshift-knative/hack/pkg/util"
 	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/openshift-knative/hack/pkg/util"
 
 	"github.com/coreos/go-semver/semver"
 	gyaml "github.com/ghodss/yaml"

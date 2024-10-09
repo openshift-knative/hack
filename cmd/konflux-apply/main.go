@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
-	"github.com/openshift-knative/hack/pkg/util"
-	"github.com/spf13/pflag"
 	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
+
+	"github.com/openshift-knative/hack/pkg/util"
+	"github.com/spf13/pflag"
 
 	"github.com/openshift-knative/hack/pkg/konfluxapply"
 )

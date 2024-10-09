@@ -6,9 +6,6 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
-	"github.com/coreos/go-semver/semver"
-	"github.com/openshift-knative/hack/pkg/soversion"
-	"github.com/openshift-knative/hack/pkg/util"
 	"io/fs"
 	"log"
 	"os"
@@ -16,6 +13,10 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
+
+	"github.com/coreos/go-semver/semver"
+	"github.com/openshift-knative/hack/pkg/soversion"
+	"github.com/openshift-knative/hack/pkg/util"
 
 	gyaml "github.com/ghodss/yaml"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"

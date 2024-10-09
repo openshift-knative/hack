@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"github.com/openshift-knative/hack/pkg/util"
 	"io/fs"
 	"log"
 	"os"
@@ -12,6 +11,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/openshift-knative/hack/pkg/util"
 
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
 	"k8s.io/apimachinery/pkg/util/sets"

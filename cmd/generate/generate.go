@@ -4,7 +4,6 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	"github.com/openshift-knative/hack/pkg/util"
 	"go/parser"
 	"go/token"
 	"io"
@@ -16,6 +15,8 @@ import (
 	"runtime/debug"
 	"strings"
 	"text/template"
+
+	"github.com/openshift-knative/hack/pkg/util"
 
 	"github.com/spf13/pflag"
 	"go.uber.org/zap/buffer"
