@@ -8,6 +8,8 @@ import (
 	"os/signal"
 	"path/filepath"
 
+	"github.com/openshift-knative/hack/pkg/konfluxgen"
+
 	"github.com/openshift-knative/hack/pkg/konfluxapply"
 )
 
@@ -17,7 +19,7 @@ func main() {
 	defer cancel()
 
 	inputConfig := flag.String("config", filepath.Join("config"), "Specify repositories config")
-	konfluxDir := flag.String("konflux-dir", ".konflux", "Konflux directory containing applications, components, etc")
+	konfluxDir := flag.String("konflux-dir", filepath.Join(".konflux", konfluxgen.ApplicationsDirectoryName), "Konflux directory containing applications, components, etc")
 	flag.Parse()
 
 	err := konfluxapply.Apply(ctx, konfluxapply.ApplyConfig{

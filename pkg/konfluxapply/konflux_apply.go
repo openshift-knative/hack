@@ -10,8 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/openshift-knative/hack/pkg/konfluxgen"
-
 	"github.com/openshift-knative/hack/pkg/prowgen"
 )
 
@@ -92,7 +90,7 @@ func apply(ctx context.Context, cfg ApplyConfig, config *prowgen.Config) error {
 				return fmt.Errorf("[%s] failed to stat Konflux directory %q for branch %q: %w", r.RepositoryDirectory(), cfg.KonfluxDir, bn, err)
 			}
 
-			if _, err := prowgen.Run(ctx, r, "oc", "apply", "-Rf", filepath.Join(cfg.KonfluxDir, konfluxgen.ApplicationsDirectoryName)); err != nil {
+			if _, err := prowgen.Run(ctx, r, "oc", "apply", "-Rf", cfg.KonfluxDir); err != nil {
 				return fmt.Errorf("[%s] failed to apply branch %q: %w", r.RepositoryDirectory(), bn, err)
 			}
 		}
