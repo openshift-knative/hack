@@ -24,6 +24,10 @@ import (
 	operatorsv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 )
 
+const (
+	ApplicationsDirectoryName = "applications"
+)
+
 //go:embed application.template.yaml
 var ApplicationTemplate embed.FS
 
@@ -300,7 +304,7 @@ func Generate(cfg Config) error {
 		for componentKey, config := range components {
 			buf := &bytes.Buffer{}
 
-			appPath := filepath.Join(cfg.ResourcesOutputPath, "applications", appKey, fmt.Sprintf("%s.yaml", appKey))
+			appPath := filepath.Join(cfg.ResourcesOutputPath, ApplicationsDirectoryName, appKey, fmt.Sprintf("%s.yaml", appKey))
 			if err := os.MkdirAll(filepath.Dir(appPath), 0777); err != nil {
 				return fmt.Errorf("failed to create directory for %q: %w", appPath, err)
 			}
@@ -314,7 +318,7 @@ func Generate(cfg Config) error {
 
 			buf.Reset()
 
-			componentPath := filepath.Join(cfg.ResourcesOutputPath, "applications", appKey, "components", fmt.Sprintf("%s.yaml", componentKey))
+			componentPath := filepath.Join(cfg.ResourcesOutputPath, ApplicationsDirectoryName, appKey, "components", fmt.Sprintf("%s.yaml", componentKey))
 			if err := os.MkdirAll(filepath.Dir(componentPath), 0777); err != nil {
 				return fmt.Errorf("failed to create directory for %q: %w", componentPath, err)
 			}
@@ -328,7 +332,7 @@ func Generate(cfg Config) error {
 
 			buf.Reset()
 
-			imageRepositoryPath := filepath.Join(cfg.ResourcesOutputPath, "applications", appKey, "components", "imagerepositories", fmt.Sprintf("%s.yaml", componentKey))
+			imageRepositoryPath := filepath.Join(cfg.ResourcesOutputPath, ApplicationsDirectoryName, appKey, "components", "imagerepositories", fmt.Sprintf("%s.yaml", componentKey))
 			if err := os.MkdirAll(filepath.Dir(imageRepositoryPath), 0777); err != nil {
 				return fmt.Errorf("failed to create directory for %q: %w", imageRepositoryPath, err)
 			}
@@ -365,7 +369,7 @@ func Generate(cfg Config) error {
 
 			buf.Reset()
 
-			ecTestPath := filepath.Join(cfg.ResourcesOutputPath, "applications", appKey, "tests", "ec-test.yaml")
+			ecTestPath := filepath.Join(cfg.ResourcesOutputPath, ApplicationsDirectoryName, appKey, "tests", "ec-test.yaml")
 			if err := os.MkdirAll(filepath.Dir(ecTestPath), 0777); err != nil {
 				return fmt.Errorf("failed to create directory for %q: %w", appPath, err)
 			}
