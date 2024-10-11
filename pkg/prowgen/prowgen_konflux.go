@@ -347,14 +347,6 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 }
 
 func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repository, r Repository, branch string, release string, resourceOutputPath string, buildArgs []string) error {
-	soMetadata.Requirements = &project.Requirements{
-		OcpVersion: project.OcpVersion{
-			List: []string{
-				"4.13",
-				"4.17",
-			},
-		},
-	}
 	for _, v := range soMetadata.Requirements.OcpVersion.List {
 		cfg := konfluxgen.FBCConfig{
 			ApplicationName:     fmt.Sprintf("serverless-operator %s FBC %s", release, v),
