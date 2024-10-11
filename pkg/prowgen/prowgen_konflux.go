@@ -308,7 +308,7 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 					return nil
 				}
 				if strings.Contains(string(ib.To), "serverless-bundle") {
-					return []string{serverlessIndexNudge(release)}
+					return serverlessIndexNudges(release, soMetadata.Requirements.OcpVersion.List)
 				}
 				return []string{serverlessBundleNudge(release)}
 			},
@@ -380,6 +380,14 @@ func serverlessBundleNudge(downstreamVersion string) string {
 	return konfluxgen.Truncate(konfluxgen.Sanitize(fmt.Sprintf("%s-%s", "serverless-bundle", downstreamVersion)))
 }
 
-func serverlessIndexNudge(downstreamVersion string) string {
-	return konfluxgen.Truncate(konfluxgen.Sanitize(fmt.Sprintf("%s-%s", "serverless-index", downstreamVersion)))
+func serverlessIndexNudges(downstreamVersion string, ocpVersions []string) []string {
+	indexes := []string{
+		konfluxgen.Truncate(konfluxgen.Sanitize(fmt.Sprintf("%s-%s", "serverless-index", downstreamVersion))),
+	}
+
+	for _, v := range ocpVersions {
+		indexes = append(indexes, konfluxgen.Truncate(konfluxgen.Sanitize(fmt.Sprintf("serverless-operator-%s-fbc-%s-index", downstreamVersion, v))))
+	}
+
+	return indexes
 }
