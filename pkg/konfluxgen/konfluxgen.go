@@ -86,6 +86,25 @@ type Config struct {
 	ClusterServiceVersionPath string
 }
 
+type FBCConfig struct {
+	ApplicationName string
+	BuildArgs       []string
+
+	ResourcesOutputPath string
+	PipelinesOutputPath string
+	OCPVersion          string
+
+	Metadata cioperatorapi.Metadata
+
+	AdditionalTektonCELExpressions string
+	IsHermetic                     bool
+
+	DockerfilePath string
+	ContextDirPath string
+
+	Tags []string
+}
+
 type PrefetchDeps struct {
 	DevPackageManagers string
 	/*
@@ -428,6 +447,149 @@ func Generate(cfg Config) error {
 	return nil
 }
 
+func GenerateFBCApp(cfg FBCConfig) error {
+	fbcBuildPipelinePath := filepath.Join(cfg.PipelinesOutputPath, "fbc-builder.yaml")
+
+	funcs := template.FuncMap{
+		"sanitize": Sanitize,
+		"truncate": Truncate,
+		"replace":  replace,
+	}
+
+	applicationTemplate, err := template.New("application.template.yaml").Funcs(funcs).ParseFS(ApplicationTemplate, "*.yaml")
+	if err != nil {
+		return fmt.Errorf("failed to parse application template: %w", err)
+	}
+
+	dockerfileComponentTemplate, err := template.New("dockerfile-component.template.yaml").Funcs(funcs).ParseFS(DockerfileComponentTemplate, "*.yaml")
+	if err != nil {
+		return fmt.Errorf("failed to parse dockerfile component template: %w", err)
+	}
+
+	imageRepositoryTemplate, err := template.New("imagerepository.template.yaml").Funcs(funcs).ParseFS(ImageRepositoryTemplate, "*.yaml")
+	if err != nil {
+		return fmt.Errorf("failed to parse dockerfile component template: %w", err)
+	}
+
+	pipelineRunTemplate, err := template.New("pipeline-run.template.yaml").Delims("{{{", "}}}").Funcs(funcs).ParseFS(PipelineRunTemplate, "*.yaml")
+	if err != nil {
+		return fmt.Errorf("failed to parse pipeline run push template: %w", err)
+	}
+
+	pipelineFBCBuildTemplate, err := template.New("fbc-builder.yaml").Delims("{{{", "}}}").Funcs(funcs).ParseFS(PipelineFBCBuildTemplate, "*.yaml")
+	if err != nil {
+		return fmt.Errorf("failed to parse pipeline run push template: %w", err)
+	}
+
+	appKey := Truncate(Sanitize(cfg.ApplicationName))
+	componentKey := Truncate(Sanitize(fmt.Sprintf("%s-index", cfg.ApplicationName)))
+
+	if err := os.RemoveAll(filepath.Join(cfg.ResourcesOutputPath, ApplicationsDirectoryName, appKey)); err != nil {
+		return fmt.Errorf("failed to cleanup application directory %q: %w", appKey, err)
+	}
+
+	appPath := filepath.Join(cfg.ResourcesOutputPath, ApplicationsDirectoryName, appKey, fmt.Sprintf("%s.yaml", appKey))
+	if err := os.MkdirAll(filepath.Dir(appPath), 0777); err != nil {
+		return fmt.Errorf("failed to create directory for %q: %w", appPath, err)
+	}
+
+	config := DockerfileApplicationConfig{
+		ApplicationName: cfg.ApplicationName,
+		ComponentName:   componentKey,
+		ReleaseBuildConfiguration: cioperatorapi.ReleaseBuildConfiguration{
+			Metadata: cfg.Metadata,
+		},
+		//Path:                      c.Path,
+		ProjectDirectoryImageBuildStepConfiguration: cioperatorapi.ProjectDirectoryImageBuildStepConfiguration{
+			To: cioperatorapi.PipelineImageStreamTagReference(componentKey),
+			ProjectDirectoryImageBuildInputs: cioperatorapi.ProjectDirectoryImageBuildInputs{
+				DockerfilePath: cfg.DockerfilePath,
+				ContextDir:     cfg.ContextDirPath,
+			},
+		},
+		Pipeline:                      FBCBuild,
+		Tags:                          append(cfg.Tags, "latest"),
+		BuildArgs:                     cfg.BuildArgs,
+		Hermetic:                      fmt.Sprintf("%t", cfg.IsHermetic),
+		AdditionalTektonCELExpression: cfg.AdditionalTektonCELExpressions,
+	}
+
+	// Generate application yaml
+	buf := &bytes.Buffer{}
+	if err := applicationTemplate.Execute(buf, config); err != nil {
+		return fmt.Errorf("failed to execute template for application %q: %w", appKey, err)
+	}
+	if err := os.WriteFile(appPath, buf.Bytes(), 0777); err != nil {
+		return fmt.Errorf("failed to write application file %q: %w", appPath, err)
+	}
+
+	// Generate component yaml
+	buf.Reset()
+
+	componentPath := filepath.Join(cfg.ResourcesOutputPath, ApplicationsDirectoryName, appKey, "components", fmt.Sprintf("%s.yaml", componentKey))
+	if err := os.MkdirAll(filepath.Dir(componentPath), 0777); err != nil {
+		return fmt.Errorf("failed to create directory for %q: %w", componentPath, err)
+	}
+
+	if err := dockerfileComponentTemplate.Execute(buf, config); err != nil {
+		return fmt.Errorf("failed to execute template for component %q: %w", componentKey, err)
+	}
+	if err := os.WriteFile(componentPath, buf.Bytes(), 0777); err != nil {
+		return fmt.Errorf("failed to write component file %q: %w", componentPath, err)
+	}
+
+	// Generate image repo yaml
+	buf.Reset()
+	imageRepositoryPath := filepath.Join(cfg.ResourcesOutputPath, ApplicationsDirectoryName, appKey, "components", "imagerepositories", fmt.Sprintf("%s.yaml", componentKey))
+	if err := os.MkdirAll(filepath.Dir(imageRepositoryPath), 0777); err != nil {
+		return fmt.Errorf("failed to create directory for %q: %w", imageRepositoryPath, err)
+	}
+
+	if err := imageRepositoryTemplate.Execute(buf, config); err != nil {
+		return fmt.Errorf("failed to execute template for imagerepository for %q: %w", componentKey, err)
+	}
+	if err := os.WriteFile(imageRepositoryPath, buf.Bytes(), 0777); err != nil {
+		return fmt.Errorf("failed to write imagerepository file %q: %w", imageRepositoryPath, err)
+	}
+
+	// Generate fbc-builder.yaml
+	buf.Reset()
+	if err := pipelineFBCBuildTemplate.Execute(buf, nil); err != nil {
+		return fmt.Errorf("failed to execute template for pipeline %q: %w", fbcBuildPipelinePath, err)
+	}
+	if err := WriteFileReplacingNewerTaskImages(fbcBuildPipelinePath, buf.Bytes(), 0777); err != nil {
+		return fmt.Errorf("failed to write FBC build pipeline file %q: %w", fbcBuildPipelinePath, err)
+	}
+
+	// Generate on-push and on-pr pipelines
+	buf.Reset()
+
+	pipelineRunPRPath := filepath.Join(cfg.PipelinesOutputPath, fmt.Sprintf("%s-pull-request.yaml", componentKey))
+	pipelineRunPushPath := filepath.Join(cfg.PipelinesOutputPath, fmt.Sprintf("%s-push.yaml", componentKey))
+
+	config.Event = PullRequestEvent
+	if err := pipelineRunTemplate.Execute(buf, config); err != nil {
+		return fmt.Errorf("failed to execute template for pipeline run PR %q: %w", pipelineRunPRPath, err)
+	}
+	if err := WriteFileReplacingNewerTaskImages(pipelineRunPRPath, buf.Bytes(), 0777); err != nil {
+		return fmt.Errorf("failed to write component file %q: %w", pipelineRunPRPath, err)
+	}
+
+	buf.Reset()
+
+	config.Event = PushEvent
+	if err := pipelineRunTemplate.Execute(buf, config); err != nil {
+		return fmt.Errorf("failed to execute template for pipeline run PR %q: %w", pipelineRunPushPath, err)
+	}
+	if err := WriteFileReplacingNewerTaskImages(pipelineRunPushPath, buf.Bytes(), 0777); err != nil {
+		return fmt.Errorf("failed to write component file %q: %w", pipelineRunPushPath, err)
+	}
+
+	buf.Reset()
+
+	return nil
+}
+
 func collectConfigurations(openshiftReleasePath string, includes []*regexp.Regexp, excludes []*regexp.Regexp) ([]TemplateConfig, error) {
 	configs := make([]TemplateConfig, 0, 8)
 	err := filepath.WalkDir(openshiftReleasePath, func(path string, info fs.DirEntry, err error) error {
@@ -540,7 +702,7 @@ func parseConfig(path string) (*cioperatorapi.ReleaseBuildConfiguration, error) 
 func Sanitize(input interface{}) string {
 	in := fmt.Sprintf("%s", input)
 	// TODO very basic name sanitizer
-	return strings.ReplaceAll(strings.ReplaceAll(in, ".", ""), " ", "-")
+	return strings.ToLower(strings.ReplaceAll(strings.ReplaceAll(in, ".", ""), " ", "-"))
 }
 
 func Truncate(input interface{}) string {

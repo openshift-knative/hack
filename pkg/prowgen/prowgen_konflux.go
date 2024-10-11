@@ -326,6 +326,10 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			return fmt.Errorf("failed to generate Konflux configurations for %s (%s): %w", r.RepositoryDirectory(), branch, err)
 		}
 
+		if err := generateFBCApplications(soMetadata, openshiftRelease, r, branch, release, resourceOutputPath, buildArgs); err != nil {
+			return fmt.Errorf("failed to generate FBC applications for %s (%s): %w", r.RepositoryDirectory(), branch, err)
+		}
+
 		pushBranch := fmt.Sprintf("%s%s", KonfluxBranchPrefix, branch)
 		commitMsg := fmt.Sprintf("[%s] Sync Konflux configurations", release)
 
@@ -337,6 +341,44 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 	commitMsg := fmt.Sprintf("Sync Konflux configurations for serverless operator")
 	if err := PushBranch(ctx, hackRepo, nil, fmt.Sprintf("%s%s", KonfluxBranchPrefix, "main"), commitMsg); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repository, r Repository, branch string, release string, resourceOutputPath string, buildArgs []string) error {
+	soMetadata.Requirements = &project.Requirements{
+		OcpVersion: project.OcpVersion{
+			List: []string{
+				"4.13",
+				"4.17",
+			},
+		},
+	}
+	for _, v := range soMetadata.Requirements.OcpVersion.List {
+		cfg := konfluxgen.FBCConfig{
+			ApplicationName:     fmt.Sprintf("serverless-operator %s FBC %s", release, v),
+			BuildArgs:           buildArgs,
+			ResourcesOutputPath: resourceOutputPath,
+			PipelinesOutputPath: fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
+			OCPVersion:          v,
+			Metadata: cioperatorapi.Metadata{
+				Org:    r.Org,
+				Repo:   r.Repo,
+				Branch: branch,
+			},
+			AdditionalTektonCELExpressions: fmt.Sprintf(" && ("+
+				" files.all.exists(x, x.matches('^olm-catalog/serverless-operator-index/v%s/')) ||"+
+				" files.all.exists(x, x.matches('^.tekton/'))"+
+				" )", v),
+			IsHermetic:     true,
+			DockerfilePath: "Dockerfile",
+			ContextDirPath: fmt.Sprintf("./olm-catalog/serverless-operator-index/v%s", v),
+		}
+
+		if err := konfluxgen.GenerateFBCApp(cfg); err != nil {
+			return fmt.Errorf("failed to generate Konflux FBC configurations for %s (%s): %w", r.RepositoryDirectory(), branch, err)
+		}
 	}
 
 	return nil
