@@ -363,7 +363,6 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 				" files.all.exists(x, x.matches('^olm-catalog/serverless-operator-index/v%s/')) ||"+
 				" files.all.exists(x, x.matches('^.tekton/'))"+
 				" )", v),
-			IsHermetic:     true,
 			DockerfilePath: "Dockerfile",
 			ContextDirPath: fmt.Sprintf("./olm-catalog/serverless-operator-index/v%s", v),
 		}

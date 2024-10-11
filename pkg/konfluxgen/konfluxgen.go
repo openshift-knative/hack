@@ -97,7 +97,6 @@ type FBCConfig struct {
 	Metadata cioperatorapi.Metadata
 
 	AdditionalTektonCELExpressions string
-	IsHermetic                     bool
 
 	DockerfilePath string
 	ContextDirPath string
@@ -510,7 +509,7 @@ func GenerateFBCApp(cfg FBCConfig) error {
 		Pipeline:                      FBCBuild,
 		Tags:                          append(cfg.Tags, "latest"),
 		BuildArgs:                     cfg.BuildArgs,
-		Hermetic:                      fmt.Sprintf("%t", cfg.IsHermetic),
+		Hermetic:                      "false",
 		AdditionalTektonCELExpression: cfg.AdditionalTektonCELExpressions,
 	}
 
