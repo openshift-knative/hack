@@ -1,7 +1,7 @@
 apiVersion: appstudio.redhat.com/v1alpha1
 kind: ReleasePlanAdmission
 metadata:
-  name: {{{ truncate ( sanitize .ApplicationName ) }}}
+  name: {{{ truncate ( sanitize .ApplicationName ) }}}-{{{ truncate ( sanitize .Version ) }}}
   namespace: rhtap-releng-tenant
 spec:
   applications: [{{{ truncate ( sanitize .ApplicationName ) }}}]
