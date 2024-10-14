@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/openshift-knative/hack/pkg/soversion"
@@ -349,6 +350,12 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repository, r Repository, branch string, release string, resourceOutputPath string, buildArgs []string) error {
 	for _, v := range soMetadata.Requirements.OcpVersion.List {
 
+		opmImage, err := getOPMImage(v)
+		if err != nil {
+			return fmt.Errorf("failed to get OPM image ref for OCP %q: %w", v, err)
+		}
+		buildArgs := append(buildArgs, fmt.Sprintf("OPM_IMAGE=%s", opmImage))
+
 		c := konfluxgen.Config{
 			OpenShiftReleasePath: openshiftRelease.RepositoryDirectory(),
 			ApplicationName:      fmt.Sprintf("serverless-operator %s FBC %s", release, v),
@@ -398,6 +405,25 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 	}
 
 	return nil
+}
+
+func getOPMImage(v string) (string, error) {
+	parts := strings.SplitN(v, ".", 2)
+	if len(parts) != 2 {
+		return "", fmt.Errorf("invalid OCP version: %s", v)
+	}
+
+	minor, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return "", fmt.Errorf("could not convert OCP minor to int (%q): %w", v, err)
+	}
+
+	if minor <= 14 {
+		return fmt.Sprintf("registry.redhat.io/openshift4/ose-operator-registry:v4.%d", minor), nil
+	} else {
+		// use RHEL9 variant for OCP version >= 4.15
+		return fmt.Sprintf("registry.redhat.io/openshift4/ose-operator-registry-rhel9:v4.%d", minor), nil
+	}
 }
 
 func serverlessBundleNudge(downstreamVersion string) string {
