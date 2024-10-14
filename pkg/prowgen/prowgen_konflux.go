@@ -389,6 +389,7 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 			IsHermetic: func(_ cioperatorapi.ReleaseBuildConfiguration, _ cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) bool {
 				return true
 			},
+			Tags: []string{soMetadata.Project.Version},
 		}
 
 		if err := konfluxgen.Generate(c); err != nil {
