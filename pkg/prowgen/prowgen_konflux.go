@@ -144,7 +144,6 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						},
 						Excludes:            b.Konflux.Excludes,
 						ExcludesImages:      b.Konflux.ExcludesImages,
-						FBCImages:           b.Konflux.FBCImages,
 						JavaImages:          b.Konflux.JavaImages,
 						ResourcesOutputPath: fmt.Sprintf("%s/.konflux", r.RepositoryDirectory()),
 						PipelinesOutputPath: fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
@@ -275,12 +274,6 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 				return fmt.Sprintf("%s-%s", ib.To, release)
 			},
 			AdditionalTektonCELExpressionFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
-				if string(ib.To) == "serverless-index" {
-					return "&& (" +
-						" files.all.exists(x, x.matches('^olm-catalog/serverless-operator-index/')) ||" +
-						" files.all.exists(x, x.matches('^.tekton/'))" +
-						" )"
-				}
 				if string(ib.To) == "serverless-bundle" {
 					return "&& (" +
 						" files.all.exists(x, x.matches('^olm-catalog/serverless-operator/')) ||" +
@@ -295,7 +288,6 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			},
 			Excludes:       b.Konflux.Excludes,
 			ExcludesImages: b.Konflux.ExcludesImages,
-			FBCImages:      b.Konflux.FBCImages,
 			JavaImages:     b.Konflux.JavaImages,
 			// Use hack repo to store configurations for Serverless operator since when we cut
 			// the branch we could have conflicting components for a new release branch and
@@ -305,9 +297,6 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			PipelinesOutputPath:           fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
 			Nudges:                        b.Konflux.Nudges,
 			NudgesFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) []string {
-				if strings.Contains(string(ib.To), "serverless-index") {
-					return nil
-				}
 				if strings.Contains(string(ib.To), "serverless-bundle") {
 					return serverlessIndexNudges(release, soMetadata.Requirements.OcpVersion.List)
 				}
@@ -431,9 +420,7 @@ func serverlessBundleNudge(downstreamVersion string) string {
 }
 
 func serverlessIndexNudges(downstreamVersion string, ocpVersions []string) []string {
-	indexes := []string{
-		konfluxgen.Truncate(konfluxgen.Sanitize(fmt.Sprintf("%s-%s", "serverless-index", downstreamVersion))),
-	}
+	indexes := make([]string, 0, len(ocpVersions))
 
 	for _, v := range ocpVersions {
 		indexes = append(indexes, konfluxgen.Truncate(konfluxgen.Sanitize(fmt.Sprintf("serverless-index-%s-fbc-%s-index", downstreamVersion, v))))

@@ -5,7 +5,7 @@ config:
         enabled: true
         excludes:
         - .*rosa.*
-        fbcImages:
+        excludesImages:
         - .*serverless-index.*
         imageOverrides:
         - name: GO_BUILDER
@@ -23,7 +23,7 @@ config:
         enabled: true
         excludes:
         - .*rosa.*
-        fbcImages:
+        excludesImages:
         - .*serverless-index.*
         imageOverrides:
         - name: GO_BUILDER
