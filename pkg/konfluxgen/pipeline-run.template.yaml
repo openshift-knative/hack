@@ -27,8 +27,13 @@ spec:
     - name: dockerfile
       value: {{{ .ProjectDirectoryImageBuildStepConfiguration.ProjectDirectoryImageBuildInputs.DockerfilePath }}}
     {{{- end }}}
+    {{{- if gt (len .BuildArgs) 0 }}}
     - name: build-args
-      value: [{{{ range $arg := .BuildArgs }}} {{{ $arg }}}, {{{ end }}}]
+      value:
+      {{{- range $arg := .BuildArgs }}}
+        - {{{ $arg }}}
+      {{{- end }}}
+    {{{- end }}}
     - name: git-url
       value: '{{source_url}}'
     - name: hermetic
@@ -45,8 +50,13 @@ spec:
     - name: revision
       value: '{{revision}}'
     {{{- if eq .Event "push" }}}
+    {{{- if gt (len .Tags) 0 }}}
     - name: additional-tags
-      value: [{{{ range $tag := .Tags }}} {{{ $tag }}}, {{{ end }}}]
+      value:
+      {{{ range $tag := .Tags }}}
+        - {{{ $tag }}}
+      {{{ end }}}]
+    {{{- end }}}
     {{{- end }}}
     {{{- if .PrefetchDeps.PrefetchInput }}}
     - name: prefetch-input
