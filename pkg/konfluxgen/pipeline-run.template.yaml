@@ -53,9 +53,9 @@ spec:
     {{{- if gt (len .Tags) 0 }}}
     - name: additional-tags
       value:
-      {{{ range $tag := .Tags }}}
+      {{{- range $tag := .Tags }}}
         - {{{ $tag }}}
-      {{{ end }}}]
+      {{{- end }}}
     {{{- end }}}
     {{{- end }}}
     {{{- if .PrefetchDeps.PrefetchInput }}}
