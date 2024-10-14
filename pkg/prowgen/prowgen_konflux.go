@@ -149,8 +149,11 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						ResourcesOutputPath: fmt.Sprintf("%s/.konflux", r.RepositoryDirectory()),
 						PipelinesOutputPath: fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
 						Nudges:              nudges,
-						Tags:                []string{versionLabel},
-						PrefetchDeps:        prefetchDeps,
+						// Preserve the version tag as first tag in any instance since SO, when bumping the patch version
+						// will change it before merging the PR.
+						// See `openshift-knative/serverless-operator/hack/generate/update-pipelines.sh` for more details.
+						Tags:         []string{versionLabel},
+						PrefetchDeps: prefetchDeps,
 					}
 					if len(cfg.ExcludesImages) == 0 {
 						cfg.ExcludesImages = []string{
@@ -314,7 +317,10 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 				return []string{serverlessBundleNudge(release)}
 			},
 			ClusterServiceVersionPath: filepath.Join(r.RepositoryDirectory(), "olm-catalog", "serverless-operator", "manifests", "serverless-operator.clusterserviceversion.yaml"),
-			Tags:                      []string{soMetadata.Project.Version},
+			// Preserve the version tag as first tag in any instance since SO, when bumping the patch version
+			// will change it before merging the PR.
+			// See `openshift-knative/serverless-operator/hack/generate/update-pipelines.sh` for more details.
+			Tags: []string{soMetadata.Project.Version},
 		}
 		if len(cfg.ExcludesImages) == 0 {
 			cfg.ExcludesImages = []string{
@@ -396,6 +402,9 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 			IsHermetic: func(_ cioperatorapi.ReleaseBuildConfiguration, _ cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) bool {
 				return true
 			},
+			// Preserve the version tag as first tag in any instance since SO, when bumping the patch version
+			// will change it before merging the PR.
+			// See `openshift-knative/serverless-operator/hack/generate/update-pipelines.sh` for more details.
 			Tags: []string{soMetadata.Project.Version},
 		}
 
