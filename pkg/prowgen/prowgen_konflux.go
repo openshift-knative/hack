@@ -348,26 +348,50 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 
 func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repository, r Repository, branch string, release string, resourceOutputPath string, buildArgs []string) error {
 	for _, v := range soMetadata.Requirements.OcpVersion.List {
-		cfg := konfluxgen.FBCConfig{
-			ApplicationName:     fmt.Sprintf("serverless-operator %s FBC %s", release, v),
-			BuildArgs:           buildArgs,
-			ResourcesOutputPath: resourceOutputPath,
-			PipelinesOutputPath: fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
-			OCPVersion:          v,
-			Metadata: cioperatorapi.Metadata{
-				Org:    r.Org,
-				Repo:   r.Repo,
-				Branch: branch,
+
+		c := konfluxgen.Config{
+			OpenShiftReleasePath: openshiftRelease.RepositoryDirectory(),
+			ApplicationName:      fmt.Sprintf("serverless-operator %s FBC %s", release, v),
+			BuildArgs:            buildArgs,
+			ResourcesOutputPath:  resourceOutputPath,
+			PipelinesOutputPath:  fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
+			AdditionalTektonCELExpressionFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
+				return fmt.Sprintf(" && ("+
+					" files.all.exists(x, x.matches('^olm-catalog/serverless-operator-index/v%s/')) ||"+
+					" files.all.exists(x, x.matches('^.tekton/'))"+
+					" )", v)
 			},
-			AdditionalTektonCELExpressions: fmt.Sprintf(" && ("+
-				" files.all.exists(x, x.matches('^olm-catalog/serverless-operator-index/v%s/')) ||"+
-				" files.all.exists(x, x.matches('^.tekton/'))"+
-				" )", v),
-			DockerfilePath: "Dockerfile",
-			ContextDirPath: fmt.Sprintf("./olm-catalog/serverless-operator-index/v%s", v),
+			AdditionalComponentConfigs: []konfluxgen.TemplateConfig{
+				{
+					ReleaseBuildConfiguration: cioperatorapi.ReleaseBuildConfiguration{
+						Metadata: cioperatorapi.Metadata{
+							Org:    r.Org,
+							Repo:   r.Repo,
+							Branch: branch,
+						},
+						Images: []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration{
+							{
+								To: cioperatorapi.PipelineImageStreamTagReference(fmt.Sprintf("serverless-index-%s-fbc-%s", release, v)),
+								ProjectDirectoryImageBuildInputs: cioperatorapi.ProjectDirectoryImageBuildInputs{
+									DockerfilePath: "Dockerfile",
+									ContextDir:     fmt.Sprintf("./olm-catalog/serverless-operator-index/v%s", v),
+								},
+							},
+						},
+					},
+				},
+			},
+			ComponentNameFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
+				return string(ib.To)
+			},
+			ResourcesOutputPathSkipRemove: true,
+			PipelinesOutputPathSkipRemove: true,
+			IsHermetic: func(_ cioperatorapi.ReleaseBuildConfiguration, _ cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) bool {
+				return true
+			},
 		}
 
-		if err := konfluxgen.GenerateFBCApp(cfg); err != nil {
+		if err := konfluxgen.Generate(c); err != nil {
 			return fmt.Errorf("failed to generate Konflux FBC configurations for %s (%s): %w", r.RepositoryDirectory(), branch, err)
 		}
 	}
@@ -385,7 +409,7 @@ func serverlessIndexNudges(downstreamVersion string, ocpVersions []string) []str
 	}
 
 	for _, v := range ocpVersions {
-		indexes = append(indexes, konfluxgen.Truncate(konfluxgen.Sanitize(fmt.Sprintf("serverless-operator-%s-fbc-%s-index", downstreamVersion, v))))
+		indexes = append(indexes, konfluxgen.Truncate(konfluxgen.Sanitize(fmt.Sprintf("serverless-index-%s-fbc-%s-index", downstreamVersion, v))))
 	}
 
 	return indexes
