@@ -363,7 +363,7 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 			ResourcesOutputPath:  resourceOutputPath,
 			PipelinesOutputPath:  fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
 			AdditionalTektonCELExpressionFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
-				return fmt.Sprintf(" && ("+
+				return fmt.Sprintf("&& ("+
 					" files.all.exists(x, x.matches('^olm-catalog/serverless-operator-index/v%s/')) ||"+
 					" files.all.exists(x, x.matches('^.tekton/'))"+
 					" )", v)
