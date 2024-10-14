@@ -386,6 +386,9 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 			ComponentNameFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
 				return string(ib.To)
 			},
+			FBCImages: []string{
+				fmt.Sprintf("serverless-index-%s-fbc-%s", release, v),
+			},
 			ResourcesOutputPathSkipRemove: true,
 			PipelinesOutputPathSkipRemove: true,
 			IsHermetic: func(_ cioperatorapi.ReleaseBuildConfiguration, _ cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) bool {
