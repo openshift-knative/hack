@@ -55,7 +55,7 @@ spec:
       value:
       {{{ range $tag := .Tags }}}
         - {{{ $tag }}}
-      {{{ end }}}]
+      {{{ end }}}
     {{{- end }}}
     {{{- end }}}
     {{{- if .PrefetchDeps.PrefetchInput }}}
