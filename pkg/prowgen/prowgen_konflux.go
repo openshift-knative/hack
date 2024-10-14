@@ -275,13 +275,13 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			},
 			AdditionalTektonCELExpressionFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
 				if string(ib.To) == "serverless-index" {
-					return " && (" +
+					return "&& (" +
 						" files.all.exists(x, x.matches('^olm-catalog/serverless-operator-index/')) ||" +
 						" files.all.exists(x, x.matches('^.tekton/'))" +
 						" )"
 				}
 				if string(ib.To) == "serverless-bundle" {
-					return " && (" +
+					return "&& (" +
 						" files.all.exists(x, x.matches('^olm-catalog/serverless-operator/')) ||" +
 						" files.all.exists(x, x.matches('^.tekton/'))" +
 						" )"

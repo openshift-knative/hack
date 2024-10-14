@@ -9,8 +9,7 @@ metadata:
     {{{- end }}}
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "{{{ .Event }}}" && target_branch
-      == "{{{ .ReleaseBuildConfiguration.Metadata.Branch }}}" {{{ .AdditionalTektonCELExpression }}}
+    pipelinesascode.tekton.dev/on-cel-expression: event == "{{{ .Event }}}" && target_branch == "{{{ .ReleaseBuildConfiguration.Metadata.Branch }}}" {{{ .AdditionalTektonCELExpression }}}
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: {{{ truncate ( sanitize .ApplicationName ) }}}
