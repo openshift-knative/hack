@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/openshift-knative/hack/pkg/soversion"
@@ -308,7 +309,7 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 					return nil
 				}
 				if strings.Contains(string(ib.To), "serverless-bundle") {
-					return []string{serverlessIndexNudge(release)}
+					return serverlessIndexNudges(release, soMetadata.Requirements.OcpVersion.List)
 				}
 				return []string{serverlessBundleNudge(release)}
 			},
@@ -324,6 +325,10 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 
 		if err := konfluxgen.Generate(cfg); err != nil {
 			return fmt.Errorf("failed to generate Konflux configurations for %s (%s): %w", r.RepositoryDirectory(), branch, err)
+		}
+
+		if err := generateFBCApplications(soMetadata, openshiftRelease, r, branch, release, resourceOutputPath, buildArgs); err != nil {
+			return fmt.Errorf("failed to generate FBC applications for %s (%s): %w", r.RepositoryDirectory(), branch, err)
 		}
 
 		pushBranch := fmt.Sprintf("%s%s", KonfluxBranchPrefix, branch)
@@ -342,10 +347,97 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 	return nil
 }
 
+func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repository, r Repository, branch string, release string, resourceOutputPath string, buildArgs []string) error {
+	for _, v := range soMetadata.Requirements.OcpVersion.List {
+
+		opmImage, err := getOPMImage(v)
+		if err != nil {
+			return fmt.Errorf("failed to get OPM image ref for OCP %q: %w", v, err)
+		}
+		buildArgs := append(buildArgs, fmt.Sprintf("OPM_IMAGE=%s", opmImage))
+
+		c := konfluxgen.Config{
+			OpenShiftReleasePath: openshiftRelease.RepositoryDirectory(),
+			ApplicationName:      fmt.Sprintf("serverless-operator %s FBC %s", release, v),
+			BuildArgs:            buildArgs,
+			ResourcesOutputPath:  resourceOutputPath,
+			PipelinesOutputPath:  fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
+			AdditionalTektonCELExpressionFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
+				return fmt.Sprintf("&& ("+
+					" files.all.exists(x, x.matches('^olm-catalog/serverless-operator-index/v%s/')) ||"+
+					" files.all.exists(x, x.matches('^.tekton/'))"+
+					" )", v)
+			},
+			AdditionalComponentConfigs: []konfluxgen.TemplateConfig{
+				{
+					ReleaseBuildConfiguration: cioperatorapi.ReleaseBuildConfiguration{
+						Metadata: cioperatorapi.Metadata{
+							Org:    r.Org,
+							Repo:   r.Repo,
+							Branch: branch,
+						},
+						Images: []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration{
+							{
+								To: cioperatorapi.PipelineImageStreamTagReference(fmt.Sprintf("serverless-index-%s-fbc-%s", release, v)),
+								ProjectDirectoryImageBuildInputs: cioperatorapi.ProjectDirectoryImageBuildInputs{
+									DockerfilePath: "Dockerfile",
+									ContextDir:     fmt.Sprintf("./olm-catalog/serverless-operator-index/v%s", v),
+								},
+							},
+						},
+					},
+				},
+			},
+			ComponentNameFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
+				return string(ib.To)
+			},
+			ResourcesOutputPathSkipRemove: true,
+			PipelinesOutputPathSkipRemove: true,
+			IsHermetic: func(_ cioperatorapi.ReleaseBuildConfiguration, _ cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) bool {
+				return true
+			},
+			Tags: []string{soMetadata.Project.Version},
+		}
+
+		if err := konfluxgen.Generate(c); err != nil {
+			return fmt.Errorf("failed to generate Konflux FBC configurations for %s (%s): %w", r.RepositoryDirectory(), branch, err)
+		}
+	}
+
+	return nil
+}
+
+func getOPMImage(v string) (string, error) {
+	parts := strings.SplitN(v, ".", 2)
+	if len(parts) != 2 {
+		return "", fmt.Errorf("invalid OCP version: %s", v)
+	}
+
+	minor, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return "", fmt.Errorf("could not convert OCP minor to int (%q): %w", v, err)
+	}
+
+	if minor <= 14 {
+		return fmt.Sprintf("registry.redhat.io/openshift4/ose-operator-registry:v4.%d", minor), nil
+	} else {
+		// use RHEL9 variant for OCP version >= 4.15
+		return fmt.Sprintf("registry.redhat.io/openshift4/ose-operator-registry-rhel9:v4.%d", minor), nil
+	}
+}
+
 func serverlessBundleNudge(downstreamVersion string) string {
 	return konfluxgen.Truncate(konfluxgen.Sanitize(fmt.Sprintf("%s-%s", "serverless-bundle", downstreamVersion)))
 }
 
-func serverlessIndexNudge(downstreamVersion string) string {
-	return konfluxgen.Truncate(konfluxgen.Sanitize(fmt.Sprintf("%s-%s", "serverless-index", downstreamVersion)))
+func serverlessIndexNudges(downstreamVersion string, ocpVersions []string) []string {
+	indexes := []string{
+		konfluxgen.Truncate(konfluxgen.Sanitize(fmt.Sprintf("%s-%s", "serverless-index", downstreamVersion))),
+	}
+
+	for _, v := range ocpVersions {
+		indexes = append(indexes, konfluxgen.Truncate(konfluxgen.Sanitize(fmt.Sprintf("serverless-index-%s-fbc-%s-index", downstreamVersion, v))))
+	}
+
+	return indexes
 }

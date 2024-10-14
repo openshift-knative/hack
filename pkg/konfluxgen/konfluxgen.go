@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 	"text/template"
@@ -70,12 +71,14 @@ type Config struct {
 
 	ResourcesOutputPathSkipRemove bool
 	ResourcesOutputPath           string
+
+	PipelinesOutputPathSkipRemove bool
 	PipelinesOutputPath           string
 
 	AdditionalTektonCELExpressionFunc func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string
+	NudgesFunc                        func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) []string
 
-	NudgesFunc func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) []string
-	Nudges     []string
+	Nudges []string
 
 	Tags []string
 
@@ -83,7 +86,8 @@ type Config struct {
 
 	IsHermetic func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) bool
 
-	ClusterServiceVersionPath string
+	ClusterServiceVersionPath  string
+	AdditionalComponentConfigs []TemplateConfig
 }
 
 type PrefetchDeps struct {
@@ -160,8 +164,10 @@ func Generate(cfg Config) error {
 		}
 	}
 
-	if err := removeAllExcept(cfg.PipelinesOutputPath, fbcBuildPipelinePath, containerBuildPipelinePath); err != nil {
-		return fmt.Errorf("failed to clean %q directory: %w", cfg.PipelinesOutputPath, err)
+	if !cfg.PipelinesOutputPathSkipRemove {
+		if err := removeAllExcept(cfg.PipelinesOutputPath, fbcBuildPipelinePath, containerBuildPipelinePath); err != nil {
+			return fmt.Errorf("failed to clean %q directory: %w", cfg.PipelinesOutputPath, err)
+		}
 	}
 
 	includes, err := util.ToRegexp(cfg.Includes)
@@ -185,7 +191,7 @@ func Generate(cfg Config) error {
 		return fmt.Errorf("failed to create regular expressions for %+v: %w", cfg.JavaImages, err)
 	}
 
-	configs, err := collectConfigurations(cfg.OpenShiftReleasePath, includes, excludes)
+	configs, err := collectConfigurations(cfg.OpenShiftReleasePath, includes, excludes, cfg.AdditionalComponentConfigs)
 	if err != nil {
 		return err
 	}
@@ -237,7 +243,7 @@ func Generate(cfg Config) error {
 		if _, ok := applications[appKey]; !ok {
 			applications[appKey] = make(map[string]DockerfileApplicationConfig, 8)
 		}
-		if c.PromotionConfiguration == nil || len(c.PromotionConfiguration.Targets) == 0 {
+		if (c.PromotionConfiguration == nil || len(c.PromotionConfiguration.Targets) == 0) && !c.IsContained(cfg.AdditionalComponentConfigs) {
 			continue
 		}
 		for _, ib := range c.Images {
@@ -428,7 +434,7 @@ func Generate(cfg Config) error {
 	return nil
 }
 
-func collectConfigurations(openshiftReleasePath string, includes []*regexp.Regexp, excludes []*regexp.Regexp) ([]TemplateConfig, error) {
+func collectConfigurations(openshiftReleasePath string, includes []*regexp.Regexp, excludes []*regexp.Regexp, additionalConfigs []TemplateConfig) ([]TemplateConfig, error) {
 	configs := make([]TemplateConfig, 0, 8)
 	err := filepath.WalkDir(openshiftReleasePath, func(path string, info fs.DirEntry, err error) error {
 		if info.IsDir() {
@@ -472,12 +478,23 @@ func collectConfigurations(openshiftReleasePath string, includes []*regexp.Regex
 	if err != nil {
 		return nil, fmt.Errorf("failed while walking directory %q: %w\n", openshiftReleasePath, err)
 	}
-	return configs, nil
+
+	return append(configs, additionalConfigs...), nil
 }
 
 type TemplateConfig struct {
 	cioperatorapi.ReleaseBuildConfiguration
 	Path string
+}
+
+func (c TemplateConfig) IsContained(configs []TemplateConfig) bool {
+	for _, config := range configs {
+		if reflect.DeepEqual(config, c) {
+			return true
+		}
+	}
+
+	return false
 }
 
 type DockerfileApplicationConfig struct {
@@ -540,7 +557,7 @@ func parseConfig(path string) (*cioperatorapi.ReleaseBuildConfiguration, error) 
 func Sanitize(input interface{}) string {
 	in := fmt.Sprintf("%s", input)
 	// TODO very basic name sanitizer
-	return strings.ReplaceAll(strings.ReplaceAll(in, ".", ""), " ", "-")
+	return strings.ToLower(strings.ReplaceAll(strings.ReplaceAll(in, ".", ""), " ", "-"))
 }
 
 func Truncate(input interface{}) string {
