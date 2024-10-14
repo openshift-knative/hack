@@ -80,6 +80,9 @@ type Config struct {
 
 	Nudges []string
 
+	// Preserve the version tag as first tag in any instance since SO, when bumping the patch version
+	// will change it before merging the PR.
+	// See `openshift-knative/serverless-operator/hack/generate/update-pipelines.sh` for more details.
 	Tags []string
 
 	PrefetchDeps PrefetchDeps
@@ -285,10 +288,11 @@ func Generate(cfg Config) error {
 				Nudges:                        append(cfg.Nudges, cfg.NudgesFunc(c.ReleaseBuildConfiguration, ib)...),
 				Pipeline:                      pipeline,
 				AdditionalTektonCELExpression: cfg.AdditionalTektonCELExpressionFunc(c.ReleaseBuildConfiguration, ib),
-				Tags:                          append(cfg.Tags, "latest"),
-				BuildArgs:                     cfg.BuildArgs,
-				PrefetchDeps:                  cfg.PrefetchDeps,
-				DockerfilePath:                dockerfilePath,
+				// Do not "prepend" tags as SO relies on the order.
+				Tags:           append(cfg.Tags, "latest"),
+				BuildArgs:      cfg.BuildArgs,
+				PrefetchDeps:   cfg.PrefetchDeps,
+				DockerfilePath: dockerfilePath,
 			}
 
 			if cfg.IsHermetic(c.ReleaseBuildConfiguration, ib) {
