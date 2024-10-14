@@ -1,7 +1,7 @@
 apiVersion: appstudio.redhat.com/v1alpha1
 kind: ReleasePlanAdmission
 metadata:
-  name: serverless-operator-135
+  name: serverless-operator-135-1350
   namespace: rhtap-releng-tenant
 spec:
   applications: [serverless-operator-135]
@@ -128,4 +128,4 @@ spec:
       tags:
         - "{{ git_sha }}"
         - "{{ git_short_sha }}"
-        - "v1.35.0"
+        - "1.35.0"
