@@ -718,7 +718,7 @@ func GenerateReleasePlanAdmission(csvPath string, resourceOutputPath string, app
 	if err := os.MkdirAll(outputDir, 0777); err != nil {
 		return fmt.Errorf("failed to create release plan admissions directory: %w", err)
 	}
-	outputFilePath := filepath.Join(outputDir, "prod.yaml")
+	outputFilePath := filepath.Join(outputDir, fmt.Sprintf("%s-prod.yaml", Truncate(Sanitize(appName))))
 
 	components, err := getComponentImageRefs(csv)
 	if err != nil {
@@ -739,7 +739,7 @@ func GenerateReleasePlanAdmission(csvPath string, resourceOutputPath string, app
 		})
 	}
 
-	outputFilePath = filepath.Join(outputDir, "stage.yaml")
+	outputFilePath = filepath.Join(outputDir, fmt.Sprintf("%s-stage.yaml", Truncate(Sanitize(appName))))
 	if err := executeReleasePlanAdmissionTemplate(componentWithStageRepoRef, outputFilePath, appName, soVersion); err != nil {
 		return fmt.Errorf("failed to execute release plan admission template: %w", err)
 	}

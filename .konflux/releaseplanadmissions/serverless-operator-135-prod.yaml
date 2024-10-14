@@ -128,4 +128,4 @@ spec:
       tags:
         - "{{ git_sha }}"
         - "{{ git_short_sha }}"
-        - "v1.35.0"
+        - "1.35.0"

@@ -19,4 +19,4 @@ spec:
       tags:
         - "{{ git_sha }}"
         - "{{ git_short_sha }}"
-        - "v{{{ .Version }}}"
+        - "{{{ .Version }}}"
