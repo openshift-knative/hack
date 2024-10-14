@@ -704,12 +704,8 @@ func replaceTaskImagesFromExisting(existingBytes, newBytes []byte) []byte {
 	return []byte(dataStr)
 }
 
-func defaultIsHermetic(_ cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) bool {
-	return !isIndex(ib)
-}
-
-func isIndex(ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) bool {
-	return string(ib.To) == "serverless-index"
+func defaultIsHermetic(_ cioperatorapi.ReleaseBuildConfiguration, _ cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) bool {
+	return true
 }
 
 func GenerateReleasePlanAdmission(csvPath string, resourceOutputPath string, appName string) error {
