@@ -1,7 +1,7 @@
 apiVersion: appstudio.redhat.com/v1alpha1
 kind: ReleasePlanAdmission
 metadata:
-  name: serverless-operator-135-1350
+  name: serverless-operator-135-1350-prod
   namespace: rhtap-releng-tenant
 spec:
   applications: [serverless-operator-135]
@@ -124,8 +124,26 @@ spec:
         - name: kn-eventing-migrate-115
           repository: registry.redhat.io/openshift-serverless-1/kn-eventing-migrate
           pushSourceContainer: true
+    pyxis:
+      secret: pyxis-prod-secret
+      server: production
+    sign:
+      configMapName: "hacbs-signing-pipeline-config-redhatrelease2"
     defaults:
       tags:
         - "{{ git_sha }}"
         - "{{ git_short_sha }}"
         - "1.35.0"
+  pipeline:
+    pipelineRef:
+      resolver: git
+      params:
+        - name: url
+          value: "https://github.com/konflux-ci/release-service-catalog.git"
+        - name: revision
+          value: production
+        - name: pathInRepo
+          value: "pipelines/rh-advisories/rh-advisories.yaml"
+    serviceAccountName: release-registry-prod
+    timeouts:
+      pipeline: "4h0m0s"

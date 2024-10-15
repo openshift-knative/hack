@@ -1,14 +1,14 @@
 apiVersion: appstudio.redhat.com/v1beta2
 kind: IntegrationTestScenario
 metadata:
-  name: serverless-operator-135-enterprise-contract
+  name: serverless-operator-135-fbc-414-enterprise-contract
 spec:
   params: 
     - name: POLICY_CONFIGURATION
       value: rhtap-releng-tenant/tmp-onboard-policy
     - name: TIMEOUT
       value: "45m0s"
-  application: serverless-operator-135
+  application: serverless-operator-135-fbc-414
   contexts:
     - description: Application testing
       name: application

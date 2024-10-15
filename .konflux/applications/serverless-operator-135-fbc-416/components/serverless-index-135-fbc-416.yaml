@@ -3,14 +3,14 @@ kind: Component
 metadata:
   annotations:
     build.appstudio.openshift.io/pipeline: '{"name":"docker-build","bundle":"latest"}'
-  name: serverless-index-135
+  name: serverless-index-135-fbc-416
 spec:
-  componentName: serverless-index-135
-  application: serverless-operator-135
+  componentName: serverless-index-135-fbc-416
+  application: serverless-operator-135-fbc-416
    
   source:
     git:
       url: https://github.com/openshift-knative/serverless-operator.git
-      context: 
-      dockerfileUrl: olm-catalog/serverless-operator-index/Dockerfile
+      context: ./olm-catalog/serverless-operator-index/v4.16
+      dockerfileUrl: Dockerfile
       revision: main
