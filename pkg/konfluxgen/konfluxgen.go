@@ -801,7 +801,7 @@ func GenerateComponentReleasePlanAdmission(csvPath string, resourceOutputPath st
 	return nil
 }
 
-func executeFBCReleasePlanAdmissionTemplate(data rpaFBCData, outputFilePath string) interface{} {
+func executeFBCReleasePlanAdmissionTemplate(data rpaFBCData, outputFilePath string) error {
 	funcs := template.FuncMap{
 		"sanitize": Sanitize,
 		"truncate": Truncate,
