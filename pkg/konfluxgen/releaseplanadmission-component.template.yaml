@@ -15,8 +15,26 @@ spec:
           repository: {{{ $component.ImageRepository }}}
           pushSourceContainer: true
       {{{- end }}}
+    pyxis:
+      secret: {{{ .PyxisSecret }}}
+      server: {{{ .PyxisServer }}}
+    sign:
+      configMapName: "hacbs-signing-pipeline-config-redhatrelease2"
     defaults:
       tags:
         - "{{ git_sha }}"
         - "{{ git_short_sha }}"
-        - "{{{ .Version }}}"
+        - "{{{ .SOVersion }}}"
+  pipeline:
+    pipelineRef:
+      resolver: git
+      params:
+        - name: url
+          value: "https://github.com/konflux-ci/release-service-catalog.git"
+        - name: revision
+          value: production
+        - name: pathInRepo
+          value: "pipelines/rh-advisories/rh-advisories.yaml"
+    serviceAccountName: {{{ .PipelineSA }}}
+    timeouts:
+      pipeline: "4h0m0s"
