@@ -26,7 +26,8 @@ import (
 )
 
 const (
-	ApplicationsDirectoryName = "applications"
+	ApplicationsDirectoryName          = "applications"
+	ReleasePlanAdmissionsDirectoryName = "releaseplanadmissions"
 )
 
 //go:embed application.template.yaml
@@ -722,7 +723,7 @@ type rpaFBCData struct {
 }
 
 func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath string, appName string, soVersion string) error {
-	outputDir := filepath.Join(resourceOutputPath, "releaseplanadmissions")
+	outputDir := filepath.Join(resourceOutputPath, ReleasePlanAdmissionsDirectoryName)
 	if err := os.MkdirAll(outputDir, 0777); err != nil {
 		return fmt.Errorf("failed to create release plan admissions directory: %w", err)
 	}
@@ -766,7 +767,7 @@ func GenerateComponentReleasePlanAdmission(csvPath string, resourceOutputPath st
 	}
 	soVersion := csv.Spec.Version
 
-	outputDir := filepath.Join(resourceOutputPath, "releaseplanadmissions")
+	outputDir := filepath.Join(resourceOutputPath, ReleasePlanAdmissionsDirectoryName)
 	if err := os.MkdirAll(outputDir, 0777); err != nil {
 		return fmt.Errorf("failed to create release plan admissions directory: %w", err)
 	}
