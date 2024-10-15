@@ -26,6 +26,10 @@ spec:
     - name: dockerfile
       value: {{{ .ProjectDirectoryImageBuildStepConfiguration.ProjectDirectoryImageBuildInputs.DockerfilePath }}}
     {{{- end }}}
+    {{{- if .ProjectDirectoryImageBuildStepConfiguration.ProjectDirectoryImageBuildInputs.ContextDir }}}
+    - name: path-context
+      value: {{{ .ProjectDirectoryImageBuildStepConfiguration.ProjectDirectoryImageBuildInputs.ContextDir }}}
+    {{{- end }}}
     {{{- if gt (len .BuildArgs) 0 }}}
     - name: build-args
       value:
