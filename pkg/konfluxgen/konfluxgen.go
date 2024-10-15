@@ -15,8 +15,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/operator-framework/api/pkg/lib/version"
-
 	"github.com/openshift-knative/hack/pkg/soversion"
 	"github.com/openshift-knative/hack/pkg/util"
 
@@ -760,6 +758,17 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 	return nil
 }
 
+type rpaComponentData struct {
+	Name            string
+	ApplicationName string
+	Components      []ComponentImageRepoRef
+
+	SOVersion   string
+	PyxisSecret string
+	PyxisServer string
+	PipelineSA  string
+}
+
 func GenerateComponentReleasePlanAdmission(csvPath string, resourceOutputPath string, appName string) error {
 	csv, err := loadClusterServiceVerion(csvPath)
 	if err != nil {
@@ -778,8 +787,17 @@ func GenerateComponentReleasePlanAdmission(csvPath string, resourceOutputPath st
 	}
 
 	rpaName := Truncate(Sanitize(fmt.Sprintf("%s-%s-prod", appName, soVersion)))
+	rpaData := rpaComponentData{
+		Name:            rpaName,
+		ApplicationName: appName,
+		Components:      components,
+		SOVersion:       soVersion.String(),
+		PyxisSecret:     "pyxis-prod-secret",
+		PyxisServer:     "production",
+		PipelineSA:      "release-registry-prod",
+	}
 	outputFilePath := filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
-	if err := executeComponentReleasePlanAdmissionTemplate(components, outputFilePath, rpaName, appName, soVersion); err != nil {
+	if err := executeComponentReleasePlanAdmissionTemplate(rpaData, outputFilePath); err != nil {
 		return fmt.Errorf("failed to execute release plan admission template: %w", err)
 	}
 
@@ -793,8 +811,17 @@ func GenerateComponentReleasePlanAdmission(csvPath string, resourceOutputPath st
 	}
 
 	rpaName = Truncate(Sanitize(fmt.Sprintf("%s-%s-stage", appName, soVersion)))
+	rpaData = rpaComponentData{
+		Name:            rpaName,
+		ApplicationName: appName,
+		Components:      componentWithStageRepoRef,
+		SOVersion:       soVersion.String(),
+		PyxisSecret:     "pyxis-staging-secret",
+		PyxisServer:     "stage",
+		PipelineSA:      "release-registry-staging",
+	}
 	outputFilePath = filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
-	if err := executeComponentReleasePlanAdmissionTemplate(componentWithStageRepoRef, outputFilePath, rpaName, appName, soVersion); err != nil {
+	if err := executeComponentReleasePlanAdmissionTemplate(rpaData, outputFilePath); err != nil {
 		return fmt.Errorf("failed to execute release plan admission template: %w", err)
 	}
 
@@ -824,7 +851,7 @@ func executeFBCReleasePlanAdmissionTemplate(data rpaFBCData, outputFilePath stri
 	return nil
 }
 
-func executeComponentReleasePlanAdmissionTemplate(components []ComponentImageRepoRef, outputFilePath string, rpaName string, appName string, soVersion version.OperatorVersion) error {
+func executeComponentReleasePlanAdmissionTemplate(data rpaComponentData, outputFilePath string) error {
 	funcs := template.FuncMap{
 		"sanitize": Sanitize,
 		"truncate": Truncate,
@@ -834,13 +861,6 @@ func executeComponentReleasePlanAdmissionTemplate(components []ComponentImageRep
 	rpaTemplate, err := template.New("releaseplanadmission-component.template.yaml").Delims("{{{", "}}}").Funcs(funcs).ParseFS(ComponentReleasePlanAdmissionsTemplate, "*.yaml")
 	if err != nil {
 		return fmt.Errorf("failed to parse component RPA template: %w", err)
-	}
-
-	data := map[string]interface{}{
-		"Name":            rpaName,
-		"ApplicationName": appName,
-		"Components":      components,
-		"Version":         soVersion.String(),
 	}
 
 	buf := &bytes.Buffer{}
