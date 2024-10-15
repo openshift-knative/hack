@@ -344,6 +344,8 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 }
 
 func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repository, r Repository, branch string, release string, resourceOutputPath string, buildArgs []string) error {
+	fbcApps := make([]string, 0, len(soMetadata.Requirements.OcpVersion.List))
+
 	for _, v := range soMetadata.Requirements.OcpVersion.List {
 
 		opmImage, err := getOPMImage(v)
@@ -352,9 +354,11 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 		}
 		buildArgs := append(buildArgs, fmt.Sprintf("OPM_IMAGE=%s", opmImage))
 
+		fbcAppName := fmt.Sprintf("serverless-operator %s FBC %s", release, v)
+
 		c := konfluxgen.Config{
 			OpenShiftReleasePath: openshiftRelease.RepositoryDirectory(),
-			ApplicationName:      fmt.Sprintf("serverless-operator %s FBC %s", release, v),
+			ApplicationName:      fbcAppName,
 			BuildArgs:            buildArgs,
 			ResourcesOutputPath:  resourceOutputPath,
 			PipelinesOutputPath:  fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
@@ -404,6 +408,12 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 		if err := konfluxgen.Generate(c); err != nil {
 			return fmt.Errorf("failed to generate Konflux FBC configurations for %s (%s): %w", r.RepositoryDirectory(), branch, err)
 		}
+
+		fbcApps = append(fbcApps, fbcAppName)
+	}
+
+	if err := konfluxgen.GenerateFBCReleasePlanAdmission(fbcApps, resourceOutputPath, fmt.Sprintf("serverless-operator %s", release), soMetadata.Project.Version); err != nil {
+		return fmt.Errorf("failed to generate ReleasePlanAdmissions for FBC of %s (%s): %w", r.RepositoryDirectory(), branch, err)
 	}
 
 	return nil

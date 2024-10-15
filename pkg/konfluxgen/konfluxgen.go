@@ -53,8 +53,11 @@ var PipelineFBCBuildTemplate embed.FS
 //go:embed integration-test-scenario.template.yaml
 var EnterpriseContractTestScenarioTemplate embed.FS
 
-//go:embed releaseplanadmission.template.yaml
-var ReleasePlanAdmissionsTemplate embed.FS
+//go:embed releaseplanadmission-component.template.yaml
+var ComponentReleasePlanAdmissionsTemplate embed.FS
+
+//go:embed releaseplanadmission-fbc.template.yaml
+var FBCReleasePlanAdmissionsTemplate embed.FS
 
 type Config struct {
 	OpenShiftReleasePath string
@@ -430,7 +433,7 @@ func Generate(cfg Config) error {
 	buf.Reset()
 
 	if cfg.ClusterServiceVersionPath != "" {
-		if err := GenerateReleasePlanAdmission(cfg.ClusterServiceVersionPath, cfg.ResourcesOutputPath, cfg.ApplicationName); err != nil {
+		if err := GenerateComponentReleasePlanAdmission(cfg.ClusterServiceVersionPath, cfg.ResourcesOutputPath, cfg.ApplicationName); err != nil {
 			return fmt.Errorf("failed to generate ReleasePlanAdmission: %w", err)
 		}
 	}
@@ -708,25 +711,74 @@ func defaultIsHermetic(_ cioperatorapi.ReleaseBuildConfiguration, _ cioperatorap
 	return true
 }
 
-func GenerateReleasePlanAdmission(csvPath string, resourceOutputPath string, appName string) error {
+type rpaFBCData struct {
+	Name         string
+	Applications []string
+
+	FromIndex             string
+	TargetIndex           string
+	PublishingCredentials string
+	PipelineSA            string
+}
+
+func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath string, appName string, soVersion string) error {
+	outputDir := filepath.Join(resourceOutputPath, "releaseplanadmissions")
+	if err := os.MkdirAll(outputDir, 0777); err != nil {
+		return fmt.Errorf("failed to create release plan admissions directory: %w", err)
+	}
+
+	rpaName := Truncate(Sanitize(fmt.Sprintf("%s-%s-fbc-prod", appName, soVersion)))
+	fbcData := rpaFBCData{
+		Name:                  rpaName,
+		Applications:          applications,
+		FromIndex:             "registry-proxy.engineering.redhat.com/rh-osbs/iib-pub:{{ OCP_VERSION }}",
+		TargetIndex:           "quay.io/redhat/redhat----redhat-operator-index:{{ OCP_VERSION }}",
+		PublishingCredentials: "fbc-production-publishing-credentials",
+		PipelineSA:            "release-index-image-prod",
+	}
+	outputFilePath := filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
+	if err := executeFBCReleasePlanAdmissionTemplate(fbcData, outputFilePath); err != nil {
+		return fmt.Errorf("failed to execute release plan admission template: %w", err)
+	}
+
+	// generate RPA for stage
+	rpaName = Truncate(Sanitize(fmt.Sprintf("%s-%s-fbc-stage", appName, soVersion)))
+	fbcData = rpaFBCData{
+		Name:                  rpaName,
+		Applications:          applications,
+		FromIndex:             "registry-proxy.engineering.redhat.com/rh-osbs/iib-pub-pending:{{ OCP_VERSION }}",
+		TargetIndex:           "",
+		PublishingCredentials: "staged-index-fbc-publishing-credentials",
+		PipelineSA:            "release-index-image-staging",
+	}
+	outputFilePath = filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
+	if err := executeFBCReleasePlanAdmissionTemplate(fbcData, outputFilePath); err != nil {
+		return fmt.Errorf("failed to execute release plan admission template: %w", err)
+	}
+
+	return nil
+}
+
+func GenerateComponentReleasePlanAdmission(csvPath string, resourceOutputPath string, appName string) error {
 	csv, err := loadClusterServiceVerion(csvPath)
 	if err != nil {
 		return fmt.Errorf("failed to load ClusterServiceVersion: %w", err)
 	}
+	soVersion := csv.Spec.Version
 
 	outputDir := filepath.Join(resourceOutputPath, "releaseplanadmissions")
 	if err := os.MkdirAll(outputDir, 0777); err != nil {
 		return fmt.Errorf("failed to create release plan admissions directory: %w", err)
 	}
-	outputFilePath := filepath.Join(outputDir, fmt.Sprintf("%s-%s-prod.yaml", Truncate(Sanitize(appName)), Truncate(Sanitize(csv.Spec.Version.String()))))
 
 	components, err := getComponentImageRefs(csv)
 	if err != nil {
 		return fmt.Errorf("failed to get component image refs: %w", err)
 	}
 
-	soVersion := csv.Spec.Version
-	if err := executeReleasePlanAdmissionTemplate(components, outputFilePath, appName, soVersion); err != nil {
+	rpaName := Truncate(Sanitize(fmt.Sprintf("%s-%s-prod", appName, soVersion)))
+	outputFilePath := filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
+	if err := executeComponentReleasePlanAdmissionTemplate(components, outputFilePath, rpaName, appName, soVersion); err != nil {
 		return fmt.Errorf("failed to execute release plan admission template: %w", err)
 	}
 
@@ -739,27 +791,52 @@ func GenerateReleasePlanAdmission(csvPath string, resourceOutputPath string, app
 		})
 	}
 
-	outputFilePath = filepath.Join(outputDir, fmt.Sprintf("%s-%s-stage.yaml", Truncate(Sanitize(appName)), Truncate(Sanitize(csv.Spec.Version.String()))))
-	if err := executeReleasePlanAdmissionTemplate(componentWithStageRepoRef, outputFilePath, appName, soVersion); err != nil {
+	rpaName = Truncate(Sanitize(fmt.Sprintf("%s-%s-stage", appName, soVersion)))
+	outputFilePath = filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
+	if err := executeComponentReleasePlanAdmissionTemplate(componentWithStageRepoRef, outputFilePath, rpaName, appName, soVersion); err != nil {
 		return fmt.Errorf("failed to execute release plan admission template: %w", err)
 	}
 
 	return nil
 }
 
-func executeReleasePlanAdmissionTemplate(components []ComponentImageRepoRef, outputFilePath string, appName string, soVersion version.OperatorVersion) error {
+func executeFBCReleasePlanAdmissionTemplate(data rpaFBCData, outputFilePath string) interface{} {
 	funcs := template.FuncMap{
 		"sanitize": Sanitize,
 		"truncate": Truncate,
 		"replace":  replace,
 	}
 
-	rpaTemplate, err := template.New("releaseplanadmission.template.yaml").Delims("{{{", "}}}").Funcs(funcs).ParseFS(ReleasePlanAdmissionsTemplate, "*.yaml")
+	rpaTemplate, err := template.New("releaseplanadmission-fbc.template.yaml").Delims("{{{", "}}}").Funcs(funcs).ParseFS(FBCReleasePlanAdmissionsTemplate, "*.yaml")
 	if err != nil {
-		return fmt.Errorf("failed to parse pipeline run push template: %w", err)
+		return fmt.Errorf("failed to parse FBC RPA template: %w", err)
+	}
+
+	buf := &bytes.Buffer{}
+	if err := rpaTemplate.Execute(buf, data); err != nil {
+		return fmt.Errorf("failed to execute template for ReleasePlanAdmission: %w", err)
+	}
+	if err := os.WriteFile(outputFilePath, buf.Bytes(), 0777); err != nil {
+		return fmt.Errorf("failed to write ReleasPlanAdmission file %q: %w", outputFilePath, err)
+	}
+
+	return nil
+}
+
+func executeComponentReleasePlanAdmissionTemplate(components []ComponentImageRepoRef, outputFilePath string, rpaName string, appName string, soVersion version.OperatorVersion) error {
+	funcs := template.FuncMap{
+		"sanitize": Sanitize,
+		"truncate": Truncate,
+		"replace":  replace,
+	}
+
+	rpaTemplate, err := template.New("releaseplanadmission-component.template.yaml").Delims("{{{", "}}}").Funcs(funcs).ParseFS(ComponentReleasePlanAdmissionsTemplate, "*.yaml")
+	if err != nil {
+		return fmt.Errorf("failed to parse component RPA template: %w", err)
 	}
 
 	data := map[string]interface{}{
+		"Name":            rpaName,
 		"ApplicationName": appName,
 		"Components":      components,
 		"Version":         soVersion.String(),

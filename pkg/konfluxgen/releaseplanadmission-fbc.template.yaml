@@ -1,0 +1,36 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: ReleasePlanAdmission
+metadata:
+  name: {{{ truncate ( sanitize .Name ) }}}
+  namespace: rhtap-releng-tenant
+spec:
+  applications:
+  {{{- range .Applications }}}
+    - {{{ truncate ( sanitize . ) }}}
+  {{{- end}}}
+  origin: ocp-serverless-tenant
+  policy: fbc-standard
+  data:
+    fbc:
+      fromIndex: "{{{ .FromIndex }}}"
+      targetIndex: "{{{ .TargetIndex }}}"
+      publishingCredentials: "{{{ .PublishingCredentials }}}"
+      requestTimeoutSeconds: 1500
+      buildTimeoutSeconds: 1500
+      allowedPackages: [serverless-operator]
+    sign:
+      configMapName: hacbs-signing-pipeline-config-redhatrelease2
+  pipeline:
+    pipelineRef:
+      resolver: git
+      params:
+        - name: url
+          value: "https://github.com/konflux-ci/release-service-catalog.git"
+        - name: revision
+          value: production
+        - name: pathInRepo
+          value: "pipelines/fbc-release/fbc-release.yaml"
+    serviceAccountName: {{{ .PipelineSA }}}
+    timeouts:
+      pipeline: "4h0m0s"
+
