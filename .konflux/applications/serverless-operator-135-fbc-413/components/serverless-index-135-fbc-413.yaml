@@ -1,0 +1,16 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Component
+metadata:
+  annotations:
+    build.appstudio.openshift.io/pipeline: '{"name":"docker-build","bundle":"latest"}'
+  name: serverless-index-135-fbc-413
+spec:
+  componentName: serverless-index-135-fbc-413
+  application: serverless-operator-135-fbc-413
+   
+  source:
+    git:
+      url: https://github.com/openshift-knative/serverless-operator.git
+      context: ./olm-catalog/serverless-operator-index/v4.13
+      dockerfileUrl: Dockerfile
+      revision: main

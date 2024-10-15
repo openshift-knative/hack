@@ -1,0 +1,38 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: ReleasePlanAdmission
+metadata:
+  name: serverless-operator-135-1350-fbc-prod
+  namespace: rhtap-releng-tenant
+spec:
+  applications:
+    - serverless-operator-135-fbc-413
+    - serverless-operator-135-fbc-414
+    - serverless-operator-135-fbc-415
+    - serverless-operator-135-fbc-416
+    - serverless-operator-135-fbc-417
+  origin: ocp-serverless-tenant
+  policy: fbc-standard
+  data:
+    fbc:
+      fromIndex: "registry-proxy.engineering.redhat.com/rh-osbs/iib-pub:{{ OCP_VERSION }}"
+      targetIndex: "quay.io/redhat/redhat----redhat-operator-index:{{ OCP_VERSION }}"
+      publishingCredentials: "fbc-production-publishing-credentials"
+      requestTimeoutSeconds: 1500
+      buildTimeoutSeconds: 1500
+      allowedPackages: [serverless-operator]
+    sign:
+      configMapName: hacbs-signing-pipeline-config-redhatrelease2
+  pipeline:
+    pipelineRef:
+      resolver: git
+      params:
+        - name: url
+          value: "https://github.com/konflux-ci/release-service-catalog.git"
+        - name: revision
+          value: production
+        - name: pathInRepo
+          value: "pipelines/fbc-release/fbc-release.yaml"
+    serviceAccountName: release-index-image-prod
+    timeouts:
+      pipeline: "4h0m0s"
+

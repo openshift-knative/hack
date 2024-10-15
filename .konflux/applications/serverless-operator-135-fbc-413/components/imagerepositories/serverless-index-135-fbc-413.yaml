@@ -1,0 +1,13 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: ImageRepository
+metadata:
+  annotations:
+    image-controller.appstudio.redhat.com/update-component-image: "true"
+  labels:
+    appstudio.redhat.com/application: serverless-operator-135-fbc-413
+    appstudio.redhat.com/component: serverless-index-135-fbc-413
+  name: serverless-index-135-fbc-413
+spec:
+  image:
+    name: serverless-operator-135-fbc-413/serverless-index-135-fbc-413
+    visibility: public
