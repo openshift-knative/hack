@@ -315,6 +315,7 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			cfg.ExcludesImages = []string{
 				".*operator-src.*",
 				".*source.*",
+				".*serverless-index.*",
 			}
 		}
 
