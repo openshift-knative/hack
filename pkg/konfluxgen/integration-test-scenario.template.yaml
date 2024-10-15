@@ -6,6 +6,8 @@ spec:
   params: 
     - name: POLICY_CONFIGURATION
       value: rhtap-releng-tenant/tmp-onboard-policy
+    - name: TIMEOUT
+      value: "45m0s"
   application: {{{ truncate ( sanitize .ApplicationName ) }}}
   contexts:
     - description: Application testing
