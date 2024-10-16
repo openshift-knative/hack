@@ -12,6 +12,9 @@ spec:
   policy: fbc-standard
   data:
     fbc:
+      {{{- if .StagedIndex }}}
+      stagedIndex: true
+      {{{- end }}}
       fromIndex: "{{{ .FromIndex }}}"
       targetIndex: "{{{ .TargetIndex }}}"
       publishingCredentials: "{{{ .PublishingCredentials }}}"

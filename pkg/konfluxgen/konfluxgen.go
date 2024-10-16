@@ -718,6 +718,7 @@ type rpaFBCData struct {
 	TargetIndex           string
 	PublishingCredentials string
 	PipelineSA            string
+	StagedIndex           bool
 }
 
 func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath string, appName string, soVersion string) error {
@@ -749,6 +750,7 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 		TargetIndex:           "",
 		PublishingCredentials: "staged-index-fbc-publishing-credentials",
 		PipelineSA:            "release-index-image-staging",
+		StagedIndex:           true,
 	}
 	outputFilePath = filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeFBCReleasePlanAdmissionTemplate(fbcData, outputFilePath); err != nil {
