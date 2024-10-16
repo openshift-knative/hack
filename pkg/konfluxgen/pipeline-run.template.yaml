@@ -48,7 +48,8 @@ spec:
       value: quay.io/redhat-user-workloads/ocp-serverless-tenant/{{{ truncate ( sanitize .ApplicationName ) }}}/{{{ truncate ( sanitize .ProjectDirectoryImageBuildStepConfiguration.To ) }}}:on-pr-{{revision}}
     {{{- if ne .Pipeline "fbc-builder" }}}
     - name: build-platforms
-      value: linux/x86_64
+      value:
+        - linux/x86_64
     {{{- end }}}
     {{{- else }}}
     - name: output-image
