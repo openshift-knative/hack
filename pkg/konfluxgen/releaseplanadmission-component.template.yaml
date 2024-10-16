@@ -11,6 +11,10 @@ spec:
   origin: ocp-serverless-tenant
   policy: registry-standard
   data:
+    releaseNotes:
+      product_id: 579
+      product_name: "OpenShift Serverless"
+      product_version: "{{{ .SOVersion }}}"
     mapping:
       components:
       {{{- range $component := .Components }}}

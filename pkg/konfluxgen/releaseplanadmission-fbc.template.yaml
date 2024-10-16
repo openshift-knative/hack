@@ -14,6 +14,10 @@ spec:
   origin: ocp-serverless-tenant
   policy: fbc-standard
   data:
+    releaseNotes:
+      product_id: 579
+      product_name: "OpenShift Serverless"
+      product_version: "{{{ .SOVersion }}}"
     fbc:
       {{{- if .StagedIndex }}}
       stagedIndex: true

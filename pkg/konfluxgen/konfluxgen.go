@@ -6,6 +6,7 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"github.com/blang/semver/v4"
 	"io/fs"
 	"log"
 	"os"
@@ -733,6 +734,7 @@ func defaultIsHermetic(_ cioperatorapi.ReleaseBuildConfiguration, _ cioperatorap
 type rpaFBCData struct {
 	Name         string
 	Applications []string
+	SOVersion    semver.Version
 
 	FromIndex             string
 	TargetIndex           string
@@ -747,10 +749,16 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 		return fmt.Errorf("failed to create release plan admissions directory: %w", err)
 	}
 
+	semv, err := semver.New(soVersion)
+	if err != nil {
+		return fmt.Errorf("failed to parse SO version %q: %w", soVersion, err)
+	}
+
 	rpaName := fbcReleasePlanAdmissionName(appName, soVersion, ProdEnv)
 	fbcData := rpaFBCData{
 		Name:                  rpaName,
 		Applications:          applications,
+		SOVersion:             *semv,
 		FromIndex:             "registry-proxy.engineering.redhat.com/rh-osbs/iib-pub:{{ OCP_VERSION }}",
 		TargetIndex:           "quay.io/redhat/redhat----redhat-operator-index:{{ OCP_VERSION }}",
 		PublishingCredentials: "fbc-production-publishing-credentials",
@@ -766,6 +774,7 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 	fbcData = rpaFBCData{
 		Name:                  rpaName,
 		Applications:          applications,
+		SOVersion:             *semv,
 		FromIndex:             "registry-proxy.engineering.redhat.com/rh-osbs/iib-pub-pending:{{ OCP_VERSION }}",
 		TargetIndex:           "",
 		PublishingCredentials: "staged-index-fbc-publishing-credentials",
@@ -785,7 +794,7 @@ type rpaComponentData struct {
 	ApplicationName string
 	Components      []ComponentImageRepoRef
 
-	SOVersion   string
+	SOVersion   semver.Version
 	PyxisSecret string
 	PyxisServer string
 	PipelineSA  string
@@ -813,7 +822,7 @@ func GenerateComponentReleasePlanAdmission(csvPath string, resourceOutputPath st
 		Name:            rpaName,
 		ApplicationName: appName,
 		Components:      components,
-		SOVersion:       soVersion.String(),
+		SOVersion:       soVersion.Version,
 		PyxisSecret:     "pyxis-prod-secret",
 		PyxisServer:     "production",
 		PipelineSA:      "release-registry-prod",
@@ -837,7 +846,7 @@ func GenerateComponentReleasePlanAdmission(csvPath string, resourceOutputPath st
 		Name:            rpaName,
 		ApplicationName: appName,
 		Components:      componentWithStageRepoRef,
-		SOVersion:       soVersion.String(),
+		SOVersion:       soVersion.Version,
 		PyxisSecret:     "pyxis-staging-secret",
 		PyxisServer:     "stage",
 		PipelineSA:      "release-registry-staging",
