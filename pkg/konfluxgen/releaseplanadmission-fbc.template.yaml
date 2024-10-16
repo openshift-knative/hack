@@ -29,7 +29,7 @@ spec:
       buildTimeoutSeconds: 1500
       allowedPackages: [serverless-operator]
     sign:
-      configMapName: hacbs-signing-pipeline-config-redhatrelease2
+      configMapName: {{{ .SignCMName }}}
   pipeline:
     pipelineRef:
       resolver: git

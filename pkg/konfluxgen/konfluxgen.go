@@ -741,6 +741,7 @@ type rpaFBCData struct {
 	PublishingCredentials string
 	PipelineSA            string
 	StagedIndex           bool
+	SignCMName            string
 }
 
 func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath string, appName string, soVersion string) error {
@@ -763,6 +764,7 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 		TargetIndex:           "quay.io/redhat/redhat----redhat-operator-index:{{ OCP_VERSION }}",
 		PublishingCredentials: "fbc-production-publishing-credentials",
 		PipelineSA:            "release-index-image-prod",
+		SignCMName:            "hacbs-signing-pipeline-config-redhatrelease2",
 	}
 	outputFilePath := filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeFBCReleasePlanAdmissionTemplate(fbcData, outputFilePath); err != nil {
@@ -780,6 +782,7 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 		PublishingCredentials: "staged-index-fbc-publishing-credentials",
 		PipelineSA:            "release-index-image-staging",
 		StagedIndex:           true,
+		SignCMName:            "hacbs-signing-pipeline-config-redhatbeta2",
 	}
 	outputFilePath = filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeFBCReleasePlanAdmissionTemplate(fbcData, outputFilePath); err != nil {
