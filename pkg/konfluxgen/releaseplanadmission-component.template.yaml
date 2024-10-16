@@ -1,6 +1,9 @@
 apiVersion: appstudio.redhat.com/v1alpha1
 kind: ReleasePlanAdmission
 metadata:
+  labels:
+    release.appstudio.openshift.io/auto-release: "true"
+    pp.engineering.redhat.com/business-unit: hybrid-platforms
   name: {{{ truncate ( sanitize .Name ) }}}
   namespace: rhtap-releng-tenant
 spec:
