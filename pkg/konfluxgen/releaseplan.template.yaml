@@ -1,0 +1,26 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: ReleasePlan
+metadata:
+  labels:
+    release.appstudio.openshift.io/auto-release: '{{{ .AutoRelease }}}'
+    release.appstudio.openshift.io/releasePlanAdmission: '{{{ truncate ( sanitize .ReleasePlanAdmissionName ) }}}'
+  name: {{{ truncate ( sanitize .Name ) }}}
+spec:
+  releaseNotes:
+    type: "Product Enhancement Advisory"
+    synopsis: "Red Hat OpenShift Serverless Release"
+    topic: |
+      The {{{ .SOVersion }}} GA release of Red Hat OpenShift Serverless Operator.
+      For more details see [product documentation](https://docs.redhat.com/documentation/red_hat_openshift_serverless).
+    description: "The {{{ .SOVersion }}} release of Red Hat OpenShift Serverless Operator."
+    solution: |
+      The Red Hat OpenShift Serverless Operator provides a collection of APIs that
+      enables containers, microservices and functions to run "serverless".
+      Serverless applications can scale up and down (to zero) on demand and be triggered by a
+      number of event sources. OpenShift Serverless integrates with a number of
+      platform services, such as Monitoring and it is based on the open
+      source project Knative.
+    references:
+      - "https://docs.redhat.com/documentation/red_hat_openshift_serverless/"
+  application: {{{ truncate ( sanitize .ApplicationName ) }}}
+  target: rhtap-releng-tenant
