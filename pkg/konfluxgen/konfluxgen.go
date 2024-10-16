@@ -814,10 +814,11 @@ type rpaComponentData struct {
 	ApplicationName string
 	Components      []ComponentImageRepoRef
 
-	SOVersion   semver.Version
-	PyxisSecret string
-	PyxisServer string
-	PipelineSA  string
+	SOVersion          semver.Version
+	PyxisSecret        string
+	PyxisServer        string
+	PipelineSA         string
+	PipelinePathInRepo string
 }
 
 func GenerateComponentReleasePlanAdmission(csv *operatorsv1alpha1.ClusterServiceVersion, bundleName string, resourceOutputPath string, appName string) error {
@@ -841,13 +842,14 @@ func GenerateComponentReleasePlanAdmission(csv *operatorsv1alpha1.ClusterService
 
 	rpaName := releasePlanAdmissionName(appName, soVersion.String(), ProdEnv)
 	rpaData := rpaComponentData{
-		Name:            rpaName,
-		ApplicationName: appName,
-		Components:      components,
-		SOVersion:       soVersion.Version,
-		PyxisSecret:     "pyxis-prod-secret",
-		PyxisServer:     "production",
-		PipelineSA:      "release-registry-prod",
+		Name:               rpaName,
+		ApplicationName:    appName,
+		Components:         components,
+		SOVersion:          soVersion.Version,
+		PyxisSecret:        "pyxis-prod-secret",
+		PyxisServer:        "production",
+		PipelineSA:         "release-registry-prod",
+		PipelinePathInRepo: "pipelines/rh-advisories/rh-advisories.yaml",
 	}
 	outputFilePath := filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeComponentReleasePlanAdmissionTemplate(rpaData, outputFilePath); err != nil {
@@ -865,13 +867,14 @@ func GenerateComponentReleasePlanAdmission(csv *operatorsv1alpha1.ClusterService
 
 	rpaName = releasePlanAdmissionName(appName, soVersion.String(), StageEnv)
 	rpaData = rpaComponentData{
-		Name:            rpaName,
-		ApplicationName: appName,
-		Components:      componentWithStageRepoRef,
-		SOVersion:       soVersion.Version,
-		PyxisSecret:     "pyxis-staging-secret",
-		PyxisServer:     "stage",
-		PipelineSA:      "release-registry-staging",
+		Name:               rpaName,
+		ApplicationName:    appName,
+		Components:         componentWithStageRepoRef,
+		SOVersion:          soVersion.Version,
+		PyxisSecret:        "pyxis-staging-secret",
+		PyxisServer:        "stage",
+		PipelineSA:         "release-registry-staging",
+		PipelinePathInRepo: "pipelines/rh-push-to-registry-redhat-io/rh-push-to-registry-redhat-io.yaml",
 	}
 	outputFilePath = filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeComponentReleasePlanAdmissionTemplate(rpaData, outputFilePath); err != nil {
