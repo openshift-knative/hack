@@ -10,8 +10,5 @@ patches:
   - path: ../patch_source_image.patch.yaml
     target:
       kind: Pipeline
-  - path: ../patch_snyk_args.patch.yaml
-    target:
-      kind: Pipeline
 openapi:
   path: ../pipeline_schema.json

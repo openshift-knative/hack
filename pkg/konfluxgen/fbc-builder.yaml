@@ -50,10 +50,6 @@ spec:
     - name: workspace
       workspace: workspace
   params:
-  - default: --all-projects --org=3e1a4cca-ebfb-495f-b64c-3cc960d566b4 --exclude=test*,vendor,third_party
-    description: Append arguments to Snyk code command.
-    name: snyk-args
-    type: string
   - default: "true"
     description: Build a source image.
     name: build-source-image
@@ -120,10 +116,6 @@ spec:
     name: CHAINS-GIT_COMMIT
     value: $(tasks.clone-repository.results.commit)
   tasks:
-  - name: sast-snyk-check
-    params:
-    - name: ARGS
-      value: $(params.snyk-args)
   - name: apply-tags
     params:
     - name: ADDITIONAL_TAGS
@@ -206,7 +198,7 @@ spec:
       - name: name
         value: buildah
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-buildah:0.2@sha256:2d6e09f356059ccfd8aada165d5b020e1eb025aeac4717a1ea2de239bed2a0d7
+        value: quay.io/konflux-ci/tekton-catalog/task-buildah:0.2@sha256:66f551fe4a163b86f38adb349b1138a3671bf01a047ef10623a6b718ba5b097b
       - name: kind
         value: task
       resolver: bundles
@@ -238,7 +230,7 @@ spec:
       - name: name
         value: build-image-index
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-build-image-index:0.1@sha256:e4871851566d8b496966b37bcb8c5ce9748a52487f116373d96c6cd28ef684c6
+        value: quay.io/konflux-ci/tekton-catalog/task-build-image-index:0.1@sha256:327d745a58c1589b0ff196ed526d12a8a0a20ae22fd1c9dd1577b850a977dc3b
       - name: kind
         value: task
       resolver: bundles
