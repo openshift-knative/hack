@@ -13,7 +13,7 @@ spec:
     - {{{ truncate ( sanitize . ) }}}
   {{{- end}}}
   origin: ocp-serverless-tenant
-  policy: fbc-standard
+  policy: {{{ .Policy }}}
   data:
     releaseNotes:
       product_id: 579

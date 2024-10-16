@@ -736,6 +736,7 @@ type rpaFBCData struct {
 	Applications []string
 	SOVersion    semver.Version
 
+	Policy                string
 	FromIndex             string
 	TargetIndex           string
 	PublishingCredentials string
@@ -760,6 +761,7 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 		Name:                  rpaName,
 		Applications:          applications,
 		SOVersion:             *semv,
+		Policy:                "fbc-standard",
 		FromIndex:             "registry-proxy.engineering.redhat.com/rh-osbs/iib-pub:{{ OCP_VERSION }}",
 		TargetIndex:           "quay.io/redhat/redhat----redhat-operator-index:{{ OCP_VERSION }}",
 		PublishingCredentials: "fbc-production-publishing-credentials",
@@ -777,6 +779,7 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 		Name:                  rpaName,
 		Applications:          applications,
 		SOVersion:             *semv,
+		Policy:                "fbc-stage",
 		FromIndex:             "registry-proxy.engineering.redhat.com/rh-osbs/iib-pub-pending:{{ OCP_VERSION }}",
 		TargetIndex:           "",
 		PublishingCredentials: "staged-index-fbc-publishing-credentials",
