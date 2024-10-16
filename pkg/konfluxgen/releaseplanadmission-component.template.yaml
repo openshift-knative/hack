@@ -18,16 +18,16 @@ spec:
           repository: {{{ $component.ImageRepository }}}
           pushSourceContainer: true
       {{{- end }}}
+      defaults:
+        tags:
+          - "{{ git_sha }}"
+          - "{{ git_short_sha }}"
+          - "{{{ .SOVersion }}}"
     pyxis:
       secret: {{{ .PyxisSecret }}}
       server: {{{ .PyxisServer }}}
     sign:
       configMapName: "hacbs-signing-pipeline-config-redhatrelease2"
-    defaults:
-      tags:
-        - "{{ git_sha }}"
-        - "{{ git_short_sha }}"
-        - "{{{ .SOVersion }}}"
   pipeline:
     pipelineRef:
       resolver: git
