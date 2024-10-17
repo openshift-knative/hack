@@ -1,6 +1,10 @@
+---
 apiVersion: appstudio.redhat.com/v1alpha1
 kind: ReleasePlanAdmission
 metadata:
+  labels:
+    release.appstudio.openshift.io/auto-release: "true"
+    pp.engineering.redhat.com/business-unit: hybrid-platforms
   name: {{{ truncate ( sanitize .Name ) }}}
   namespace: rhtap-releng-tenant
 spec:
@@ -9,8 +13,12 @@ spec:
     - {{{ truncate ( sanitize . ) }}}
   {{{- end}}}
   origin: ocp-serverless-tenant
-  policy: fbc-standard
+  policy: {{{ .Policy }}}
   data:
+    releaseNotes:
+      product_id: 579
+      product_name: "OpenShift Serverless"
+      product_version: "{{{ .SOVersion }}}"
     fbc:
       {{{- if .StagedIndex }}}
       stagedIndex: true
@@ -22,7 +30,7 @@ spec:
       buildTimeoutSeconds: 1500
       allowedPackages: [serverless-operator]
     sign:
-      configMapName: hacbs-signing-pipeline-config-redhatrelease2
+      configMapName: {{{ .SignCMName }}}
   pipeline:
     pipelineRef:
       resolver: git
@@ -36,4 +44,3 @@ spec:
     serviceAccountName: {{{ .PipelineSA }}}
     timeouts:
       pipeline: "4h0m0s"
-

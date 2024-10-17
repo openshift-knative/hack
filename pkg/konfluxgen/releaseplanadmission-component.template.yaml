@@ -1,6 +1,10 @@
+---
 apiVersion: appstudio.redhat.com/v1alpha1
 kind: ReleasePlanAdmission
 metadata:
+  labels:
+    release.appstudio.openshift.io/auto-release: "true"
+    pp.engineering.redhat.com/business-unit: hybrid-platforms
   name: {{{ truncate ( sanitize .Name ) }}}
   namespace: rhtap-releng-tenant
 spec:
@@ -8,6 +12,10 @@ spec:
   origin: ocp-serverless-tenant
   policy: registry-standard
   data:
+    releaseNotes:
+      product_id: 579
+      product_name: "OpenShift Serverless"
+      product_version: "{{{ .SOVersion }}}"
     mapping:
       components:
       {{{- range $component := .Components }}}
@@ -15,16 +23,16 @@ spec:
           repository: {{{ $component.ImageRepository }}}
           pushSourceContainer: true
       {{{- end }}}
+      defaults:
+        tags:
+          - "{{ git_sha }}"
+          - "{{ git_short_sha }}"
+          - "{{{ .SOVersion }}}"
     pyxis:
       secret: {{{ .PyxisSecret }}}
       server: {{{ .PyxisServer }}}
     sign:
       configMapName: "hacbs-signing-pipeline-config-redhatrelease2"
-    defaults:
-      tags:
-        - "{{ git_sha }}"
-        - "{{ git_short_sha }}"
-        - "{{{ .SOVersion }}}"
   pipeline:
     pipelineRef:
       resolver: git

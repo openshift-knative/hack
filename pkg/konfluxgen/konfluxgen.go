@@ -15,6 +15,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/blang/semver/v4"
+
 	"github.com/openshift-knative/hack/pkg/soversion"
 	"github.com/openshift-knative/hack/pkg/util"
 
@@ -733,12 +735,15 @@ func defaultIsHermetic(_ cioperatorapi.ReleaseBuildConfiguration, _ cioperatorap
 type rpaFBCData struct {
 	Name         string
 	Applications []string
+	SOVersion    semver.Version
 
+	Policy                string
 	FromIndex             string
 	TargetIndex           string
 	PublishingCredentials string
 	PipelineSA            string
 	StagedIndex           bool
+	SignCMName            string
 }
 
 func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath string, appName string, soVersion string) error {
@@ -747,14 +752,22 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 		return fmt.Errorf("failed to create release plan admissions directory: %w", err)
 	}
 
+	semv, err := semver.New(soVersion)
+	if err != nil {
+		return fmt.Errorf("failed to parse SO version %q: %w", soVersion, err)
+	}
+
 	rpaName := fbcReleasePlanAdmissionName(appName, soVersion, ProdEnv)
 	fbcData := rpaFBCData{
 		Name:                  rpaName,
 		Applications:          applications,
+		SOVersion:             *semv,
+		Policy:                "fbc-standard",
 		FromIndex:             "registry-proxy.engineering.redhat.com/rh-osbs/iib-pub:{{ OCP_VERSION }}",
 		TargetIndex:           "quay.io/redhat/redhat----redhat-operator-index:{{ OCP_VERSION }}",
 		PublishingCredentials: "fbc-production-publishing-credentials",
 		PipelineSA:            "release-index-image-prod",
+		SignCMName:            "hacbs-signing-pipeline-config-redhatrelease2",
 	}
 	outputFilePath := filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeFBCReleasePlanAdmissionTemplate(fbcData, outputFilePath); err != nil {
@@ -766,11 +779,14 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 	fbcData = rpaFBCData{
 		Name:                  rpaName,
 		Applications:          applications,
+		SOVersion:             *semv,
+		Policy:                "fbc-stage",
 		FromIndex:             "registry-proxy.engineering.redhat.com/rh-osbs/iib-pub-pending:{{ OCP_VERSION }}",
 		TargetIndex:           "",
 		PublishingCredentials: "staged-index-fbc-publishing-credentials",
 		PipelineSA:            "release-index-image-staging",
 		StagedIndex:           true,
+		SignCMName:            "hacbs-signing-pipeline-config-redhatbeta2",
 	}
 	outputFilePath = filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeFBCReleasePlanAdmissionTemplate(fbcData, outputFilePath); err != nil {
@@ -785,7 +801,7 @@ type rpaComponentData struct {
 	ApplicationName string
 	Components      []ComponentImageRepoRef
 
-	SOVersion   string
+	SOVersion   semver.Version
 	PyxisSecret string
 	PyxisServer string
 	PipelineSA  string
@@ -813,7 +829,7 @@ func GenerateComponentReleasePlanAdmission(csvPath string, resourceOutputPath st
 		Name:            rpaName,
 		ApplicationName: appName,
 		Components:      components,
-		SOVersion:       soVersion.String(),
+		SOVersion:       soVersion.Version,
 		PyxisSecret:     "pyxis-prod-secret",
 		PyxisServer:     "production",
 		PipelineSA:      "release-registry-prod",
@@ -837,7 +853,7 @@ func GenerateComponentReleasePlanAdmission(csvPath string, resourceOutputPath st
 		Name:            rpaName,
 		ApplicationName: appName,
 		Components:      componentWithStageRepoRef,
-		SOVersion:       soVersion.String(),
+		SOVersion:       soVersion.Version,
 		PyxisSecret:     "pyxis-staging-secret",
 		PyxisServer:     "stage",
 		PipelineSA:      "release-registry-staging",
