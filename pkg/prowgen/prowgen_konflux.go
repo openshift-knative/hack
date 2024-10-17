@@ -412,8 +412,12 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 		fbcApps = append(fbcApps, fbcAppName)
 	}
 
-	if err := konfluxgen.GenerateFBCReleasePlanAdmission(fbcApps, resourceOutputPath, fmt.Sprintf("serverless-operator %s", release), soMetadata.Project.Version); err != nil {
+	appName := fmt.Sprintf("serverless-operator %s", release)
+	if err := konfluxgen.GenerateFBCReleasePlanAdmission(fbcApps, resourceOutputPath, appName, soMetadata.Project.Version); err != nil {
 		return fmt.Errorf("failed to generate ReleasePlanAdmissions for FBC of %s (%s): %w", r.RepositoryDirectory(), branch, err)
+	}
+	if err := konfluxgen.GenerateReleasePlans(fbcApps, resourceOutputPath, appName, soMetadata.Project.Version); err != nil {
+		return fmt.Errorf("failed to generate ReleasePlan for FBC of %s (%s): %w", r.RepositoryDirectory(), branch, err)
 	}
 
 	return nil

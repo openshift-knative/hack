@@ -26,6 +26,10 @@ import (
 const (
 	ApplicationsDirectoryName          = "applications"
 	ReleasePlanAdmissionsDirectoryName = "releaseplanadmissions"
+	ReleasePlansDirName                = "releaseplans"
+
+	StageEnv = "stage"
+	ProdEnv  = "prod"
 )
 
 //go:embed application.template.yaml
@@ -57,6 +61,9 @@ var ComponentReleasePlanAdmissionsTemplate embed.FS
 
 //go:embed releaseplanadmission-fbc.template.yaml
 var FBCReleasePlanAdmissionsTemplate embed.FS
+
+//go:embed releaseplan.template.yaml
+var ReleasePlanTemplate embed.FS
 
 type Config struct {
 	OpenShiftReleasePath string
@@ -435,6 +442,19 @@ func Generate(cfg Config) error {
 		if err := GenerateComponentReleasePlanAdmission(cfg.ClusterServiceVersionPath, cfg.ResourcesOutputPath, cfg.ApplicationName); err != nil {
 			return fmt.Errorf("failed to generate ReleasePlanAdmission: %w", err)
 		}
+		csv, err := loadClusterServiceVerion(cfg.ClusterServiceVersionPath)
+		if err != nil {
+			return fmt.Errorf("failed to load ClusterServiceVersion: %w", err)
+		}
+		if err = GenerateComponentsReleasePlans(
+			cfg.ResourcesOutputPath,
+			cfg.ApplicationName,
+			csv.Spec.Version.String(),
+			/* In this case RPA.name == RP.name */ releasePlanAdmissionName,
+			releasePlanAdmissionName,
+		); err != nil {
+			return fmt.Errorf("failed to generate ReleasePlan: %w", err)
+		}
 	}
 
 	return nil
@@ -727,7 +747,7 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 		return fmt.Errorf("failed to create release plan admissions directory: %w", err)
 	}
 
-	rpaName := Truncate(Sanitize(fmt.Sprintf("%s-%s-fbc-prod", appName, soVersion)))
+	rpaName := fbcReleasePlanAdmissionName(appName, soVersion, ProdEnv)
 	fbcData := rpaFBCData{
 		Name:                  rpaName,
 		Applications:          applications,
@@ -742,7 +762,7 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 	}
 
 	// generate RPA for stage
-	rpaName = Truncate(Sanitize(fmt.Sprintf("%s-%s-fbc-stage", appName, soVersion)))
+	rpaName = fbcReleasePlanAdmissionName(appName, soVersion, StageEnv)
 	fbcData = rpaFBCData{
 		Name:                  rpaName,
 		Applications:          applications,
@@ -788,7 +808,7 @@ func GenerateComponentReleasePlanAdmission(csvPath string, resourceOutputPath st
 		return fmt.Errorf("failed to get component image refs: %w", err)
 	}
 
-	rpaName := Truncate(Sanitize(fmt.Sprintf("%s-%s-prod", appName, soVersion)))
+	rpaName := releasePlanAdmissionName(appName, soVersion.String(), ProdEnv)
 	rpaData := rpaComponentData{
 		Name:            rpaName,
 		ApplicationName: appName,
@@ -812,7 +832,7 @@ func GenerateComponentReleasePlanAdmission(csvPath string, resourceOutputPath st
 		})
 	}
 
-	rpaName = Truncate(Sanitize(fmt.Sprintf("%s-%s-stage", appName, soVersion)))
+	rpaName = releasePlanAdmissionName(appName, soVersion.String(), StageEnv)
 	rpaData = rpaComponentData{
 		Name:            rpaName,
 		ApplicationName: appName,
@@ -873,6 +893,96 @@ func executeComponentReleasePlanAdmissionTemplate(data rpaComponentData, outputF
 		return fmt.Errorf("failed to write ReleasPlanAdmission file %q: %w", outputFilePath, err)
 	}
 
+	return nil
+}
+
+type releasePlanNameFunc func(appName string, soVersion string, env string) string
+
+func (f releasePlanNameFunc) forceAppName(appName string) releasePlanNameFunc {
+	return func(_ string, soVersion string, env string) string {
+		return f(appName, soVersion, env)
+	}
+}
+
+func releasePlanAdmissionName(appName, soVersion, env string) string {
+	return Truncate(Sanitize(fmt.Sprintf("%s-%s-%s", appName, soVersion, env)))
+}
+
+func fbcReleasePlanAdmissionName(appName, soVersion, env string) string {
+	return Truncate(Sanitize(fmt.Sprintf("%s-%s-fbc-%s", appName, soVersion, env)))
+}
+
+type ReleasePlan struct {
+	Name                     string
+	ApplicationName          string
+	AutoRelease              string
+	ReleasePlanAdmissionName string
+	SOVersion                string
+}
+
+func GenerateComponentsReleasePlans(resourceOutputPath string, appName string, soVersion string, planNameFunc releasePlanNameFunc, rpaNameFunc releasePlanNameFunc) error {
+	outputDir := filepath.Join(resourceOutputPath, ReleasePlansDirName)
+	if err := os.MkdirAll(outputDir, 0777); err != nil {
+		return fmt.Errorf("failed to create release plan directory: %w", err)
+	}
+
+	prod := ReleasePlan{
+		Name:                     planNameFunc(appName, soVersion, ProdEnv),
+		ApplicationName:          appName,
+		AutoRelease:              "false", // Never ever flip this to true for prod.
+		ReleasePlanAdmissionName: rpaNameFunc(appName, soVersion, ProdEnv),
+		SOVersion:                soVersion,
+	}
+	if err := executeReleasePlanTemplate(prod, filepath.Join(outputDir, fmt.Sprintf("%s.yaml", prod.Name))); err != nil {
+		return fmt.Errorf("failed to execute release plan template: %w", err)
+	}
+
+	stage := ReleasePlan{
+		Name:                     planNameFunc(appName, soVersion, StageEnv),
+		ApplicationName:          appName,
+		AutoRelease:              "true", // Auto release for stage
+		ReleasePlanAdmissionName: rpaNameFunc(appName, soVersion, StageEnv),
+		SOVersion:                soVersion,
+	}
+	if err := executeReleasePlanTemplate(stage, filepath.Join(outputDir, fmt.Sprintf("%s.yaml", stage.Name))); err != nil {
+		return fmt.Errorf("failed to execute release plan template: %w", err)
+	}
+
+	return nil
+}
+
+func GenerateReleasePlans(applications []string, resourceOutputPath string, appName string, soVersion string) error {
+	for _, app := range applications {
+
+		// There is only a single RPA for all FBC applications and the name uses `appName` vs the FBC-specific application name.
+		var rpaNameFunc releasePlanNameFunc = fbcReleasePlanAdmissionName
+		rpaNameFunc = rpaNameFunc.forceAppName(appName)
+
+		if err := GenerateComponentsReleasePlans(resourceOutputPath, app, soVersion, releasePlanAdmissionName, rpaNameFunc); err != nil {
+			return fmt.Errorf("failed to generate release plan for %q: %w", app, err)
+		}
+	}
+	return nil
+}
+
+func executeReleasePlanTemplate(data ReleasePlan, outputFilePath string) error {
+	funcs := template.FuncMap{
+		"sanitize": Sanitize,
+		"truncate": Truncate,
+	}
+
+	tpl, err := template.New("releaseplan.template.yaml").Delims("{{{", "}}}").Funcs(funcs).ParseFS(ReleasePlanTemplate, "*.yaml")
+	if err != nil {
+		return fmt.Errorf("failed to parse ReleasePlan template: %w", err)
+	}
+
+	buf := &bytes.Buffer{}
+	if err := tpl.Execute(buf, data); err != nil {
+		return fmt.Errorf("failed to execute template for ReleasePlan: %w", err)
+	}
+	if err := os.WriteFile(outputFilePath, buf.Bytes(), 0777); err != nil {
+		return fmt.Errorf("failed to write ReleasPlan file %q: %w", outputFilePath, err)
+	}
 	return nil
 }
 
