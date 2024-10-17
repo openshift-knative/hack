@@ -91,7 +91,7 @@ func apply(ctx context.Context, cfg ApplyConfig, config *prowgen.Config) error {
 			}
 
 			if _, err := prowgen.Run(ctx, r, "oc", "apply", "-Rf", cfg.KonfluxDir); err != nil {
-				return fmt.Errorf("[%s] failed to apply branch %q: %w", r.RepositoryDirectory(), bn, err)
+				return fmt.Errorf("[%s] failed to apply dir %q in branch %q: %w", cfg.KonfluxDir, r.RepositoryDirectory(), bn, err)
 			}
 		}
 	}
