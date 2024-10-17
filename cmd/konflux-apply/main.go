@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -20,6 +21,7 @@ func main() {
 
 	inputConfig := flag.String("config", filepath.Join("config"), "Specify repositories config")
 	konfluxDir := flag.String("konflux-dir", filepath.Join(".konflux", konfluxgen.ApplicationsDirectoryName), "Konflux directory containing applications, components, etc")
+	releasePlansDir := flag.String("release-plans-dir", filepath.Join(".konflux", "releaseplans"), "Release plans directory")
 	flag.Parse()
 
 	err := konfluxapply.Apply(ctx, konfluxapply.ApplyConfig{
@@ -27,6 +29,14 @@ func main() {
 		KonfluxDir:      *konfluxDir,
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Sprintf("Failed to apply dir %q: %v", *konfluxDir, err))
+	}
+
+	err = konfluxapply.Apply(ctx, konfluxapply.ApplyConfig{
+		InputConfigPath: *inputConfig,
+		KonfluxDir:      *releasePlansDir,
+	})
+	if err != nil {
+		log.Fatal(fmt.Sprintf("Failed to apply dir %q: %v", *releasePlansDir, err))
 	}
 }
