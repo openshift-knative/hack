@@ -6,7 +6,6 @@ import (
 	"embed"
 	"encoding/json"
 	"fmt"
-	"github.com/blang/semver/v4"
 	"io/fs"
 	"log"
 	"os"
@@ -15,6 +14,8 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
+
+	"github.com/blang/semver/v4"
 
 	"github.com/openshift-knative/hack/pkg/soversion"
 	"github.com/openshift-knative/hack/pkg/util"
