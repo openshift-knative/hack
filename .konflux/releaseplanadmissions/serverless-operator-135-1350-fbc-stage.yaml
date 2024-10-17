@@ -1,6 +1,10 @@
+---
 apiVersion: appstudio.redhat.com/v1alpha1
 kind: ReleasePlanAdmission
 metadata:
+  labels:
+    release.appstudio.openshift.io/auto-release: "true"
+    pp.engineering.redhat.com/business-unit: hybrid-platforms
   name: serverless-operator-135-1350-fbc-stage
   namespace: rhtap-releng-tenant
 spec:
@@ -11,9 +15,14 @@ spec:
     - serverless-operator-135-fbc-416
     - serverless-operator-135-fbc-417
   origin: ocp-serverless-tenant
-  policy: fbc-standard
+  policy: fbc-stage
   data:
+    releaseNotes:
+      product_id: 579
+      product_name: "OpenShift Serverless"
+      product_version: "1.35.0"
     fbc:
+      stagedIndex: true
       fromIndex: "registry-proxy.engineering.redhat.com/rh-osbs/iib-pub-pending:{{ OCP_VERSION }}"
       targetIndex: ""
       publishingCredentials: "staged-index-fbc-publishing-credentials"
@@ -21,7 +30,7 @@ spec:
       buildTimeoutSeconds: 1500
       allowedPackages: [serverless-operator]
     sign:
-      configMapName: hacbs-signing-pipeline-config-redhatrelease2
+      configMapName: hacbs-signing-pipeline-config-redhatbeta2
   pipeline:
     pipelineRef:
       resolver: git
@@ -35,4 +44,3 @@ spec:
     serviceAccountName: release-index-image-staging
     timeouts:
       pipeline: "4h0m0s"
-
