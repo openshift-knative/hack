@@ -19,7 +19,7 @@ repositories:
   ignoreConfigs:
     matches:
     - .*release-next*
-    - .*release-v1.*.yaml$
+    - .*release-v1.1[0-4]*.yaml$
   imagePrefix: knative-client
   org: openshift-knative
   promotion:
