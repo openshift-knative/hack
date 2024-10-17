@@ -201,6 +201,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 			// versions.
 			if !test.SkipCron && !openShift.SkipCron && !openShift.CandidateRelease {
 				cronTestConfiguration := testConfiguration.DeepCopy()
+				cronTestConfiguration.As += "-c"
 				// Override test command for periodic jobs if desired.
 				if openShift.CronForceKonfluxIndex {
 					cronTestConfiguration.MultiStageTestConfiguration.Test[0].Commands = fmt.Sprintf("FORCE_KONFLUX_INDEX=true %s", testCommand)
