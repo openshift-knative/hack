@@ -1,6 +1,10 @@
+---
 apiVersion: appstudio.redhat.com/v1alpha1
 kind: ReleasePlanAdmission
 metadata:
+  labels:
+    release.appstudio.openshift.io/auto-release: "true"
+    pp.engineering.redhat.com/business-unit: hybrid-platforms
   name: serverless-operator-135-1350-stage
   namespace: rhtap-releng-tenant
 spec:
@@ -8,6 +12,10 @@ spec:
   origin: ocp-serverless-tenant
   policy: registry-standard
   data:
+    releaseNotes:
+      product_id: 579
+      product_name: "OpenShift Serverless"
+      product_version: "1.35.0"
     mapping:
       components:
         - name: serverless-openshift-kn-operator-135
@@ -124,16 +132,16 @@ spec:
         - name: kn-eventing-migrate-115
           repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-migrate
           pushSourceContainer: true
+      defaults:
+        tags:
+          - "{{ git_sha }}"
+          - "{{ git_short_sha }}"
+          - "1.35.0"
     pyxis:
       secret: pyxis-staging-secret
       server: stage
     sign:
       configMapName: "hacbs-signing-pipeline-config-redhatrelease2"
-    defaults:
-      tags:
-        - "{{ git_sha }}"
-        - "{{ git_short_sha }}"
-        - "1.35.0"
   pipeline:
     pipelineRef:
       resolver: git
