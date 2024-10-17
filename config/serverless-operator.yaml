@@ -13,6 +13,7 @@ config:
       openShiftVersions:
       - generateCustomConfigs: true
         useClusterPool: true
+        cronForceKonfluxIndex: true
         version: "4.16"
       - onDemand: true
         version: "4.13"
