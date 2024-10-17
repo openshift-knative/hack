@@ -1,9 +1,12 @@
 config:
   branches:
     release-v1.15:
+      konflux:
+        enabled: true
       openShiftVersions:
       - skipCron: true
-        version: "4.15"
+        useClusterPool: true
+        version: "4.16"
 repositories:
 - canonicalGoRepository: github.com/knative/client
   dockerfiles: {}
