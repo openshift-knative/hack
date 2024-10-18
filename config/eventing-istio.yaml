@@ -6,19 +6,6 @@ config:
         version: "4.16"
       - onDemand: true
         version: "4.13"
-    release-v1.10:
-      openShiftVersions:
-      - skipCron: true
-        useClusterPool: true
-        version: "4.16"
-    release-v1.11:
-      openShiftVersions:
-      - skipCron: true
-        useClusterPool: true
-        version: "4.16"
-      - onDemand: true
-        skipCron: true
-        version: "4.12"
     release-v1.12:
       openShiftVersions:
       - useClusterPool: true
