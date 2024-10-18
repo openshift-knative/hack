@@ -1012,6 +1012,7 @@ func getComponentImageRefs(csv *operatorsv1alpha1.ClusterServiceVersion) ([]Comp
 
 	soVersion := csv.Spec.Version.Version
 	componentVersion := soversion.ToUpstreamVersion(soVersion.String())
+	addedComponents := make(map[string]interface{})
 	for _, relatedImage := range csv.Spec.RelatedImages {
 		if !strings.HasPrefix(relatedImage.Image, "registry.redhat.io/openshift-serverless-1") {
 			continue
@@ -1028,10 +1029,14 @@ func getComponentImageRefs(csv *operatorsv1alpha1.ClusterServiceVersion) ([]Comp
 			componentName = fmt.Sprintf("%s-%d%d", componentName, componentVersion.Major, componentVersion.Minor)
 		}
 
-		refs = append(refs, ComponentImageRepoRef{
-			ComponentName:   componentName,
-			ImageRepository: repoRef,
-		})
+		if _, ok := addedComponents[componentName]; !ok {
+			refs = append(refs, ComponentImageRepoRef{
+				ComponentName:   componentName,
+				ImageRepository: repoRef,
+			})
+
+			addedComponents[componentName] = nil
+		}
 	}
 
 	return refs, nil
