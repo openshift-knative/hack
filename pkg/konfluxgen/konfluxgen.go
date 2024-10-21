@@ -32,6 +32,12 @@ const (
 
 	StageEnv = "stage"
 	ProdEnv  = "prod"
+
+	prodRegistryHost  = "registry.redhat.io"
+	stageRegistryHost = "registry.stage.redhat.io"
+	registryRepoName  = "openshift-serverless-1"
+	prodRegistry      = prodRegistryHost + "/" + registryRepoName
+	stageRegistry     = stageRegistryHost + "/" + registryRepoName
 )
 
 //go:embed application.template.yaml
@@ -100,7 +106,7 @@ type Config struct {
 
 	IsHermetic func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) bool
 
-	ClusterServiceVersionPath  string
+	ComponentReleasePlanConfig *ComponentReleasePlanConfig
 	AdditionalComponentConfigs []TemplateConfig
 }
 
@@ -110,6 +116,11 @@ type PrefetchDeps struct {
 		Example: '[{ "type": "rpm" }, {"type": "gomod", "path": "."}]'
 	*/
 	PrefetchInput string
+}
+
+type ComponentReleasePlanConfig struct {
+	ClusterServiceVersionPath string
+	BundleName                string
 }
 
 func (pd *PrefetchDeps) WithRPMs() {
@@ -440,14 +451,16 @@ func Generate(cfg Config) error {
 
 	buf.Reset()
 
-	if cfg.ClusterServiceVersionPath != "" {
-		if err := GenerateComponentReleasePlanAdmission(cfg.ClusterServiceVersionPath, cfg.ResourcesOutputPath, cfg.ApplicationName); err != nil {
-			return fmt.Errorf("failed to generate ReleasePlanAdmission: %w", err)
-		}
-		csv, err := loadClusterServiceVerion(cfg.ClusterServiceVersionPath)
+	if cfg.ComponentReleasePlanConfig != nil {
+		csv, err := loadClusterServiceVerion(cfg.ComponentReleasePlanConfig.ClusterServiceVersionPath)
 		if err != nil {
 			return fmt.Errorf("failed to load ClusterServiceVersion: %w", err)
 		}
+
+		if err := GenerateComponentReleasePlanAdmission(csv, cfg.ComponentReleasePlanConfig.BundleName, cfg.ResourcesOutputPath, cfg.ApplicationName); err != nil {
+			return fmt.Errorf("failed to generate ReleasePlanAdmission: %w", err)
+		}
+
 		if err = GenerateComponentsReleasePlans(
 			cfg.ResourcesOutputPath,
 			cfg.ApplicationName,
@@ -807,11 +820,7 @@ type rpaComponentData struct {
 	PipelineSA  string
 }
 
-func GenerateComponentReleasePlanAdmission(csvPath string, resourceOutputPath string, appName string) error {
-	csv, err := loadClusterServiceVerion(csvPath)
-	if err != nil {
-		return fmt.Errorf("failed to load ClusterServiceVersion: %w", err)
-	}
+func GenerateComponentReleasePlanAdmission(csv *operatorsv1alpha1.ClusterServiceVersion, bundleName string, resourceOutputPath string, appName string) error {
 	soVersion := csv.Spec.Version
 
 	outputDir := filepath.Join(resourceOutputPath, ReleasePlanAdmissionsDirectoryName)
@@ -823,6 +832,12 @@ func GenerateComponentReleasePlanAdmission(csvPath string, resourceOutputPath st
 	if err != nil {
 		return fmt.Errorf("failed to get component image refs: %w", err)
 	}
+
+	// append bundle component, as this is not part of the CSV
+	components = append(components, ComponentImageRepoRef{
+		ComponentName:   fmt.Sprintf("%s-%d%d", bundleName, soVersion.Major, soVersion.Minor),
+		ImageRepository: fmt.Sprintf("%s/%s", prodRegistry, bundleName),
+	})
 
 	rpaName := releasePlanAdmissionName(appName, soVersion.String(), ProdEnv)
 	rpaData := rpaComponentData{
@@ -844,7 +859,7 @@ func GenerateComponentReleasePlanAdmission(csvPath string, resourceOutputPath st
 	for _, component := range components {
 		componentWithStageRepoRef = append(componentWithStageRepoRef, ComponentImageRepoRef{
 			ComponentName:   component.ComponentName,
-			ImageRepository: strings.ReplaceAll(component.ImageRepository, "registry.redhat.io", "registry.stage.redhat.io"),
+			ImageRepository: strings.ReplaceAll(component.ImageRepository, prodRegistryHost, stageRegistryHost),
 		})
 	}
 
@@ -1014,12 +1029,12 @@ func getComponentImageRefs(csv *operatorsv1alpha1.ClusterServiceVersion) ([]Comp
 	componentVersion := soversion.ToUpstreamVersion(soVersion.String())
 	addedComponents := make(map[string]interface{})
 	for _, relatedImage := range csv.Spec.RelatedImages {
-		if !strings.HasPrefix(relatedImage.Image, "registry.redhat.io/openshift-serverless-1") {
+		if !strings.HasPrefix(relatedImage.Image, prodRegistry) {
 			continue
 		}
 
 		repoRef, _, _ := strings.Cut(relatedImage.Image, "@sha")
-		componentName := strings.TrimPrefix(repoRef, "registry.redhat.io/openshift-serverless-1/")
+		componentName := strings.TrimPrefix(repoRef, prodRegistry+"/")
 
 		if strings.HasPrefix(componentName, "serverless-") {
 			// SO component image
