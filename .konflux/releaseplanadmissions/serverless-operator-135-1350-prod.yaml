@@ -90,9 +90,6 @@ spec:
         - name: kn-eventing-apiserver-receive-adapter-115
           repository: registry.redhat.io/openshift-serverless-1/kn-eventing-apiserver-receive-adapter
           pushSourceContainer: true
-        - name: kn-eventing-channel-dispatcher-115
-          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-channel-dispatcher
-          pushSourceContainer: true
         - name: kn-eventing-jobsink-115
           repository: registry.redhat.io/openshift-serverless-1/kn-eventing-jobsink
           pushSourceContainer: true
@@ -108,20 +105,8 @@ spec:
         - name: kn-ekb-dispatcher-115
           repository: registry.redhat.io/openshift-serverless-1/kn-ekb-dispatcher
           pushSourceContainer: true
-        - name: kn-ekb-receiver-115
-          repository: registry.redhat.io/openshift-serverless-1/kn-ekb-receiver
-          pushSourceContainer: true
-        - name: kn-ekb-dispatcher-115
-          repository: registry.redhat.io/openshift-serverless-1/kn-ekb-dispatcher
-          pushSourceContainer: true
         - name: kn-ekb-kafka-controller-115
           repository: registry.redhat.io/openshift-serverless-1/kn-ekb-kafka-controller
-          pushSourceContainer: true
-        - name: kn-ekb-receiver-115
-          repository: registry.redhat.io/openshift-serverless-1/kn-ekb-receiver
-          pushSourceContainer: true
-        - name: kn-ekb-dispatcher-115
-          repository: registry.redhat.io/openshift-serverless-1/kn-ekb-dispatcher
           pushSourceContainer: true
         - name: kn-ekb-webhook-kafka-115
           repository: registry.redhat.io/openshift-serverless-1/kn-ekb-webhook-kafka
@@ -129,8 +114,8 @@ spec:
         - name: kn-ekb-post-install-115
           repository: registry.redhat.io/openshift-serverless-1/kn-ekb-post-install
           pushSourceContainer: true
-        - name: kn-eventing-migrate-115
-          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-migrate
+        - name: serverless-bundle-135
+          repository: registry.redhat.io/openshift-serverless-1/serverless-bundle
           pushSourceContainer: true
       defaults:
         tags:
