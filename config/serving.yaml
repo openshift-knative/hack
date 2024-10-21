@@ -11,14 +11,6 @@ config:
       skipE2EMatches:
       - perf-tests$
       - .*e2e-tls$
-    release-v1.11:
-      openShiftVersions:
-      - skipCron: true
-        useClusterPool: true
-        version: "4.16"
-      - onDemand: true
-        skipCron: true
-        version: "4.12"
     release-v1.12:
       openShiftVersions:
       - useClusterPool: true
