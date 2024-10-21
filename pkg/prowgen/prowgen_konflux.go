@@ -305,7 +305,10 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 				}
 				return []string{serverlessBundleNudge(release)}
 			},
-			ClusterServiceVersionPath: filepath.Join(r.RepositoryDirectory(), "olm-catalog", "serverless-operator", "manifests", "serverless-operator.clusterserviceversion.yaml"),
+			ComponentReleasePlanConfig: &konfluxgen.ComponentReleasePlanConfig{
+				ClusterServiceVersionPath: filepath.Join(r.RepositoryDirectory(), "olm-catalog", "serverless-operator", "manifests", "serverless-operator.clusterserviceversion.yaml"),
+				BundleName:                "serverless-bundle",
+			},
 			// Preserve the version tag as first tag in any instance since SO, when bumping the patch version
 			// will change it before merging the PR.
 			// See `openshift-knative/serverless-operator/hack/generate/update-pipelines.sh` for more details.
