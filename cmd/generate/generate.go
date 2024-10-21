@@ -30,10 +30,11 @@ import (
 )
 
 const (
-	GenerateDockerfileOption       = "dockerfile"
-	defaultAppFilename             = "main"
-	defaultDockerfileTemplateName  = "default"
-	funcUtilDockerfileTemplateName = "func-util"
+	GenerateDockerfileOption         = "dockerfile"
+	defaultAppFilename               = "main"
+	defaultDockerfileTemplateName    = "default"
+	funcUtilDockerfileTemplateName   = "func-util"
+	mustGatherDockerfileTemplateName = "must-gather"
 
 	// builderImageFmt defines the default pattern for the builder image.
 	// At the given places, the Go version from the projects go.mod will be inserted.
@@ -56,6 +57,9 @@ var DockerfileBuildImageTemplate embed.FS
 
 //go:embed dockerfile-templates/SourceImageDockerfile.template
 var DockerfileSourceImageTemplate embed.FS
+
+//go:embed dockerfile-templates/MustGatherDockerfile.template
+var DockerfileMustGatherTemplate embed.FS
 
 //go:embed rpms.lock.yaml
 var RPMsLockTemplate embed.FS
@@ -268,6 +272,9 @@ func main() {
 				DockerfileTemplate = DockerfileDefaultTemplate
 			case funcUtilDockerfileTemplateName:
 				DockerfileTemplate = DockerfileFuncUtilTemplate
+				rpmsLockTemplate = &RPMsLockTemplate
+			case mustGatherDockerfileTemplateName:
+				DockerfileTemplate = DockerfileMustGatherTemplate
 				rpmsLockTemplate = &RPMsLockTemplate
 			default:
 				log.Fatal("Unknown template name: " + templateName)
