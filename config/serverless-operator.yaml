@@ -10,6 +10,10 @@ config:
           pullSpec: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.22
         - name: GO_RUNTIME
           pullSpec: registry.access.redhat.com/ubi8/ubi-minimal
+        - name: JAVA_BUILDER
+          value: registry.access.redhat.com/ubi8/openjdk-21
+        - name: JAVA_RUNTIME
+          value: registry.access.redhat.com/ubi8/openjdk-21-runtime
       openShiftVersions:
       - generateCustomConfigs: true
         useClusterPool: true
@@ -26,6 +30,10 @@ config:
           pullSpec: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.22
         - name: GO_RUNTIME
           pullSpec: registry.access.redhat.com/ubi8/ubi-minimal
+        - name: JAVA_BUILDER
+          value: registry.access.redhat.com/ubi8/openjdk-21
+        - name: JAVA_RUNTIME
+          value: registry.access.redhat.com/ubi8/openjdk-21-runtime
       openShiftVersions:
       - generateCustomConfigs: true
         useClusterPool: true
