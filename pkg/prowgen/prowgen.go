@@ -183,7 +183,12 @@ func LoadConfig(path string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	j, err := gyaml.YAMLToJSON(y)
+
+	return UnmarshalConfig(y)
+}
+
+func UnmarshalConfig(yaml []byte) (*Config, error) {
+	j, err := gyaml.YAMLToJSON(yaml)
 	if err != nil {
 		return nil, err
 	}

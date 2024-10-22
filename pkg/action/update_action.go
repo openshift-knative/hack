@@ -41,7 +41,7 @@ func UpdateAction(ctx context.Context, cfg Config) error {
 	}
 
 	err = filepath.Walk(cfg.InputConfigPath, func(path string, info fs.FileInfo, err error) error {
-		if info.IsDir() {
+		if info.IsDir() || !strings.HasSuffix(path, ".yaml") {
 			return nil
 		}
 

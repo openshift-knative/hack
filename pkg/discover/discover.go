@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"slices"
+	"strings"
 
 	gyaml "github.com/ghodss/yaml"
 
@@ -30,7 +31,7 @@ func Main() {
 	flag.Parse()
 
 	err := filepath.Walk(*inputConfig, func(path string, info fs.FileInfo, err error) error {
-		if info.IsDir() {
+		if info.IsDir() || !strings.HasSuffix(path, ".yaml") {
 			return nil
 		}
 

@@ -4,14 +4,25 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/coreos/go-semver/semver"
+	"github.com/openshift-knative/hack/config"
+	"github.com/openshift-knative/hack/pkg/soversion"
+
 	"github.com/openshift-knative/hack/pkg/prowgen"
 )
 
-func ForSOBranchName(soBranchName string) (string, error) {
-	soConfig, loadErr := prowgen.LoadConfig("config/serverless-operator.yaml")
-	if loadErr != nil {
-		return "", fmt.Errorf("failed to load config for serverless-operator: %w", loadErr)
+func ForSOVersion(soVersion *semver.Version) (string, error) {
+	soYaml, err := config.Configs.ReadFile("serverless-operator.yaml")
+	if err != nil {
+		return "", fmt.Errorf("failed to load config for serverless-operator: %w", err)
 	}
+
+	soConfig, err := prowgen.UnmarshalConfig(soYaml)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse config for serverless-operator: %w", err)
+	}
+
+	soBranchName := soversion.BranchName(soVersion)
 
 	br, ok := soConfig.Config.Branches[soBranchName]
 	if !ok {
