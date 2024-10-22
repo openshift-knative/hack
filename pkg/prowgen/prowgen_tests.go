@@ -97,6 +97,8 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				}
 				workflow = pointer.String("ipi-aws")
 			}
+
+			testCommand := fmt.Sprintf("GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true make %s", test.Command)
 			testConfiguration := cioperatorapi.TestStepConfiguration{
 				As:           as,
 				ClusterClaim: clusterClaim,
@@ -111,7 +113,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 							LiteralTestStep: &cioperatorapi.LiteralTestStep{
 								As:       "test",
 								From:     sourceImageName,
-								Commands: fmt.Sprintf("GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true make %s", test.Command),
+								Commands: testCommand,
 								Resources: cioperatorapi.ResourceRequirements{
 									Requests: cioperatorapi.ResourceList{
 										"cpu": "100m",
@@ -200,6 +202,10 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 			if !test.SkipCron && !openShift.SkipCron && !openShift.CandidateRelease {
 				cronTestConfiguration := testConfiguration.DeepCopy()
 				cronTestConfiguration.As += "-c"
+				// Override test command for periodic jobs if desired.
+				if openShift.CronForceKonfluxIndex {
+					cronTestConfiguration.MultiStageTestConfiguration.Test[0].Commands = fmt.Sprintf("FORCE_KONFLUX_INDEX=true %s", testCommand)
+				}
 				if openShift.Cron == "" {
 					cronTemplate := midstreamCronTemplate
 					// Run s-o tests on other days to prevent hitting limits in AWS.
