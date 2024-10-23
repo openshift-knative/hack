@@ -120,7 +120,8 @@ type PrefetchDeps struct {
 
 type ComponentReleasePlanConfig struct {
 	ClusterServiceVersionPath string
-	BundleName                string
+	BundleComponentName       string
+	BundleImageRepoName       string
 }
 
 func (pd *PrefetchDeps) WithRPMs() {
@@ -457,7 +458,7 @@ func Generate(cfg Config) error {
 			return fmt.Errorf("failed to load ClusterServiceVersion: %w", err)
 		}
 
-		if err := GenerateComponentReleasePlanAdmission(csv, cfg.ComponentReleasePlanConfig.BundleName, cfg.ResourcesOutputPath, cfg.ApplicationName); err != nil {
+		if err := GenerateComponentReleasePlanAdmission(csv, cfg.ComponentReleasePlanConfig.BundleComponentName, cfg.ComponentReleasePlanConfig.BundleImageRepoName, cfg.ResourcesOutputPath, cfg.ApplicationName); err != nil {
 			return fmt.Errorf("failed to generate ReleasePlanAdmission: %w", err)
 		}
 
@@ -820,7 +821,7 @@ type rpaComponentData struct {
 	PipelineSA  string
 }
 
-func GenerateComponentReleasePlanAdmission(csv *operatorsv1alpha1.ClusterServiceVersion, bundleName string, resourceOutputPath string, appName string) error {
+func GenerateComponentReleasePlanAdmission(csv *operatorsv1alpha1.ClusterServiceVersion, bundleName string, bundleRepoName string, resourceOutputPath string, appName string) error {
 	soVersion := csv.Spec.Version
 
 	outputDir := filepath.Join(resourceOutputPath, ReleasePlanAdmissionsDirectoryName)
@@ -836,7 +837,7 @@ func GenerateComponentReleasePlanAdmission(csv *operatorsv1alpha1.ClusterService
 	// append bundle component, as this is not part of the CSV
 	components = append(components, ComponentImageRepoRef{
 		ComponentName:   fmt.Sprintf("%s-%d%d", bundleName, soVersion.Major, soVersion.Minor),
-		ImageRepository: fmt.Sprintf("%s/%s", prodRegistry, bundleName),
+		ImageRepository: fmt.Sprintf("%s/%s", prodRegistry, bundleRepoName),
 	})
 
 	rpaName := releasePlanAdmissionName(appName, soVersion.String(), ProdEnv)
