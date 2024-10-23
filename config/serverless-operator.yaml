@@ -11,9 +11,9 @@ config:
         - name: GO_RUNTIME
           pullSpec: registry.access.redhat.com/ubi8/ubi-minimal
         - name: JAVA_BUILDER
-          value: registry.access.redhat.com/ubi8/openjdk-21
+          pullSpec: registry.access.redhat.com/ubi8/openjdk-21
         - name: JAVA_RUNTIME
-          value: registry.access.redhat.com/ubi8/openjdk-21-runtime
+          pullSpec: registry.access.redhat.com/ubi8/openjdk-21-runtime
       openShiftVersions:
       - cronForceKonfluxIndex: true
         generateCustomConfigs: true
@@ -33,9 +33,9 @@ config:
         - name: GO_RUNTIME
           pullSpec: registry.access.redhat.com/ubi8/ubi-minimal
         - name: JAVA_BUILDER
-          value: registry.access.redhat.com/ubi8/openjdk-21
+          pullSpec: registry.access.redhat.com/ubi8/openjdk-21
         - name: JAVA_RUNTIME
-          value: registry.access.redhat.com/ubi8/openjdk-21-runtime
+          pullSpec: registry.access.redhat.com/ubi8/openjdk-21-runtime
       openShiftVersions:
       - generateCustomConfigs: true
         useClusterPool: true
