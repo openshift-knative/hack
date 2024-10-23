@@ -98,6 +98,9 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						}
 					}
 					for _, img := range br.Konflux.ImageOverrides {
+						if img.Name == "" || img.PullSpec == "" {
+							return fmt.Errorf("image override missing name or pull spec: %#v", img)
+						}
 						buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", img.Name, img.PullSpec))
 					}
 
@@ -266,6 +269,9 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 		buildArgs := []string{fmt.Sprintf("VERSION=%s", soMetadata.Project.Version)}
 
 		for _, img := range b.Konflux.ImageOverrides {
+			if img.Name == "" || img.PullSpec == "" {
+				return fmt.Errorf("image override missing name or pull spec: %#v", img)
+			}
 			buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", img.Name, img.PullSpec))
 		}
 
