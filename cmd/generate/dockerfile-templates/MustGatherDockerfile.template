@@ -12,14 +12,14 @@ COPY --from=builder /usr/bin/gather /usr/bin/gather_original
 COPY bin/* /usr/bin/
 
 LABEL \
-      com.redhat.component="openshift-serverless-1-{{.project_dashcase}}{{.component_dashcase}}-rhel8-container" \
-      name="openshift-serverless-1/svls-{{.project_dashcase}}{{.component_dashcase}}-rhel8" \
-      version=$VERSION \
-      summary="Red Hat OpenShift Serverless 1 {{.project}}{{.component}}" \
+      com.redhat.component="openshift-serverless-1-{{.project_dashcase}}rhel8-container" \
+      name="openshift-serverless-1/svls-{{.project_dashcase}}rhel8" \
+      version={{.version}} \
+      summary="Red Hat OpenShift Serverless 1 {{.project}}" \
       maintainer="serverless-support@redhat.com" \
-      description="Red Hat OpenShift Serverless 1 {{.project}}{{.component}}" \
-      io.k8s.display-name="Red Hat OpenShift Serverless 1 {{.project}}{{.component}}" \
-      io.k8s.description="Red Hat OpenShift Serverless {{.project}}{{.component}}" \
-      io.openshift.tags="{{.component_dashcase}}"
+      description="Red Hat OpenShift Serverless 1 {{.project}}" \
+      io.k8s.display-name="Red Hat OpenShift Serverless 1 {{.project}}" \
+      io.k8s.description="Red Hat OpenShift Serverless {{.project}}" \
+      io.openshift.tags="{{.main}}"
 
 ENTRYPOINT /usr/bin/gather
