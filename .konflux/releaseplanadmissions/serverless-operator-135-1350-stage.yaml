@@ -19,103 +19,103 @@ spec:
     mapping:
       components:
         - name: serverless-openshift-kn-operator-135
-          repository: registry.stage.redhat.io/openshift-serverless-1/serverless-openshift-kn-operator
+          repository: registry.stage.redhat.io/openshift-serverless-1/serverless-openshift-kn-rhel8-operator
           pushSourceContainer: true
         - name: serverless-kn-operator-135
-          repository: registry.stage.redhat.io/openshift-serverless-1/serverless-kn-operator
+          repository: registry.stage.redhat.io/openshift-serverless-1/serverless-kn-operator-rhel8
           pushSourceContainer: true
         - name: serverless-ingress-135
-          repository: registry.stage.redhat.io/openshift-serverless-1/serverless-ingress
+          repository: registry.stage.redhat.io/openshift-serverless-1/serverless-ingress-rhel8
           pushSourceContainer: true
         - name: kn-serving-queue-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-serving-queue
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-serving-queue-rhel8
           pushSourceContainer: true
         - name: kn-serving-activator-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-serving-activator
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-serving-activator-rhel8
           pushSourceContainer: true
         - name: kn-serving-autoscaler-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-serving-autoscaler
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-serving-autoscaler-rhel8
           pushSourceContainer: true
         - name: kn-serving-autoscaler-hpa-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-serving-autoscaler-hpa
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-serving-autoscaler-hpa-rhel8
           pushSourceContainer: true
         - name: kn-serving-controller-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-serving-controller
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-serving-controller-rhel8
           pushSourceContainer: true
         - name: kn-serving-webhook-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-serving-webhook
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-serving-webhook-rhel8
           pushSourceContainer: true
         - name: kn-serving-storage-version-migration-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-serving-storage-version-migration
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-serving-storage-version-migration-rhel8
           pushSourceContainer: true
         - name: net-kourier-kourier-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/net-kourier-kourier
+          repository: registry.stage.redhat.io/openshift-serverless-1/net-kourier-kourier-rhel8
           pushSourceContainer: true
         - name: net-istio-controller-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/net-istio-controller
+          repository: registry.stage.redhat.io/openshift-serverless-1/net-istio-controller-rhel8
           pushSourceContainer: true
         - name: net-istio-webhook-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/net-istio-webhook
+          repository: registry.stage.redhat.io/openshift-serverless-1/net-istio-webhook-rhel8
           pushSourceContainer: true
         - name: kn-eventing-controller-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-controller
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-controller-rhel8
           pushSourceContainer: true
         - name: kn-eventing-istio-controller-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-istio-controller
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-istio-controller-rhel8
           pushSourceContainer: true
         - name: kn-eventing-webhook-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-webhook
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-webhook-rhel8
           pushSourceContainer: true
         - name: kn-eventing-migrate-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-migrate
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-migrate-rhel8
           pushSourceContainer: true
         - name: kn-eventing-mtchannel-broker-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-mtchannel-broker
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-mtchannel-broker-rhel8
           pushSourceContainer: true
         - name: kn-eventing-filter-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-filter
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-filter-rhel8
           pushSourceContainer: true
         - name: kn-eventing-ingress-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-ingress
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-ingress-rhel8
           pushSourceContainer: true
         - name: kn-eventing-channel-controller-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-channel-controller
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-channel-controller-rhel8
           pushSourceContainer: true
         - name: kn-eventing-channel-dispatcher-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-channel-dispatcher
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-channel-dispatcher-rhel8
           pushSourceContainer: true
         - name: kn-eventing-mtping-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-mtping
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-mtping-rhel8
           pushSourceContainer: true
         - name: kn-eventing-apiserver-receive-adapter-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-apiserver-receive-adapter
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-apiserver-receive-adapter-rhel8
           pushSourceContainer: true
         - name: kn-eventing-jobsink-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-jobsink
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-jobsink-rhel8
           pushSourceContainer: true
         - name: kn-backstage-plugins-eventmesh-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-backstage-plugins-eventmesh
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-backstage-plugins-eventmesh-rhel8
           pushSourceContainer: true
         - name: kn-plugin-func-func-util-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-plugin-func-func-util
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-plugin-func-func-util-rhel8
           pushSourceContainer: true
         - name: kn-ekb-receiver-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-ekb-receiver
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-ekb-receiver-rhel8
           pushSourceContainer: true
         - name: kn-ekb-dispatcher-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-ekb-dispatcher
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-ekb-dispatcher-rhel8
           pushSourceContainer: true
         - name: kn-ekb-kafka-controller-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-ekb-kafka-controller
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-ekb-kafka-controller-rhel8
           pushSourceContainer: true
         - name: kn-ekb-webhook-kafka-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-ekb-webhook-kafka
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-ekb-webhook-kafka-rhel8
           pushSourceContainer: true
         - name: kn-ekb-post-install-115
-          repository: registry.stage.redhat.io/openshift-serverless-1/kn-ekb-post-install
+          repository: registry.stage.redhat.io/openshift-serverless-1/kn-ekb-post-install-rhel8
           pushSourceContainer: true
         - name: serverless-bundle-135
-          repository: registry.stage.redhat.io/openshift-serverless-1/serverless-bundle
+          repository: registry.stage.redhat.io/openshift-serverless-1/serverless-operator-bundle
           pushSourceContainer: true
       defaults:
         tags:
