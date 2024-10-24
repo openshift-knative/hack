@@ -1,0 +1,25 @@
+# DO NOT EDIT! Generated Dockerfile for {{.main}}.
+ARG MUSTGATHER={{.mustGather}}
+ARG RUNTIME=registry.access.redhat.com/ubi8/ubi-minimal
+FROM $MUSTGATHER AS builder
+
+FROM $RUNTIME
+
+COPY --from=builder /usr/bin/oc /usr/bin/oc
+COPY --from=builder /usr/bin/gather /usr/bin/gather_original
+
+# Copy all collection scripts to /usr/bin
+COPY bin/* /usr/bin/
+
+LABEL \
+      com.redhat.component="openshift-serverless-1-{{.project_dashcase}}rhel8-container" \
+      name="openshift-serverless-1/svls-{{.project_dashcase}}rhel8" \
+      version={{.version}} \
+      summary="Red Hat OpenShift Serverless 1 {{.project}}" \
+      maintainer="serverless-support@redhat.com" \
+      description="Red Hat OpenShift Serverless 1 {{.project}}" \
+      io.k8s.display-name="Red Hat OpenShift Serverless 1 {{.project}}" \
+      io.k8s.description="Red Hat OpenShift Serverless {{.project}}" \
+      io.openshift.tags="{{.main}}"
+
+ENTRYPOINT /usr/bin/gather
