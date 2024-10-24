@@ -45,6 +45,17 @@ Limitations:
 
 - It is not currently possible to disable periodics per job
 
+# Konflux
+
+The architecture of the Konflux configuration architecture is summarized in this diagram:
+
+![Konflux applications and components diagram](./docs/assets/konflux-serverless-operator-architecture.png)
+
+while the following summarizes the Konflux release configuration architecture:
+
+![Konflux release diagram](./docs/assets/konflux-serverless-operator-architecture-release.png)
+
+
 ## Apply Konflux configurations
 
 1. Follow the instructions to access the Konflux instance
