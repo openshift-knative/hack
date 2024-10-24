@@ -7,6 +7,13 @@ config:
       - skipCron: true
         useClusterPool: true
         version: "4.16"
+    release-v1.16:
+      konflux:
+        enabled: true
+      openShiftVersions:
+      - skipCron: true
+        useClusterPool: true
+        version: "4.16"
 repositories:
 - canonicalGoRepository: github.com/knative/client
   dockerfiles: {}

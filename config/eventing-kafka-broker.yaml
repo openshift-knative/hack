@@ -2,6 +2,7 @@ config:
   branches:
     release-next:
       konflux:
+        enabled: true
         javaImages:
         - .*eventing-kafka-broker-receiver
         - .*eventing-kafka-broker-dispatcher
@@ -25,6 +26,19 @@ config:
       - onDemand: true
         version: "4.13"
     release-v1.15:
+      konflux:
+        enabled: true
+        javaImages:
+        - .*eventing-kafka-broker-receiver
+        - .*eventing-kafka-broker-dispatcher
+      openShiftVersions:
+      - useClusterPool: true
+        version: "4.16"
+      - onDemand: true
+        version: "4.13"
+      skipDockerFilesMatches:
+      - .*hermetic.*
+    release-v1.16:
       konflux:
         enabled: true
         javaImages:
