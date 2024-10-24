@@ -1027,7 +1027,7 @@ func getComponentImageRefs(csv *operatorsv1alpha1.ClusterServiceVersion) ([]Comp
 	var refs []ComponentImageRepoRef
 
 	soVersion := csv.Spec.Version.Version
-	var rhelRe = regexp.MustCompile(`([.]*)-rhel\d+([.]*|$)`)
+	var rhelRe = regexp.MustCompile(`(.*)-rhel\d+(.*)`)
 
 	componentVersion := soversion.ToUpstreamVersion(soVersion.String())
 	addedComponents := make(map[string]interface{})
