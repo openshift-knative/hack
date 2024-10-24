@@ -30,12 +30,13 @@ import (
 )
 
 const (
-	GenerateDockerfileOption         = "dockerfile"
-	defaultAppFilename               = "main"
-	defaultDockerfileTemplateName    = "default"
-	funcUtilDockerfileTemplateName   = "func-util"
-	mustGatherDockerfileTemplateName = "must-gather"
-
+	GenerateDockerfileOption           = "dockerfile"
+	GenerateMustGatherDockerfileOption = "must-gather-dockerfile"
+	defaultAppFilename                 = "main"
+	defaultDockerfileTemplateName      = "default"
+	funcUtilDockerfileTemplateName     = "func-util"
+	mustGatherDockerfileTemplateName   = "must-gather"
+	mustGatherBaseImage                = "brew.registry.redhat.io/rh-osbs/openshift-ose-must-gather:latest"
 	// builderImageFmt defines the default pattern for the builder image.
 	// At the given places, the Go version from the projects go.mod will be inserted.
 	// Keep in mind to also update the tools image in the ImageBuilderDockerfile, when the OCP / RHEL
@@ -116,7 +117,7 @@ func main() {
 	pflag.StringArrayVar(&imagesFromRepositories, "images-from", nil, "Additional image references to be pulled from other midstream repositories matching the tag in project.yaml")
 	pflag.StringVar(&imagesFromRepositoriesURLFmt, "images-from-url-format", "https://raw.githubusercontent.com/openshift-knative/%s/%s/openshift/images.yaml", "Additional images to be pulled from other midstream repositories matching the tag in project.yaml")
 	pflag.StringArrayVar(&additionalPackages, "additional-packages", nil, "Additional packages to be installed in the image")
-	pflag.StringVar(&templateName, "template-name", defaultDockerfileTemplateName, fmt.Sprintf("Dockerfile template name to use. Supported values are [%s, %s]", defaultDockerfileTemplateName, funcUtilDockerfileTemplateName))
+	pflag.StringVar(&templateName, "template-name", defaultDockerfileTemplateName, fmt.Sprintf("Dockerfile template name to use. Supported values are [%s, %s, %s]", defaultDockerfileTemplateName, funcUtilDockerfileTemplateName, mustGatherDockerfileTemplateName))
 	pflag.BoolVar(&rpmsLockFileEnabled, "generate-rpms-lock-file", false, "Enable the creation of the rpms.lock.yaml file")
 	pflag.Parse()
 
@@ -273,9 +274,6 @@ func main() {
 			case funcUtilDockerfileTemplateName:
 				DockerfileTemplate = DockerfileFuncUtilTemplate
 				rpmsLockTemplate = &RPMsLockTemplate
-			case mustGatherDockerfileTemplateName:
-				DockerfileTemplate = DockerfileMustGatherTemplate
-				rpmsLockTemplate = &RPMsLockTemplate
 			default:
 				log.Fatal("Unknown template name: " + templateName)
 			}
@@ -353,6 +351,53 @@ func main() {
 		// github.com/openshift-knative/hack/cmd/testselect: registry.ci.openshift.org/openshift/knative-test-testselect:knative-v1.8
 		if err := os.WriteFile(filepath.Join(output, "images.yaml"), mapping, fs.ModePerm); err != nil {
 			log.Fatal("Write images mapping file ", err)
+		}
+	} else if generators == GenerateMustGatherDockerfileOption {
+		if templateName != mustGatherDockerfileTemplateName {
+			log.Fatal("Unknown template name: " + templateName)
+		}
+		metadata, err := project.ReadMetadataFile(projectFilePath)
+		if err != nil {
+			if !errors.Is(err, os.ErrNotExist) {
+				log.Fatal("Failed to read project metadata file: ", err)
+			}
+			log.Println("File ", projectFilePath, " not found")
+			metadata = nil
+		}
+
+		for _, p := range mainPackagesPaths.List() {
+			appFile := fmt.Sprintf(appFileFmt, appFilename(p))
+			projectName := strings.TrimPrefix(metadata.Project.ImagePrefix, "knative-")
+			var projectWithSep, projectDashCaseWithSep string
+			if projectName != "" {
+				projectWithSep = capitalize(projectName) + " "
+				projectDashCaseWithSep = projectName + "-"
+			}
+			d := map[string]interface{}{
+				"main":                p,
+				"app_file":            appFile,
+				"mustGather":          mustGatherBaseImage,
+				"version":             metadata.Project.Tag,
+				"project":             projectWithSep,
+				"project_dashcase":    projectDashCaseWithSep,
+				"component":           capitalize(p),
+				"component_dashcase":  dashcase(p),
+				"additional_packages": strings.Join(additionalPackages, " "),
+			}
+			t, err := template.ParseFS(DockerfileMustGatherTemplate, "dockerfile-templates/*.template")
+			if err != nil {
+				log.Fatal("Failed creating template ", err)
+			}
+
+			bf := &buffer.Buffer{}
+			if err := t.Execute(bf, d); err != nil {
+				log.Fatal("Failed to execute template", err)
+			}
+			out := filepath.Join(output, dockerfilesDir, filepath.Base(p))
+
+			dockerfilePath := saveDockerfile(d, DockerfileMustGatherTemplate, out, "")
+			log.Println("Must-Gather Dockerfile generated at:", dockerfilePath)
+
 		}
 	}
 }
