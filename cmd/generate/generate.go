@@ -365,40 +365,30 @@ func main() {
 			metadata = nil
 		}
 
-		for _, p := range mainPackagesPaths.List() {
-			appFile := fmt.Sprintf(appFileFmt, appFilename(p))
-			projectName := strings.TrimPrefix(metadata.Project.ImagePrefix, "knative-")
-			var projectWithSep, projectDashCaseWithSep string
-			if projectName != "" {
-				projectWithSep = capitalize(projectName) + " "
-				projectDashCaseWithSep = projectName + "-"
-			}
-			d := map[string]interface{}{
-				"main":                p,
-				"app_file":            appFile,
-				"mustGather":          mustGatherBaseImage,
-				"version":             metadata.Project.Tag,
-				"project":             projectWithSep,
-				"project_dashcase":    projectDashCaseWithSep,
-				"component":           capitalize(p),
-				"component_dashcase":  dashcase(p),
-				"additional_packages": strings.Join(additionalPackages, " "),
-			}
-			t, err := template.ParseFS(DockerfileMustGatherTemplate, "dockerfile-templates/*.template")
-			if err != nil {
-				log.Fatal("Failed creating template ", err)
-			}
-
-			bf := &buffer.Buffer{}
-			if err := t.Execute(bf, d); err != nil {
-				log.Fatal("Failed to execute template", err)
-			}
-			out := filepath.Join(output, dockerfilesDir, filepath.Base(p))
-
-			dockerfilePath := saveDockerfile(d, DockerfileMustGatherTemplate, out, "")
-			log.Println("Must-Gather Dockerfile generated at:", dockerfilePath)
-
+		projectName := mustGatherDockerfileTemplateName
+		var projectDashCaseWithSep string
+		if projectName != "" {
+			projectDashCaseWithSep = projectName + "-"
 		}
+		d := map[string]interface{}{
+			"main":             projectName,
+			"mustGather":       mustGatherBaseImage,
+			"version":          metadata.Project.Version,
+			"project":          capitalize(projectName),
+			"project_dashcase": projectDashCaseWithSep,
+		}
+		t, err := template.ParseFS(DockerfileMustGatherTemplate, "dockerfile-templates/*.template")
+		if err != nil {
+			log.Fatal("Failed creating template ", err)
+		}
+
+		bf := &buffer.Buffer{}
+		if err := t.Execute(bf, d); err != nil {
+			log.Fatal("Failed to execute template", err)
+		}
+		out := filepath.Join(output, dockerfilesDir, filepath.Base(projectName))
+		dockerfilePath := saveDockerfile(d, DockerfileMustGatherTemplate, out, "")
+		log.Println("Must-Gather Dockerfile generated at:", dockerfilePath)
 	}
 }
 
