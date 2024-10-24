@@ -313,7 +313,8 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			},
 			ComponentReleasePlanConfig: &konfluxgen.ComponentReleasePlanConfig{
 				ClusterServiceVersionPath: filepath.Join(r.RepositoryDirectory(), "olm-catalog", "serverless-operator", "manifests", "serverless-operator.clusterserviceversion.yaml"),
-				BundleName:                "serverless-bundle",
+				BundleComponentName:       "serverless-bundle",
+				BundleImageRepoName:       "serverless-operator-bundle",
 			},
 			// Preserve the version tag as first tag in any instance since SO, when bumping the patch version
 			// will change it before merging the PR.
