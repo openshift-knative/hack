@@ -1027,6 +1027,8 @@ func getComponentImageRefs(csv *operatorsv1alpha1.ClusterServiceVersion) ([]Comp
 	var refs []ComponentImageRepoRef
 
 	soVersion := csv.Spec.Version.Version
+	var rhelRe = regexp.MustCompile(`([.]*)-rhel\d+([.]*|$)`)
+
 	componentVersion := soversion.ToUpstreamVersion(soVersion.String())
 	addedComponents := make(map[string]interface{})
 	for _, relatedImage := range csv.Spec.RelatedImages {
@@ -1036,6 +1038,8 @@ func getComponentImageRefs(csv *operatorsv1alpha1.ClusterServiceVersion) ([]Comp
 
 		repoRef, _, _ := strings.Cut(relatedImage.Image, "@sha")
 		componentName := strings.TrimPrefix(repoRef, prodRegistry+"/")
+		// remove -rhelXYZ from component name
+		componentName = rhelRe.ReplaceAllString(componentName, "${1}${2}")
 
 		if strings.HasPrefix(componentName, "serverless-") {
 			// SO component image
