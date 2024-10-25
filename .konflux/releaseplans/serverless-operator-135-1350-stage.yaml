@@ -4,6 +4,7 @@ metadata:
   labels:
     release.appstudio.openshift.io/auto-release: 'true'
     release.appstudio.openshift.io/releasePlanAdmission: 'serverless-operator-135-1350-stage'
+    release.appstudio.openshift.io/standing-attribution: 'true'
   name: serverless-operator-135-1350-stage
 spec:
   releaseNotes:
