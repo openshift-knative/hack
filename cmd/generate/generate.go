@@ -241,8 +241,8 @@ func main() {
 				additionalInstructions: []string{},
 				"additional_packages":  strings.Join(additionalPackages, " "),
 			}
-			if strings.Contains(p, "ping") || slices.Contains(additionalPackages, "tzdata") {
-				// https: //access.redhat.com/solutions/5616681
+			if slices.Contains(additionalPackages, "tzdata") {
+				// https://access.redhat.com/solutions/5616681
 				d[additionalInstructions] = append(d[additionalInstructions].([]string), fmt.Sprintf("RUN microdnf update tzdata -y && microdnf reinstall tzdata -y"))
 				idx := -1
 				for i, p := range additionalPackages {
