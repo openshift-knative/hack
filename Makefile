@@ -70,7 +70,9 @@ unit-tests:
 
 	go run ./cmd/generate/ --generators dockerfile \
 		--project-file pkg/project/testdata/project.yaml \
-		--includes ".*discover.*" \
+		--includes "^cmd/.*discover.*" \
+		--additional-packages tzdata \
+		--additional-packages rsync \
 		--images-from "hack" \
 		--images-from-url-format "https://raw.githubusercontent.com/openshift-knative/%s/%s/pkg/project/testdata/additional-images.yaml" \
 		--output "openshift/project/testoutput/openshift"

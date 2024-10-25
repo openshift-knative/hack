@@ -14,6 +14,8 @@ RUN go build -tags strictfipsruntime -o /usr/bin/main ./cmd/discover
 FROM $GO_RUNTIME
 
 ARG VERSION=main
+RUN microdnf update tzdata -y && microdnf reinstall tzdata -y
+RUN microdnf install rsync
 
 COPY --from=builder /usr/bin/main /usr/bin/discover
 
