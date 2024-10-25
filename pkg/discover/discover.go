@@ -113,6 +113,11 @@ func discover(ctx context.Context, path string) error {
 								Enabled: true,
 							}
 						} else {
+							// copy the Konflux attribute as this is a pointer, and
+							// it would otherwise update the existing branch config
+							v := *other.Konflux
+							other.Konflux = &v
+
 							other.Konflux.Enabled = true
 						}
 
