@@ -4,6 +4,7 @@ metadata:
   labels:
     release.appstudio.openshift.io/auto-release: '{{{ .AutoRelease }}}'
     release.appstudio.openshift.io/releasePlanAdmission: '{{{ truncate ( sanitize .ReleasePlanAdmissionName ) }}}'
+    release.appstudio.openshift.io/standing-attribution: 'true'
   name: {{{ truncate ( sanitize .Name ) }}}
 spec:
   releaseNotes:
