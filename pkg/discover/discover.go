@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/jinzhu/copier"
 	"io/fs"
 	"log"
 	"os"
@@ -106,18 +107,19 @@ func discover(ctx context.Context, path string) error {
 					if _, ok := inConfig.Config.Branches[availableBranches[i]]; !ok {
 						branchConfig := inConfig.Config.Branches[latest]
 
+						other := prowgen.Branch{}
+						// copy the whole branchConfig as this contains some pointers,
+						// and it would otherwise update the existing branch config
+						if err := copier.Copy(&other, &branchConfig); err != nil {
+							return fmt.Errorf("could not copy branchconfig: %w", err)
+						}
+
 						// enable Konflux for all new branches
-						other := branchConfig
 						if other.Konflux == nil {
 							other.Konflux = &prowgen.Konflux{
 								Enabled: true,
 							}
 						} else {
-							// copy the Konflux attribute as this is a pointer, and
-							// it would otherwise update the existing branch config
-							v := *other.Konflux
-							other.Konflux = &v
-
 							other.Konflux.Enabled = true
 						}
 
@@ -130,8 +132,14 @@ func discover(ctx context.Context, path string) error {
 			if latestAvailable == latestConfigured || latestConfigured == "main" {
 				branchConfig := inConfig.Config.Branches[latest]
 
+				other := prowgen.Branch{}
+				// copy the whole branchConfig as this contains some pointers,
+				// and it would otherwise update the existing branch config
+				if err := copier.Copy(&other, &branchConfig); err != nil {
+					return fmt.Errorf("could not copy branchconfig: %w", err)
+				}
+
 				// enable Konflux for all new branches
-				other := branchConfig
 				if other.Konflux == nil {
 					other.Konflux = &prowgen.Konflux{
 						Enabled: true,
