@@ -38,9 +38,12 @@ var (
 	}
 
 	defaultDockerfileIncludes = []string{
-		"openshift/ci-operator/knative-images.*",
-		"openshift/ci-operator/knative-test-images.*",
-		"openshift/ci-operator/static-images.*",
+		"openshift/ci-operator/.*images?.*",
+	}
+
+	defaultDockerfileExcludes = []string{
+		"openshift/ci-operator/source-image.*",
+		"openshift/ci-operator/build-image.*",
 	}
 )
 
@@ -113,6 +116,10 @@ func discoverDockerfiles(r Repository, skipDockerFiles []string) ([]string, erro
 	for _, dockerfile := range skipDockerFiles {
 		skips = append(skips, regexp.MustCompile(dockerfile))
 	}
+	dockerFilesToExclude := defaultDockerfileExcludes
+	if len(r.Dockerfiles.Excludes) != 0 {
+		dockerFilesToExclude = r.Dockerfiles.Excludes
+	}
 
 	filteredDockerFiles := slices.Filter(nil, dockerFilesToInclude, func(s string) bool {
 		return !slices.Contains(skipDockerFiles, s)
@@ -121,6 +128,10 @@ func discoverDockerfiles(r Repository, skipDockerFiles []string) ([]string, erro
 	includePathRegex, err := util.ToRegexp(filteredDockerFiles)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse filtered dockerfile regexp: %v", err)
+	}
+	excludePathRegex, err := util.ToRegexp(dockerFilesToExclude)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse excludes regexp: %v", err)
 	}
 
 	dockerfiles := sets.NewString()
@@ -139,6 +150,15 @@ func discoverDockerfiles(r Repository, skipDockerFiles []string) ([]string, erro
 					include = true
 					break
 				}
+			}
+		}
+		if !include {
+			return nil
+		}
+		for _, r := range excludePathRegex {
+			if r.MatchString(path) {
+				include = false
+				break
 			}
 		}
 		if !include {

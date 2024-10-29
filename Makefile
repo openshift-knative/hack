@@ -35,6 +35,10 @@ generate-functions-ci:
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/kn-plugin-func.yaml $(ARGS)
 .PHONY: generate-functions-ci
 
+generate-event-ci:
+	go run github.com/openshift-knative/hack/cmd/prowgen --config config/kn-plugin-event.yaml $(ARGS)
+.PHONY: generate-event-ci
+
 discover-branches: clean
 	go run github.com/openshift-knative/hack/cmd/discover $(ARGS)
 .PHONY: discover-branches

@@ -44,7 +44,8 @@ type E2ETest struct {
 }
 
 type Dockerfiles struct {
-	Matches []string `json:"matches,omitempty" yaml:"matches,omitempty"`
+	Matches  []string `json:"matches,omitempty" yaml:"matches,omitempty"`
+	Excludes []string `json:"excludes,omitempty" yaml:"excludes,omitempty"`
 }
 
 type IgnoreConfigs struct {
@@ -53,6 +54,7 @@ type IgnoreConfigs struct {
 
 type Promotion struct {
 	Namespace string `json:"namespace,omitempty" yaml:"namespace,omitempty"`
+	Template  string `json:"template,omitempty" yaml:"template,omitempty"`
 }
 
 type CustomConfigs struct {
@@ -355,7 +357,7 @@ func withNamePromotion(r Repository, branchName string) ReleaseBuildConfiguratio
 			Targets: []cioperatorapi.PromotionTarget{
 				{
 					Namespace: ns,
-					Name:      strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
+					Name:      createPromotionName(r.Promotion, branchName),
 					AdditionalImages: map[string]string{
 						// Add source image
 						transformLegacyKnativeSourceImageName(r): "src",
@@ -377,7 +379,7 @@ func withTagPromotion(r Repository, branchName string) ReleaseBuildConfiguration
 			Targets: []cioperatorapi.PromotionTarget{
 				{
 					Namespace:   ns,
-					Tag:         strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
+					Tag:         createPromotionName(r.Promotion, branchName),
 					TagByCommit: false, // TODO: revisit this later
 					AdditionalImages: map[string]string{
 						// Add source image
@@ -388,6 +390,18 @@ func withTagPromotion(r Repository, branchName string) ReleaseBuildConfiguration
 		}
 		return nil
 	}
+}
+
+func createPromotionName(p Promotion, branchName string) string {
+	tpl := "knative-${version}"
+	if p.Template != "" {
+		tpl = p.Template
+	}
+	version := strings.Replace(branchName, "release-", "", 1)
+	if version == "next" {
+		version = "nightly"
+	}
+	return strings.ReplaceAll(tpl, "${version}", version)
 }
 
 func addCandidateRelease(openshiftVersions []OpenShift) ([]OpenShift, error) {
