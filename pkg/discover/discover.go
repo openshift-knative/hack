@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/jinzhu/copier"
 	"io/fs"
 	"log"
 	"os"
@@ -13,6 +12,8 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+
+	"github.com/jinzhu/copier"
 
 	gyaml "github.com/ghodss/yaml"
 
