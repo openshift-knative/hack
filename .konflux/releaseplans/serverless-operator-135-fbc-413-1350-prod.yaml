@@ -4,6 +4,7 @@ metadata:
   labels:
     release.appstudio.openshift.io/auto-release: 'false'
     release.appstudio.openshift.io/releasePlanAdmission: 'serverless-operator-135-1350-fbc-prod'
+    release.appstudio.openshift.io/standing-attribution: 'true'
   name: serverless-operator-135-fbc-413-1350-prod
 spec:
   releaseNotes:
