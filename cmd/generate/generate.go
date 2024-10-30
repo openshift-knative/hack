@@ -117,7 +117,7 @@ func main() {
 	pflag.StringArrayVar(&imagesFromRepositories, "images-from", nil, "Additional image references to be pulled from other midstream repositories matching the tag in project.yaml")
 	pflag.StringVar(&imagesFromRepositoriesURLFmt, "images-from-url-format", "https://raw.githubusercontent.com/openshift-knative/%s/%s/openshift/images.yaml", "Additional images to be pulled from other midstream repositories matching the tag in project.yaml")
 	pflag.StringArrayVar(&additionalPackages, "additional-packages", nil, "Additional packages to be installed in the image")
-	pflag.StringVar(&templateName, "template-name", defaultDockerfileTemplateName, fmt.Sprintf("Dockerfile template name to use. Supported values are [%s, %s, %s]", defaultDockerfileTemplateName, funcUtilDockerfileTemplateName, mustGatherDockerfileTemplateName))
+	pflag.StringVar(&templateName, "template-name", defaultDockerfileTemplateName, fmt.Sprintf("Dockerfile template name to use. Supported values are [%s, %s]", defaultDockerfileTemplateName, funcUtilDockerfileTemplateName))
 	pflag.BoolVar(&rpmsLockFileEnabled, "generate-rpms-lock-file", false, "Enable the creation of the rpms.lock.yaml file")
 	pflag.Parse()
 
@@ -353,9 +353,7 @@ func main() {
 			log.Fatal("Write images mapping file ", err)
 		}
 	} else if generators == GenerateMustGatherDockerfileOption {
-		if templateName != mustGatherDockerfileTemplateName {
-			log.Fatal("Unknown template name: " + templateName)
-		}
+		templateName = mustGatherDockerfileTemplateName
 		metadata, err := project.ReadMetadataFile(projectFilePath)
 		if err != nil {
 			if !errors.Is(err, os.ErrNotExist) {
@@ -366,29 +364,17 @@ func main() {
 		}
 
 		projectName := mustGatherDockerfileTemplateName
-		var projectDashCaseWithSep string
-		if projectName != "" {
-			projectDashCaseWithSep = projectName + "-"
-		}
+		projectDashCaseWithSep := projectName + "-"
+
 		d := map[string]interface{}{
 			"main":             projectName,
-			"mustGather":       mustGatherBaseImage,
+			"must_gather_base": mustGatherBaseImage,
 			"version":          metadata.Project.Version,
 			"project":          capitalize(projectName),
 			"project_dashcase": projectDashCaseWithSep,
 		}
-		t, err := template.ParseFS(DockerfileMustGatherTemplate, "dockerfile-templates/*.template")
-		if err != nil {
-			log.Fatal("Failed creating template ", err)
-		}
-
-		bf := &buffer.Buffer{}
-		if err := t.Execute(bf, d); err != nil {
-			log.Fatal("Failed to execute template", err)
-		}
 		out := filepath.Join(output, dockerfilesDir, filepath.Base(projectName))
-		dockerfilePath := saveDockerfile(d, DockerfileMustGatherTemplate, out, "")
-		log.Println("Must-Gather Dockerfile generated at:", dockerfilePath)
+		saveDockerfile(d, DockerfileMustGatherTemplate, out, "")
 	}
 }
 

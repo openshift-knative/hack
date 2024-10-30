@@ -1,5 +1,5 @@
 # DO NOT EDIT! Generated Dockerfile for {{.main}}.
-ARG MUSTGATHER={{.mustGather}}
+ARG MUSTGATHER={{.must_gather_base}}
 ARG RUNTIME=registry.access.redhat.com/ubi8/ubi-minimal
 FROM $MUSTGATHER AS builder
 

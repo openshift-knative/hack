@@ -335,7 +335,6 @@ repositories:
     - olm-catalog/serverless-operator/Dockerfile
     - olm-catalog/serverless-operator-index/Dockerfile
     - must-gather/.*
-
   e2e:
   - match: ^operator-e2e$
   - match: ^test-upgrade$
