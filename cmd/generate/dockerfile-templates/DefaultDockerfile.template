@@ -15,9 +15,8 @@ FROM $GO_RUNTIME
 
 ARG VERSION={{.version}}
 
-{{- if .additional_packages }}
-
-RUN microdnf install {{ .additional_packages }}
+{{- range $c := .additional_instructions }}
+{{ $c }}
 {{- end }}
 
 COPY --from=builder /usr/bin/main {{.app_file}}

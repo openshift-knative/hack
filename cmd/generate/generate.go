@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -225,16 +226,37 @@ func main() {
 				projectWithSep = capitalize(projectName) + " "
 				projectDashCaseWithSep = projectName + "-"
 			}
+
+			const additionalInstructions = "additional_instructions"
+
 			d := map[string]interface{}{
-				"main":                p,
-				"app_file":            appFile,
-				"builder":             builderImage,
-				"version":             metadata.Project.Tag,
-				"project":             projectWithSep,
-				"project_dashcase":    projectDashCaseWithSep,
-				"component":           capitalize(p),
-				"component_dashcase":  dashcase(p),
-				"additional_packages": strings.Join(additionalPackages, " "),
+				"main":                 p,
+				"app_file":             appFile,
+				"builder":              builderImage,
+				"version":              metadata.Project.Tag,
+				"project":              projectWithSep,
+				"project_dashcase":     projectDashCaseWithSep,
+				"component":            capitalize(p),
+				"component_dashcase":   dashcase(p),
+				additionalInstructions: []string{},
+				"additional_packages":  strings.Join(additionalPackages, " "),
+			}
+			if slices.Contains(additionalPackages, "tzdata") {
+				// https://access.redhat.com/solutions/5616681
+				d[additionalInstructions] = append(d[additionalInstructions].([]string), fmt.Sprintf("RUN microdnf update tzdata -y && microdnf reinstall tzdata -y"))
+				idx := -1
+				for i, p := range additionalPackages {
+					if strings.TrimSpace(p) == "tzdata" {
+						idx = i
+						break
+					}
+				}
+				if idx >= 0 {
+					additionalPackages = slices.Delete(additionalPackages, idx, idx+1)
+				}
+			}
+			if len(additionalPackages) > 0 {
+				d[additionalInstructions] = append(d[additionalInstructions].([]string), fmt.Sprintf("RUN microdnf install %s", strings.Join(additionalPackages, " ")))
 			}
 
 			var DockerfileTemplate embed.FS
