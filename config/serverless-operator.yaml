@@ -197,7 +197,8 @@ repositories:
             HYPERSHIFT_NODE_COUNT: "6"
           test:
           - as: operator-e2e
-            commands: FORCE_KONFLUX_INDEX=true USER_MANAGEMENT_ALLOWED=false make test-e2e-with-kafka
+            commands: FORCE_KONFLUX_INDEX=true USER_MANAGEMENT_ALLOWED=false make
+              test-e2e-with-kafka
             from: serverless-source-image
             resources:
               limits:
