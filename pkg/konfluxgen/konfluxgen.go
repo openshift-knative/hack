@@ -38,10 +38,8 @@ const (
 	registryRepoName  = "openshift-serverless-1"
 	prodRegistry      = prodRegistryHost + "/" + registryRepoName
 	stageRegistry     = stageRegistryHost + "/" + registryRepoName
-)
 
-const (
-	APPLY_KONFLUX_MANIFESTS_WORKFLOW_FILE = "apply-konflux-manifests.yaml"
+	triggerKonfluxApplyManifestsWorkflowFile = "apply-konflux-manifests.yaml"
 )
 
 //go:embed application.template.yaml
@@ -116,6 +114,8 @@ type Config struct {
 
 	ComponentReleasePlanConfig *ComponentReleasePlanConfig
 	AdditionalComponentConfigs []TemplateConfig
+
+	SkipApplyKonfluxWorkflowCreation bool
 }
 
 type PrefetchDeps struct {
@@ -481,8 +481,10 @@ func Generate(cfg Config) error {
 		}
 	}
 
-	if err := addApplyKonfluxManifestsWorkflow(cfg); err != nil {
-		return fmt.Errorf("failed to set apply-konflux-manifests workflow: %w", err)
+	if !cfg.SkipApplyKonfluxWorkflowCreation {
+		if err := addApplyKonfluxManifestsWorkflow(cfg); err != nil {
+			return fmt.Errorf("failed to add apply-konflux-manifests workflow: %w", err)
+		}
 	}
 
 	return nil
@@ -493,7 +495,7 @@ func addApplyKonfluxManifestsWorkflow(cfg Config) error {
 		return fmt.Errorf("failed to create %s: %w", cfg.WorkflowsPath, err)
 	}
 
-	return os.WriteFile(filepath.Join(cfg.WorkflowsPath, APPLY_KONFLUX_MANIFESTS_WORKFLOW_FILE), ApplyKonfluxManifestsWorkflow, 0644)
+	return os.WriteFile(filepath.Join(cfg.WorkflowsPath, triggerKonfluxApplyManifestsWorkflowFile), ApplyKonfluxManifestsWorkflow, 0644)
 }
 
 func collectConfigurations(openshiftReleasePath string, includes []*regexp.Regexp, excludes []*regexp.Regexp, additionalConfigs []TemplateConfig) ([]TemplateConfig, error) {

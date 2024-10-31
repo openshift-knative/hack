@@ -322,6 +322,9 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			// will change it before merging the PR.
 			// See `openshift-knative/serverless-operator/hack/generate/update-pipelines.sh` for more details.
 			Tags: []string{soMetadata.Project.Version},
+			// We can skip the GH workflow creation to apply the Konflux manifests, as the SO
+			// manifests are stored in the hack repo and the workflow is anyhow present in there
+			SkipApplyKonfluxWorkflowCreation: true,
 		}
 		if len(cfg.ExcludesImages) == 0 {
 			cfg.ExcludesImages = []string{
@@ -415,6 +418,9 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 			// will change it before merging the PR.
 			// See `openshift-knative/serverless-operator/hack/generate/update-pipelines.sh` for more details.
 			Tags: []string{soMetadata.Project.Version},
+			// We can skip the GH workflow creation to apply the Konflux manifests, as the SO
+			// manifests are stored in the hack repo and the workflow is anyhow present in there
+			SkipApplyKonfluxWorkflowCreation: true,
 		}
 
 		if err := konfluxgen.Generate(c); err != nil {

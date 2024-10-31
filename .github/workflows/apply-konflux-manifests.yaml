@@ -1,6 +1,13 @@
-name: Reusable Apply Konflux Manifests
+name: Apply Konflux Manifests
 on:
-  workflow_call:
+  schedule:
+    - cron: "0 6 * * *" # Daily at 06:00.
+  workflow_dispatch: # Manual workflow trigger
+  push:
+    paths:
+      - ".konflux/**"
+    branches:
+      - 'main'
 defaults:
   run:
     shell: bash
@@ -27,4 +34,4 @@ jobs:
           kubectl config use-context konflux-sa@konflux
 
       - name: Apply Manifests
-        run: kubectl apply -Rf .konflux/
+        run: make konflux-apply
