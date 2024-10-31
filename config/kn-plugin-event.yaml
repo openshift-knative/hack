@@ -10,7 +10,7 @@ config:
       konflux:
         enabled: true
       openShiftVersions:
-        - version: '4.17'
+        - version: '4.16'
           useClusterPool: true
     release-next:
       openShiftVersions:
