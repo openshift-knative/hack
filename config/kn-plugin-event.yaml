@@ -4,32 +4,35 @@ config:
       konflux:
         enabled: true
       openShiftVersions:
-        - version: '4.16'
-          useClusterPool: true
+      - useClusterPool: true
+        version: "4.16"
     release-1.16:
       konflux:
         enabled: true
       openShiftVersions:
-        - version: '4.16'
-          useClusterPool: true
+      - useClusterPool: true
+        version: "4.16"
     release-next:
       openShiftVersions:
-        - version: '4.16'
-          skipCron: true
-          useClusterPool: true
+      - skipCron: true
+        useClusterPool: true
+        version: "4.16"
 repositories:
-- org: openshift-knative
-  repo: kn-plugin-event
-  imagePrefix: kn-plugin-event
-  imageNameOverrides:
-    kn-event-sender: sender
+- dockerfiles: {}
+  e2e:
+  - match: e2e
   ignoreConfigs:
     matches:
     - release-1\.13
     - release-1\.14
+  imageNameOverrides:
+    kn-event-sender: sender
+  imagePrefix: kn-plugin-event
+  org: openshift-knative
   promotion:
     namespace: knative
     template: release-${version}
+  repo: kn-plugin-event
   resources:
     '*':
       limits:
@@ -38,8 +41,6 @@ repositories:
         cpu: 100m
         memory: 200Mi
   slackChannel: '#knative-client'
-  e2e:
-  - match: e2e
   tests:
   - as: unit
     commands: make test
