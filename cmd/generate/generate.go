@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/debug"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -216,6 +217,25 @@ func main() {
 		saveDockerfile(d, DockerfileBuildImageTemplate, output, dockerfilesBuildDir)
 		saveDockerfile(d, DockerfileSourceImageTemplate, output, dockerfilesSourceDir)
 
+		var additionalInstructions []string
+		if slices.Contains(additionalPackages, "tzdata") {
+			// https://access.redhat.com/solutions/5616681
+			additionalInstructions = append(additionalInstructions, fmt.Sprintf("RUN microdnf update tzdata -y && microdnf reinstall tzdata -y"))
+			idx := -1
+			for i, p := range additionalPackages {
+				if strings.TrimSpace(p) == "tzdata" {
+					idx = i
+					break
+				}
+			}
+			if idx >= 0 {
+				additionalPackages = slices.Delete(additionalPackages, idx, idx+1)
+			}
+		}
+		if len(additionalPackages) > 0 {
+			additionalInstructions = append(additionalInstructions, fmt.Sprintf("RUN microdnf install %s", strings.Join(additionalPackages, " ")))
+		}
+
 		rpmsLockFileWritten := false
 		for _, p := range mainPackagesPaths.List() {
 			appFile := fmt.Sprintf(appFileFmt, appFilename(p))
@@ -225,16 +245,17 @@ func main() {
 				projectWithSep = capitalize(projectName) + " "
 				projectDashCaseWithSep = projectName + "-"
 			}
+
 			d := map[string]interface{}{
-				"main":                p,
-				"app_file":            appFile,
-				"builder":             builderImage,
-				"version":             metadata.Project.Tag,
-				"project":             projectWithSep,
-				"project_dashcase":    projectDashCaseWithSep,
-				"component":           capitalize(p),
-				"component_dashcase":  dashcase(p),
-				"additional_packages": strings.Join(additionalPackages, " "),
+				"main":                    p,
+				"app_file":                appFile,
+				"builder":                 builderImage,
+				"version":                 metadata.Project.Tag,
+				"project":                 projectWithSep,
+				"project_dashcase":        projectDashCaseWithSep,
+				"component":               capitalize(p),
+				"component_dashcase":      dashcase(p),
+				"additional_instructions": additionalInstructions,
 			}
 
 			var DockerfileTemplate embed.FS
