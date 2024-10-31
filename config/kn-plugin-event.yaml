@@ -1,0 +1,47 @@
+config:
+  branches:
+    release-1.15:
+      konflux:
+        enabled: true
+      openShiftVersions:
+        - version: '4.16'
+          useClusterPool: true
+    release-1.16:
+      konflux:
+        enabled: true
+      openShiftVersions:
+        - version: '4.16'
+          useClusterPool: true
+    release-next:
+      openShiftVersions:
+        - version: '4.16'
+          skipCron: true
+          useClusterPool: true
+repositories:
+- org: openshift-knative
+  repo: kn-plugin-event
+  imagePrefix: kn-plugin-event
+  imageNameOverrides:
+    kn-event-sender: sender
+  ignoreConfigs:
+    matches:
+    - release-1\.13
+    - release-1\.14
+  promotion:
+    namespace: knative
+    template: release-${version}
+  resources:
+    '*':
+      limits:
+        memory: 8Gi
+      requests:
+        cpu: 100m
+        memory: 200Mi
+  slackChannel: '#knative-client'
+  e2e:
+  - match: e2e
+  tests:
+  - as: unit
+    commands: make test
+    container:
+      from: src

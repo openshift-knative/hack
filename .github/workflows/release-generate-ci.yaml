@@ -65,6 +65,13 @@ jobs:
           repository: openshift-knative/eventing
           token: ${{ secrets.SERVERLESS_QE_ROBOT }}
       - if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[kn-plugin-event] Clone repository'
+        uses: actions/checkout@v4
+        with:
+          path: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-event
+          repository: openshift-knative/kn-plugin-event
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
+      - if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         name: '[kn-plugin-func] Clone repository'
         uses: actions/checkout@v4
         with:
@@ -426,6 +433,54 @@ jobs:
           fi
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[kn-plugin-event - release-1.15] Create Konflux PR'
+        run: |
+          set -x
+          repo="kn-plugin-event"
+          branch="sync-konflux-release-1.15"
+          target_branch="release-1.15"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch fork "$branch"
+          if git diff --quiet "fork/$branch" "$branch"; then
+            echo "Branches are identical. No need to force push."
+          else
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          fi
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-event
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[kn-plugin-event - release-1.16] Create Konflux PR'
+        run: |
+          set -x
+          repo="kn-plugin-event"
+          branch="sync-konflux-release-1.16"
+          target_branch="release-1.16"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch fork "$branch"
+          if git diff --quiet "fork/$branch" "$branch"; then
+            echo "Branches are identical. No need to force push."
+          else
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          fi
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-event
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
