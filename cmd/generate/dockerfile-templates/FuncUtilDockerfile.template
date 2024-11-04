@@ -16,7 +16,10 @@ FROM $GO_RUNTIME
 
 ARG VERSION={{.version}}
 
-RUN microdnf install socat tar {{.additional_packages}}
+RUN microdnf install socat tar
+{{- range $c := .additional_instructions }}
+{{ $c }}
+{{- end }}
 
 COPY --from=builder /usr/bin/main {{.app_file}}
 
