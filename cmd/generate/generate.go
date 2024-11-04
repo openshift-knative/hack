@@ -353,6 +353,7 @@ func main() {
 			log.Fatal("Write images mapping file ", err)
 		}
 	} else if generators == GenerateMustGatherDockerfileOption {
+		var rpmsLockTemplate *embed.FS
 		templateName = mustGatherDockerfileTemplateName
 		metadata, err := project.ReadMetadataFile(projectFilePath)
 		if err != nil {
@@ -375,6 +376,21 @@ func main() {
 		}
 		out := filepath.Join(output, dockerfilesDir, filepath.Base(projectName))
 		saveDockerfile(d, DockerfileMustGatherTemplate, out, "")
+		rpmsLockTemplate = &RPMsLockTemplate
+
+		t, err := template.ParseFS(rpmsLockTemplate, "rpms.lock.yaml")
+		if err != nil {
+			log.Fatal("Failed creating RPM template ", err)
+		}
+
+		bf := &buffer.Buffer{}
+		if err := t.Execute(bf, nil); err != nil {
+			log.Fatal("Failed to execute RPM template", err)
+		}
+
+		if err := os.WriteFile(filepath.Join(rootDir, cachi2DefaultRPMsLockFilePath), bf.Bytes(), 0644); err != nil {
+			log.Fatal("Failed to write RPM lock file", err)
+		}
 	}
 }
 
