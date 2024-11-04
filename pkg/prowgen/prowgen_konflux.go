@@ -413,6 +413,8 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 			// will change it before merging the PR.
 			// See `openshift-knative/serverless-operator/hack/generate/update-pipelines.sh` for more details.
 			Tags: []string{soMetadata.Project.Version},
+			// use fbc-standard enterprise contract policy for FBC applications
+			ECPolicyConfigName: "rhtap-releng-tenant/fbc-standard",
 		}
 
 		if err := konfluxgen.Generate(c); err != nil {
