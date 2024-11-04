@@ -1,0 +1,25 @@
+name: Apply Konflux Manifests
+on:
+  workflow_dispatch: # Manual workflow trigger
+  push:
+    paths:
+      - ".konflux/**"
+    branches:
+    - 'main'
+    - 'release-v*'
+jobs:
+  trigger-konflux-apply:
+    name: Trigger Konflux Apply
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Konflux Apply
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: 'hack',
+              workflow_id: 'apply-konflux-manifests.yaml',
+              ref: 'main',
+            })

@@ -38,6 +38,8 @@ const (
 	registryRepoName  = "openshift-serverless-1"
 	prodRegistry      = prodRegistryHost + "/" + registryRepoName
 	stageRegistry     = stageRegistryHost + "/" + registryRepoName
+
+	triggerKonfluxApplyManifestsWorkflowFile = "apply-konflux-manifests.yaml"
 )
 
 //go:embed application.template.yaml
@@ -63,6 +65,9 @@ var PipelineFBCBuildTemplate embed.FS
 
 //go:embed integration-test-scenario.template.yaml
 var EnterpriseContractTestScenarioTemplate embed.FS
+
+//go:embed apply-konflux-manifests-workflow.yaml
+var ApplyKonfluxManifestsWorkflow []byte
 
 //go:embed releaseplanadmission-component.template.yaml
 var ComponentReleasePlanAdmissionsTemplate embed.FS
@@ -91,6 +96,7 @@ type Config struct {
 
 	PipelinesOutputPathSkipRemove bool
 	PipelinesOutputPath           string
+	WorkflowsPath                 string
 
 	AdditionalTektonCELExpressionFunc func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string
 	NudgesFunc                        func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) []string
@@ -108,6 +114,8 @@ type Config struct {
 
 	ComponentReleasePlanConfig *ComponentReleasePlanConfig
 	AdditionalComponentConfigs []TemplateConfig
+
+	SkipApplyKonfluxWorkflowCreation bool
 }
 
 type PrefetchDeps struct {
@@ -473,7 +481,21 @@ func Generate(cfg Config) error {
 		}
 	}
 
+	if !cfg.SkipApplyKonfluxWorkflowCreation {
+		if err := addApplyKonfluxManifestsWorkflow(cfg); err != nil {
+			return fmt.Errorf("failed to add apply-konflux-manifests workflow: %w", err)
+		}
+	}
+
 	return nil
+}
+
+func addApplyKonfluxManifestsWorkflow(cfg Config) error {
+	if err := os.MkdirAll(cfg.WorkflowsPath, 0755); err != nil {
+		return fmt.Errorf("failed to create %s: %w", cfg.WorkflowsPath, err)
+	}
+
+	return os.WriteFile(filepath.Join(cfg.WorkflowsPath, triggerKonfluxApplyManifestsWorkflowFile), ApplyKonfluxManifestsWorkflow, 0644)
 }
 
 func collectConfigurations(openshiftReleasePath string, includes []*regexp.Regexp, excludes []*regexp.Regexp, additionalConfigs []TemplateConfig) ([]TemplateConfig, error) {
