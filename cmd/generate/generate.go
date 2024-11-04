@@ -30,11 +30,13 @@ import (
 )
 
 const (
-	GenerateDockerfileOption       = "dockerfile"
-	defaultAppFilename             = "main"
-	defaultDockerfileTemplateName  = "default"
-	funcUtilDockerfileTemplateName = "func-util"
-
+	GenerateDockerfileOption           = "dockerfile"
+	GenerateMustGatherDockerfileOption = "must-gather-dockerfile"
+	defaultAppFilename                 = "main"
+	defaultDockerfileTemplateName      = "default"
+	funcUtilDockerfileTemplateName     = "func-util"
+	mustGatherDockerfileTemplateName   = "must-gather"
+	mustGatherBaseImage                = "brew.registry.redhat.io/rh-osbs/openshift-ose-must-gather:latest"
 	// builderImageFmt defines the default pattern for the builder image.
 	// At the given places, the Go version from the projects go.mod will be inserted.
 	// Keep in mind to also update the tools image in the ImageBuilderDockerfile, when the OCP / RHEL
@@ -56,6 +58,9 @@ var DockerfileBuildImageTemplate embed.FS
 
 //go:embed dockerfile-templates/SourceImageDockerfile.template
 var DockerfileSourceImageTemplate embed.FS
+
+//go:embed dockerfile-templates/MustGatherDockerfile.template
+var DockerfileMustGatherTemplate embed.FS
 
 //go:embed rpms.lock.yaml
 var RPMsLockTemplate embed.FS
@@ -346,6 +351,45 @@ func main() {
 		// github.com/openshift-knative/hack/cmd/testselect: registry.ci.openshift.org/openshift/knative-test-testselect:knative-v1.8
 		if err := os.WriteFile(filepath.Join(output, "images.yaml"), mapping, fs.ModePerm); err != nil {
 			log.Fatal("Write images mapping file ", err)
+		}
+	} else if generators == GenerateMustGatherDockerfileOption {
+		var rpmsLockTemplate *embed.FS
+		templateName = mustGatherDockerfileTemplateName
+		metadata, err := project.ReadMetadataFile(projectFilePath)
+		if err != nil {
+			if !errors.Is(err, os.ErrNotExist) {
+				log.Fatal("Failed to read project metadata file: ", err)
+			}
+			log.Println("File ", projectFilePath, " not found")
+			metadata = nil
+		}
+
+		projectName := mustGatherDockerfileTemplateName
+		projectDashCaseWithSep := projectName + "-"
+
+		d := map[string]interface{}{
+			"main":             projectName,
+			"must_gather_base": mustGatherBaseImage,
+			"version":          metadata.Project.Version,
+			"project":          capitalize(projectName),
+			"project_dashcase": projectDashCaseWithSep,
+		}
+		out := filepath.Join(output, dockerfilesDir, filepath.Base(projectName))
+		saveDockerfile(d, DockerfileMustGatherTemplate, out, "")
+		rpmsLockTemplate = &RPMsLockTemplate
+
+		t, err := template.ParseFS(rpmsLockTemplate, "rpms.lock.yaml")
+		if err != nil {
+			log.Fatal("Failed creating RPM template ", err)
+		}
+
+		bf := &buffer.Buffer{}
+		if err := t.Execute(bf, nil); err != nil {
+			log.Fatal("Failed to execute RPM template", err)
+		}
+
+		if err := os.WriteFile(filepath.Join(rootDir, cachi2DefaultRPMsLockFilePath), bf.Bytes(), 0644); err != nil {
+			log.Fatal("Failed to write RPM lock file", err)
 		}
 	}
 }
