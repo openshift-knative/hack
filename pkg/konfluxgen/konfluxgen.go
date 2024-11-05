@@ -108,6 +108,8 @@ type Config struct {
 
 	ComponentReleasePlanConfig *ComponentReleasePlanConfig
 	AdditionalComponentConfigs []TemplateConfig
+
+	ECPolicyConfigName string
 }
 
 type PrefetchDeps struct {
@@ -322,6 +324,12 @@ func Generate(cfg Config) error {
 				r.Hermetic = "true"
 			} else {
 				r.Hermetic = "false"
+			}
+
+			if cfg.ECPolicyConfigName == "" {
+				r.ECPolicyConfiguration = "rhtap-releng-tenant/tmp-onboard-policy"
+			} else {
+				r.ECPolicyConfiguration = cfg.ECPolicyConfigName
 			}
 
 			applications[appKey][Truncate(Sanitize(cfg.ComponentNameFunc(c.ReleaseBuildConfiguration, ib)))] = r
@@ -558,7 +566,8 @@ type DockerfileApplicationConfig struct {
 
 	Hermetic string
 
-	DockerfilePath string
+	DockerfilePath        string
+	ECPolicyConfiguration string
 }
 
 type PipelineEvent string
