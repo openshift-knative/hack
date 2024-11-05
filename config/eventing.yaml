@@ -5,6 +5,7 @@ config:
       - useClusterPool: true
         version: "4.16"
       - version: "4.13"
+        onDemand: true
     release-v1.12:
       openShiftVersions:
       - useClusterPool: true
@@ -16,6 +17,7 @@ config:
       - useClusterPool: true
         version: "4.16"
       - version: "4.13"
+        onDemand: true
     release-v1.15:
       konflux:
         enabled: true
@@ -23,6 +25,7 @@ config:
       - useClusterPool: true
         version: "4.16"
       - version: "4.13"
+        onDemand: true
     release-v1.16:
       konflux:
         enabled: true
@@ -30,6 +33,7 @@ config:
       - useClusterPool: true
         version: "4.16"
       - version: "4.13"
+        onDemand: true
 repositories:
 - dockerfiles: {}
   e2e:
