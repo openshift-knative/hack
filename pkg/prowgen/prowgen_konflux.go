@@ -121,21 +121,9 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						log.Printf("[%s] created nudges (%v) - operatorVersions: %#v - downstreamVersion: %v): %#v", r.RepositoryDirectory(), ok, operatorVersions, soBranchName, nudges)
 					}
 
-					prefetchDeps := konfluxgen.PrefetchDeps{}
-					if _, err := os.Stat(filepath.Join(r.RepositoryDirectory(), "rpms.lock.yaml")); err == nil {
-						// If rpms.lock.yaml is present enable dev-package-managers and RPM caching
-						prefetchDeps.DevPackageManagers = "true"
-						prefetchDeps.WithRPMs()
-					}
-					_, err := os.Stat(filepath.Join(r.RepositoryDirectory(), "vendor"))
+					prefetchDeps, err := getPrefetchDeps(r, targetBranch)
 					if err != nil {
-						if !errors.Is(err, fs.ErrNotExist) {
-							return fmt.Errorf("[%s - %s] failed to verify if the project uses Go vendoring: %w", r.RepositoryDirectory(), targetBranch, err)
-						}
-						if _, err := os.Stat(filepath.Join(r.RepositoryDirectory(), "go.mod")); err == nil {
-							// If it's a Go project and no vendor dir is present enable Go caching
-							prefetchDeps.WithUnvendoredGo("." /* root of the repository */)
-						}
+						return fmt.Errorf("could not get prefetchDeps: %w", err)
 					}
 
 					cfg := konfluxgen.Config{
@@ -155,7 +143,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						// will change it before merging the PR.
 						// See `openshift-knative/serverless-operator/hack/generate/update-pipelines.sh` for more details.
 						Tags:         []string{versionLabel},
-						PrefetchDeps: prefetchDeps,
+						PrefetchDeps: *prefetchDeps,
 					}
 					if len(cfg.ExcludesImages) == 0 {
 						cfg.ExcludesImages = []string{
@@ -275,6 +263,11 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", img.Name, img.PullSpec))
 		}
 
+		prefetchDeps, err := getPrefetchDeps(r, branch)
+		if err != nil {
+			return fmt.Errorf("could not get prefetchDeps: %w", err)
+		}
+
 		cfg := konfluxgen.Config{
 			OpenShiftReleasePath: openshiftRelease.RepositoryDirectory(),
 			ApplicationName:      fmt.Sprintf("serverless-operator %s", release),
@@ -319,7 +312,8 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			// Preserve the version tag as first tag in any instance since SO, when bumping the patch version
 			// will change it before merging the PR.
 			// See `openshift-knative/serverless-operator/hack/generate/update-pipelines.sh` for more details.
-			Tags: []string{soMetadata.Project.Version},
+			Tags:         []string{soMetadata.Project.Version},
+			PrefetchDeps: *prefetchDeps,
 		}
 		if len(cfg.ExcludesImages) == 0 {
 			cfg.ExcludesImages = []string{
@@ -351,6 +345,28 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 	}
 
 	return nil
+}
+
+func getPrefetchDeps(repo Repository, branch string) (*konfluxgen.PrefetchDeps, error) {
+	prefetchDeps := konfluxgen.PrefetchDeps{}
+	if _, err := os.Stat(filepath.Join(repo.RepositoryDirectory(), "rpms.lock.yaml")); err == nil {
+		// If rpms.lock.yaml is present enable dev-package-managers and RPM caching
+		prefetchDeps.DevPackageManagers = "true"
+		prefetchDeps.WithRPMs()
+	}
+
+	_, err := os.Stat(filepath.Join(repo.RepositoryDirectory(), "vendor"))
+	if err != nil {
+		if !errors.Is(err, fs.ErrNotExist) {
+			return nil, fmt.Errorf("[%s - %s] failed to verify if the project uses Go vendoring: %w", repo.RepositoryDirectory(), branch, err)
+		}
+		if _, err := os.Stat(filepath.Join(repo.RepositoryDirectory(), "go.mod")); err == nil {
+			// If it's a Go project and no vendor dir is present enable Go caching
+			prefetchDeps.WithUnvendoredGo("." /* root of the repository */)
+		}
+	}
+
+	return &prefetchDeps, nil
 }
 
 func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repository, r Repository, branch string, release string, resourceOutputPath string, buildArgs []string) error {
