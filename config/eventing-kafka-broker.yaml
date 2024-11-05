@@ -7,7 +7,7 @@ config:
         - .*eventing-kafka-broker-dispatcher
       openShiftVersions:
       - useClusterPool: true
-        version: "4.16"
+        version: "4.17"
       - onDemand: true
         version: "4.13"
       skipDockerFilesMatches:
@@ -32,7 +32,7 @@ config:
         - .*eventing-kafka-broker-dispatcher
       openShiftVersions:
       - useClusterPool: true
-        version: "4.16"
+        version: "4.17"
       - onDemand: true
         version: "4.13"
       skipDockerFilesMatches:
@@ -45,7 +45,7 @@ config:
         - .*eventing-kafka-broker-dispatcher
       openShiftVersions:
       - useClusterPool: true
-        version: "4.16"
+        version: "4.17"
       - onDemand: true
         version: "4.13"
       skipDockerFilesMatches:

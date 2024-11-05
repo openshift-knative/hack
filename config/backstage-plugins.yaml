@@ -14,14 +14,14 @@ config:
       konflux:
         enabled: true
       openShiftVersions:
-      - version: "4.15"
+      - version: "4.17"
       - onDemand: true
         version: "4.13"
     release-v1.16:
       konflux:
         enabled: true
       openShiftVersions:
-      - version: "4.15"
+      - version: "4.17"
       - onDemand: true
         version: "4.13"
 repositories:

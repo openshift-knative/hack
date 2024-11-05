@@ -5,18 +5,18 @@ config:
         enabled: true
       openShiftVersions:
       - useClusterPool: true
-        version: "4.16"
+        version: "4.17"
     release-1.16:
       konflux:
         enabled: true
       openShiftVersions:
       - useClusterPool: true
-        version: "4.16"
+        version: "4.17"
     release-next:
       openShiftVersions:
       - skipCron: true
         useClusterPool: true
-        version: "4.16"
+        version: "4.17"
 repositories:
 - dockerfiles: {}
   e2e:
