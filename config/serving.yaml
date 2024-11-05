@@ -3,7 +3,7 @@ config:
     release-next:
       openShiftVersions:
       - useClusterPool: true
-        version: "4.16"
+        version: "4.17"
       - onDemand: true
         version: "4.13"
       skipDockerFilesMatches:
@@ -30,7 +30,7 @@ config:
         enabled: true
       openShiftVersions:
       - useClusterPool: true
-        version: "4.16"
+        version: "4.17"
       - onDemand: true
         version: "4.13"
     release-v1.16:
@@ -38,7 +38,7 @@ config:
         enabled: true
       openShiftVersions:
       - useClusterPool: true
-        version: "4.16"
+        version: "4.17"
       - onDemand: true
         version: "4.13"
 repositories:
