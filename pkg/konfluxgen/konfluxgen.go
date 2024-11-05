@@ -110,6 +110,8 @@ type Config struct {
 	AdditionalComponentConfigs []TemplateConfig
 
 	ECPolicyConfigName string
+
+	CreateEnterpriseContractIntegrationTestSecenario bool
 }
 
 type PrefetchDeps struct {
@@ -410,16 +412,18 @@ func Generate(cfg Config) error {
 
 			buf.Reset()
 
-			ecTestPath := filepath.Join(cfg.ResourcesOutputPath, ApplicationsDirectoryName, appKey, "tests", "ec-test.yaml")
-			if err := os.MkdirAll(filepath.Dir(ecTestPath), 0777); err != nil {
-				return fmt.Errorf("failed to create directory for %q: %w", appPath, err)
-			}
+			if cfg.CreateEnterpriseContractIntegrationTestSecenario {
+				ecTestPath := filepath.Join(cfg.ResourcesOutputPath, ApplicationsDirectoryName, appKey, "tests", "ec-test.yaml")
+				if err := os.MkdirAll(filepath.Dir(ecTestPath), 0777); err != nil {
+					return fmt.Errorf("failed to create directory for %q: %w", appPath, err)
+				}
 
-			if err := enterpriseContractTestScenarioTemplate.Execute(buf, config); err != nil {
-				return fmt.Errorf("failed to execute template for EC test: %w", err)
-			}
-			if err := WriteFileReplacingNewerTaskImages(ecTestPath, buf.Bytes(), 0777); err != nil {
-				return fmt.Errorf("failed to write application file %q: %w", ecTestPath, err)
+				if err := enterpriseContractTestScenarioTemplate.Execute(buf, config); err != nil {
+					return fmt.Errorf("failed to execute template for EC test: %w", err)
+				}
+				if err := WriteFileReplacingNewerTaskImages(ecTestPath, buf.Bytes(), 0777); err != nil {
+					return fmt.Errorf("failed to write application file %q: %w", ecTestPath, err)
+				}
 			}
 
 			buf.Reset()

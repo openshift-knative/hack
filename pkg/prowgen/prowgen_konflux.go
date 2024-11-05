@@ -322,6 +322,7 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			// See `openshift-knative/serverless-operator/hack/generate/update-pipelines.sh` for more details.
 			Tags:         []string{soMetadata.Project.Version},
 			PrefetchDeps: *prefetchDeps,
+			CreateEnterpriseContractIntegrationTestSecenario: true,
 		}
 		if len(cfg.ExcludesImages) == 0 {
 			cfg.ExcludesImages = []string{
@@ -456,6 +457,7 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 			// will change it before merging the PR.
 			// See `openshift-knative/serverless-operator/hack/generate/update-pipelines.sh` for more details.
 			Tags: []string{soMetadata.Project.Version},
+			CreateEnterpriseContractIntegrationTestSecenario: true,
 			// use fbc-stage enterprise contract policy for FBC applications
 			// we don't use fbc-standard, as fbc-stage excludes the fbc-related-image-check
 			ECPolicyConfigName: "rhtap-releng-tenant/fbc-stage",
