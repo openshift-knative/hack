@@ -224,6 +224,7 @@ func main() {
 
 		var additionalInstructions []string
 		if slices.Contains(additionalPackages, "tzdata") {
+			rpmsLockFileEnabled = true
 			// https://access.redhat.com/solutions/5616681
 			additionalInstructions = append(additionalInstructions, fmt.Sprintf("RUN microdnf update tzdata -y && microdnf reinstall tzdata -y"))
 			idx := -1
