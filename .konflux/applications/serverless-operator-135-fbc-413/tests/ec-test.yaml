@@ -5,7 +5,7 @@ metadata:
 spec:
   params: 
     - name: POLICY_CONFIGURATION
-      value: rhtap-releng-tenant/fbc-standard
+      value: rhtap-releng-tenant/fbc-stage
     - name: TIMEOUT
       value: "45m0s"
   application: serverless-operator-135-fbc-413
