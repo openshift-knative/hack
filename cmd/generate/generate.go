@@ -90,7 +90,6 @@ func main() {
 		additionalPackages           []string
 		templateName                 string
 		rpmsLockFileEnabled          bool
-		workdir                      bool
 	)
 
 	defaultIncludes := []string{
@@ -120,7 +119,6 @@ func main() {
 	pflag.StringArrayVar(&additionalPackages, "additional-packages", nil, "Additional packages to be installed in the image")
 	pflag.StringVar(&templateName, "template-name", defaultDockerfileTemplateName, fmt.Sprintf("Dockerfile template name to use. Supported values are [%s, %s]", defaultDockerfileTemplateName, funcUtilDockerfileTemplateName))
 	pflag.BoolVar(&rpmsLockFileEnabled, "generate-rpms-lock-file", false, "Enable the creation of the rpms.lock.yaml file")
-	pflag.BoolVar(&workdir, "dockerfile-workdir", false, "Enable default WORKDIR in builder images")
 	pflag.Parse()
 
 	if rootDir == "" {
@@ -264,7 +262,6 @@ func main() {
 				"component":               capitalize(p),
 				"component_dashcase":      dashcase(p),
 				"additional_instructions": additionalInstructions,
-				"workdir":                 workdir,
 			}
 
 			var DockerfileTemplate embed.FS

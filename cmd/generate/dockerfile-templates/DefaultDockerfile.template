@@ -3,12 +3,10 @@ ARG GO_BUILDER={{.builder}}
 ARG GO_RUNTIME=registry.access.redhat.com/ubi8/ubi-minimal
 
 FROM $GO_BUILDER as builder
-{{if .workdir}}
+
 WORKDIR /go/src/{{.main}}
 COPY . .
-{{else}}
-COPY . .
-{{end}}
+
 ENV CGO_ENABLED=1
 ENV GOEXPERIMENT=strictfipsruntime
 
