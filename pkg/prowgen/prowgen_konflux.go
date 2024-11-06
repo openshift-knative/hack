@@ -65,12 +65,6 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 
 					versionLabel := soBranchName
 					var buildArgs []string
-					soProjectYamlPath := filepath.Join(soRepo.RepositoryDirectory(),
-						"olm-catalog", "serverless-operator", "project.yaml")
-					soMetadata, err := project.ReadMetadataFile(soProjectYamlPath)
-					if err != nil {
-						return err
-					}
 					if err := GitCheckout(ctx, soRepo, soBranchName); err != nil {
 						if !strings.Contains(err.Error(), "failed to run git [checkout") {
 							return err
@@ -81,6 +75,13 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						}
 						// For non-existent branches we keep going and use downstreamVersion for versionLabel.
 					} else {
+						soProjectYamlPath := filepath.Join(soRepo.RepositoryDirectory(),
+							"olm-catalog", "serverless-operator", "project.yaml")
+						soMetadata, err := project.ReadMetadataFile(soProjectYamlPath)
+						if err != nil {
+							return err
+						}
+
 						versionLabel = soMetadata.Project.Version
 					}
 					log.Println("Version label:", versionLabel)
