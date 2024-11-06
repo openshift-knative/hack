@@ -36,7 +36,7 @@ const (
 	defaultDockerfileTemplateName      = "default"
 	funcUtilDockerfileTemplateName     = "func-util"
 	mustGatherDockerfileTemplateName   = "must-gather"
-	mustGatherBaseImage                = "brew.registry.redhat.io/rh-osbs/openshift-ose-must-gather:latest"
+	mustGatherBaseImageFmt             = "quay.io/openshift/origin-must-gather:%s"
 	// builderImageFmt defines the default pattern for the builder image.
 	// At the given places, the Go version from the projects go.mod will be inserted.
 	// Keep in mind to also update the tools image in the ImageBuilderDockerfile, when the OCP / RHEL
@@ -83,6 +83,7 @@ func main() {
 		dockerfilesSourceDir         string
 		projectFilePath              string
 		dockerfileImageBuilderFmt    string
+		mustGatherBuilderImageFmt    string
 		appFileFmt                   string
 		registryImageFmt             string
 		imagesFromRepositories       []string
@@ -112,6 +113,7 @@ func main() {
 	pflag.StringVar(&output, "output", filepath.Join(wd, "openshift"), "Output directory")
 	pflag.StringVar(&projectFilePath, "project-file", filepath.Join(wd, "openshift", "project.yaml"), "Project metadata file path")
 	pflag.StringVar(&dockerfileImageBuilderFmt, "dockerfile-image-builder-fmt", builderImageFmt, "Dockerfile image builder format")
+	pflag.StringVar(&mustGatherBuilderImageFmt, "must-gather-builder-image-fmt", mustGatherBaseImageFmt, "Must gather Dockerfile image builder format")
 	pflag.StringVar(&appFileFmt, "app-file-fmt", "/usr/bin/%s", "Target application binary path format")
 	pflag.StringVar(&registryImageFmt, "registry-image-fmt", "registry.ci.openshift.org/openshift/%s:%s", "Container registry image format")
 	pflag.StringArrayVar(&imagesFromRepositories, "images-from", nil, "Additional image references to be pulled from other midstream repositories matching the tag in project.yaml")
@@ -321,19 +323,7 @@ func main() {
 			}
 
 			if rpmsLockTemplate != nil && !rpmsLockFileWritten {
-				t, err := template.ParseFS(rpmsLockTemplate, "rpms.lock.yaml")
-				if err != nil {
-					log.Fatal("Failed creating RPM template ", err)
-				}
-
-				bf := &buffer.Buffer{}
-				if err := t.Execute(bf, nil); err != nil {
-					log.Fatal("Failed to execute RPM template", err)
-				}
-
-				if err := os.WriteFile(filepath.Join(rootDir, cachi2DefaultRPMsLockFilePath), bf.Bytes(), 0644); err != nil {
-					log.Fatal("Failed to write RPM lock file", err)
-				}
+				writeRPMLockFile(rpmsLockTemplate, rootDir)
 				rpmsLockFileWritten = true
 			}
 		}
@@ -364,13 +354,18 @@ func main() {
 			log.Println("File ", projectFilePath, " not found")
 			metadata = nil
 		}
+		// Builder image might be provided without formatting '%s' string as plain value
+		builderImage := mustGatherBuilderImageFmt
+		if strings.Count(mustGatherBuilderImageFmt, "%s") == 1 {
+			builderImage = fmt.Sprintf(mustGatherBaseImageFmt, metadata.Requirements.OcpVersion.Max)
+		}
 
 		projectName := mustGatherDockerfileTemplateName
 		projectDashCaseWithSep := projectName + "-"
 
 		d := map[string]interface{}{
 			"main":             projectName,
-			"must_gather_base": mustGatherBaseImage,
+			"must_gather_base": builderImage,
 			"version":          metadata.Project.Version,
 			"project":          capitalize(projectName),
 			"project_dashcase": projectDashCaseWithSep,
@@ -378,20 +373,7 @@ func main() {
 		out := filepath.Join(output, dockerfilesDir, filepath.Base(projectName))
 		saveDockerfile(d, DockerfileMustGatherTemplate, out, "")
 		rpmsLockTemplate = &RPMsLockTemplate
-
-		t, err := template.ParseFS(rpmsLockTemplate, "rpms.lock.yaml")
-		if err != nil {
-			log.Fatal("Failed creating RPM template ", err)
-		}
-
-		bf := &buffer.Buffer{}
-		if err := t.Execute(bf, nil); err != nil {
-			log.Fatal("Failed to execute RPM template", err)
-		}
-
-		if err := os.WriteFile(filepath.Join(rootDir, cachi2DefaultRPMsLockFilePath), bf.Bytes(), 0644); err != nil {
-			log.Fatal("Failed to write RPM lock file", err)
-		}
+		writeRPMLockFile(rpmsLockTemplate, rootDir)
 	}
 }
 
@@ -512,4 +494,26 @@ func getGoMod(rootDir string) *modfile.File {
 		log.Fatal(err)
 	}
 	return gm
+}
+
+func writeRPMLockFile(rpmsLockTemplate fs.FS, rootDir string) {
+	// Parse the template file
+	t, err := template.ParseFS(rpmsLockTemplate, "rpms.lock.yaml")
+	if err != nil {
+		log.Fatal("Failed to create RPM template: ", err)
+	}
+
+	// Create a buffer to hold the template execution output
+	bf := &buffer.Buffer{}
+	if err := t.Execute(bf, nil); err != nil {
+		log.Fatal("Failed to execute RPM template: ", err)
+	}
+
+	// Define the output file path
+	outputPath := filepath.Join(rootDir, cachi2DefaultRPMsLockFilePath)
+
+	// Write the generated content to the output file
+	if err := os.WriteFile(outputPath, bf.Bytes(), 0644); err != nil {
+		log.Fatal("Failed to write RPM lock file: ", err)
+	}
 }
