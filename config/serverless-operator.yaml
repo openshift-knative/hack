@@ -14,8 +14,6 @@ config:
           pullSpec: registry.access.redhat.com/ubi8/openjdk-21
         - name: JAVA_RUNTIME
           pullSpec: registry.access.redhat.com/ubi8/openjdk-21-runtime
-        - name: MUSTGATHER
-          pullSpec: brew.registry.redhat.io/rh-osbs/openshift-ose-must-gather:latest
       openShiftVersions:
       - cronForceKonfluxIndex: true
         generateCustomConfigs: true
@@ -38,8 +36,6 @@ config:
           pullSpec: registry.access.redhat.com/ubi8/openjdk-21
         - name: JAVA_RUNTIME
           pullSpec: registry.access.redhat.com/ubi8/openjdk-21-runtime
-        - name: MUSTGATHER
-          pullSpec: brew.registry.redhat.io/rh-osbs/openshift-ose-must-gather:latest
       openShiftVersions:
       - generateCustomConfigs: true
         useClusterPool: true

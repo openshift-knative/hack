@@ -352,7 +352,7 @@ func main() {
 			log.Println("File ", projectFilePath, " not found")
 			metadata = nil
 		}
-		builderImage := fmt.Sprintf(mustGatherBaseImageFmt, metadata.Requirements.OcpVersion.Max)
+		builderImage := fmt.Sprintf(mustGatherBaseImageFmt, metadata.Requirements.OcpVersion.Min)
 		projectName := mustGatherDockerfileTemplateName
 		projectDashCaseWithSep := projectName + "-"
 

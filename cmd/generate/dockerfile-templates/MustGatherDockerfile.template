@@ -6,7 +6,6 @@ FROM $MUSTGATHER AS mustgather
 FROM $RUNTIME
 
 COPY --from=mustgather /usr/bin/oc /usr/bin/oc
-COPY --from=mustgather /usr/bin/gather /usr/bin/gather_original
 
 # Copy all collection scripts to /usr/bin
 COPY must-gather/bin/* /usr/bin/
