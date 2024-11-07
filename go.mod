@@ -11,6 +11,7 @@ require (
 	github.com/openshift/ci-tools v0.0.0-20240910200445-d561bdd430ec
 	github.com/operator-framework/api v0.27.0
 	github.com/spf13/pflag v1.0.5
+	github.com/stretchr/testify v1.9.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/mod v0.20.0
 	golang.org/x/sync v0.7.0
@@ -92,6 +93,7 @@ require (
 	github.com/openshift/api v0.0.0-20240522145529-93d6bda14341 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.19.1 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect

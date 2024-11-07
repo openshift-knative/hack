@@ -53,7 +53,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 
 		for i := range tests {
 			test := &tests[i]
-			as := ToName(r, test, openShift.Version)
+			as := ToName(r, test)
 
 			var testTimeout *prowapi.Duration
 			var jobTimeout *prowapi.Duration
