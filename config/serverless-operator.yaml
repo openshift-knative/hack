@@ -326,6 +326,75 @@ repositories:
         branch: ""
         org: ""
         repo: ""
+  - name: lp-rosa-classic
+    releaseBuildConfiguration:
+      base_images:
+        rosa-aws-cli:
+          name: rosa-aws-cli
+          namespace: ci
+          tag: latest
+      releases:
+        latest:
+          integration:
+            include_built_images: true
+            name: "4.17"
+            namespace: ocp
+      tests:
+        - as: operator-e2e-rosa-aws
+          cron: 0 6 25 10 *
+          steps:
+            cluster_profile: aws-cspi-qe
+            env:
+              CHANNEL_GROUP: candidate
+              FIREWATCH_CONFIG: |
+                {
+                  "failure_rules":
+                    [
+                      {"step": "knative-eventing-kafka-broker-e2e", "failure_type": "test_failure", "classification": "knative-eventing-kafka-broker-e2e Test Failure", "jira_project": "SRVCOM", "jira_additional_labels": ["!default"]},
+                      {"step": "knative-serving-eventing-e2e", "failure_type": "test_failure", "classification": "knative-serving-eventing-e2e Test Failure", "jira_project": "SRVCOM", "jira_additional_labels": ["!default"]},
+                      {"step": "operator-e2e", "failure_type": "test_failure", "classification": "operator-e2e Test Failure", "jira_project": "SRVCOM", "jira_additional_labels": ["!default"]},
+                      {"step": "knative-*", "failure_type": "pod_failure", "classification": "knative Test Execution", "jira_additional_labels": ["!default"]},
+                      {"step": "operator-e2e", "failure_type": "pod_failure", "classification": "operator-e2e Test Execution", "jira_additional_labels": ["!default"]},
+                    ]
+                }
+              FIREWATCH_CONFIG_FILE_PATH: https://raw.githubusercontent.com/CSPI-QE/cspi-utils/main/firewatch-base-configs/rosa/lp-interop.json
+              FIREWATCH_DEFAULT_JIRA_ADDITIONAL_LABELS: '["4.17-lp","rosa-classic-lp","serverless-lp"]'
+              FIREWATCH_DEFAULT_JIRA_PROJECT: LPINTEROP
+              FIREWATCH_FAIL_WITH_TEST_FAILURES: "true"
+              OCM_LOGIN_ENV: staging
+              OPENSHIFT_VERSION: "4.17"
+            test:
+              - ref: cucushift-installer-check-cluster-health
+              - as: knative-eventing-kafka-broker-e2e
+                commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true make test-upstream-e2e-kafka-no-upgrade
+                from: serverless-source-image
+                # Dependencies are injected automatically based on images.
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 200Mi
+              - as: operator-e2e
+                commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true DELETE_CRD_ON_TEARDOWN=false make teardown test-e2e-with-kafka
+                from: serverless-source-image
+                # Dependencies are injected automatically based on images.
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 200Mi
+              - as: knative-serving-eventing-e2e
+                commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true make test-upstream-e2e-no-upgrade
+                from: serverless-source-image
+                # Dependencies are injected automatically based on images.
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 200Mi
+            workflow: firewatch-rosa-aws-sts
+          timeout: 8h0m0s
+      zz_generated_metadata:
+        branch: ""
+        org: ""
+        repo: ""
   dockerfiles:
     matches:
     - knative-operator/.*
@@ -370,7 +439,6 @@ repositories:
     - .*main.yaml$
     - .*lp-interop.*
     - .*lp-interop.*
-    - .*rosa-classic.*
   imageNameOverrides:
     serverless-operator: bundle
     serverless-operator-index: index

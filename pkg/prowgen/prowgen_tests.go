@@ -239,7 +239,10 @@ func DependenciesForTestSteps() ReleaseBuildConfigurationOption {
 		for _, testConfig := range cfg.Tests {
 			if testConfig.MultiStageTestConfiguration != nil {
 				for _, testStep := range testConfig.MultiStageTestConfiguration.Test {
-					testStep.Dependencies = dependenciesFromImages(cfg.Images, nil)
+					// Add dependencies only if it's LiteralTestStep.
+					if testStep.Reference == nil {
+						testStep.Dependencies = dependenciesFromImages(cfg.Images, nil)
+					}
 				}
 			}
 		}
