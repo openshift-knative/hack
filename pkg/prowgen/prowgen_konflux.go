@@ -255,7 +255,13 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			return err
 		}
 		buildArgs := []string{fmt.Sprintf("VERSION=%s", soMetadata.Project.Version)}
-		buildArgs = append(buildArgs, fmt.Sprintf("MUSTGATHER=brew.registry.redhat.io/rh-osbs/openshift-ose-must-gather:v%s", soMetadata.Requirements.OcpVersion.Min))
+
+		cliImage, err := getCLIArtifactsImage(soMetadata.Requirements.OcpVersion.Min)
+		if err != nil {
+			return fmt.Errorf("failed to get cli artifacts image for OCP %s: %w", soMetadata.Requirements.OcpVersion.Min, err)
+		}
+
+		buildArgs = append(buildArgs, fmt.Sprintf("CLI_ARTIFACTS=%s", cliImage))
 
 		for _, img := range b.Konflux.ImageOverrides {
 			if img.Name == "" || img.PullSpec == "" {
@@ -346,6 +352,25 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 	}
 
 	return nil
+}
+
+func getCLIArtifactsImage(ocpVersion string) (string, error) {
+	parts := strings.SplitN(ocpVersion, ".", 2)
+	if len(parts) != 2 {
+		return "", fmt.Errorf("invalid OCP version: %s", ocpVersion)
+	}
+
+	minor, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return "", fmt.Errorf("could not convert OCP minor to int (%q): %w", ocpVersion, err)
+	}
+
+	if minor <= 14 {
+		return fmt.Sprintf("registry.redhat.io/openshift4/ose-cli-artifacts:v4.%d", minor), nil
+	} else {
+		// use RHEL9 variant for OCP version >= 4.15
+		return fmt.Sprintf("registry.redhat.io/openshift4/ose-cli-artifacts-rhel9:v4.%d", minor), nil
+	}
 }
 
 func getPrefetchDeps(repo Repository, branch string) (*konfluxgen.PrefetchDeps, error) {
