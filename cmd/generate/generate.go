@@ -14,9 +14,12 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"slices"
+	"strconv"
 	"strings"
 	"text/template"
 
+	"github.com/coreos/go-semver/semver"
+	"github.com/openshift-knative/hack/pkg/rhel"
 	"github.com/openshift-knative/hack/pkg/util"
 
 	"github.com/spf13/pflag"
@@ -36,7 +39,7 @@ const (
 	defaultDockerfileTemplateName      = "default"
 	funcUtilDockerfileTemplateName     = "func-util"
 	mustGatherDockerfileTemplateName   = "must-gather"
-	mustGatherBaseImageFmt             = "quay.io/openshift/origin-must-gather:%s"
+	ocClientArtifactsBaseImage         = "registry.ci.openshift.org/ocp/%s:cli-artifacts"
 	// builderImageFmt defines the default pattern for the builder image.
 	// At the given places, the Go version from the projects go.mod will be inserted.
 	// Keep in mind to also update the tools image in the ImageBuilderDockerfile, when the OCP / RHEL
@@ -346,19 +349,21 @@ func main() {
 		templateName = mustGatherDockerfileTemplateName
 		metadata, err := project.ReadMetadataFile(projectFilePath)
 		if err != nil {
-			if !errors.Is(err, os.ErrNotExist) {
-				log.Fatal("Failed to read project metadata file: ", err)
-			}
-			log.Println("File ", projectFilePath, " not found")
-			metadata = nil
+			log.Fatal("could not read metadata file", err)
 		}
-		builderImage := fmt.Sprintf(mustGatherBaseImageFmt, metadata.Requirements.OcpVersion.Min)
+
+		ocClientArtifactsImage := fmt.Sprintf(ocClientArtifactsBaseImage, metadata.Requirements.OcpVersion.Min)
 		projectName := mustGatherDockerfileTemplateName
 		projectDashCaseWithSep := projectName + "-"
 
+		ocBinaryName, err := getOCBinaryName(metadata)
+		if err != nil {
+			log.Fatal("could not get oc binary name", err)
+		}
 		d := map[string]interface{}{
 			"main":             projectName,
-			"must_gather_base": builderImage,
+			"oc_cli_artifacts": ocClientArtifactsImage,
+			"oc_binary_name":   ocBinaryName,
 			"version":          metadata.Project.Version,
 			"project":          capitalize(projectName),
 			"project_dashcase": projectDashCaseWithSep,
@@ -367,6 +372,37 @@ func main() {
 		saveDockerfile(d, DockerfileMustGatherTemplate, out, "")
 		rpmsLockTemplate = &RPMsLockTemplate
 		writeRPMLockFile(rpmsLockTemplate, rootDir)
+	}
+}
+
+func getOCBinaryName(metadata *project.Metadata) (string, error) {
+	// depending on the OCP version, the oc binary has different names in registry.ci.openshift.org/ocp/4.13:cli-artifacts:
+	// <4.15 it's simply oc, but for >=4.15 it contains two (one for each rhel version: oc.rhel8 & oc.rhel9)
+
+	ocpVersion := metadata.Requirements.OcpVersion.Min
+
+	parts := strings.SplitN(ocpVersion, ".", 2)
+	if len(parts) != 2 {
+		return "", fmt.Errorf("invalid OCP version: %s", ocpVersion)
+	}
+
+	minor, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return "", fmt.Errorf("could not convert OCP minor to int (%q): %w", ocpVersion, err)
+	}
+
+	if minor <= 14 {
+		return "oc", nil
+	} else {
+		// use rhel suffix for OCP version >= 4.15
+
+		soVersion := semver.New(metadata.Project.Version)
+		rhelVersion, err := rhel.ForSOVersion(soVersion)
+		if err != nil {
+			return "", fmt.Errorf("could not determine rhel version: %v", err)
+		}
+
+		return fmt.Sprintf("oc.rhel%s", rhelVersion), nil
 	}
 }
 
