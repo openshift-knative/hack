@@ -43,6 +43,6 @@ repositories:
   slackChannel: '#knative-client'
   tests:
   - as: unit
-    commands: make test
+    commands: make unit
     container:
       from: src
