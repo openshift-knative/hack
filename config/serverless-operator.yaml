@@ -15,8 +15,19 @@ config:
         - name: JAVA_RUNTIME
           pullSpec: registry.access.redhat.com/ubi8/openjdk-21-runtime
       openShiftVersions:
+      - candidateRelease: true
+        cronForceKonfluxIndex: true
+        customConfigs:
+          enabled: true
+          includes:
+            - .*ocp4.18-lp-interop.*
+        onDemand: true
+        version: "4.18"
       - cronForceKonfluxIndex: true
-        generateCustomConfigs: true
+        customConfigs:
+          enabled: true
+          excludes:
+            - .*ocp4.18-lp-interop.*
         useClusterPool: true
         version: "4.17"
       - cronForceKonfluxIndex: true
@@ -403,6 +414,121 @@ repositories:
         branch: ""
         org: ""
         repo: ""
+  - name: ocp4.18-lp-interop
+    releaseBuildConfiguration:
+      tests:
+        - as: operator-e2e-interop-aws-ocp418
+          cron: 0 6 11 2 *
+          steps:
+            cluster_profile: aws-cspi-qe
+            env:
+              BASE_DOMAIN: cspilp.interop.ccitredhat.com
+              FIREWATCH_CONFIG: |
+                {
+                  "failure_rules":
+                    [
+                      {"step": "knative-eventing-kafka-broker-e2e", "failure_type": "test_failure", "classification": "knative-eventing-kafka-broker-e2e Test Failure", "jira_project": "SRVCOM", "jira_additional_labels": ["!default","interop-tests"]},
+                      {"step": "knative-serving-eventing-e2e", "failure_type": "test_failure", "classification": "knative-serving-eventing-e2e Test Failure", "jira_project": "SRVCOM", "jira_additional_labels": ["!default","interop-tests"]},
+                      {"step": "operator-e2e", "failure_type": "test_failure", "classification": "operator-e2e Test Failure", "jira_project": "SRVCOM", "jira_additional_labels": ["!default","interop-tests"]},
+                      {"step": "knative-*", "failure_type": "pod_failure", "classification": "knative Test Execution", "jira_additional_labels": ["!default","interop-tests"]},
+                      {"step": "operator-e2e", "failure_type": "pod_failure", "classification": "operator-e2e Test Execution", "jira_additional_labels": ["!default","interop-tests"]}
+                    ]
+                }
+              FIREWATCH_CONFIG_FILE_PATH: https://raw.githubusercontent.com/CSPI-QE/cspi-utils/main/firewatch-base-configs/aws-ipi/lp-interop.json
+              FIREWATCH_DEFAULT_JIRA_ADDITIONAL_LABELS: '["4.18-lp","self-managed-lp","serverless-lp"]'
+              FIREWATCH_DEFAULT_JIRA_ASSIGNEE: mgencur@redhat.com
+              FIREWATCH_DEFAULT_JIRA_PROJECT: LPINTEROP
+              USER_TAGS: |
+                scenario serverless
+            test:
+              - as: operator-e2e
+                commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true make test-e2e-with-kafka
+                # Dependencies are injected automatically based on images.
+                from: serverless-source-image
+                resources:
+                  limits:
+                    memory: 8Gi
+                  requests:
+                    cpu: 100m
+                    memory: 200Mi
+              - as: knative-serving-eventing-e2e
+                commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true make test-upstream-e2e-no-upgrade
+                # Dependencies are injected automatically based on images.
+                from: serverless-source-image
+                resources:
+                  limits:
+                    memory: 8Gi
+                  requests:
+                    cpu: 100m
+                    memory: 200Mi
+              - as: knative-eventing-kafka-broker-e2e
+                commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true make test-upstream-e2e-kafka-no-upgrade
+                # Dependencies are injected automatically based on images.
+                from: serverless-source-image
+                resources:
+                  limits:
+                    memory: 10Gi
+                  requests:
+                    cpu: 100m
+                    memory: 200Mi
+            workflow: firewatch-ipi-aws
+          timeout: 8h0m0s
+        - as: operator-e2e-interop-aws-ocp418-fips
+          cron: 0 0 11 6 *
+          steps:
+            cluster_profile: aws-cspi-qe
+            env:
+              BASE_DOMAIN: cspilp.interop.ccitredhat.com
+              FIPS_ENABLED: "true"
+              FIREWATCH_CONFIG: |
+                {
+                  "failure_rules":
+                    [
+                      {"step": "knative-eventing-kafka-broker-e2e", "failure_type": "test_failure", "classification": "knative-eventing-kafka-broker-e2e Test Failure", "jira_project": "SRVCOM", "jira_additional_labels": ["!default","interop-tests"]},
+                      {"step": "knative-serving-eventing-e2e", "failure_type": "test_failure", "classification": "knative-serving-eventing-e2e Test Failure", "jira_project": "SRVCOM", "jira_additional_labels": ["!default","interop-tests"]},
+                      {"step": "operator-e2e", "failure_type": "test_failure", "classification": "operator-e2e Test Failure", "jira_project": "SRVCOM", "jira_additional_labels": ["!default","interop-tests"]},
+                      {"step": "knative-*", "failure_type": "pod_failure", "classification": "knative Test Execution", "jira_additional_labels": ["!default","interop-tests"]},
+                      {"step": "operator-e2e", "failure_type": "pod_failure", "classification": "operator-e2e Test Execution", "jira_additional_labels": ["!default","interop-tests"]}
+                    ]
+                }
+              FIREWATCH_CONFIG_FILE_PATH: https://raw.githubusercontent.com/CSPI-QE/cspi-utils/main/firewatch-base-configs/aws-ipi/lp-interop.json
+              FIREWATCH_DEFAULT_JIRA_ADDITIONAL_LABELS: '["4.18-lp","self-managed-lp","serverless-lp","fips"]'
+              FIREWATCH_DEFAULT_JIRA_PROJECT: LPINTEROP
+              USER_TAGS: |
+                scenario serverless
+            test:
+              - as: operator-e2e
+                commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true make test-e2e-with-kafka
+                # Dependencies are injected automatically based on images.
+                from: serverless-source-image
+                resources:
+                  limits:
+                    memory: 8Gi
+                  requests:
+                    cpu: 100m
+                    memory: 200Mi
+              - as: knative-serving-eventing-e2e
+                commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true make test-upstream-e2e-no-upgrade
+                # Dependencies are injected automatically based on images.
+                from: serverless-source-image
+                resources:
+                  limits:
+                    memory: 8Gi
+                  requests:
+                    cpu: 100m
+                    memory: 200Mi
+              - as: knative-eventing-kafka-broker-e2e
+                commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true make test-upstream-e2e-kafka-no-upgrade
+                # Dependencies are injected automatically based on images.
+                from: serverless-source-image
+                resources:
+                  limits:
+                    memory: 10Gi
+                  requests:
+                    cpu: 100m
+                    memory: 200Mi
+            workflow: firewatch-ipi-aws
+          timeout: 8h0m0s
   dockerfiles:
     matches:
     - knative-operator/.*
@@ -445,8 +571,6 @@ repositories:
   ignoreConfigs:
     matches:
     - .*main.yaml$
-    - .*lp-interop.*
-    - .*lp-interop.*
   imageNameOverrides:
     serverless-operator: bundle
     serverless-operator-index: index

@@ -389,12 +389,7 @@ func AlwaysRunInjector() JobConfigInjector {
 					variant := jobConfig.PresubmitsStatic[k][i].Labels["ci-operator.openshift.io/variant"]
 					ocpVersion := strings.ReplaceAll(strings.SplitN(variant, "-", 2)[0], ".", "")
 
-					var err error
 					openshiftVersions := b.OpenShiftVersions
-					openshiftVersions, err = addCandidateRelease(b.OpenShiftVersions)
-					if err != nil {
-						return err
-					}
 					// Individual OpenShift versions can enforce all their jobs to be on demand.
 					var onDemandForOpenShift bool
 					for _, v := range openshiftVersions {

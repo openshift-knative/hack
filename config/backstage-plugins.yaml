@@ -21,6 +21,10 @@ config:
       konflux:
         enabled: true
       openShiftVersions:
+      - candidateRelease: true
+        onDemand: true
+        skipCron: true
+        version: "4.18"
       - version: "4.17"
       - onDemand: true
         version: "4.13"
