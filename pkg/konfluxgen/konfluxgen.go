@@ -809,7 +809,7 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 		PublishingCredentials: "staged-index-fbc-publishing-credentials",
 		PipelineSA:            "release-index-image-staging",
 		StagedIndex:           true,
-		SignCMName:            "hacbs-signing-pipeline-config-redhatbeta2",
+		SignCMName:            "hacbs-signing-pipeline-config-staging-redhatrelease2",
 	}
 	outputFilePath = filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeFBCReleasePlanAdmissionTemplate(fbcData, outputFilePath); err != nil {
@@ -828,6 +828,7 @@ type rpaComponentData struct {
 	PyxisSecret string
 	PyxisServer string
 	PipelineSA  string
+	SignCMName  string
 }
 
 func GenerateComponentReleasePlanAdmission(csv *operatorsv1alpha1.ClusterServiceVersion, bundleName string, bundleRepoName string, resourceOutputPath string, appName string) error {
@@ -858,6 +859,7 @@ func GenerateComponentReleasePlanAdmission(csv *operatorsv1alpha1.ClusterService
 		PyxisSecret:     "pyxis-prod-secret",
 		PyxisServer:     "production",
 		PipelineSA:      "release-registry-prod",
+		SignCMName:      "hacbs-signing-pipeline-config-redhatrelease2",
 	}
 	outputFilePath := filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeComponentReleasePlanAdmissionTemplate(rpaData, outputFilePath); err != nil {
@@ -882,6 +884,7 @@ func GenerateComponentReleasePlanAdmission(csv *operatorsv1alpha1.ClusterService
 		PyxisSecret:     "pyxis-staging-secret",
 		PyxisServer:     "stage",
 		PipelineSA:      "release-registry-staging",
+		SignCMName:      "hacbs-signing-pipeline-config-staging-redhatrelease2",
 	}
 	outputFilePath = filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeComponentReleasePlanAdmissionTemplate(rpaData, outputFilePath); err != nil {
