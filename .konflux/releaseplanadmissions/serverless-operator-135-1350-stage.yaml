@@ -16,6 +16,12 @@ spec:
       product_id: 579
       product_name: "OpenShift Serverless"
       product_version: "1.35.0"
+      references:
+        - https://docs.redhat.com/en/documentation/red_hat_openshift_serverless
+      solution: "The container images provided by this update can be downloaded from the Red Hat container registry at registry.redhat.io"
+      description: "Release 1.35.0 of OpenShift Serverless"
+      topic: "Release 1.35.0 of OpenShift Serverless"
+      synopsis: "OpenShift Serverless Release 1.35.0"
     mapping:
       components:
         - name: serverless-openshift-kn-operator-135

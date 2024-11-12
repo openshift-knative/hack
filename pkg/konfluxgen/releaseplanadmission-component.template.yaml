@@ -16,6 +16,12 @@ spec:
       product_id: 579
       product_name: "OpenShift Serverless"
       product_version: "{{{ .SOVersion }}}"
+      references:
+        - https://docs.redhat.com/en/documentation/red_hat_openshift_serverless
+      solution: "The container images provided by this update can be downloaded from the Red Hat container registry at registry.redhat.io"
+      description: "Release {{{ .SOVersion }}} of OpenShift Serverless"
+      topic: "Release {{{ .SOVersion }}} of OpenShift Serverless"
+      synopsis: "OpenShift Serverless Release {{{ .SOVersion }}}"
     mapping:
       components:
       {{{- range $component := .Components }}}
@@ -32,7 +38,7 @@ spec:
       secret: {{{ .PyxisSecret }}}
       server: {{{ .PyxisServer }}}
     sign:
-      configMapName: "hacbs-signing-pipeline-config-redhatrelease2"
+      configMapName: {{{ .SignCMName }}}
   pipeline:
     pipelineRef:
       resolver: git
