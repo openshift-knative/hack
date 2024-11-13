@@ -58,7 +58,7 @@ type Promotion struct {
 }
 
 type CustomConfigs struct {
-	// Name will be used together with OpenShift version to generate a specific variant.
+	// Name will be used to generate a specific variant.
 	Name string `json:"name,omitempty" yaml:"name,omitempty"`
 	// ReleaseBuildConfiguration allows defining configuration manually. The final configuration
 	// is extended with images and test steps with dependencies.
@@ -319,7 +319,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 
 				buildConfigPath = filepath.Join(
 					r.RepositoryDirectory(),
-					r.Org+"-"+r.Repo+"-"+branchName+"__"+variant+"-"+customCfg.Name+".yaml",
+					r.Org+"-"+r.Repo+"-"+branchName+"__"+customCfg.Name+".yaml",
 				)
 
 				cfgs = append(cfgs, ReleaseBuildConfiguration{
