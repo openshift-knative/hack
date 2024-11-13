@@ -8,9 +8,9 @@ COPY . .
 
 ENV CGO_ENABLED=1
 ENV GOEXPERIMENT=strictfipsruntime
-ENV GOFLAGS=''
+ENV GOFLAGS='-tags=strictfipsruntime,exclude_graphdriver_btrfs'
 
-RUN go build -tags strictfipsruntime,exclude_graphdriver_btrfs -o /usr/bin/main ./{{.main}}
+RUN go build -o /usr/bin/main ./{{.main}}
 RUN go run github.com/google/go-licenses@v1.6.0 \
   save ./... --save_path=/licenses
 

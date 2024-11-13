@@ -9,8 +9,9 @@ COPY . .
 
 ENV CGO_ENABLED=1
 ENV GOEXPERIMENT=strictfipsruntime
+ENV GOFLAGS='-tags=strictfipsruntime'
 
-RUN go build -tags strictfipsruntime -o /usr/bin/main ./{{.main}}
+RUN go build -o /usr/bin/main ./{{.main}}
 RUN go run github.com/google/go-licenses@v1.6.0 \
   save ./... --save_path=/licenses
 
