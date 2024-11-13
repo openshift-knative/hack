@@ -11,6 +11,8 @@ ENV CGO_ENABLED=1
 ENV GOEXPERIMENT=strictfipsruntime
 
 RUN go build -tags strictfipsruntime -o /usr/bin/main ./cmd/discover
+RUN go run github.com/google/go-licenses@v1.6.0 \
+  save ./... --save_path=/licenses
 
 FROM $GO_RUNTIME
 
@@ -19,6 +21,7 @@ RUN microdnf update tzdata -y && microdnf reinstall tzdata -y
 RUN microdnf install rsync
 
 COPY --from=builder /usr/bin/main /usr/bin/discover
+COPY --from=builder /licenses /licenses
 
 USER 65532
 

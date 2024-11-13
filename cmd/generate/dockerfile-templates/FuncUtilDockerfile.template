@@ -11,6 +11,8 @@ ENV GOEXPERIMENT=strictfipsruntime
 ENV GOFLAGS=''
 
 RUN go build -tags strictfipsruntime,exclude_graphdriver_btrfs -o /usr/bin/main ./{{.main}}
+RUN go run github.com/google/go-licenses@v1.6.0 \
+  save ./... --save_path=/licenses
 
 FROM $GO_RUNTIME
 
@@ -22,6 +24,7 @@ RUN microdnf install socat tar
 {{- end }}
 
 COPY --from=builder /usr/bin/main {{.app_file}}
+COPY --from=builder /licenses /licenses
 
 RUN ln -s {{.app_file}} /usr/local/bin/deploy && \
 	ln -s {{.app_file}} /usr/local/bin/scaffold && \

@@ -11,6 +11,8 @@ ENV CGO_ENABLED=1
 ENV GOEXPERIMENT=strictfipsruntime
 
 RUN go build -tags strictfipsruntime -o /usr/bin/main ./{{.main}}
+RUN go run github.com/google/go-licenses@v1.6.0 \
+  save ./... --save_path=/licenses
 
 FROM $GO_RUNTIME
 
@@ -21,6 +23,7 @@ ARG VERSION={{.version}}
 {{- end }}
 
 COPY --from=builder /usr/bin/main {{.app_file}}
+COPY --from=builder /licenses /licenses
 
 USER 65532
 
