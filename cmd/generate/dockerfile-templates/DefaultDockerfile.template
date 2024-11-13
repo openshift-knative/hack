@@ -21,6 +21,7 @@ ARG VERSION={{.version}}
 {{- end }}
 
 COPY --from=builder /usr/bin/main {{.app_file}}
+COPY --from=builder /go/src/{{.main}}/LICENSE /licenses/
 
 USER 65532
 

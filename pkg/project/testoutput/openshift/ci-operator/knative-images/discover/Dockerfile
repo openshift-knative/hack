@@ -19,6 +19,7 @@ RUN microdnf update tzdata -y && microdnf reinstall tzdata -y
 RUN microdnf install rsync
 
 COPY --from=builder /usr/bin/main /usr/bin/discover
+COPY --from=builder /go/src/cmd/discover/LICENSE /licenses/
 
 USER 65532
 
