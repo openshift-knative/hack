@@ -9,11 +9,11 @@ metadata:
   namespace: rhtap-releng-tenant
 spec:
   applications:
-    - serverless-operator-135-fbc-413
     - serverless-operator-135-fbc-414
     - serverless-operator-135-fbc-415
     - serverless-operator-135-fbc-416
     - serverless-operator-135-fbc-417
+    - serverless-operator-135-fbc-418
   origin: ocp-serverless-tenant
   policy: fbc-standard
   data:

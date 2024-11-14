@@ -102,6 +102,12 @@ spec:
         - name: kn-backstage-plugins-eventmesh-115
           repository: registry.redhat.io/openshift-serverless-1/kn-backstage-plugins-eventmesh-rhel8
           pushSourceContainer: true
+        - name: kn-plugin-event-sender-115
+          repository: registry.redhat.io/openshift-serverless-1/kn-plugin-event-sender-rhel8
+          pushSourceContainer: true
+        - name: kn-client-kn-115
+          repository: registry.redhat.io/openshift-serverless-1/kn-client-kn-rhel8
+          pushSourceContainer: true
         - name: kn-plugin-func-func-util-115
           repository: registry.redhat.io/openshift-serverless-1/kn-plugin-func-func-util-rhel8
           pushSourceContainer: true
@@ -120,6 +126,12 @@ spec:
         - name: kn-ekb-post-install-115
           repository: registry.redhat.io/openshift-serverless-1/kn-ekb-post-install-rhel8
           pushSourceContainer: true
+        - name: serverless-must-gather-135
+          repository: registry.redhat.io/openshift-serverless-1/serverless-must-gather-rhel8
+          pushSourceContainer: true
+        - name: kn-client-cli-artifacts-115
+          repository: registry.redhat.io/openshift-serverless-1/kn-client-cli-artifacts-rhel8
+          pushSourceContainer: true
         - name: serverless-bundle-135
           repository: registry.redhat.io/openshift-serverless-1/serverless-operator-bundle
           pushSourceContainer: true
@@ -132,7 +144,7 @@ spec:
       secret: pyxis-prod-secret
       server: production
     sign:
-      configMapName: "hacbs-signing-pipeline-config-redhatrelease2"
+      configMapName: hacbs-signing-pipeline-config-redhatrelease2
   pipeline:
     pipelineRef:
       resolver: git
