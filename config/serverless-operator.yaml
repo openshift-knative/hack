@@ -46,7 +46,7 @@ config:
         disabled: true
 repositories:
 - customConfigs:
-  - name: aws-ovn
+  - name: 417-aws-ovn
     releaseBuildConfiguration:
       tests:
       - as: e2e-aws-ovn-continuous
@@ -87,7 +87,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: azure
+  - name: 417-azure
     releaseBuildConfiguration:
       tests:
       - as: e2e-azure-continuous
@@ -128,7 +128,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: gcp
+  - name: 417-gcp
     releaseBuildConfiguration:
       tests:
       - as: e2e-gcp-continuous
@@ -169,7 +169,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: hypershift
+  - name: 417-hypershift
     releaseBuildConfiguration:
       base_images:
         hypershift-operator:
@@ -230,7 +230,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: osd
+  - name: 417-osd
     releaseBuildConfiguration:
       base_images:
         cli-ocm:
@@ -276,7 +276,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: single-node
+  - name: 417-single-node
     releaseBuildConfiguration:
       tests:
       - as: e2e-sno-continuous
@@ -299,7 +299,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: vsphere
+  - name: 417-vsphere
     releaseBuildConfiguration:
       base_images:
         upi-installer:
@@ -326,7 +326,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: lp-rosa-classic
+  - name: ocp4.17-lp-rosa-classic
     releaseBuildConfiguration:
       base_images:
         cli:
