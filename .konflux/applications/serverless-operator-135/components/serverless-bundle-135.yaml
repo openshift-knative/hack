@@ -10,8 +10,6 @@ spec:
    
   build-nudges-ref:
     
-    - "serverless-index-135-fbc-413-index"
-    
     - "serverless-index-135-fbc-414-index"
     
     - "serverless-index-135-fbc-415-index"
@@ -19,6 +17,8 @@ spec:
     - "serverless-index-135-fbc-416-index"
     
     - "serverless-index-135-fbc-417-index"
+    
+    - "serverless-index-135-fbc-418-index"
     
   
   source:

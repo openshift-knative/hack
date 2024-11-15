@@ -5,7 +5,7 @@ metadata:
     release.appstudio.openshift.io/auto-release: 'true'
     release.appstudio.openshift.io/releasePlanAdmission: 'serverless-operator-135-1350-fbc-stage'
     release.appstudio.openshift.io/standing-attribution: 'true'
-  name: serverless-operator-135-fbc-413-1350-stage
+  name: serverless-operator-135-fbc-418-1350-stage
 spec:
   releaseNotes:
     type: "Product Enhancement Advisory"
@@ -23,5 +23,5 @@ spec:
       source project Knative.
     references:
       - "https://docs.redhat.com/documentation/red_hat_openshift_serverless/"
-  application: serverless-operator-135-fbc-413
+  application: serverless-operator-135-fbc-418
   target: rhtap-releng-tenant
