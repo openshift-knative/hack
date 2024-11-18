@@ -4,7 +4,7 @@ ARG GO_RUNTIME=registry.access.redhat.com/ubi8/ubi-minimal
 
 FROM $GO_BUILDER as builder
 
-WORKDIR /go/src/cmd/discover
+WORKDIR /workspace
 COPY . .
 
 ENV CGO_ENABLED=1
@@ -19,6 +19,7 @@ RUN microdnf update tzdata -y && microdnf reinstall tzdata -y
 RUN microdnf install rsync
 
 COPY --from=builder /usr/bin/main /usr/bin/discover
+COPY --from=builder /workspace/LICENSE /licenses/
 
 USER 65532
 
