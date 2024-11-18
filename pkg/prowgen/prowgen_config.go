@@ -10,7 +10,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/coreos/go-semver/semver"
+	"github.com/openshift-knative/hack/pkg/util"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
 	prowapi "sigs.k8s.io/prow/pkg/apis/prowjobs/v1"
 )
@@ -102,11 +102,17 @@ type OpenShift struct {
 	UseClusterPool bool   `json:"useClusterPool,omitempty" yaml:"useClusterPool,omitempty"`
 	Cron           string `json:"cron,omitempty" yaml:"cron,omitempty"`
 	// SkipCron ensures that no periodic jobs are generated for tests running on the given OpenShift version.
-	SkipCron              bool `json:"skipCron,omitempty" yaml:"skipCron,omitempty"`
-	CronForceKonfluxIndex bool `json:"cronForceKonfluxIndex,omitempty" yaml:"cronForceKonfluxIndex,omitempty"`
-	OnDemand              bool `json:"onDemand,omitempty" yaml:"onDemand,omitempty"`
-	GenerateCustomConfigs bool `json:"generateCustomConfigs,omitempty" yaml:"generateCustomConfigs,omitempty"`
-	CandidateRelease      bool `json:"candidateRelease,omitempty" yaml:"candidateRelease,omitempty"`
+	SkipCron              bool                    `json:"skipCron,omitempty" yaml:"skipCron,omitempty"`
+	CronForceKonfluxIndex bool                    `json:"cronForceKonfluxIndex,omitempty" yaml:"cronForceKonfluxIndex,omitempty"`
+	OnDemand              bool                    `json:"onDemand,omitempty" yaml:"onDemand,omitempty"`
+	CustomConfigs         CustomConfigsEnablement `json:"customConfigs,omitempty" yaml:"customConfigs,omitempty"`
+	CandidateRelease      bool                    `json:"candidateRelease,omitempty" yaml:"candidateRelease,omitempty"`
+}
+
+type CustomConfigsEnablement struct {
+	Enabled  bool     `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Includes []string `json:"includes,omitempty" yaml:"includes,omitempty"`
+	Excludes []string `json:"excludes,omitempty" yaml:"excludes,omitempty"`
 }
 
 type Image struct {
@@ -159,12 +165,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 			return nil, fmt.Errorf("[%s] failed to checkout branch %s", r.RepositoryDirectory(), branchName)
 		}
 
-		var err error
 		openshiftVersions := branch.OpenShiftVersions
-		openshiftVersions, err = addCandidateRelease(branch.OpenShiftVersions)
-		if err != nil {
-			return nil, err
-		}
 
 		for i, ov := range openshiftVersions {
 			log.Println(r.RepositoryDirectory(), "Generating config", branchName, "OpenShiftVersion", ov)
@@ -282,12 +283,19 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				Branch:                    branchName,
 			})
 
-			if !ov.GenerateCustomConfigs {
+			if !ov.CustomConfigs.Enabled {
 				continue
 			}
 
 			// Generate custom configs.
 			for _, customCfg := range r.CustomConfigs {
+				shouldInclude, err := shouldIncludeCustomConfig(ov, customCfg.Name)
+				if err != nil {
+					return nil, err
+				}
+				if !shouldInclude {
+					continue
+				}
 				customBuildCfg := customCfg.ReleaseBuildConfiguration.DeepCopy()
 				customBuildCfg.Metadata = metadata
 				if customBuildCfg.BuildRootImage == nil {
@@ -332,6 +340,31 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 	}
 
 	return cfgs, nil
+}
+
+func shouldIncludeCustomConfig(ov OpenShift, customCfgName string) (bool, error) {
+	includes, err := util.ToRegexp(ov.CustomConfigs.Includes)
+	if err != nil {
+		return false, fmt.Errorf("failed to create regular expressions for %+v: %w", ov.CustomConfigs.Includes, err)
+	}
+	excludes, err := util.ToRegexp(ov.CustomConfigs.Excludes)
+	if err != nil {
+		return false, fmt.Errorf("failed to create regular expressions for %+v: %w", ov.CustomConfigs.Excludes, err)
+	}
+	// Empty includes means we want everything. Configs can still be excluded later.
+	// If both "includes" and "excludes" match the config name then excludes take precedence.
+	shouldInclude := len(includes) == 0
+	for _, i := range includes {
+		if i.MatchString(customCfgName) {
+			shouldInclude = true
+		}
+	}
+	for _, x := range excludes {
+		if x.MatchString(customCfgName) {
+			shouldInclude = false
+		}
+	}
+	return shouldInclude, nil
 }
 
 // TODO: In 2023 we need to move forward to use the new `eventing` or `serving`, for _new_ repos,
@@ -402,36 +435,6 @@ func createPromotionName(p Promotion, branchName string) string {
 		version = "nightly"
 	}
 	return strings.ReplaceAll(tpl, "${version}", version)
-}
-
-func addCandidateRelease(openshiftVersions []OpenShift) ([]OpenShift, error) {
-	semVersions := make([]*semver.Version, 0, len(openshiftVersions))
-	for _, ov := range openshiftVersions {
-		v := ov.Version
-		// Make sure version strings are in the format MAJOR.MINOR.MICRO
-		if len(strings.SplitN(v, ".", 3)) != 3 {
-			v = v + ".0"
-		}
-		ovSemVer, err := semver.NewVersion(v)
-		if err != nil {
-			return nil, err
-		}
-		semVersions = append(semVersions, ovSemVer)
-	}
-	semver.Sort(semVersions)
-
-	log.Println(semVersions)
-
-	latest := *semVersions[len(semVersions)-1]
-	latest.BumpMinor()
-
-	extendedVersions := append(openshiftVersions, OpenShift{
-		Version:          fmt.Sprintf("%d.%d", latest.Major, latest.Minor),
-		OnDemand:         true,
-		CandidateRelease: true},
-	)
-
-	return extendedVersions, nil
 }
 
 func applyOptions(cfg *cioperatorapi.ReleaseBuildConfiguration, opts ...ReleaseBuildConfigurationOption) error {
