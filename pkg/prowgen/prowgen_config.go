@@ -102,11 +102,11 @@ type OpenShift struct {
 	UseClusterPool bool   `json:"useClusterPool,omitempty" yaml:"useClusterPool,omitempty"`
 	Cron           string `json:"cron,omitempty" yaml:"cron,omitempty"`
 	// SkipCron ensures that no periodic jobs are generated for tests running on the given OpenShift version.
-	SkipCron              bool                    `json:"skipCron,omitempty" yaml:"skipCron,omitempty"`
-	CronForceKonfluxIndex bool                    `json:"cronForceKonfluxIndex,omitempty" yaml:"cronForceKonfluxIndex,omitempty"`
-	OnDemand              bool                    `json:"onDemand,omitempty" yaml:"onDemand,omitempty"`
-	CustomConfigs         CustomConfigsEnablement `json:"customConfigs,omitempty" yaml:"customConfigs,omitempty"`
-	CandidateRelease      bool                    `json:"candidateRelease,omitempty" yaml:"candidateRelease,omitempty"`
+	SkipCron              bool                     `json:"skipCron,omitempty" yaml:"skipCron,omitempty"`
+	CronForceKonfluxIndex bool                     `json:"cronForceKonfluxIndex,omitempty" yaml:"cronForceKonfluxIndex,omitempty"`
+	OnDemand              bool                     `json:"onDemand,omitempty" yaml:"onDemand,omitempty"`
+	CustomConfigs         *CustomConfigsEnablement `json:"customConfigs,omitempty" yaml:"customConfigs,omitempty"`
+	CandidateRelease      bool                     `json:"candidateRelease,omitempty" yaml:"candidateRelease,omitempty"`
 }
 
 type CustomConfigsEnablement struct {
@@ -283,7 +283,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				Branch:                    branchName,
 			})
 
-			if !ov.CustomConfigs.Enabled {
+			if ov.CustomConfigs == nil || !ov.CustomConfigs.Enabled {
 				continue
 			}
 
