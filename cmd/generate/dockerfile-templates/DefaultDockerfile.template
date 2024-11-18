@@ -4,7 +4,7 @@ ARG GO_RUNTIME=registry.access.redhat.com/ubi8/ubi-minimal
 
 FROM $GO_BUILDER as builder
 
-WORKDIR /go/src/{{.main}}
+WORKDIR /workspace
 COPY . .
 
 ENV CGO_ENABLED=1
@@ -21,7 +21,7 @@ ARG VERSION={{.version}}
 {{- end }}
 
 COPY --from=builder /usr/bin/main {{.app_file}}
-COPY --from=builder /go/src/{{.main}}/LICENSE /licenses/
+COPY --from=builder /workspace/LICENSE /licenses/
 
 USER 65532
 

@@ -4,7 +4,7 @@ ARG GO_RUNTIME=registry.access.redhat.com/ubi8/ubi-minimal
 
 FROM $GO_BUILDER as builder
 
-WORKDIR /go/src/{{.main}}
+WORKDIR /workspace
 COPY . .
 
 ENV CGO_ENABLED=1
@@ -23,7 +23,7 @@ RUN microdnf install socat tar
 {{- end }}
 
 COPY --from=builder /usr/bin/main {{.app_file}}
-COPY --from=builder /go/src/{{.main}}/LICENSE /licenses/
+COPY --from=builder /workspace/LICENSE /licenses/
 
 RUN ln -s {{.app_file}} /usr/local/bin/deploy && \
 	ln -s {{.app_file}} /usr/local/bin/scaffold && \
