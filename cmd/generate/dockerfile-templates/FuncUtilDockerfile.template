@@ -23,7 +23,7 @@ RUN microdnf install socat tar
 {{- end }}
 
 COPY --from=builder /usr/bin/main {{.app_file}}
-COPY --from=builder /workspace/LICENSE /licenses/
+COPY LICENSE /licenses/
 
 RUN ln -s {{.app_file}} /usr/local/bin/deploy && \
 	ln -s {{.app_file}} /usr/local/bin/scaffold && \
