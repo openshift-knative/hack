@@ -50,6 +50,9 @@ spec:
     - name: build-platforms
       value:
         - linux/x86_64
+    {{{- else }}}
+    - name: skip-fbc-related-image-check
+      value: "true"
     {{{- end }}}
     {{{- else }}}
     - name: output-image
