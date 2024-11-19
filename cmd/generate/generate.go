@@ -14,7 +14,6 @@ import (
 	"path/filepath"
 	"runtime/debug"
 	"slices"
-	"strconv"
 	"strings"
 	"text/template"
 
@@ -39,7 +38,6 @@ const (
 	defaultDockerfileTemplateName      = "default"
 	funcUtilDockerfileTemplateName     = "func-util"
 	mustGatherDockerfileTemplateName   = "must-gather"
-	ocClientArtifactsBaseImage         = "registry.ci.openshift.org/ocp/%s:cli-artifacts"
 	// builderImageFmt defines the default pattern for the builder image.
 	// At the given places, the Go version from the projects go.mod will be inserted.
 	// Keep in mind to also update the tools image in the ImageBuilderDockerfile, when the OCP / RHEL
@@ -352,7 +350,6 @@ func main() {
 			log.Fatal("could not read metadata file", err)
 		}
 
-		ocClientArtifactsImage := fmt.Sprintf(ocClientArtifactsBaseImage, metadata.Requirements.OcpVersion.Min)
 		projectName := mustGatherDockerfileTemplateName
 		projectDashCaseWithSep := projectName + "-"
 
@@ -362,7 +359,6 @@ func main() {
 		}
 		d := map[string]interface{}{
 			"main":             projectName,
-			"oc_cli_artifacts": ocClientArtifactsImage,
 			"oc_binary_name":   ocBinaryName,
 			"version":          metadata.Project.Version,
 			"project":          capitalize(projectName),
@@ -376,34 +372,16 @@ func main() {
 }
 
 func getOCBinaryName(metadata *project.Metadata) (string, error) {
-	// depending on the OCP version, the oc binary has different names in registry.ci.openshift.org/ocp/4.13:cli-artifacts:
-	// <4.15 it's simply oc, but for >=4.15 it contains two (one for each rhel version: oc.rhel8 & oc.rhel9)
+	// depending on the RHEL version the binary is named differently:
+	// oc.rhel8 / oc.rhel9
 
-	ocpVersion := metadata.Requirements.OcpVersion.Min
-
-	parts := strings.SplitN(ocpVersion, ".", 2)
-	if len(parts) != 2 {
-		return "", fmt.Errorf("invalid OCP version: %s", ocpVersion)
-	}
-
-	minor, err := strconv.Atoi(parts[1])
+	soVersion := semver.New(metadata.Project.Version)
+	rhelVersion, err := rhel.ForSOVersion(soVersion)
 	if err != nil {
-		return "", fmt.Errorf("could not convert OCP minor to int (%q): %w", ocpVersion, err)
+		return "", fmt.Errorf("could not determine rhel version: %v", err)
 	}
 
-	if minor <= 14 {
-		return "oc", nil
-	} else {
-		// use rhel suffix for OCP version >= 4.15
-
-		soVersion := semver.New(metadata.Project.Version)
-		rhelVersion, err := rhel.ForSOVersion(soVersion)
-		if err != nil {
-			return "", fmt.Errorf("could not determine rhel version: %v", err)
-		}
-
-		return fmt.Sprintf("oc.rhel%s", rhelVersion), nil
-	}
+	return fmt.Sprintf("oc.rhel%s", rhelVersion), nil
 }
 
 func appFilename(importpath string) string {

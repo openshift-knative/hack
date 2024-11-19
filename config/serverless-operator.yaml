@@ -14,6 +14,8 @@ config:
           pullSpec: registry.access.redhat.com/ubi8/openjdk-21
         - name: JAVA_RUNTIME
           pullSpec: registry.access.redhat.com/ubi8/openjdk-21-runtime
+        - name: CLI_ARTIFACTS
+          pullSpec: registry.redhat.io/openshift4/ose-cli-artifacts:v4.15
       openShiftVersions:
       - candidateRelease: true
         cronForceKonfluxIndex: true
@@ -47,6 +49,8 @@ config:
           pullSpec: registry.access.redhat.com/ubi8/openjdk-21
         - name: JAVA_RUNTIME
           pullSpec: registry.access.redhat.com/ubi8/openjdk-21-runtime
+        - name: CLI_ARTIFACTS
+          pullSpec: registry.redhat.io/openshift4/ose-cli-artifacts:v4.15
       openShiftVersions:
       - useClusterPool: true
         version: "4.17"

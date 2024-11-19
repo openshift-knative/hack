@@ -1,5 +1,5 @@
 # DO NOT EDIT! Generated Dockerfile for {{.main}}.
-ARG CLI_ARTIFACTS={{ .oc_cli_artifacts }}
+ARG CLI_ARTIFACTS=registry.ci.openshift.org/ocp/4.15:cli-artifacts
 ARG RUNTIME=registry.access.redhat.com/ubi8/ubi-minimal
 FROM $CLI_ARTIFACTS AS cli-artifacts
 
