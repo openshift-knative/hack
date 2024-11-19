@@ -491,10 +491,10 @@ func getOPMImage(v string) (string, error) {
 	}
 
 	if minor <= 14 {
-		return fmt.Sprintf("brew.registry.redhat.io/rh-osbs/ose-operator-registry:v4.%d", minor), nil
+		return fmt.Sprintf("registry.redhat.io/openshift4/ose-operator-registry:v4.%d", minor), nil
 	} else {
 		// use RHEL9 variant for OCP version >= 4.15
-		return fmt.Sprintf("brew.registry.redhat.io/rh-osbs/ose-operator-registry-rhel9:v4.%d", minor), nil
+		return fmt.Sprintf("brew.registry.redhat.io/rh-osbs/openshift-ose-operator-registry-rhel9:v4.%d", minor), nil
 	}
 }
 
