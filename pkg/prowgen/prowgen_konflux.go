@@ -366,10 +366,10 @@ func getCLIArtifactsImage(ocpVersion string) (string, error) {
 		return "", fmt.Errorf("could not convert OCP minor to int (%q): %w", ocpVersion, err)
 	}
 
-	if minor <= 14 {
+	if minor <= 15 {
 		return fmt.Sprintf("registry.redhat.io/openshift4/ose-cli-artifacts:v4.%d", minor), nil
 	} else {
-		// use RHEL9 variant for OCP version >= 4.15
+		// use RHEL9 variant for OCP version > 4.15
 		return fmt.Sprintf("registry.redhat.io/openshift4/ose-cli-artifacts-rhel9:v4.%d", minor), nil
 	}
 }
