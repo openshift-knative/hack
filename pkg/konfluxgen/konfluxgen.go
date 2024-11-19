@@ -884,7 +884,7 @@ func GenerateComponentReleasePlanAdmission(csv *operatorsv1alpha1.ClusterService
 		PyxisSecret:     "pyxis-staging-secret",
 		PyxisServer:     "stage",
 		PipelineSA:      "release-registry-staging",
-		SignCMName:      "hacbs-signing-pipeline-config-staging-redhatrelease2",
+		SignCMName:      "hacbs-signing-pipeline-config-redhatrelease2",
 	}
 	outputFilePath = filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeComponentReleasePlanAdmissionTemplate(rpaData, outputFilePath); err != nil {
