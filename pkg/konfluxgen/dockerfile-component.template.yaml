@@ -17,5 +17,5 @@ spec:
     git:
       url: https://github.com/{{ .ReleaseBuildConfiguration.Metadata.Org }}/{{ .ReleaseBuildConfiguration.Metadata.Repo }}.git
       context: {{ .ProjectDirectoryImageBuildStepConfiguration.ProjectDirectoryImageBuildInputs.ContextDir }}
-      dockerfileUrl: {{ .ProjectDirectoryImageBuildStepConfiguration.ProjectDirectoryImageBuildInputs.DockerfilePath }}
+      dockerfileUrl: {{ .DockerfilePath }}
       revision: {{ .ReleaseBuildConfiguration.Metadata.Branch }}
