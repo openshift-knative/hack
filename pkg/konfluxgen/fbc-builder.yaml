@@ -90,10 +90,6 @@ spec:
     description: Skip checks against built image
     name: skip-checks
     type: string
-  - default: "false"
-    description: Skip fbc-related-image-check
-    name: skip-fbc-related-image-check
-    type: string
   - default: "true"
     description: Execute the build with network isolation
     name: hermetic
@@ -337,7 +333,7 @@ spec:
         value: task
       resolver: bundles
     when:
-    - input: $(params.skip-fbc-related-image-check)
+    - input: $(params.skip-checks)
       operator: in
       values:
       - "false"
