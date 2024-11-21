@@ -327,7 +327,7 @@ func Generate(cfg Config) error {
 			}
 
 			if cfg.ECPolicyConfigName == "" {
-				r.ECPolicyConfiguration = "rhtap-releng-tenant/registry-standard"
+				r.ECPolicyConfiguration = "rhtap-releng-tenant/registry-standard-stage"
 			} else {
 				r.ECPolicyConfiguration = cfg.ECPolicyConfigName
 			}
