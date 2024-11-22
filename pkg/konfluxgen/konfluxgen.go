@@ -327,7 +327,7 @@ func Generate(cfg Config) error {
 			}
 
 			if cfg.ECPolicyConfigName == "" {
-				r.ECPolicyConfiguration = "rhtap-releng-tenant/registry-standard"
+				r.ECPolicyConfiguration = "rhtap-releng-tenant/registry-standard-stage"
 			} else {
 				r.ECPolicyConfiguration = cfg.ECPolicyConfigName
 			}
@@ -824,6 +824,7 @@ type rpaComponentData struct {
 	ApplicationName string
 	Components      []ComponentImageRepoRef
 
+	Policy      string
 	SOVersion   semver.Version
 	PyxisSecret string
 	PyxisServer string
@@ -860,6 +861,7 @@ func GenerateComponentReleasePlanAdmission(csv *operatorsv1alpha1.ClusterService
 		PyxisServer:     "production",
 		PipelineSA:      "release-registry-prod",
 		SignCMName:      "hacbs-signing-pipeline-config-redhatrelease2",
+		Policy:          "registry-standard",
 	}
 	outputFilePath := filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeComponentReleasePlanAdmissionTemplate(rpaData, outputFilePath); err != nil {
@@ -885,6 +887,7 @@ func GenerateComponentReleasePlanAdmission(csv *operatorsv1alpha1.ClusterService
 		PyxisServer:     "stage",
 		PipelineSA:      "release-registry-staging",
 		SignCMName:      "hacbs-signing-pipeline-config-redhatrelease2",
+		Policy:          "registry-standard-stage",
 	}
 	outputFilePath = filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeComponentReleasePlanAdmissionTemplate(rpaData, outputFilePath); err != nil {
