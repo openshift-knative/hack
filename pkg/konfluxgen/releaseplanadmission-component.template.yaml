@@ -10,7 +10,7 @@ metadata:
 spec:
   applications: [{{{ truncate ( sanitize .ApplicationName ) }}}]
   origin: ocp-serverless-tenant
-  policy: registry-standard
+  policy: {{{ .Policy }}}
   data:
     releaseNotes:
       product_id: 579
