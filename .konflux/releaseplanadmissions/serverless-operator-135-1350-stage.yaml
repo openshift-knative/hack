@@ -10,7 +10,7 @@ metadata:
 spec:
   applications: [serverless-operator-135]
   origin: ocp-serverless-tenant
-  policy: registry-standard
+  policy: registry-standard-stage
   data:
     releaseNotes:
       product_id: 579
@@ -144,7 +144,7 @@ spec:
       secret: pyxis-staging-secret
       server: stage
     sign:
-      configMapName: hacbs-signing-pipeline-config-staging-redhatrelease2
+      configMapName: hacbs-signing-pipeline-config-redhatrelease2
   pipeline:
     pipelineRef:
       resolver: git
