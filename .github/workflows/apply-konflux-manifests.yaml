@@ -6,6 +6,8 @@ on:
   push:
     paths:
       - ".konflux/**"
+    branches:
+      - main
 defaults:
   run:
     shell: bash
