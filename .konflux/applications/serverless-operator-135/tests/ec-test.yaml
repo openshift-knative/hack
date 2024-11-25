@@ -7,7 +7,7 @@ spec:
     - name: POLICY_CONFIGURATION
       value: rhtap-releng-tenant/registry-standard-stage
     - name: TIMEOUT
-      value: "45m0s"
+      value: "120m"
   application: serverless-operator-135
   contexts:
     - description: Application testing
