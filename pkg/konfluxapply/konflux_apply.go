@@ -59,6 +59,12 @@ func Apply(ctx context.Context, cfg ApplyConfig) error {
 		return fmt.Errorf("failed to walk filesystem path %q: %w", cfg.InputConfigPath, err)
 	}
 
+	// Apply hack repo again, to have always latest changes from hack (e.g. on IntegrationTestScenarios)
+	// without waiting for full propagation to all repos
+	if err := apply(ctx, cfg, hack); err != nil {
+		return fmt.Errorf("failed to apply konflux for hack repo: %w", err)
+	}
+
 	return nil
 }
 
