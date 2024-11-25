@@ -7,7 +7,7 @@ spec:
     - name: POLICY_CONFIGURATION
       value: {{{ .ECPolicyConfiguration }}}
     - name: TIMEOUT
-      value: "45m0s"
+      value: "120m"
   application: {{{ truncate ( sanitize .ApplicationName ) }}}
   contexts:
     - description: Application testing
