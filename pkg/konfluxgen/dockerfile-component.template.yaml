@@ -3,6 +3,7 @@ kind: Component
 metadata:
   annotations:
     build.appstudio.openshift.io/pipeline: '{"name":"docker-build","bundle":"latest"}'
+    build.appstudio.openshift.io/request: configure-pac-no-mr
   name: {{ sanitize .ComponentName }}
 spec:
   componentName: {{ sanitize .ComponentName }}
