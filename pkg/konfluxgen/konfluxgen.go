@@ -787,7 +787,7 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 		SOVersion:             *semv,
 		Policy:                "fbc-standard",
 		FromIndex:             "registry-proxy.engineering.redhat.com/rh-osbs/iib-pub:{{ OCP_VERSION }}",
-		TargetIndex:           "quay.io/redhat/redhat----redhat-operator-index:{{ OCP_VERSION }}",
+		TargetIndex:           "quay.io/redhat-prod/redhat----redhat-operator-index:{{ OCP_VERSION }}",
 		PublishingCredentials: "fbc-production-publishing-credentials",
 		PipelineSA:            "release-index-image-prod",
 		SignCMName:            "hacbs-signing-pipeline-config-redhatrelease2",
