@@ -566,6 +566,7 @@ repositories:
     match: ^test-soak$
     onDemand: true
     runIfChanged: test/soak
+    timeout: 4h0m0s
   - ignoreError: true
     match: ^kitchensink-e2e$
     onDemand: true
