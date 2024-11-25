@@ -3,6 +3,7 @@ kind: Component
 metadata:
   annotations:
     build.appstudio.openshift.io/pipeline: '{"name":"docker-build","bundle":"latest"}'
+    build.appstudio.openshift.io/request: configure-pac-no-mr
   name: serverless-index-135-fbc-415
 spec:
   componentName: serverless-index-135-fbc-415
