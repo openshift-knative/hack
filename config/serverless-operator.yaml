@@ -54,6 +54,27 @@ config:
         version: "4.13"
       prowgen:
         disabled: true
+    release-1.36:
+      konflux:
+        enabled: true
+        excludes:
+        - .*rosa.*
+        imageOverrides:
+        - name: GO_BUILDER
+          pullSpec: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.22
+        - name: GO_RUNTIME
+          pullSpec: registry.access.redhat.com/ubi8/ubi-minimal
+        - name: JAVA_BUILDER
+          pullSpec: registry.access.redhat.com/ubi8/openjdk-21
+        - name: JAVA_RUNTIME
+          pullSpec: registry.access.redhat.com/ubi8/openjdk-21-runtime
+      openShiftVersions:
+      - useClusterPool: true
+        version: "4.17"
+      - onDemand: true
+        version: "4.13"
+      prowgen:
+        disabled: true
 repositories:
 - customConfigs:
   - name: 417-aws-ovn
@@ -65,7 +86,8 @@ repositories:
           cluster_profile: aws
           test:
           - as: operator-e2e
-            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-e2e-with-kafka
+            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin
+              make test-e2e-with-kafka
             from: serverless-source-image
             resources:
               limits:
@@ -74,7 +96,8 @@ repositories:
                 cpu: 100m
                 memory: 200Mi
           - as: knative-serving-eventing-e2e
-            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-upstream-e2e-no-upgrade
+            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin
+              make test-upstream-e2e-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -83,7 +106,8 @@ repositories:
                 cpu: 100m
                 memory: 200Mi
           - as: knative-eventing-kafka-broker-e2e
-            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-upstream-e2e-kafka-no-upgrade
+            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin
+              make test-upstream-e2e-kafka-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -106,7 +130,8 @@ repositories:
           cluster_profile: azure4
           test:
           - as: operator-e2e
-            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-e2e-with-kafka
+            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin
+              make test-e2e-with-kafka
             from: serverless-source-image
             resources:
               limits:
@@ -115,7 +140,8 @@ repositories:
                 cpu: 100m
                 memory: 200Mi
           - as: knative-serving-eventing-e2e
-            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-upstream-e2e-no-upgrade
+            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin
+              make test-upstream-e2e-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -124,7 +150,8 @@ repositories:
                 cpu: 100m
                 memory: 200Mi
           - as: knative-eventing-kafka-broker-e2e
-            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-upstream-e2e-kafka-no-upgrade
+            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin
+              make test-upstream-e2e-kafka-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -147,7 +174,8 @@ repositories:
           cluster_profile: gcp
           test:
           - as: operator-e2e
-            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-e2e-with-kafka
+            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin
+              make test-e2e-with-kafka
             from: serverless-source-image
             resources:
               limits:
@@ -156,7 +184,8 @@ repositories:
                 cpu: 100m
                 memory: 200Mi
           - as: knative-serving-eventing-e2e
-            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-upstream-e2e-no-upgrade
+            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin
+              make test-upstream-e2e-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -165,7 +194,8 @@ repositories:
                 cpu: 100m
                 memory: 200Mi
           - as: knative-eventing-kafka-broker-e2e
-            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-upstream-e2e-kafka-no-upgrade
+            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin
+              make test-upstream-e2e-kafka-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -207,8 +237,8 @@ repositories:
             HYPERSHIFT_NODE_COUNT: "6"
           test:
           - as: operator-e2e
-            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin USER_MANAGEMENT_ALLOWED=false make
-              test-e2e-with-kafka
+            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin
+              USER_MANAGEMENT_ALLOWED=false make test-e2e-with-kafka
             from: serverless-source-image
             resources:
               limits:
@@ -217,7 +247,8 @@ repositories:
                 cpu: 100m
                 memory: 200Mi
           - as: knative-serving-eventing-e2e
-            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-upstream-e2e-no-upgrade
+            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin
+              make test-upstream-e2e-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -226,7 +257,8 @@ repositories:
                 cpu: 100m
                 memory: 200Mi
           - as: knative-eventing-kafka-broker-e2e
-            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-upstream-e2e-kafka-no-upgrade
+            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin
+              make test-upstream-e2e-kafka-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -264,7 +296,8 @@ repositories:
           - ref: osd-create-create
           test:
           - as: operator-e2e
-            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-e2e-with-kafka
+            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin
+              make test-e2e-with-kafka
             from: serverless-source-image
             resources:
               limits:
@@ -273,7 +306,8 @@ repositories:
                 cpu: 100m
                 memory: 200Mi
           - as: knative-serving-eventing-e2e
-            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-upstream-e2e-no-upgrade
+            commands: FORCE_KONFLUX_INDEX=true GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin
+              make test-upstream-e2e-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -295,7 +329,8 @@ repositories:
           cluster_profile: gcp
           test:
           - as: operator-e2e
-            commands: FORCE_KONFLUX_INDEX=true HA=false GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-e2e-with-kafka-no-tracing
+            commands: FORCE_KONFLUX_INDEX=true HA=false GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin
+              make test-e2e-with-kafka-no-tracing
             from: serverless-source-image
             resources:
               limits:
@@ -323,7 +358,8 @@ repositories:
           cluster_profile: vsphere-elastic
           test:
           - as: operator-e2e
-            commands: FORCE_KONFLUX_INDEX=true HA=false GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-e2e-with-kafka
+            commands: FORCE_KONFLUX_INDEX=true HA=false GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin
+              make test-e2e-with-kafka
             from: serverless-source-image
             resources:
               limits:
