@@ -193,7 +193,7 @@ func Generate(cfg Config) error {
 	}
 
 	if !cfg.PipelinesOutputPathSkipRemove {
-		if err := removeAllExcept(cfg.PipelinesOutputPath, fbcBuildPipelinePath, containerBuildPipelinePath); err != nil {
+		if err := removeAllExcept(cfg.PipelinesOutputPath, fbcBuildPipelinePath, containerBuildPipelinePath, containerJavaBuildPipelinePath); err != nil {
 			return fmt.Errorf("failed to clean %q directory: %w", cfg.PipelinesOutputPath, err)
 		}
 	}

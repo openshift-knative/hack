@@ -232,9 +232,6 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 	log.Println("Recreating konflux configurations for serverless operator")
 
 	resourceOutputPath := fmt.Sprintf("%s/.konflux", hackRepo.RepositoryDirectory())
-	if err := os.RemoveAll(resourceOutputPath); err != nil {
-		return fmt.Errorf("failed to remove %q directory: %w", resourceOutputPath, err)
-	}
 
 	for release, branch := range konfluxVersions {
 
