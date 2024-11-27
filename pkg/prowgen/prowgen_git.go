@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -28,6 +29,23 @@ func GitClone(ctx context.Context, r Repository) error {
 	return gitClone(ctx, r, false)
 }
 
+var (
+
+	/* Example outputs:
+	$ git --no-pager branch --list "release-*"
+	  release-1.33
+	  release-1.34
+	* release-1.35
+
+	$ git --no-pager branch --list "release-1.33*"
+	  release-1.33
+	*/
+	branchParsingRegexes = []*regexp.Regexp{
+		regexp.MustCompile("([ \t]+|^)(release-[0-9]+.[0-9]+)"),
+		regexp.MustCompile("([ \t]+|^)(release-v[0-9]+.[0-9]+)"),
+	}
+)
+
 func Branches(ctx context.Context, r Repository) ([]string, error) {
 	if err := GitMirror(ctx, r); err != nil {
 		return nil, err
@@ -43,9 +61,12 @@ func Branches(ctx context.Context, r Repository) ([]string, error) {
 
 	var sortedBranches []string
 	for _, branch := range strings.Split(branchesList, "\n") {
-		branch = strings.TrimSpace(branch)
-		if branch != "" {
-			sortedBranches = append(sortedBranches, branch)
+		for _, regex := range branchParsingRegexes {
+			match := regex.FindStringSubmatch(branch)
+			if len(match) == 3 {
+				sortedBranches = append(sortedBranches, match[2])
+				break
+			}
 		}
 	}
 	slices.SortFunc(sortedBranches, CmpBranches)
