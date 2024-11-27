@@ -523,7 +523,6 @@ func InitializeOpenShiftReleaseRepository(ctx context.Context, openShiftRelease 
 			if strings.Contains(r.RepositoryDirectory(), "serverless-operator") {
 				for branch, branchConfig := range inConfig.Config.Branches {
 					if branchConfig.Prowgen != nil && branchConfig.Prowgen.Disabled {
-						// only cleanup, when we have also to create the prowconfig
 						continue
 					}
 
