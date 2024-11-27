@@ -521,7 +521,12 @@ func InitializeOpenShiftReleaseRepository(ctx context.Context, openShiftRelease 
 		for _, r := range inConfig.Repositories {
 			// TODO: skip automatic deletion for S-O for now
 			if strings.Contains(r.RepositoryDirectory(), "serverless-operator") {
-				for branch := range inConfig.Config.Branches {
+				for branch, branchConfig := range inConfig.Config.Branches {
+					if branchConfig.Prowgen != nil && branchConfig.Prowgen.Disabled {
+						// only cleanup, when we have also to create the prowconfig
+						continue
+					}
+
 					matches, err := filepath.Glob(filepath.Join(*outputConfig, r.RepositoryDirectory(), "*"+branch+"*"))
 					if err != nil {
 						return err
