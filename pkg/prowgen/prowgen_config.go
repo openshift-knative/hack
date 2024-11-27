@@ -10,9 +10,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/openshift-knative/hack/pkg/util"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
 	prowapi "sigs.k8s.io/prow/pkg/apis/prowjobs/v1"
+
+	"github.com/openshift-knative/hack/pkg/util"
 )
 
 type Repository struct {
@@ -156,6 +157,10 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 	slices.Sort(branches)
 
 	for _, branchName := range branches {
+
+		// This is a special GH log format: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#example-grouping-log-lines
+		log.Printf("::group::prowgen %s %s\n", r.RepositoryDirectory(), branchName)
+
 		branch := cc.Branches[branchName]
 		if branch.Prowgen != nil && branch.Prowgen.Disabled {
 			continue
@@ -337,6 +342,9 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				})
 			}
 		}
+
+		// This is a special GH log format: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#example-grouping-log-lines
+		log.Printf("::endgroup::\n\n")
 	}
 
 	return cfgs, nil

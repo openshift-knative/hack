@@ -36,7 +36,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 		for _, r := range config.Repositories {
 
 			// Special case serverless-operator
-			if r.Org == "openshift-knative" && r.Repo == "serverless-operator" {
+			if r.IsServerlessOperator() {
 				if err := GenerateKonfluxServerlessOperator(ctx, openshiftRelease, r, config); err != nil {
 					return fmt.Errorf("failed to generate konflux for %q: %w", r.RepositoryDirectory(), err)
 				}
@@ -45,6 +45,9 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 
 			for branchName, b := range config.Config.Branches {
 				if b.Konflux != nil && b.Konflux.Enabled {
+
+					// This is a special GH log format: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#example-grouping-log-lines
+					log.Printf("::group::konfluxgen %s %s\n", r.RepositoryDirectory(), branchName)
 
 					var soVersion *semver.Version
 					// Special case "release-next"
@@ -56,6 +59,8 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						soVersion = soversion.FromUpstreamVersion(branchName)
 						soBranchName = soversion.BranchName(soVersion)
 					}
+
+					log.Printf("targetBranch: %s, soBranchName: %s, soVersion: %s\n", targetBranch, soBranchName, soVersion)
 
 					// Checkout s-o to get the right release version from project.yaml (e.g. 1.34.1)
 					soRepo := Repository{Org: "openshift-knative", Repo: "serverless-operator"}
@@ -162,6 +167,9 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 					if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
 						return err
 					}
+
+					// This is a special GH log format: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#example-grouping-log-lines
+					log.Printf("::endgroup::\n\n")
 				}
 			}
 		}
@@ -230,7 +238,9 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 
 	for release, branch := range konfluxVersions {
 
-		log.Println("Creating Konflux configuration for serverless operator", release)
+		// This is a special GH log format: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#example-grouping-log-lines
+		log.Printf("::group::konfluxgen %s %s %s\n", r.RepositoryDirectory(), branch, release)
+		log.Println("Creating Konflux configuration for serverless operator", branch, release)
 
 		if err := GitMirror(ctx, r); err != nil {
 			return err
@@ -247,6 +257,7 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			if !ok {
 				return fmt.Errorf("main or %s branch configuration not found for %q", branch, r.RepositoryDirectory())
 			}
+			log.Printf("Using configuration for branch main")
 		}
 
 		soProjectYamlPath := filepath.Join(r.RepositoryDirectory(),
@@ -345,6 +356,9 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 		if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
 			return err
 		}
+
+		// This is a special GH log format: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#example-grouping-log-lines
+		log.Printf("::endgroup::\n\n")
 	}
 
 	commitMsg := fmt.Sprintf("Sync Konflux configurations for serverless operator")
