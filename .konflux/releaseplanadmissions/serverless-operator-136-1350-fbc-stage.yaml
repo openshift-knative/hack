@@ -1,0 +1,52 @@
+---
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: ReleasePlanAdmission
+metadata:
+  labels:
+    release.appstudio.openshift.io/auto-release: "true"
+    pp.engineering.redhat.com/business-unit: hybrid-platforms
+  name: serverless-operator-136-1350-fbc-stage
+  namespace: rhtap-releng-tenant
+spec:
+  applications:
+    - serverless-operator-136-fbc-414
+    - serverless-operator-136-fbc-415
+    - serverless-operator-136-fbc-416
+    - serverless-operator-136-fbc-417
+    - serverless-operator-136-fbc-418
+  origin: ocp-serverless-tenant
+  policy: fbc-stage
+  data:
+    releaseNotes:
+      product_id: 579
+      product_name: "OpenShift Serverless"
+      product_version: "1.35.0"
+      references:
+        - https://docs.redhat.com/en/documentation/red_hat_openshift_serverless
+      solution: "The container images provided by this update can be downloaded from the Red Hat container registry at registry.redhat.io"
+      description: "Release 1.35.0 of OpenShift Serverless"
+      topic: "Release 1.35.0 of OpenShift Serverless"
+      synopsis: "OpenShift Serverless Release 1.35.0"
+    fbc:
+      stagedIndex: true
+      fromIndex: "registry-proxy.engineering.redhat.com/rh-osbs/iib-pub-pending:{{ OCP_VERSION }}"
+      targetIndex: ""
+      publishingCredentials: "staged-index-fbc-publishing-credentials"
+      requestTimeoutSeconds: 1500
+      buildTimeoutSeconds: 1500
+      allowedPackages: [serverless-operator]
+    sign:
+      configMapName: hacbs-signing-pipeline-config-staging-redhatrelease2
+  pipeline:
+    pipelineRef:
+      resolver: git
+      params:
+        - name: url
+          value: "https://github.com/konflux-ci/release-service-catalog.git"
+        - name: revision
+          value: production
+        - name: pathInRepo
+          value: "pipelines/fbc-release/fbc-release.yaml"
+    serviceAccountName: release-index-image-staging
+    timeouts:
+      pipeline: "4h0m0s"

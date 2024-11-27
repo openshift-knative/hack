@@ -4,22 +4,22 @@ metadata:
   annotations:
     build.appstudio.openshift.io/pipeline: '{"name":"docker-build","bundle":"latest"}'
     build.appstudio.openshift.io/request: configure-pac-no-mr
-  name: serverless-bundle-135
+  name: serverless-bundle-136
 spec:
-  componentName: serverless-bundle-135
-  application: serverless-operator-135
+  componentName: serverless-bundle-136
+  application: serverless-operator-136
    
   build-nudges-ref:
     
-    - "serverless-index-135-fbc-414-index"
+    - "serverless-index-136-fbc-414-index"
     
-    - "serverless-index-135-fbc-415-index"
+    - "serverless-index-136-fbc-415-index"
     
-    - "serverless-index-135-fbc-416-index"
+    - "serverless-index-136-fbc-416-index"
     
-    - "serverless-index-135-fbc-417-index"
+    - "serverless-index-136-fbc-417-index"
     
-    - "serverless-index-135-fbc-418-index"
+    - "serverless-index-136-fbc-418-index"
     
   
   source:
@@ -27,4 +27,4 @@ spec:
       url: https://github.com/openshift-knative/serverless-operator.git
       context: 
       dockerfileUrl: olm-catalog/serverless-operator/Dockerfile
-      revision: release-1.35
+      revision: main

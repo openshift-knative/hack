@@ -4,19 +4,19 @@ metadata:
   annotations:
     build.appstudio.openshift.io/pipeline: '{"name":"docker-build","bundle":"latest"}'
     build.appstudio.openshift.io/request: configure-pac-no-mr
-  name: serverless-must-gather-135
+  name: serverless-metadata-webhook-136
 spec:
-  componentName: serverless-must-gather-135
-  application: serverless-operator-135
+  componentName: serverless-metadata-webhook-136
+  application: serverless-operator-136
    
   build-nudges-ref:
     
-    - "serverless-bundle-135"
+    - "serverless-bundle-136"
     
   
   source:
     git:
       url: https://github.com/openshift-knative/serverless-operator.git
       context: 
-      dockerfileUrl: must-gather/Dockerfile
-      revision: release-1.35
+      dockerfileUrl: serving/metadata-webhook/Dockerfile
+      revision: main
