@@ -19,4 +19,4 @@ spec:
       url: https://github.com/openshift-knative/serverless-operator.git
       context: 
       dockerfileUrl: openshift-knative-operator/Dockerfile
-      revision: main
+      revision: release-1.35

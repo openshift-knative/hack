@@ -1,0 +1,23 @@
+apiVersion: appstudio.redhat.com/v1beta2
+kind: IntegrationTestScenario
+metadata:
+  name: serverless-operator-136-enterprise-contract
+spec:
+  params: 
+    - name: POLICY_CONFIGURATION
+      value: rhtap-releng-tenant/registry-standard-stage
+    - name: TIMEOUT
+      value: "120m"
+  application: serverless-operator-136
+  contexts:
+    - description: Application testing
+      name: application
+  resolverRef:
+    params:
+      - name: url
+        value: 'https://github.com/redhat-appstudio/build-definitions'
+      - name: revision
+        value: main
+      - name: pathInRepo
+        value: pipelines/enterprise-contract.yaml
+    resolver: git
