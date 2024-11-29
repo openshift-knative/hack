@@ -118,6 +118,11 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						return err
 					}
 
+					// TODO: Remove this when the multiarch build file is removed from all repositories.
+					if _, err := Run(ctx, r, "rm", "-f", ".github/workflows/multiarch-build.yaml"); err != nil {
+						return err
+					}
+
 					nudges := b.Konflux.Nudges
 					if soBranchName != "release-next" {
 						_, ok := operatorVersions[soBranchName]

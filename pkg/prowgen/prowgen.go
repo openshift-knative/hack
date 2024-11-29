@@ -212,11 +212,6 @@ func PushBranch(ctx context.Context, release Repository, remote *string, branch 
 	_, _ = Run(ctx, release, "git", "checkout", "-b", branch)
 	_, _ = Run(ctx, release, "git", "checkout", branch)
 
-	// TODO: Remove this when the multiarch build file is removed from all repositories.
-	if _, err := Run(ctx, release, "rm", "-f", ".github/workflows/multiarch-build.yaml"); err != nil {
-		return err
-	}
-
 	if _, err := Run(ctx, release, "git", "add", "."); err != nil {
 		return err
 	}
