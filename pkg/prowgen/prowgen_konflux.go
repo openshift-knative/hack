@@ -303,8 +303,10 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 						" files.all.exists(x, x.matches('^.tekton/'))" +
 						" )"
 				}
-				nonCatalog := " && files.all.exists(x, !x.matches('^olm-catalog/'))"
-				return nonCatalog
+				return "&& (" +
+					" files.all.exists(x, !x.matches('^olm-catalog/')) &&" + // do not run on catalog changes
+					" files.all.exists(x, !x.matches('^.konflux-release/'))" + // do not run on konflux release data changes (e.g override snapshot)
+					" )"
 			},
 			Includes: []string{
 				fmt.Sprintf("ci-operator/config/%s/.*%s.*.yaml", r.RepositoryDirectory(), branch),
