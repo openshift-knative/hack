@@ -431,7 +431,7 @@ func Generate(cfg Config) error {
 
 		// add default integration test scenario with the stage policies
 		config := IntegrationTestConfig{
-			Name:            appKey,
+			Name:            fmt.Sprintf("%s-ec", appKey),
 			ApplicationName: cfg.ApplicationName,
 			Contexts: []IntegrationTestContext{{
 				Name:        "application",
@@ -461,7 +461,7 @@ func Generate(cfg Config) error {
 
 		// add integration test scenario for override snapshots with prod policies
 		config = IntegrationTestConfig{
-			Name:            fmt.Sprintf("%s-override-snapshot", appKey),
+			Name:            fmt.Sprintf("%s-ec-override-snapshot", appKey),
 			ApplicationName: cfg.ApplicationName,
 			Contexts: []IntegrationTestContext{{
 				Name:        "override",
