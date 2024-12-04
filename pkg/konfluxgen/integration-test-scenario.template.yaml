@@ -1,7 +1,7 @@
 apiVersion: appstudio.redhat.com/v1beta2
 kind: IntegrationTestScenario
 metadata:
-  name: {{{ truncate ( sanitize .ApplicationName ) }}}-enterprise-contract
+  name: {{{ truncate ( sanitize .Name ) }}}
 spec:
   params: 
     - name: POLICY_CONFIGURATION
@@ -10,8 +10,10 @@ spec:
       value: "120m"
   application: {{{ truncate ( sanitize .ApplicationName ) }}}
   contexts:
-    - description: Application testing
-      name: application
+    {{{- range .Contexts }}}
+    - description: {{{ .Description }}}
+      name: {{{ .Name }}}
+    {{{- end }}}
   resolverRef:
     params:
       - name: url
