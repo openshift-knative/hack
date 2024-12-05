@@ -16,5 +16,8 @@ patches:
   - path: ./patch_related_image_check.patch.yaml
     target:
       kind: Pipeline
+  - path: ../patch_build_platforms_default.patch.yaml
+    target:
+      kind: Pipeline
 openapi:
   path: ../pipeline_schema.json
