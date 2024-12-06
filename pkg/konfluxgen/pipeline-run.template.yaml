@@ -49,9 +49,6 @@ spec:
     - name: build-platforms
       value:
         - linux/x86_64
-    {{{- if eq .Pipeline "fbc-builder" }}}
-    - name: skip-fbc-related-image-check
-      value: "true"
     {{{- end }}}
     {{{- else }}}
     - name: output-image
