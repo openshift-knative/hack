@@ -37,14 +37,6 @@ spec:
       set of values is determined by the configuration of the multi-platform-controller.
     name: build-platforms
     type: array
-  - default: "false"
-    description: Skip fbc-related-image-check
-    name: skip-fbc-related-image-check
-    type: string
-  - default: []
-    description: Array of --build-arg values ("arg=value" strings) for buildah
-    name: build-args
-    type: array
   - default: "true"
     description: Build a source image.
     name: build-source-image
@@ -97,6 +89,10 @@ spec:
     description: Add built image into an OCI image index
     name: build-image-index
     type: string
+  - default: []
+    description: Array of --build-arg values ("arg=value" strings) for buildah
+    name: build-args
+    type: array
   - default: ""
     description: Path to a file with build arguments for buildah, see https://www.mankier.com/1/buildah-build#--build-arg-file
     name: build-args-file
@@ -115,11 +111,6 @@ spec:
     name: CHAINS-GIT_COMMIT
     value: $(tasks.clone-repository.results.commit)
   tasks:
-  - name: build-container
-    params:
-    - name: BUILD_ARGS
-      value:
-      - $(params.build-args[*])
   - name: apply-tags
     params:
     - name: ADDITIONAL_TAGS
@@ -248,7 +239,7 @@ spec:
       - name: name
         value: buildah-remote-oci-ta
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.2@sha256:3c630943c958f070f542573a29be8e02f08646ec85ed20338ca13940f4b8be46
+        value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.2@sha256:f6c2a95faeafe6e92232aae15398022c7dae512bf2c874b23c73407a920a621b
       - name: kind
         value: task
       resolver: bundles
