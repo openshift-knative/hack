@@ -108,8 +108,6 @@ type Config struct {
 
 	ComponentReleasePlanConfig *ComponentReleasePlanConfig
 	AdditionalComponentConfigs []TemplateConfig
-
-	ECPolicyConfigName string
 }
 
 type PrefetchDeps struct {
@@ -326,12 +324,6 @@ func Generate(cfg Config) error {
 				r.Hermetic = "false"
 			}
 
-			if cfg.ECPolicyConfigName == "" {
-				r.ECPolicyConfiguration = "rhtap-releng-tenant/registry-standard-stage"
-			} else {
-				r.ECPolicyConfiguration = cfg.ECPolicyConfigName
-			}
-
 			applications[appKey][Truncate(Sanitize(cfg.ComponentNameFunc(c.ReleaseBuildConfiguration, ib)))] = r
 		}
 	}
@@ -410,20 +402,6 @@ func Generate(cfg Config) error {
 
 			buf.Reset()
 
-			ecTestPath := filepath.Join(cfg.ResourcesOutputPath, ApplicationsDirectoryName, appKey, "tests", "ec-test.yaml")
-			if err := os.MkdirAll(filepath.Dir(ecTestPath), 0777); err != nil {
-				return fmt.Errorf("failed to create directory for %q: %w", appPath, err)
-			}
-
-			if err := enterpriseContractTestScenarioTemplate.Execute(buf, config); err != nil {
-				return fmt.Errorf("failed to execute template for EC test: %w", err)
-			}
-			if err := WriteFileReplacingNewerTaskImages(ecTestPath, buf.Bytes(), 0777); err != nil {
-				return fmt.Errorf("failed to write application file %q: %w", ecTestPath, err)
-			}
-
-			buf.Reset()
-
 			if config.Pipeline == FBCBuild {
 
 				if err := pipelineFBCBuildTemplate.Execute(buf, nil); err != nil {
@@ -447,6 +425,65 @@ func Generate(cfg Config) error {
 				}
 
 			}
+		}
+
+		buf := &bytes.Buffer{}
+
+		// add default integration test scenario with the stage policies
+		config := IntegrationTestConfig{
+			Name:            fmt.Sprintf("%s-ec", appKey),
+			ApplicationName: cfg.ApplicationName,
+			Contexts: []IntegrationTestContext{{
+				Name:        "application",
+				Description: "Application testing",
+			}},
+		}
+
+		if len(cfg.FBCImages) > 0 {
+			config.ECPolicyConfiguration = "rhtap-releng-tenant/fbc-stage"
+		} else {
+			config.ECPolicyConfiguration = "rhtap-releng-tenant/registry-standard-stage"
+		}
+
+		ecTestDir := filepath.Join(cfg.ResourcesOutputPath, ApplicationsDirectoryName, appKey, "tests")
+		if err := os.MkdirAll(ecTestDir, 0777); err != nil {
+			return fmt.Errorf("failed to create directory for %q: %w", appKey, err)
+		}
+
+		if err := enterpriseContractTestScenarioTemplate.Execute(buf, config); err != nil {
+			return fmt.Errorf("failed to execute template for EC test: %w", err)
+		}
+		if err := WriteFileReplacingNewerTaskImages(filepath.Join(ecTestDir, "ec-test.yaml"), buf.Bytes(), 0777); err != nil {
+			return fmt.Errorf("failed to write application file: %w", err)
+		}
+
+		buf.Reset()
+
+		// add integration test scenario for override snapshots with prod policies
+		config = IntegrationTestConfig{
+			Name:            fmt.Sprintf("%s-ec-override-snapshot", appKey),
+			ApplicationName: cfg.ApplicationName,
+			Contexts: []IntegrationTestContext{{
+				Name:        "override",
+				Description: "Override Snapshot testing",
+			}},
+		}
+
+		if len(cfg.FBCImages) > 0 {
+			config.ECPolicyConfiguration = "rhtap-releng-tenant/fbc-standard"
+		} else {
+			config.ECPolicyConfiguration = "rhtap-releng-tenant/registry-standard"
+		}
+
+		if err := os.MkdirAll(ecTestDir, 0777); err != nil {
+			return fmt.Errorf("failed to create directory for %q: %w", appKey, err)
+		}
+
+		if err := enterpriseContractTestScenarioTemplate.Execute(buf, config); err != nil {
+			return fmt.Errorf("failed to execute template for EC test: %w", err)
+		}
+		if err := WriteFileReplacingNewerTaskImages(filepath.Join(ecTestDir, "override-snapshot-ec-test.yaml"), buf.Bytes(), 0777); err != nil {
+			return fmt.Errorf("failed to write application file: %w", err)
 		}
 	}
 
@@ -566,8 +603,19 @@ type DockerfileApplicationConfig struct {
 
 	Hermetic string
 
-	DockerfilePath        string
+	DockerfilePath string
+}
+
+type IntegrationTestConfig struct {
+	Name                  string
+	ApplicationName       string
 	ECPolicyConfiguration string
+	Contexts              []IntegrationTestContext
+}
+
+type IntegrationTestContext struct {
+	Name        string
+	Description string
 }
 
 type PipelineEvent string
