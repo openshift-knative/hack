@@ -22,6 +22,9 @@ patches:
   - path: ../patch_build_platforms_default.patch.yaml
     target:
       kind: Pipeline
+  - path: ../patch_sast_coverity_check.patch.yaml
+    target:
+      kind: Pipeline
   - patch: |-
       - op: replace
         path: /metadata/name

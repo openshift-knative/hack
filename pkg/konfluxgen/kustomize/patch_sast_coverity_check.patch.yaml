@@ -1,0 +1,10 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: docker-build
+spec:
+  tasks:
+    - $patch: delete
+      name: sast-coverity-check
+    - $patch: delete
+      name: coverity-availability-check
