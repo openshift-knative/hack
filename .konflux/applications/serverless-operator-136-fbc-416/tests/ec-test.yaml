@@ -1,7 +1,7 @@
 apiVersion: appstudio.redhat.com/v1beta2
 kind: IntegrationTestScenario
 metadata:
-  name: serverless-operator-136-fbc-416-enterprise-contract
+  name: serverless-operator-136-fbc-416-ec
 spec:
   params: 
     - name: POLICY_CONFIGURATION
