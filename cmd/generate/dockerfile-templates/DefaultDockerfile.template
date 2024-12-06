@@ -6,9 +6,9 @@ FROM $GO_BUILDER as builder
 
 WORKDIR /workspace
 COPY . .
-
-ENV CGO_ENABLED=1
-ENV GOEXPERIMENT=strictfipsruntime
+{{ range $c := .build_env_vars}}
+{{ $c }}
+{{- end }}
 
 RUN go build -tags strictfipsruntime -o /usr/bin/main ./{{.main}}
 
