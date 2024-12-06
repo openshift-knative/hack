@@ -144,7 +144,7 @@ func Main() {
 
 				// Generate and write image mirroring configurations.
 				for _, imageMirroring := range GenerateImageMirroringConfigs(openShiftRelease, cfgs) {
-					if err := ReconcileImageMirroringConfig(imageMirroring); err != nil {
+					if err := ReconcileImageMirroringConfig(inConfig, imageMirroring); err != nil {
 						return err
 					}
 				}
