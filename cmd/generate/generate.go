@@ -91,6 +91,7 @@ func main() {
 		imagesFromRepositories       []string
 		imagesFromRepositoriesURLFmt string
 		additionalPackages           []string
+		additionalBuildEnvVars       []string
 		templateName                 string
 		rpmsLockFileEnabled          bool
 	)
@@ -102,6 +103,12 @@ func main() {
 	defaultExcludes := []string{
 		".*k8s\\.io.*",
 		".*knative.dev/pkg/codegen.*",
+	}
+
+	// Default set of FIPS flags to be used per builds
+	defaultBuildEnvVar := []string{
+		"ENV CGO_ENABLED=1",
+		"ENV GOEXPERIMENT=strictfipsruntime",
 	}
 
 	pflag.StringVar(&rootDir, "root-dir", wd, "Root directory to start scanning, default to current working directory")
@@ -120,6 +127,7 @@ func main() {
 	pflag.StringArrayVar(&imagesFromRepositories, "images-from", nil, "Additional image references to be pulled from other midstream repositories matching the tag in project.yaml")
 	pflag.StringVar(&imagesFromRepositoriesURLFmt, "images-from-url-format", "https://raw.githubusercontent.com/openshift-knative/%s/%s/openshift/images.yaml", "Additional images to be pulled from other midstream repositories matching the tag in project.yaml")
 	pflag.StringArrayVar(&additionalPackages, "additional-packages", nil, "Additional packages to be installed in the image")
+	pflag.StringArrayVar(&additionalBuildEnvVars, "additional-build-env", nil, "Additional env vars to be added to builder in the image")
 	pflag.StringVar(&templateName, "template-name", defaultDockerfileTemplateName, fmt.Sprintf("Dockerfile template name to use. Supported values are [%s, %s]", defaultDockerfileTemplateName, funcUtilDockerfileTemplateName))
 	pflag.BoolVar(&rpmsLockFileEnabled, "generate-rpms-lock-file", false, "Enable the creation of the rpms.lock.yaml file")
 	pflag.Parse()
@@ -245,6 +253,10 @@ func main() {
 			additionalInstructions = append(additionalInstructions, fmt.Sprintf("RUN microdnf install %s", strings.Join(additionalPackages, " ")))
 		}
 
+		if len(additionalBuildEnvVars) > 0 {
+			defaultBuildEnvVar = append(defaultBuildEnvVar, additionalBuildEnvVars...)
+		}
+
 		rpmsLockFileWritten := false
 		for _, p := range mainPackagesPaths.List() {
 			appFile := fmt.Sprintf(appFileFmt, appFilename(p))
@@ -265,6 +277,7 @@ func main() {
 				"component":               capitalize(p),
 				"component_dashcase":      dashcase(p),
 				"additional_instructions": additionalInstructions,
+				"build_env_vars":          defaultBuildEnvVar,
 			}
 
 			var DockerfileTemplate embed.FS
