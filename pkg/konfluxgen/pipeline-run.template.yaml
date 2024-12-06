@@ -50,7 +50,7 @@ spec:
     - name: build-platforms
       value:
         - linux/x86_64
-    {{{- else }}}
+    {{{- if eq .Pipeline "fbc-builder" }}}
     - name: skip-fbc-related-image-check
       value: "true"
     {{{- end }}}
@@ -81,19 +81,6 @@ spec:
     name: {{{ .Pipeline }}}
   taskRunTemplate: {}
   workspaces:
-    {{{- if eq .Pipeline "fbc-builder" }}}
-    - name: workspace
-      volumeClaimTemplate:
-        metadata:
-          creationTimestamp: null
-        spec:
-          accessModes:
-            - ReadWriteOnce
-          resources:
-            requests:
-              storage: 1Gi
-        status: {}
-    {{{- end }}}
     - name: git-auth
       secret:
         secretName: '{{ git_auth_secret }}'
