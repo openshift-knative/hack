@@ -115,12 +115,6 @@ spec:
     name: CHAINS-GIT_COMMIT
     value: $(tasks.clone-repository.results.commit)
   tasks:
-  - name: fbc-related-image-check
-    when:
-    - input: $(params.skip-fbc-related-image-check)
-      operator: in
-      values:
-      - "false"
   - name: build-container
     params:
     - name: BUILD_ARGS
