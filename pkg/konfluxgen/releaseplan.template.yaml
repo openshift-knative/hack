@@ -13,7 +13,10 @@ spec:
     topic: |
       The {{{ .SOVersion }}} GA release of Red Hat OpenShift Serverless Operator.
       For more details see [product documentation](https://docs.redhat.com/documentation/red_hat_openshift_serverless).
-    description: "The {{{ .SOVersion }}} release of Red Hat OpenShift Serverless Operator."
+    description: |
+      The {{{ .SOVersion }}} release of Red Hat OpenShift Serverless Operator.
+
+      https://docs.redhat.com/documentation/red_hat_openshift_serverless/
     solution: |
       The Red Hat OpenShift Serverless Operator provides a collection of APIs that
       enables containers, microservices and functions to run "serverless".
@@ -21,7 +24,5 @@ spec:
       number of event sources. OpenShift Serverless integrates with a number of
       platform services, such as Monitoring and it is based on the open
       source project Knative.
-    references:
-      - "https://docs.redhat.com/documentation/red_hat_openshift_serverless/"
   application: {{{ truncate ( sanitize .ApplicationName ) }}}
   target: rhtap-releng-tenant
