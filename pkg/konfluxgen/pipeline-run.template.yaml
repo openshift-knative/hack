@@ -56,13 +56,12 @@ spec:
     - name: revision
       value: '{{revision}}'
     {{{- if eq .Event "push" }}}
-    {{{- if gt (len .Tags) 0 }}}
     - name: additional-tags
       value:
+        - $(context.pipelineRun.uid)-{{revision}}
       {{{- range $tag := .Tags }}}
         - {{{ $tag }}}
       {{{- end }}}
-    {{{- end }}}
     {{{- end }}}
     {{{- if .PrefetchDeps.PrefetchInput }}}
     - name: prefetch-input
