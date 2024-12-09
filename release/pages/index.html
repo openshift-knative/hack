@@ -9,6 +9,7 @@
     <style>
         #build-status-table {
             background-color: #e0e0e0;
+            width: 100%;
         }
         #build-status-table tr:nth-child(even) {
             background-color: #c0c0c0;
@@ -157,7 +158,7 @@
                             <td>${branch}</td>
                             <td>${item.repo}</td>
                             <td>${run.name}</td>
-                            <td>${run.conclusion ?? run.output.summary}</td>
+                            <td>${run.output.title}</td>
                             <td>${new Date(run.started_at).toLocaleString()}</td>
                             <td><a href="${run.html_url}" target="_blank">link</a></td>
                         </tr>`).join('')
