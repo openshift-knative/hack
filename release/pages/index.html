@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Serverless Build Status</title>
+</head>
+<body>
+<div>
+    <h1>Release Build Status</h1>
+    <table>
+        <tr>
+            <td>
+                <label for="pat">Personal Access token</label>
+            </td>
+            <td>
+                <input type="password" name="pat" id="pat"/>
+                (create a fine-grained token without permissions for public repositories <a
+                    href="https://github.com/settings/tokens" target="_blank">here</a>)
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="branches">Branches</label>
+            </td>
+            <td>
+                <input type="text" name="branches" id="branches"/>
+                (Comma separated list of branches to filter on, all by default, for example <code>release-1.35,release-v1.15</code>)
+            </td>
+        </tr>
+    </table>
+    <br/>
+    <button type="button" id="trigger">Run</button>
+    <div id="build-status">
+    </div>
+</div>
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"
+        integrity="sha512-CSBhVREyzHAjAFfBlIBakjoRUKp5h7VSweP0InR/pAJyptH7peuhCsqAI/snV+TwZmXZqoUklpXp6R6wMnYf5Q=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+    const baseConfigURL = 'https://raw.githubusercontent.com/openshift-knative/hack/refs/heads/main/config'
+    document.getElementById('trigger').addEventListener('click', e => {
+        const urlParams = new URLSearchParams(window.location.search);
+        let branches = urlParams.get('branches');
+        if (document.getElementById('branches').value.trim() !== '') {
+            branches = document.getElementById('branches').value;
+        } else if (branches != null) {
+            document.getElementById('branches').value = branches
+        }
+
+        if (branches) {
+            branches = branches.split(',').map(b => b.trim())
+        }
+
+        yamls = [
+            `${baseConfigURL}/serverless-operator.yaml`,
+            `${baseConfigURL}/serving.yaml`,
+            `${baseConfigURL}/eventing.yaml`,
+            `${baseConfigURL}/eventing-kafka-broker.yaml`,
+            `${baseConfigURL}/eventing-istio.yaml`,
+            `${baseConfigURL}/client.yaml`,
+            `${baseConfigURL}/kn-plugin-event.yaml`,
+            `${baseConfigURL}/kn-plugin-func.yaml`,
+            `${baseConfigURL}/serving-net-istio.yaml`,
+            `${baseConfigURL}/serving-net-kourier.yaml`,
+            `${baseConfigURL}/backstage-plugins.yaml`,
+        ]
+        configs = Promise.all(
+            yamls
+                .flatMap(async (u) => {
+                    const yaml = await fetch(u)
+                    const b = await yaml.text()
+                    const doc = jsyaml.load(b);
+                    return doc.repositories
+                        .flatMap(r => {
+                            return Object.keys(doc.config.branches)
+                                .filter(b => {
+                                    if (branches) {
+                                        return branches.includes(b)
+                                    }
+                                    return b !== "release-next"
+                                })
+                                .map(async (b) => {
+                                    let headers = {}
+                                    if (document.getElementById("pat").value !== '') {
+                                        headers = {
+                                            "Authorization": `Bearer ${document.getElementById("pat").value}`
+                                        }
+                                    }
+                                    const res = await fetch(`https://api.github.com/repos/${r.org}/${r.repo}/commits/${b}/check-runs`, {
+                                        headers: headers
+                                    })
+                                    const json = await res.json()
+
+                                    return {
+                                        branch: b,
+                                        org: r.org,
+                                        repo: r.repo,
+                                        runs: json,
+                                    }
+                                })
+                        })
+                })
+        )
+
+        configs.then(c => {
+            c = c.flat()
+            console.log(c)
+
+            Promise.all(c).then(c => {
+                const configsByBranch = c
+                    .reduce((acc, v) => {
+                        if (!acc.get(v.branch)) {
+                            acc.set(v.branch, [])
+                        }
+                        acc.get(v.branch).push(v)
+                        return acc
+                    }, new Map())
+
+                console.log(configsByBranch)
+
+                const statusDiv = document.getElementById('build-status');
+                statusDiv.innerHTML = `
+        <table>
+            <thead>
+                <tr>
+                    <th>Branch</th>
+                    <th>Repository</th>
+                    <th>Run Name</th>
+                    <th>Status</th>
+                    <th>Started</th>
+                    <th>Run</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${
+                    Array.from(configsByBranch).map(([branch, item]) => {
+                            return item
+                                .filter(item => item.runs.status == null)
+                                .flatMap(item => {
+                                    return item.runs.check_runs
+                                        .filter(run => run.name.includes('Konflux'))
+                                        .map(run =>
+                                            `
+                        <tr>
+                            <td>${branch}</td>
+                            <td>${item.repo}</td>
+                            <td>${run.name}</td>
+                            <td>${run.conclusion ?? run.output.summary}</td>
+                            <td>${new Date(run.started_at).toLocaleString()}</td>
+                            <td><a href="${run.html_url}" target="_blank">link</a></td>
+                        </tr>`).join('')
+                                })
+                        }
+                    ).join('')
+                }
+            </tbody>
+        </table>
+    `;
+            })
+
+        })
+    })
+</script>
+</html>
