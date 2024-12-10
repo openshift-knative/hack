@@ -141,6 +141,7 @@
                     <th>Run Name</th>
                     <th>Status</th>
                     <th>Started</th>
+                    <th>Trigger retest</th>
                     <th>Run</th>
                 </tr>
             </thead>
@@ -152,16 +153,21 @@
                                 .flatMap(item => {
                                     return item.runs.check_runs
                                         .filter(run => run.name.includes('Konflux'))
-                                        .map(run =>
-                                            `
+                                        .map((run) => {
+
+                                            const testName = run.name.slice(run.app.name.length).replace(/[\t /]+/, '').trim()
+
+                                            return `
                         <tr>
                             <td>${branch}</td>
                             <td>${item.repo}</td>
                             <td>${run.name}</td>
                             <td>${run.output.title}</td>
                             <td>${new Date(run.started_at).toLocaleString()}</td>
+                            <td><button onClick="retriggerTest('${item.org}', '${item.repo}', '${item.branch}', '${run.head_sha}', '${testName}')">retest</button></td>
                             <td><a href="${run.html_url}" target="_blank">link</a></td>
-                        </tr>`).join('')
+                        </tr>`
+                                        })
                                 })
                         }
                     ).join('')
@@ -173,5 +179,42 @@
 
         })
     })
+
+    async function retriggerTest(org, repo, branch, commitSha, testName) {
+        const url = `https://api.github.com/repos/${org}/${repo}/commits/${commitSha}/comments`;
+
+        if (document.getElementById("pat").value.trim().length === 0) {
+            alert("Token required to retigger a run")
+            return
+        }
+
+        let headers = {
+            "Authorization": `Bearer ${document.getElementById("pat").value}`
+        }
+        const comment = `/retest ${testName} branch:${branch}`
+
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: headers,
+                body: JSON.stringify({
+                    body: comment
+                })
+            });
+
+            if (response.ok) {
+                const responseData = await response.json();
+                console.log("Successfully retriggered:", responseData);
+                alert("Run retriggered!");
+            } else {
+                const responseText = await response.text()
+                console.error("Failed to retrigger run:", response.status, responseText);
+                alert(`Failed to retrigger run: ${responseText}`);
+            }
+        } catch (err) {
+            console.error("Failed to retrigger run:", err);
+            alert(`Failed to retrigger run: ${err}`);
+        }
+    }
 </script>
 </html>
