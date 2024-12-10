@@ -102,7 +102,27 @@
                                     const res = await fetch(`https://api.github.com/repos/${r.org}/${r.repo}/commits/${b}/check-runs`, {
                                         headers: headers
                                     })
+                                    if (!res.ok) {
+                                       return {
+                                           branch: b,
+                                           org: r.org,
+                                           repo: r.repo,
+                                           runs: {
+                                               status: res.status
+                                           }
+                                       }
+                                    }
                                     const json = await res.json()
+
+                                    json.check_runs.sort((a, b) => {
+                                        if (a.output.title != null && b.output.title != null) {
+                                            return a.output.title.localeCompare(b.output.title)
+                                        }
+                                        if (a.output.title != null) {
+                                            return 1
+                                        }
+                                        return -1
+                                    })
 
                                     return {
                                         branch: b,
