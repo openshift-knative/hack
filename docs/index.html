@@ -153,7 +153,7 @@
                                 .flatMap(item => {
                                     return item.runs.check_runs
                                         .filter(run => run.name.includes('Konflux'))
-                                        .map(function (run) {
+                                        .map((run) => {
 
                                             const parts = run.name.split(" / ")
                                             const testName = parts[parts.length - 1]
