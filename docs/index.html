@@ -157,11 +157,6 @@
 
                                             const testName = run.name.slice(run.app.name.length).replace(/[\t /]+/, '').trim()
 
-                                            let retestLink = `<a href="javascript:void(0);" onClick="retriggerTest('${item.org}', '${item.repo}', '${item.branch}', '${run.head_sha}', '${testName}')">/retest</a>`
-                                            if (parts.length === 3 && parts[1].endsWith("-ec")) {
-                                                retestLink = "<i title='retest not available on enterprise contract runs'>n/a</i>"
-                                            }
-
                                             return `
                         <tr>
                             <td>${branch}</td>
@@ -169,7 +164,7 @@
                             <td>${run.name}</td>
                             <td>${run.output.title}</td>
                             <td>${new Date(run.started_at).toLocaleString()}</td>
-                            <td>${retestLink}</td>
+                            <td><button onClick="retriggerTest('${item.org}', '${item.repo}', '${item.branch}', '${run.head_sha}', '${testName}')">retest</button></td>
                             <td><a href="${run.html_url}" target="_blank">link</a></td>
                         </tr>`
                                         })
