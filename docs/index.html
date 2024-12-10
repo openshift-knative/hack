@@ -155,8 +155,7 @@
                                         .filter(run => run.name.includes('Konflux'))
                                         .map((run) => {
 
-                                            const parts = run.name.split(" / ")
-                                            const testName = parts[parts.length - 1]
+                                            const testName = run.name.slice(run.app.name.length).replace(/[\t /]+/, '').trim()
 
                                             let retestLink = `<a href="javascript:void(0);" onClick="retriggerTest('${item.org}', '${item.repo}', '${item.branch}', '${run.head_sha}', '${testName}')">/retest</a>`
                                             if (parts.length === 3 && parts[1].endsWith("-ec")) {
