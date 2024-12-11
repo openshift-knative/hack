@@ -15,6 +15,7 @@
             background-color: #c0c0c0;
         }
     </style>
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.dataTables.css" />
 </head>
 <body>
 <div>
@@ -42,13 +43,26 @@
     </table>
     <br/>
     <button type="button" id="trigger">Run</button>
-    <div id="build-status">
-    </div>
+    <table id="build-status-table">
+        <thead>
+        <tr>
+            <th>Branch</th>
+            <th>Repository</th>
+            <th>Run Name</th>
+            <th>Status</th>
+            <th>Started</th>
+            <th>Trigger retest</th>
+            <th>Run</th>
+        </tr>
+        </thead>
+    </table>
 </div>
 </body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"
         integrity="sha512-CSBhVREyzHAjAFfBlIBakjoRUKp5h7VSweP0InR/pAJyptH7peuhCsqAI/snV+TwZmXZqoUklpXp6R6wMnYf5Q=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.js"></script>
 <script>
     const baseConfigURL = 'https://raw.githubusercontent.com/openshift-knative/hack/refs/heads/main/config'
     document.getElementById('trigger').addEventListener('click', e => {
@@ -77,7 +91,8 @@
             `${baseConfigURL}/serving-net-kourier.yaml`,
             `${baseConfigURL}/backstage-plugins.yaml`,
         ]
-        configs = Promise.all(
+
+        Promise.all(
             yamls
                 .flatMap(async (u) => {
                     const yaml = await fetch(u)
@@ -113,13 +128,13 @@
                                 })
                         })
                 })
-        )
-
-        configs.then(c => {
+        ).then(c => {
             c = c.flat()
-            console.log(c)
+            console.log("configs:", c)
 
-            Promise.all(c).then(c => {
+            return Promise.all(c).then(c => {
+                console.log("config: ", c)
+
                 const configsByBranch = c
                     .reduce((acc, v) => {
                         if (!acc.get(v.branch)) {
@@ -129,54 +144,40 @@
                         return acc
                     }, new Map())
 
-                console.log(configsByBranch)
+                console.log("configsByBranch:", configsByBranch)
 
-                const statusDiv = document.getElementById('build-status');
-                statusDiv.innerHTML = `
-        <table id="build-status-table">
-            <thead>
-                <tr>
-                    <th>Branch</th>
-                    <th>Repository</th>
-                    <th>Run Name</th>
-                    <th>Status</th>
-                    <th>Started</th>
-                    <th>Trigger retest</th>
-                    <th>Run</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${
-                    Array.from(configsByBranch).map(([branch, item]) => {
-                            return item
-                                .filter(item => item.runs.status == null)
-                                .flatMap(item => {
-                                    return item.runs.check_runs
-                                        .filter(run => run.name.includes('Konflux'))
-                                        .map((run) => {
+                return Array.from(configsByBranch).map(([branch, item]) => {
+                        return item
+                            .filter(item => item.runs.status == null)
+                            .flatMap(item => {
+                                return item.runs.check_runs
+                                    .filter(run => run.name.includes('Konflux'))
+                                    .map((run) => {
 
-                                            const testName = run.name.slice(run.app.name.length).replace(/[\t /]+/, '').trim()
+                                        const testName = run.name.slice(run.app.name.length).replace(/[\t /]+/, '').trim()
 
-                                            return `
-                        <tr>
-                            <td>${branch}</td>
-                            <td>${item.repo}</td>
-                            <td>${run.name}</td>
-                            <td>${run.output.title}</td>
-                            <td>${new Date(run.started_at).toLocaleString()}</td>
-                            <td><button onClick="retriggerTest('${item.org}', '${item.repo}', '${item.branch}', '${run.head_sha}', '${testName}')">retest</button></td>
-                            <td><a href="${run.html_url}" target="_blank">link</a></td>
-                        </tr>`
-                                        })
-                                })
+                                        return [
+                                            branch,
+                                            item.repo,
+                                            run.name,
+                                            run.output.title,
+                                            new Date(run.started_at).toLocaleString(),
+                                            `<button onClick="retriggerTest('${item.org}', '${item.repo}', '${item.branch}', '${run.head_sha}', '${testName}')">retest</button>`,
+                                            `<a href="${run.html_url}" target="_blank">link</a>`
+                                        ]
+                                    })
+                            })
                         }
-                    ).join('')
-                }
-            </tbody>
-        </table>
-    `;
+                    ).flat()
             })
+        }).then(data => {
+            console.log("data", data)
 
+            new DataTable('#build-status-table', {
+                destroy: true,
+                paging: false,
+                data: data,
+            })
         })
     })
 
