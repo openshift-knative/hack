@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -124,6 +125,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 					for name, pullSpec := range overrides {
 						buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", name, pullSpec))
 					}
+					slices.Sort(buildArgs)
 
 					if err := GitMirror(ctx, r); err != nil {
 						return err
