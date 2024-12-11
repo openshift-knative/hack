@@ -103,11 +103,26 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 							return fmt.Errorf("main or %s branch configuration not found for serverless-operator", soBranchName)
 						}
 					}
+
+					overrides := make(map[string]string)
+					// add overrides from SO config
 					for _, img := range br.Konflux.ImageOverrides {
 						if img.Name == "" || img.PullSpec == "" {
 							return fmt.Errorf("image override missing name or pull spec: %#v", img)
 						}
-						buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", img.Name, img.PullSpec))
+						overrides[img.Name] = img.PullSpec
+					}
+
+					// add overrides from this branch config and let them override the ones from SO
+					for _, img := range b.Konflux.ImageOverrides {
+						if img.Name == "" || img.PullSpec == "" {
+							return fmt.Errorf("image override missing name or pull spec: %#v", img)
+						}
+						overrides[img.Name] = img.PullSpec
+					}
+
+					for name, pullSpec := range overrides {
+						buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", name, pullSpec))
 					}
 
 					if err := GitMirror(ctx, r); err != nil {
