@@ -568,6 +568,7 @@ repositories:
   e2e:
   - match: ^operator-e2e$
   - match: ^test-upgrade$
+    timeout: 1h30m0s
   - ignoreError: true
     match: ^upstream-e2e$
     skipCron: true
