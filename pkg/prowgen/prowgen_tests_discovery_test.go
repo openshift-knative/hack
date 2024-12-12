@@ -120,6 +120,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
 			As:       "test-e2e",
@@ -145,6 +146,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
 			As:   "test-e2e-c",
@@ -170,6 +172,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
 			As: "test-e2e-tls",
@@ -194,6 +197,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
 			As:   "test-e2e-tls-c",
@@ -219,6 +223,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
 			As:           "ui-e2e",
@@ -244,6 +249,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 	}
 
@@ -359,6 +365,7 @@ func TestDiscoverTestsServingClusterClaim(t *testing.T) {
 				},
 				Workflow: pointer.String("generic-claim"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 	}
 
@@ -403,7 +410,9 @@ func TestDiscoverTestsEventing(t *testing.T) {
 				Match: "test-e2e$",
 			},
 			{
-				Match: "test-reconcile.*",
+				Match:      "test-reconcile.*",
+				Timeout:    &prowapi.Duration{Duration: 2 * time.Hour},
+				JobTimeout: &prowapi.Duration{Duration: 4 * time.Hour},
 			},
 			{
 				Match: "test-conformance.*",
@@ -459,6 +468,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
 			As:   "test-conformance-c",
@@ -484,6 +494,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
 			As: "test-conformance-long-long-long-80ea36d",
@@ -508,6 +519,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
 			As:   "test-conformance-long-long-long-80ea36d-c",
@@ -533,6 +545,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
 			As: "test-e2e",
@@ -557,6 +570,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
 			As:   "test-e2e-c",
@@ -582,6 +596,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
 			As: "test-reconciler",
@@ -598,7 +613,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 									"cpu": "100m",
 								},
 							},
-							Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
+							Timeout:      &prowapi.Duration{Duration: 2 * time.Hour},
 							Dependencies: dependencies,
 							Cli:          "latest",
 						},
@@ -606,6 +621,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 4 * time.Hour},
 		},
 		{
 			As:   "test-reconciler-c",
@@ -623,7 +639,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 									"cpu": "100m",
 								},
 							},
-							Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
+							Timeout:      &prowapi.Duration{Duration: 2 * time.Hour},
 							Dependencies: dependencies,
 							Cli:          "latest",
 						},
@@ -631,6 +647,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 4 * time.Hour},
 		},
 	}
 
