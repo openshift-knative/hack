@@ -58,13 +58,12 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 			var testTimeout *prowapi.Duration
 			var jobTimeout *prowapi.Duration
 
+			// Use 4h test timeout by default
+			testTimeout = &prowapi.Duration{Duration: 4 * time.Hour}
 			if test.Timeout != nil {
 				testTimeout = test.Timeout
-				jobTimeout = &prowapi.Duration{Duration: test.Timeout.Duration + time.Hour} // test time + 3 * 20m must-gathers
-			} else {
-				// Use 4h test timeout by default
-				testTimeout = &prowapi.Duration{Duration: 4 * time.Hour}
 			}
+			jobTimeout = &prowapi.Duration{Duration: testTimeout.Duration + time.Hour} // test time + 3 * 20m must-gathers
 
 			var (
 				clusterClaim   *cioperatorapi.ClusterClaim
