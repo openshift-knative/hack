@@ -42,6 +42,7 @@ type E2ETest struct {
 	SkipCron   bool              `json:"skipCron,omitempty" yaml:"skipCron,omitempty"`
 	SkipImages []string          `json:"skipImages,omitempty" yaml:"skipImages,omitempty"`
 	Timeout    *prowapi.Duration `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	JobTimeout *prowapi.Duration `json:"jobTimeout,omitempty" yaml:"jobTimeout,omitempty"`
 }
 
 type Dockerfiles struct {

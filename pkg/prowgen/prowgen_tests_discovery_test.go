@@ -410,7 +410,9 @@ func TestDiscoverTestsEventing(t *testing.T) {
 				Match: "test-e2e$",
 			},
 			{
-				Match: "test-reconcile.*",
+				Match:      "test-reconcile.*",
+				Timeout:    &prowapi.Duration{Duration: 2 * time.Hour},
+				JobTimeout: &prowapi.Duration{Duration: 4 * time.Hour},
 			},
 			{
 				Match: "test-conformance.*",
@@ -611,7 +613,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 									"cpu": "100m",
 								},
 							},
-							Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
+							Timeout:      &prowapi.Duration{Duration: 2 * time.Hour},
 							Dependencies: dependencies,
 							Cli:          "latest",
 						},
@@ -619,7 +621,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
-			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
+			Timeout: &prowapi.Duration{Duration: 4 * time.Hour},
 		},
 		{
 			As:   "test-reconciler-c",
@@ -637,7 +639,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 									"cpu": "100m",
 								},
 							},
-							Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
+							Timeout:      &prowapi.Duration{Duration: 2 * time.Hour},
 							Dependencies: dependencies,
 							Cli:          "latest",
 						},
@@ -645,7 +647,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
-			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
+			Timeout: &prowapi.Duration{Duration: 4 * time.Hour},
 		},
 	}
 

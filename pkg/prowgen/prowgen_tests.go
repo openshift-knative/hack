@@ -64,6 +64,9 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				testTimeout = test.Timeout
 			}
 			jobTimeout = &prowapi.Duration{Duration: testTimeout.Duration + time.Hour} // test time + 3 * 20m must-gathers
+			if test.JobTimeout != nil {
+				jobTimeout = test.JobTimeout
+			}
 
 			var (
 				clusterClaim   *cioperatorapi.ClusterClaim
@@ -257,6 +260,7 @@ type Test struct {
 	SkipCron     bool
 	SkipImages   []string
 	Timeout      *prowapi.Duration
+	JobTimeout   *prowapi.Duration
 }
 
 func (t *Test) HexSha() string {
@@ -314,7 +318,7 @@ func createTest(r Repository, target string, e2e E2ETest, tests *[]Test, command
 		return fmt.Errorf("[%s] failed to match test %s: %w", r.RepositoryDirectory(), e2e.Match, err)
 	}
 	if matches && !commands.Has(target) {
-		*tests = append(*tests, Test{Command: target, OnDemand: e2e.OnDemand, IgnoreError: e2e.IgnoreError, RunIfChanged: e2e.RunIfChanged, SkipCron: e2e.SkipCron, SkipImages: e2e.SkipImages, Timeout: e2e.Timeout})
+		*tests = append(*tests, Test{Command: target, OnDemand: e2e.OnDemand, IgnoreError: e2e.IgnoreError, RunIfChanged: e2e.RunIfChanged, SkipCron: e2e.SkipCron, SkipImages: e2e.SkipImages, Timeout: e2e.Timeout, JobTimeout: e2e.JobTimeout})
 		commands.Insert(target)
 	}
 	return nil
