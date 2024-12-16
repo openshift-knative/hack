@@ -130,6 +130,22 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 					Post: []cioperatorapi.TestStep{
 						{
 							LiteralTestStep: &cioperatorapi.LiteralTestStep{
+								As:       "testlog-gather",
+								From:     sourceImageName,
+								Commands: `cp -v ${SHARED_DIR}/debuglog-*.log ${SHARED_DIR}/stdout-*.log ${SHARED_DIR}/stderr-*.log "${ARTIFACT_DIR}/" || true`,
+								Resources: cioperatorapi.ResourceRequirements{
+									Requests: cioperatorapi.ResourceList{
+										"cpu": "100m",
+									},
+								},
+								Timeout:           &prowapi.Duration{Duration: 1 * time.Minute},
+								BestEffort:        pointer.Bool(true),
+								OptionalOnSuccess: pointer.Bool(true),
+								Cli:               "latest",
+							},
+						},
+						{
+							LiteralTestStep: &cioperatorapi.LiteralTestStep{
 								As:       "knative-must-gather",
 								From:     sourceImageName,
 								Commands: `oc adm must-gather --image=quay.io/openshift-knative/must-gather --dest-dir "${ARTIFACT_DIR}/gather-knative"`,

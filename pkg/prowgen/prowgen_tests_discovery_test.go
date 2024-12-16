@@ -692,6 +692,22 @@ func mustGatherSteps(sourceImage string, optionalOnSuccess bool) []cioperatorapi
 	return []cioperatorapi.TestStep{
 		{
 			LiteralTestStep: &cioperatorapi.LiteralTestStep{
+				As:       "testlog-gather",
+				From:     sourceImage,
+				Commands: `cp -v ${SHARED_DIR}/debuglog-*.log ${SHARED_DIR}/stdout-*.log ${SHARED_DIR}/stderr-*.log "${ARTIFACT_DIR}/" || true`,
+				Resources: cioperatorapi.ResourceRequirements{
+					Requests: cioperatorapi.ResourceList{
+						"cpu": "100m",
+					},
+				},
+				Timeout:           &prowapi.Duration{Duration: 1 * time.Minute},
+				BestEffort:        pointer.Bool(true),
+				OptionalOnSuccess: &optionalOnSuccess,
+				Cli:               "latest",
+			},
+		},
+		{
+			LiteralTestStep: &cioperatorapi.LiteralTestStep{
 				As:       "knative-must-gather",
 				From:     sourceImage,
 				Commands: `oc adm must-gather --image=quay.io/openshift-knative/must-gather --dest-dir "${ARTIFACT_DIR}/gather-knative"`,
