@@ -145,6 +145,7 @@ spec:
       server: production
     sign:
       configMapName: hacbs-signing-pipeline-config-redhatrelease2
+      cosignSecretName: konflux-cosign-signing-production
   pipeline:
     pipelineRef:
       resolver: git
@@ -157,4 +158,4 @@ spec:
           value: "pipelines/rh-advisories/rh-advisories.yaml"
     serviceAccountName: release-registry-prod
     timeouts:
-      pipeline: "4h0m0s"
+      pipeline: "6h0m0s"
