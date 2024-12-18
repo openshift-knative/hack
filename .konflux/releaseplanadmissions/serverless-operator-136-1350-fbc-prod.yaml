@@ -29,7 +29,7 @@ spec:
       synopsis: "OpenShift Serverless Release 1.35.0"
     fbc:
       fromIndex: "registry-proxy.engineering.redhat.com/rh-osbs/iib-pub:{{ OCP_VERSION }}"
-      targetIndex: "quay.io/redhat/redhat----redhat-operator-index:{{ OCP_VERSION }}"
+      targetIndex: "quay.io/redhat-prod/redhat----redhat-operator-index:{{ OCP_VERSION }}"
       publishingCredentials: "fbc-production-publishing-credentials"
       requestTimeoutSeconds: 1500
       buildTimeoutSeconds: 1500
