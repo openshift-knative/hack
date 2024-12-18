@@ -37,6 +37,7 @@ spec:
       allowedPackages: [serverless-operator]
     sign:
       configMapName: hacbs-signing-pipeline-config-staging-redhatrelease2
+      cosignSecretName: konflux-cosign-signing-stage
   pipeline:
     pipelineRef:
       resolver: git
