@@ -39,6 +39,7 @@ spec:
       server: {{{ .PyxisServer }}}
     sign:
       configMapName: {{{ .SignCMName }}}
+      cosignSecretName: {{{ .SignSecretName }}}
   pipeline:
     pipelineRef:
       resolver: git
