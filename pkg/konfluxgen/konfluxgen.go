@@ -815,6 +815,7 @@ type rpaFBCData struct {
 	PipelineSA            string
 	StagedIndex           bool
 	SignCMName            string
+	SignSecretName        string
 }
 
 func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath string, appName string, soVersion string) error {
@@ -839,6 +840,7 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 		PublishingCredentials: "fbc-production-publishing-credentials",
 		PipelineSA:            "release-index-image-prod",
 		SignCMName:            "hacbs-signing-pipeline-config-redhatrelease2",
+		SignSecretName:        "konflux-cosign-signing-production",
 	}
 	outputFilePath := filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeFBCReleasePlanAdmissionTemplate(fbcData, outputFilePath); err != nil {
@@ -858,6 +860,7 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 		PipelineSA:            "release-index-image-staging",
 		StagedIndex:           true,
 		SignCMName:            "hacbs-signing-pipeline-config-staging-redhatrelease2",
+		SignSecretName:        "konflux-cosign-signing-stage",
 	}
 	outputFilePath = filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeFBCReleasePlanAdmissionTemplate(fbcData, outputFilePath); err != nil {
@@ -872,12 +875,13 @@ type rpaComponentData struct {
 	ApplicationName string
 	Components      []ComponentImageRepoRef
 
-	Policy      string
-	SOVersion   semver.Version
-	PyxisSecret string
-	PyxisServer string
-	PipelineSA  string
-	SignCMName  string
+	Policy         string
+	SOVersion      semver.Version
+	PyxisSecret    string
+	PyxisServer    string
+	PipelineSA     string
+	SignCMName     string
+	SignSecretName string
 }
 
 func GenerateComponentReleasePlanAdmission(csv *operatorsv1alpha1.ClusterServiceVersion, bundleName string, bundleRepoName string, resourceOutputPath string, appName string) error {
@@ -909,6 +913,7 @@ func GenerateComponentReleasePlanAdmission(csv *operatorsv1alpha1.ClusterService
 		PyxisServer:     "production",
 		PipelineSA:      "release-registry-prod",
 		SignCMName:      "hacbs-signing-pipeline-config-redhatrelease2",
+		SignSecretName:  "konflux-cosign-signing-production",
 		Policy:          "registry-standard",
 	}
 	outputFilePath := filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
@@ -935,6 +940,7 @@ func GenerateComponentReleasePlanAdmission(csv *operatorsv1alpha1.ClusterService
 		PyxisServer:     "stage",
 		PipelineSA:      "release-registry-staging",
 		SignCMName:      "hacbs-signing-pipeline-config-staging-redhatrelease2",
+		SignSecretName:  "konflux-cosign-signing-stage",
 		Policy:          "registry-standard-stage",
 	}
 	outputFilePath = filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))

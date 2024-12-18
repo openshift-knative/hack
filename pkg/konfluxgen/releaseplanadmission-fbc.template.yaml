@@ -37,6 +37,7 @@ spec:
       allowedPackages: [serverless-operator]
     sign:
       configMapName: {{{ .SignCMName }}}
+      cosignSecretName: {{{ .SignSecretName }}}
   pipeline:
     pipelineRef:
       resolver: git
