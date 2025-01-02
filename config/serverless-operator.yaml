@@ -383,7 +383,7 @@ repositories:
             namespace: ocp
       tests:
       - as: operator-e2e-rosa-aws
-        cron: 0 6 25 10 *
+        cron: 0 23 31 2 *
         steps:
           cluster_profile: aws-cspi-qe
           env:
@@ -441,7 +441,7 @@ repositories:
     releaseBuildConfiguration:
       tests:
       - as: operator-e2e-interop-aws-ocp418
-        cron: 0 6 11 2 *
+        cron: 0 23 31 2 *
         steps:
           cluster_profile: aws-cspi-qe
           env:
@@ -497,7 +497,7 @@ repositories:
           workflow: firewatch-ipi-aws
         timeout: 8h0m0s
       - as: operator-e2e-interop-aws-ocp418-fips
-        cron: 0 0 11 6 *
+        cron: 0 23 31 2 *
         steps:
           cluster_profile: aws-cspi-qe
           env:
