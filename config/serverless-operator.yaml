@@ -567,9 +567,9 @@ repositories:
     - must-gather/.*
   e2e:
   - match: ^operator-e2e$
-  - match: ^test-upgrade$
+  - jobTimeout: 5h0m0s
+    match: ^test-upgrade$
     timeout: 1h30m0s
-    jobTimeout: 5h0m0s
   - ignoreError: true
     match: ^upstream-e2e$
     skipCron: true
