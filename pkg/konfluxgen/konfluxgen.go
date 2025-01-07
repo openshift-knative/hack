@@ -472,7 +472,7 @@ func Generate(cfg Config) error {
 		if len(cfg.FBCImages) > 0 {
 			config.ECPolicyConfiguration = "rhtap-releng-tenant/fbc-standard"
 		} else {
-			config.ECPolicyConfiguration = "rhtap-releng-tenant/registry-ocp-serverless"
+			config.ECPolicyConfiguration = "rhtap-releng-tenant/registry-ocp-serverless-prod"
 		}
 
 		if err := os.MkdirAll(ecTestDir, 0777); err != nil {
