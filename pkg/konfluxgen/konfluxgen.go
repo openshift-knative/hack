@@ -472,7 +472,7 @@ func Generate(cfg Config) error {
 		if len(cfg.FBCImages) > 0 {
 			config.ECPolicyConfiguration = "rhtap-releng-tenant/fbc-standard"
 		} else {
-			config.ECPolicyConfiguration = "rhtap-releng-tenant/registry-standard"
+			config.ECPolicyConfiguration = "rhtap-releng-tenant/registry-ocp-serverless"
 		}
 
 		if err := os.MkdirAll(ecTestDir, 0777); err != nil {
@@ -914,7 +914,7 @@ func GenerateComponentReleasePlanAdmission(csv *operatorsv1alpha1.ClusterService
 		PipelineSA:      "release-registry-prod",
 		SignCMName:      "hacbs-signing-pipeline-config-redhatrelease2",
 		SignSecretName:  "konflux-cosign-signing-production",
-		Policy:          "registry-standard",
+		Policy:          "registry-ocp-serverless-prod",
 	}
 	outputFilePath := filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeComponentReleasePlanAdmissionTemplate(rpaData, outputFilePath); err != nil {
