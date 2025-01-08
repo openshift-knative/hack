@@ -10,7 +10,7 @@ metadata:
 spec:
   applications: [serverless-operator-136]
   origin: ocp-serverless-tenant
-  policy: registry-standard
+  policy: registry-ocp-serverless-prod
   data:
     releaseNotes:
       product_id: 579
