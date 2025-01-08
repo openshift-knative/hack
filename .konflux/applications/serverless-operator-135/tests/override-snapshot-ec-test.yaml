@@ -5,7 +5,7 @@ metadata:
 spec:
   params: 
     - name: POLICY_CONFIGURATION
-      value: rhtap-releng-tenant/registry-standard
+      value: rhtap-releng-tenant/registry-ocp-serverless-prod
     - name: TIMEOUT
       value: "120m"
   application: serverless-operator-135
