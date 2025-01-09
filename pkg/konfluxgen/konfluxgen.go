@@ -509,7 +509,7 @@ func Generate(cfg Config) error {
 			return fmt.Errorf("failed to execute template for mintmaker config: %w", err)
 		}
 		if err := os.WriteFile(RenovateConfigPath, buf.Bytes(), 0644); err != nil {
-			return fmt.Errorf("failed to write application file: %w", err)
+			return fmt.Errorf("failed to write mintmaker config file: %w", err)
 		}
 	}
 
