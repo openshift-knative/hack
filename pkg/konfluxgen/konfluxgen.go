@@ -30,6 +30,8 @@ const (
 	ReleasePlanAdmissionsDirectoryName = "releaseplanadmissions"
 	ReleasePlansDirName                = "releaseplans"
 
+	RenovateConfigPath = "renovate.json"
+
 	StageEnv = "stage"
 	ProdEnv  = "prod"
 
@@ -73,6 +75,9 @@ var FBCReleasePlanAdmissionsTemplate embed.FS
 //go:embed releaseplan.template.yaml
 var ReleasePlanTemplate embed.FS
 
+//go:embed renovate.template.json
+var RenovateTemplate embed.FS
+
 type Config struct {
 	OpenShiftReleasePath string
 	ApplicationName      string
@@ -94,8 +99,9 @@ type Config struct {
 
 	AdditionalTektonCELExpressionFunc func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string
 	NudgesFunc                        func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) []string
+	Nudges                            []string
 
-	Nudges []string
+	PipelineRunAnnotationsFunc func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) map[string]string
 
 	// Preserve the version tag as first tag in any instance since SO, when bumping the patch version
 	// will change it before merging the PR.
@@ -172,6 +178,11 @@ func Generate(cfg Config) error {
 	if cfg.AdditionalTektonCELExpressionFunc == nil {
 		cfg.AdditionalTektonCELExpressionFunc = func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
 			return ""
+		}
+	}
+	if cfg.PipelineRunAnnotationsFunc == nil {
+		cfg.PipelineRunAnnotationsFunc = func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) map[string]string {
+			return nil
 		}
 	}
 
@@ -262,6 +273,10 @@ func Generate(cfg Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to parse integration test scenario template: %w", err)
 	}
+	renovateTemplate, err := template.New("renovate.template.json").Delims("{{{", "}}}").Funcs(funcs).ParseFS(RenovateTemplate, "*.json")
+	if err != nil {
+		return fmt.Errorf("failed to parse renovate template: %w", err)
+	}
 
 	applications := make(map[string]map[string]DockerfileApplicationConfig, 8)
 	for _, c := range configs {
@@ -316,6 +331,8 @@ func Generate(cfg Config) error {
 				BuildArgs:      cfg.BuildArgs,
 				PrefetchDeps:   cfg.PrefetchDeps,
 				DockerfilePath: dockerfilePath,
+
+				PipelineRunAnnotations: cfg.PipelineRunAnnotationsFunc(c.ReleaseBuildConfiguration, ib),
 			}
 
 			if cfg.IsHermetic(c.ReleaseBuildConfiguration, ib) {
@@ -485,6 +502,15 @@ func Generate(cfg Config) error {
 		if err := WriteFileReplacingNewerTaskImages(filepath.Join(ecTestDir, "override-snapshot-ec-test.yaml"), buf.Bytes(), 0777); err != nil {
 			return fmt.Errorf("failed to write application file: %w", err)
 		}
+
+		buf.Reset()
+
+		if err := renovateTemplate.Execute(buf, nil); err != nil {
+			return fmt.Errorf("failed to execute template for EC test: %w", err)
+		}
+		if err := os.WriteFile(RenovateConfigPath, buf.Bytes(), 0644); err != nil {
+			return fmt.Errorf("failed to write application file: %w", err)
+		}
 	}
 
 	buf := &bytes.Buffer{}
@@ -604,6 +630,8 @@ type DockerfileApplicationConfig struct {
 	Hermetic string
 
 	DockerfilePath string
+
+	PipelineRunAnnotations map[string]string
 }
 
 type IntegrationTestConfig struct {
