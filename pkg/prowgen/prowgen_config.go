@@ -468,3 +468,7 @@ func (r Repository) IsEKB() bool {
 func (r Repository) IsFunc() bool {
 	return r.Org == "openshift-knative" && r.Repo == "kn-plugin-func"
 }
+
+func (r Repository) IsEventPlugin() bool {
+	return r.Org == "openshift-knative" && r.Repo == "kn-plugin-event"
+}

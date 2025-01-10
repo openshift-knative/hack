@@ -125,7 +125,7 @@ func (cfg *DependabotConfig) WithMaven(dirs []string, branch string) {
 	*cfg.Updates = append(*cfg.Updates, u)
 }
 
-func (cfg *DependabotConfig) Write(repoDir string) error {
+func (cfg *DependabotConfig) Write(repoDir string, run string) error {
 	log.Printf("Writing dependabot config %#v\n", *cfg)
 
 	out, err := yaml.Marshal(*cfg)
@@ -134,12 +134,66 @@ func (cfg *DependabotConfig) Write(repoDir string) error {
 	}
 
 	const ghDir = ".github"
+	const workflowsDir = "workflows"
 
-	if err := os.MkdirAll(filepath.Join(repoDir, ghDir), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(repoDir, ghDir, workflowsDir), 0755); err != nil {
 		return fmt.Errorf("failed to create .github directory: %w", err)
 	}
 	if err := os.WriteFile(filepath.Join(repoDir, ghDir, "dependabot.yml"), out, 0644); err != nil {
 		return fmt.Errorf("failed to write dependabot config file: %w", err)
+	}
+
+	if run == "" {
+		return nil
+	}
+
+	workflow := []byte(fmt.Sprintf(`
+name: Dependabot
+
+on:
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  update-deps:
+    name: Update deps
+    runs-on: ubuntu-latest
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          path: ./src/github.com/${{ github.repository }}
+          fetch-depth: 0
+
+      - name: Setup Golang
+        uses: openshift-knative/hack/actions/setup-go@main
+
+      - name: Install yq
+        run: |
+          go install github.com/mikefarah/yq/v3@latest
+
+      - name: Generate files
+        working-directory: ./src/github.com/${{ github.repository }}
+        run: %s
+
+      - name: git push
+        working-directory: ./src/github.com/${{ github.repository }}
+        run: |
+          if ! git diff --exit-code --quiet
+          then
+            git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
+            git add .
+            git commit -m "Run generate release"
+            git push
+          fi
+`, run))
+	if err := os.WriteFile(filepath.Join(repoDir, ghDir, workflowsDir, "dependabot-deps.yaml"), workflow, 0644); err != nil {
+		return fmt.Errorf("failed to write dependabot workflow file: %w", err)
 	}
 
 	return nil

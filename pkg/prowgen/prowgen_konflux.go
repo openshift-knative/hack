@@ -219,7 +219,15 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 					return err
 				}
 
-				if err := dependabotConfig.Write(r.RepositoryDirectory()); err != nil {
+				run := "make generate-release"
+				if r.IsFunc() || r.IsEventPlugin() {
+					// These repos don't use vendor, so they don't patch dependencies.
+					run = ""
+				}
+				if r.IsServerlessOperator() {
+					run = "make generated-files"
+				}
+				if err := dependabotConfig.Write(r.RepositoryDirectory(), run); err != nil {
 					return fmt.Errorf("[%s] %w", r.RepositoryDirectory(), err)
 				}
 
