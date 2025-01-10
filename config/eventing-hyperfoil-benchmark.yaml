@@ -1,6 +1,7 @@
 config:
   branches:
     main:
+      dependabotEnabled: false
       openShiftVersions:
       - skipCron: true
         version: "4.14"

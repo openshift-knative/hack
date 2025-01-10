@@ -206,6 +206,26 @@ func UnmarshalConfig(yaml []byte) (*Config, error) {
 	return inConfig, nil
 }
 
+func ForeachConfig(path string, walk func(config *Config) error) error {
+
+	return filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
+		if info.IsDir() || !strings.HasSuffix(path, ".yaml") {
+			return nil
+		}
+
+		inConfig, err := LoadConfig(path)
+		if err != nil {
+			return err
+		}
+
+		if err := walk(inConfig); err != nil {
+			return fmt.Errorf("failed to walk %s: %w", path, err)
+		}
+
+		return nil
+	})
+}
+
 func PushBranch(ctx context.Context, release Repository, remote *string, branch string, commitMsg string) error {
 
 	// Ignore error since remote and branch might be already there

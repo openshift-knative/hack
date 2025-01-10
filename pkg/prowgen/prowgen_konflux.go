@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/openshift-knative/hack/pkg/dependabotgen"
 	"github.com/openshift-knative/hack/pkg/soversion"
 
 	"github.com/coreos/go-semver/semver"
@@ -38,6 +39,8 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 	for _, config := range configs {
 		for _, r := range config.Repositories {
 
+			dependabotConfig := dependabotgen.NewDependabotConfig()
+
 			// Special case serverless-operator
 			if r.IsServerlessOperator() {
 				if err := GenerateKonfluxServerlessOperator(ctx, openshiftRelease, r, config); err != nil {
@@ -61,6 +64,21 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 					} else {
 						soVersion = soversion.FromUpstreamVersion(branchName)
 						soBranchName = soversion.BranchName(soVersion)
+
+						if b.DependabotEnabled == nil || *b.DependabotEnabled {
+							dependabotConfig.WithGo(branchName)
+							if r.IsEKB() {
+								dependabotConfig.WithMaven([]string{"/data-plane"}, branchName)
+							}
+							if r.IsFunc() {
+								dependabotConfig.WithMaven([]string{
+									"/templates/quarkus/http",
+									"/templates/quarkus/cloudevents",
+									"/templates/springboot/http",
+									"/templates/springboot/cloudevents",
+								}, branchName)
+							}
+						}
 					}
 
 					log.Printf("targetBranch: %s, soBranchName: %s, soVersion: %s\n", targetBranch, soBranchName, soVersion)
@@ -137,11 +155,6 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						return err
 					}
 
-					// TODO: Remove this when the multiarch build file is removed from all repositories.
-					if _, err := Run(ctx, r, "rm", "-f", ".github/workflows/multiarch-build.yaml"); err != nil {
-						return err
-					}
-
 					nudges := b.Konflux.Nudges
 					if soBranchName != "release-next" {
 						_, ok := operatorVersions[soBranchName]
@@ -196,6 +209,30 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 					log.Printf("::endgroup::\n\n")
 				}
 			}
+
+			if dependabotConfig.Updates != nil && len(*dependabotConfig.Updates) > 0 {
+				if err := GitMirror(ctx, r); err != nil {
+					return err
+				}
+
+				if err := GitCheckout(ctx, r, dependabotgen.DefaultTargetBranch); err != nil {
+					return err
+				}
+
+				if err := dependabotConfig.Write(r.RepositoryDirectory()); err != nil {
+					return fmt.Errorf("[%s] %w", r.RepositoryDirectory(), err)
+				}
+
+				pushBranch := fmt.Sprintf("%s%s", dependabotgen.SyncBranchPrefix, dependabotgen.DefaultTargetBranch)
+				commitMsg := fmt.Sprintf("Update dependabot configurations")
+
+				if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
+					return err
+				}
+			} else {
+				log.Println("No dependabot configurations")
+			}
+
 		}
 	}
 

@@ -80,6 +80,9 @@ type Branch struct {
 	SkipE2EMatches         []string    `json:"skipE2EMatches,omitempty" yaml:"skipE2EMatches,omitempty"`
 	SkipDockerFilesMatches []string    `json:"skipDockerFilesMatches,omitempty" yaml:"skipDockerFilesMatches,omitempty"`
 	Konflux                *Konflux    `json:"konflux,omitempty" yaml:"konflux,omitempty"`
+
+	// DependabotEnabled enabled if `nil`.
+	DependabotEnabled *bool `json:"dependabotEnabled,omitempty" yaml:"dependabotEnabled,omitempty"`
 }
 
 type Konflux struct {
@@ -456,4 +459,12 @@ func applyOptions(cfg *cioperatorapi.ReleaseBuildConfiguration, opts ...ReleaseB
 
 func (r Repository) IsServerlessOperator() bool {
 	return r.Org == "openshift-knative" && r.Repo == "serverless-operator"
+}
+
+func (r Repository) IsEKB() bool {
+	return r.Org == "openshift-knative" && r.Repo == "eventing-kafka-broker"
+}
+
+func (r Repository) IsFunc() bool {
+	return r.Org == "openshift-knative" && r.Repo == "kn-plugin-func"
 }
