@@ -43,7 +43,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 
 			// Special case serverless-operator
 			if r.IsServerlessOperator() {
-				if err := GenerateKonfluxServerlessOperator(ctx, openshiftRelease, r, config); err != nil {
+				if err := GenerateKonfluxServerlessOperator(ctx, openshiftRelease, r, config, dependabotConfig); err != nil {
 					return fmt.Errorf("failed to generate konflux for %q: %w", r.RepositoryDirectory(), err)
 				}
 				continue
@@ -284,7 +284,7 @@ func ServerlessOperatorKonfluxVersions(ctx context.Context) (map[string]string, 
 	return konfluxVersions, nil
 }
 
-func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Repository, r Repository, config *Config) error {
+func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Repository, r Repository, config *Config, dependabotConfig *dependabotgen.DependabotConfig) error {
 
 	konfluxVersions, err := ServerlessOperatorKonfluxVersions(ctx)
 	if err != nil {
@@ -303,6 +303,8 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 	resourceOutputPath := fmt.Sprintf("%s/.konflux", hackRepo.RepositoryDirectory())
 
 	for release, branch := range konfluxVersions {
+
+		dependabotConfig.WithGo(branch)
 
 		// This is a special GH log format: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#example-grouping-log-lines
 		log.Printf("::group::konfluxgen %s %s %s\n", r.RepositoryDirectory(), branch, release)
