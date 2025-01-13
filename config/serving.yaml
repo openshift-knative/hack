@@ -51,6 +51,8 @@ repositories:
     - openshift/ci-operator/knative-images.*
     - openshift/ci-operator/knative-test-images.*
     - openshift/ci-operator/knative-perf-images.*
+    excludes:
+    - openshift/ci-operator/knative-images/schema-tweak.*
   e2e:
   - match: .*e2e$
     skipImages:
