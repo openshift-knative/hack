@@ -11,9 +11,11 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	"gopkg.in/yaml.v3"
 
+	"github.com/openshift-knative/hack/pkg/dependabotgen"
 	"github.com/openshift-knative/hack/pkg/prowgen"
 )
 
@@ -109,10 +111,50 @@ func updateAction(ctx context.Context, inConfig *prowgen.Config) ([]interface{},
 				},
 			})
 
+		addDependabotStepOnce := sync.OnceFunc(func() {
+
+			steps = append(steps, map[string]interface{}{
+				"name": fmt.Sprintf("[%s - %s] Update dependabot configurations", r.Repo, dependabotgen.DefaultTargetBranch),
+				"if":   "${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}",
+				"env": map[string]string{
+					"GH_TOKEN":     "${{ secrets.SERVERLESS_QE_ROBOT }}",
+					"GITHUB_TOKEN": "${{ secrets.SERVERLESS_QE_ROBOT }}",
+				},
+				"working-directory": fmt.Sprintf("./src/github.com/openshift-knative/hack/%s", r.RepositoryDirectory()),
+				"run": fmt.Sprintf(`set -x
+repo="%s"
+branch="%s"
+target_branch="%s"
+git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+remote_exists=$(git ls-remote --heads fork "$branch")
+if [ -z "$remote_exists" ]; then
+  # remote doesn't exist.
+  git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+fi
+git fetch fork "$branch"
+if git diff --quiet "fork/$branch" "$branch"; then
+  echo "Branches are identical. No need to force push."
+else
+  git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+fi
+gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update dependabot configurations" --body "Update dependabot configurations" --label needs-ok-to-test || true
+`,
+					r.Repo,
+					fmt.Sprintf("%s%s", dependabotgen.SyncBranchPrefix, dependabotgen.DefaultTargetBranch),
+					dependabotgen.DefaultTargetBranch,
+				),
+			})
+
+		})
+
 		sortedBranches := sortedKeys(inConfig.Config.Branches)
 
 		for _, branchName := range sortedBranches {
 			b := inConfig.Config.Branches[branchName]
+
+			if b.DependabotEnabled == nil || *b.DependabotEnabled {
+				addDependabotStepOnce()
+			}
 
 			if b.Konflux != nil && b.Konflux.Enabled {
 

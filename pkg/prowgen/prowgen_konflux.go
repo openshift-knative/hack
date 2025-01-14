@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/openshift-knative/hack/pkg/dependabotgen"
 	"github.com/openshift-knative/hack/pkg/soversion"
 
 	"github.com/coreos/go-semver/semver"
@@ -46,6 +47,8 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 				continue
 			}
 
+			dependabotConfig := dependabotgen.NewDependabotConfig()
+
 			for branchName, b := range config.Config.Branches {
 				if b.Konflux != nil && b.Konflux.Enabled {
 
@@ -61,6 +64,21 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 					} else {
 						soVersion = soversion.FromUpstreamVersion(branchName)
 						soBranchName = soversion.BranchName(soVersion)
+
+						if b.DependabotEnabled == nil || *b.DependabotEnabled {
+							dependabotConfig.WithGo(branchName)
+							if r.IsEKB() {
+								dependabotConfig.WithMaven([]string{"/data-plane"}, branchName)
+							}
+							if r.IsFunc() {
+								dependabotConfig.WithMaven([]string{
+									"/templates/quarkus/http",
+									"/templates/quarkus/cloudevents",
+									"/templates/springboot/http",
+									"/templates/springboot/cloudevents",
+								}, branchName)
+							}
+						}
 					}
 
 					log.Printf("targetBranch: %s, soBranchName: %s, soVersion: %s\n", targetBranch, soBranchName, soVersion)
@@ -137,11 +155,6 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						return err
 					}
 
-					// TODO: Remove this when the multiarch build file is removed from all repositories.
-					if _, err := Run(ctx, r, "rm", "-f", ".github/workflows/multiarch-build.yaml"); err != nil {
-						return err
-					}
-
 					nudges := b.Konflux.Nudges
 					if soBranchName != "release-next" {
 						_, ok := operatorVersions[soBranchName]
@@ -196,9 +209,48 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 					log.Printf("::endgroup::\n\n")
 				}
 			}
+
+			if err := writeDependabotConfig(ctx, dependabotConfig, r); err != nil {
+				return err
+			}
+
 		}
 	}
 
+	return nil
+}
+
+func writeDependabotConfig(ctx context.Context, dependabotConfig *dependabotgen.DependabotConfig, r Repository) error {
+	if dependabotConfig.Updates != nil && len(*dependabotConfig.Updates) > 0 {
+		if err := GitMirror(ctx, r); err != nil {
+			return err
+		}
+
+		if err := GitCheckout(ctx, r, dependabotgen.DefaultTargetBranch); err != nil {
+			return err
+		}
+
+		run := "make generate-release"
+		if r.IsFunc() || r.IsEventPlugin() {
+			// These repos don't use vendor, so they don't patch dependencies.
+			run = ""
+		}
+		if r.IsServerlessOperator() {
+			run = "make generated-files"
+		}
+		if err := dependabotConfig.Write(r.RepositoryDirectory(), run); err != nil {
+			return fmt.Errorf("[%s] %w", r.RepositoryDirectory(), err)
+		}
+
+		pushBranch := fmt.Sprintf("%s%s", dependabotgen.SyncBranchPrefix, dependabotgen.DefaultTargetBranch)
+		commitMsg := fmt.Sprintf("Update dependabot configurations")
+
+		if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
+			return err
+		}
+	} else {
+		log.Println("No dependabot configurations")
+	}
 	return nil
 }
 
@@ -241,6 +293,8 @@ func ServerlessOperatorKonfluxVersions(ctx context.Context) (map[string]string, 
 
 func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Repository, r Repository, config *Config) error {
 
+	dependabotConfig := dependabotgen.NewDependabotConfig()
+
 	konfluxVersions, err := ServerlessOperatorKonfluxVersions(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get Konflux versions for serverless operator: %w", err)
@@ -262,6 +316,8 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 		// This is a special GH log format: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#example-grouping-log-lines
 		log.Printf("::group::konfluxgen %s %s %s\n", r.RepositoryDirectory(), branch, release)
 		log.Println("Creating Konflux configuration for serverless operator", branch, release)
+
+		dependabotConfig.WithGo(branch)
 
 		if err := GitMirror(ctx, r); err != nil {
 			return err
@@ -397,6 +453,10 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 
 	commitMsg := fmt.Sprintf("Sync Konflux configurations for serverless operator")
 	if err := PushBranch(ctx, hackRepo, nil, fmt.Sprintf("%s%s", KonfluxBranchPrefix, "main"), commitMsg); err != nil {
+		return err
+	}
+
+	if err := writeDependabotConfig(ctx, dependabotConfig, r); err != nil {
 		return err
 	}
 
