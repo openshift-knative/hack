@@ -7,7 +7,7 @@ on:
     branches:
       - 'main'
   schedule:
-    - cron: "0 6 * * *" # Daily at 06:00.
+    - cron: "0 6 * * 1" # Runs every Monday at 6:00 AM UTC
   workflow_dispatch: # Manual workflow trigger
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,8 +19,6 @@ jobs:
   generate-ci:
     name: generate-ci
     runs-on: ubuntu-latest
-    env:
-      GOPATH: ${{ github.workspace }}
     steps:
       - if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         name: '[backstage-plugins] Clone repository'
@@ -106,13 +104,6 @@ jobs:
           path: ./src/github.com/openshift-knative/hack/openshift-knative/serving
           repository: openshift-knative/serving
           token: ${{ secrets.SERVERLESS_QE_ROBOT }}
-      - name: Install prerequisites
-        env:
-          YQ_VERSION: 3.4.0
-        run: |
-          sudo wget https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 -O /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
-          sudo mv /usr/bin/yq /usr/local/bin/yq
       - name: Checkout openshift-knative/hack
         uses: actions/checkout@v4
         with:
@@ -121,6 +112,10 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: ./src/github.com/openshift-knative/hack/go.mod
+      - name: Install yq
+        run: go install github.com/mikefarah/yq/v3@latest
+      - name: Install skopeo
+        run: go install -tags="exclude_graphdriver_btrfs containers_image_openpgp" github.com/containers/skopeo/cmd/skopeo@v1.16.1
       - name: Install YAML2JSON
         run: go install github.com/bronze1man/yaml2json@latest
       - name: Convert configurations to JSON
@@ -217,6 +212,14 @@ jobs:
           fi
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update dependabot configurations" --body "Update dependabot configurations" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/backstage-plugins
+      - name: '[backstage-plugins - release-v1.15] Update codegen'
+        run: |
+          set -euox
+          git checkout sync-konflux-release-v1.15
+          make generate-release
+          git add .
+          git commit -m "Run make generate-release" || true # ignore: nothing to commit
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/backstage-plugins
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -239,7 +242,15 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/backstage-plugins
+      - name: '[backstage-plugins - release-v1.16] Update codegen'
+        run: |
+          set -euox
+          git checkout sync-konflux-release-v1.16
+          make generate-release
+          git add .
+          git commit -m "Run make generate-release" || true # ignore: nothing to commit
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/backstage-plugins
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -263,7 +274,7 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/backstage-plugins
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -289,6 +300,14 @@ jobs:
           fi
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update dependabot configurations" --body "Update dependabot configurations" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/client
+      - name: '[client - release-v1.15] Update codegen'
+        run: |
+          set -euox
+          git checkout sync-konflux-release-v1.15
+          make generate-release
+          git add .
+          git commit -m "Run make generate-release" || true # ignore: nothing to commit
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/client
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -311,7 +330,15 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/client
+      - name: '[client - release-v1.16] Update codegen'
+        run: |
+          set -euox
+          git checkout sync-konflux-release-v1.16
+          make generate-release
+          git add .
+          git commit -m "Run make generate-release" || true # ignore: nothing to commit
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/client
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -335,7 +362,7 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/client
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -361,6 +388,14 @@ jobs:
           fi
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update dependabot configurations" --body "Update dependabot configurations" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-istio
+      - name: '[eventing-istio - release-v1.15] Update codegen'
+        run: |
+          set -euox
+          git checkout sync-konflux-release-v1.15
+          make generate-release
+          git add .
+          git commit -m "Run make generate-release" || true # ignore: nothing to commit
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-istio
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -383,7 +418,15 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-istio
+      - name: '[eventing-istio - release-v1.16] Update codegen'
+        run: |
+          set -euox
+          git checkout sync-konflux-release-v1.16
+          make generate-release
+          git add .
+          git commit -m "Run make generate-release" || true # ignore: nothing to commit
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-istio
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -407,7 +450,7 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-istio
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -433,6 +476,14 @@ jobs:
           fi
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update dependabot configurations" --body "Update dependabot configurations" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-kafka-broker
+      - name: '[eventing-kafka-broker - release-v1.15] Update codegen'
+        run: |
+          set -euox
+          git checkout sync-konflux-release-v1.15
+          make generate-release
+          git add .
+          git commit -m "Run make generate-release" || true # ignore: nothing to commit
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-kafka-broker
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -455,7 +506,15 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-kafka-broker
+      - name: '[eventing-kafka-broker - release-v1.16] Update codegen'
+        run: |
+          set -euox
+          git checkout sync-konflux-release-v1.16
+          make generate-release
+          git add .
+          git commit -m "Run make generate-release" || true # ignore: nothing to commit
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-kafka-broker
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -479,7 +538,7 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-kafka-broker
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -505,6 +564,14 @@ jobs:
           fi
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update dependabot configurations" --body "Update dependabot configurations" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
+      - name: '[eventing - release-v1.15] Update codegen'
+        run: |
+          set -euox
+          git checkout sync-konflux-release-v1.15
+          make generate-release
+          git add .
+          git commit -m "Run make generate-release" || true # ignore: nothing to commit
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -527,7 +594,15 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
+      - name: '[eventing - release-v1.16] Update codegen'
+        run: |
+          set -euox
+          git checkout sync-konflux-release-v1.16
+          make generate-release
+          git add .
+          git commit -m "Run make generate-release" || true # ignore: nothing to commit
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -551,7 +626,7 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -599,7 +674,7 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-event
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -623,7 +698,7 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-event
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -649,6 +724,14 @@ jobs:
           fi
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update dependabot configurations" --body "Update dependabot configurations" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-func
+      - name: '[kn-plugin-func - release-v1.15] Update codegen'
+        run: |
+          set -euox
+          git checkout sync-konflux-release-v1.15
+          ./openshift/scripts/generate-dockerfiles.sh
+          git add .
+          git commit -m "Run ./openshift/scripts/generate-dockerfiles.sh" || true # ignore: nothing to commit
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-func
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -671,7 +754,15 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-func
+      - name: '[kn-plugin-func - release-v1.16] Update codegen'
+        run: |
+          set -euox
+          git checkout sync-konflux-release-v1.16
+          ./openshift/scripts/generate-dockerfiles.sh
+          git add .
+          git commit -m "Run ./openshift/scripts/generate-dockerfiles.sh" || true # ignore: nothing to commit
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-func
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -695,7 +786,7 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-func
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -743,7 +834,7 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serverless-operator
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -767,7 +858,7 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serverless-operator
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -793,6 +884,14 @@ jobs:
           fi
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update dependabot configurations" --body "Update dependabot configurations" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-istio
+      - name: '[net-istio - release-v1.15] Update codegen'
+        run: |
+          set -euox
+          git checkout sync-konflux-release-v1.15
+          make generate-release
+          git add .
+          git commit -m "Run make generate-release" || true # ignore: nothing to commit
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-istio
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -815,7 +914,15 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-istio
+      - name: '[net-istio - release-v1.16] Update codegen'
+        run: |
+          set -euox
+          git checkout sync-konflux-release-v1.16
+          make generate-release
+          git add .
+          git commit -m "Run make generate-release" || true # ignore: nothing to commit
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-istio
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -839,7 +946,7 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-istio
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -865,6 +972,14 @@ jobs:
           fi
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update dependabot configurations" --body "Update dependabot configurations" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-kourier
+      - name: '[net-kourier - release-v1.15] Update codegen'
+        run: |
+          set -euox
+          git checkout sync-konflux-release-v1.15
+          make generate-release
+          git add .
+          git commit -m "Run make generate-release" || true # ignore: nothing to commit
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-kourier
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -887,7 +1002,15 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-kourier
+      - name: '[net-kourier - release-v1.16] Update codegen'
+        run: |
+          set -euox
+          git checkout sync-konflux-release-v1.16
+          make generate-release
+          git add .
+          git commit -m "Run make generate-release" || true # ignore: nothing to commit
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-kourier
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -911,7 +1034,7 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-kourier
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -937,6 +1060,14 @@ jobs:
           fi
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update dependabot configurations" --body "Update dependabot configurations" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serving
+      - name: '[serving - release-v1.15] Update codegen'
+        run: |
+          set -euox
+          git checkout sync-konflux-release-v1.15
+          make generate-release
+          git add .
+          git commit -m "Run make generate-release" || true # ignore: nothing to commit
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serving
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -959,7 +1090,15 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serving
+      - name: '[serving - release-v1.16] Update codegen'
+        run: |
+          set -euox
+          git checkout sync-konflux-release-v1.16
+          make generate-release
+          git add .
+          git commit -m "Run make generate-release" || true # ignore: nothing to commit
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serving
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -983,5 +1122,5 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serving

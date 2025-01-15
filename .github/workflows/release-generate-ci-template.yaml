@@ -8,7 +8,7 @@ on:
     branches:
       - 'main'
   schedule:
-    - cron: "0 6 * * *" # Daily at 06:00.
+    - cron: "0 6 * * 1" # Runs every Monday at 6:00 AM UTC
   workflow_dispatch: # Manual workflow trigger
 
 concurrency:
@@ -23,17 +23,7 @@ jobs:
   generate-ci:
     name: generate-ci
     runs-on: ubuntu-latest
-    env:
-      GOPATH: ${{ github.workspace }}
     steps:
-      - name: Install prerequisites
-        env:
-          YQ_VERSION: 3.4.0
-        run: |
-          sudo wget https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 -O /usr/bin/yq
-          sudo chmod +x /usr/bin/yq
-          sudo mv /usr/bin/yq /usr/local/bin/yq
-
       - name: Checkout openshift-knative/hack
         uses: actions/checkout@v4
         with:
@@ -43,6 +33,12 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: ./src/github.com/openshift-knative/hack/go.mod
+
+      - name: Install yq
+        run: go install github.com/mikefarah/yq/v3@latest
+
+      - name: Install skopeo
+        run: go install -tags="exclude_graphdriver_btrfs containers_image_openpgp" github.com/containers/skopeo/cmd/skopeo@v1.16.1
 
       - name: Install YAML2JSON
         run: go install github.com/bronze1man/yaml2json@latest

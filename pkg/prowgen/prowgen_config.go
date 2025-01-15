@@ -472,3 +472,27 @@ func (r Repository) IsFunc() bool {
 func (r Repository) IsEventPlugin() bool {
 	return r.Org == "openshift-knative" && r.Repo == "kn-plugin-event"
 }
+
+func (r Repository) RunCodegenCommand() string {
+	run := "make generate-release"
+	if r.IsFunc() || r.IsEventPlugin() {
+		// These repos don't use vendor, so they don't patch dependencies.
+		run = ""
+	}
+	if r.IsServerlessOperator() {
+		run = "make generated-files"
+	}
+	return run
+}
+
+func (r Repository) RunDockefileGenCommand() string {
+	run := r.RunCodegenCommand()
+	if r.IsFunc() {
+		run = "./openshift/scripts/generate-dockerfiles.sh"
+	}
+	if r.IsServerlessOperator() {
+		// SO has its own scheduled workflow (Validate).
+		run = ""
+	}
+	return run
+}

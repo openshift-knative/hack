@@ -229,16 +229,7 @@ func writeDependabotConfig(ctx context.Context, dependabotConfig *dependabotgen.
 		if err := GitCheckout(ctx, r, dependabotgen.DefaultTargetBranch); err != nil {
 			return err
 		}
-
-		run := "make generate-release"
-		if r.IsFunc() || r.IsEventPlugin() {
-			// These repos don't use vendor, so they don't patch dependencies.
-			run = ""
-		}
-		if r.IsServerlessOperator() {
-			run = "make generated-files"
-		}
-		if err := dependabotConfig.Write(r.RepositoryDirectory(), run); err != nil {
+		if err := dependabotConfig.Write(r.RepositoryDirectory(), r.RunCodegenCommand()); err != nil {
 			return fmt.Errorf("[%s] %w", r.RepositoryDirectory(), err)
 		}
 
