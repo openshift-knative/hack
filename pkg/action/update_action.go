@@ -176,6 +176,20 @@ gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$t
 				}
 
 				localBranch := fmt.Sprintf("%s%s", prowgen.KonfluxBranchPrefix, branchName)
+
+				if run := r.RunDockefileGenCommand(); run != "" && !r.IsServerlessOperator() {
+					steps = append(steps, map[string]interface{}{
+						"name":              fmt.Sprintf("[%s - %s] Update codegen", r.Repo, branchName),
+						"working-directory": fmt.Sprintf("./src/github.com/openshift-knative/hack/%s", r.RepositoryDirectory()),
+						"run": fmt.Sprintf(`set -euox
+git checkout %s
+%s
+git add .
+git commit -m "Run %s" || true # ignore: nothing to commit
+`, localBranch, run, run),
+					})
+				}
+
 				steps = append(steps, map[string]interface{}{
 					"name": fmt.Sprintf("[%s - %s] Create Konflux PR", r.Repo, branchName),
 					"if":   "${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}",
@@ -200,7 +214,7 @@ if git diff --quiet "fork/$branch" "$branch"; then
 else
   git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
 fi
-gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Add Konflux configurations" --body "Add Konflux components and pipelines" --label needs-ok-to-test || true
+gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" --label needs-ok-to-test || true
 `,
 						r.Repo,
 						localBranch,
