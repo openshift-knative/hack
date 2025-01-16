@@ -50,7 +50,8 @@ func GoModuleBumpAction(ctx context.Context, cfg Config) error {
 		}
 
 		for _, repo := range inConfig.Repositories {
-			for branchName := range inConfig.Config.Branches {
+			sortedBranches := sortedKeys(inConfig.Config.Branches)
+			for _, branchName := range sortedBranches {
 
 				if branchName == "release-next" {
 					continue
@@ -59,13 +60,7 @@ func GoModuleBumpAction(ctx context.Context, cfg Config) error {
 				repoConfig := BumpRepoConfig{
 					Repo:          repo.Repo,
 					Branch:        branchName,
-					PostUpdateCmd: "make generated-files",
-				}
-
-				if repo.IsServerlessOperator() {
-					repoConfig.PostUpdateCmd = "make generate-release"
-				} else if repo.IsFunc() || repo.IsEventPlugin() {
-					repoConfig.PostUpdateCmd = ""
+					PostUpdateCmd: repo.RunCodegenCommand(),
 				}
 
 				repoConfigs = append(repoConfigs, repoConfig)

@@ -22,116 +22,116 @@ jobs:
         include:
           - repo: backstage-plugins
             branch: release-v1.12
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: backstage-plugins
             branch: release-v1.14
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: backstage-plugins
             branch: release-v1.15
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: backstage-plugins
             branch: release-v1.16
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: client
             branch: release-v1.15
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: client
             branch: release-v1.16
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: eventing-hyperfoil-benchmark
             branch: main
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: eventing-istio
             branch: release-v1.12
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: eventing-istio
             branch: release-v1.14
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: eventing-istio
             branch: release-v1.15
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: eventing-istio
             branch: release-v1.16
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: eventing-kafka-broker
             branch: release-v1.12
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: eventing-kafka-broker
             branch: release-v1.14
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: eventing-kafka-broker
             branch: release-v1.15
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: eventing-kafka-broker
             branch: release-v1.16
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: eventing
             branch: release-v1.12
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: eventing
             branch: release-v1.14
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: eventing
             branch: release-v1.15
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: eventing
             branch: release-v1.16
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: kn-plugin-event
             branch: release-1.15
           - repo: kn-plugin-event
             branch: release-1.16
           - repo: kn-plugin-func
-            branch: serverless-1.34
-          - repo: kn-plugin-func
             branch: release-v1.15
           - repo: kn-plugin-func
             branch: release-v1.16
+          - repo: kn-plugin-func
+            branch: serverless-1.34
           - repo: serverless-operator
             branch: main
-            postUpdateCmd: make generate-release
+            postUpdateCmd: make generated-files
           - repo: serverless-operator
             branch: release-1.35
-            postUpdateCmd: make generate-release
+            postUpdateCmd: make generated-files
           - repo: serverless-operator
             branch: release-1.36
+            postUpdateCmd: make generated-files
+          - repo: net-istio
+            branch: release-v1.12
             postUpdateCmd: make generate-release
           - repo: net-istio
-            branch: release-v1.12
-            postUpdateCmd: make generated-files
-          - repo: net-istio
             branch: release-v1.14
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: net-istio
             branch: release-v1.15
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: net-istio
             branch: release-v1.16
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: net-kourier
             branch: release-v1.12
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: net-kourier
             branch: release-v1.14
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: net-kourier
             branch: release-v1.15
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: net-kourier
             branch: release-v1.16
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: serving
             branch: release-v1.12
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: serving
             branch: release-v1.14
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: serving
             branch: release-v1.15
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
           - repo: serving
             branch: release-v1.16
-            postUpdateCmd: make generated-files
+            postUpdateCmd: make generate-release
     steps:
       - name: Configure Git user
         run: |
