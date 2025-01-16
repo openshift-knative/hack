@@ -47,7 +47,7 @@ spec:
         - name: revision
           value: production
         - name: pathInRepo
-          value: "pipelines/fbc-release/fbc-release.yaml"
+          value: "pipelines/managed/fbc-release/fbc-release.yaml"
     serviceAccountName: {{{ .PipelineSA }}}
     timeouts:
       pipeline: "4h0m0s"
