@@ -68,7 +68,7 @@ unit-tests:
 	rm -rf openshift/project/.github
 
 	mkdir -p openshift
-	go run ./cmd/generate-ci-action --input ".github/workflows/release-generate-ci-template.yaml" --config "config/" --output "openshift/release-generate-ci.yaml"
+	go run ./cmd/generate-ci-action --config "config/" --output "openshift/"
 	# If the following fails, please run 'make generate-ci-action'
 	diff -r "openshift/release-generate-ci.yaml" ".github/workflows/release-generate-ci.yaml"
 

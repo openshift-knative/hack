@@ -28,8 +28,7 @@ func Main() {
 	defer cancel()
 
 	inputConfig := flag.String("config", filepath.Join("config"), "Specify repositories config")
-	inputAction := flag.String("input", filepath.Join(".github", "workflows", "release-generate-ci-template.yaml"), "Input action (template)")
-	outputAction := flag.String("output", filepath.Join(".github", "workflows", "release-generate-ci.yaml"), "Output action")
+	outputFolder := flag.String("output", filepath.Join(".github", "workflows"), "Output folder for the actions")
 	flag.Parse()
 
 	err := filepath.Walk(*inputConfig, func(path string, info fs.FileInfo, err error) error {
@@ -46,12 +45,9 @@ func Main() {
 	if err != nil {
 		log.Fatalln("Failed to walk path", *inputConfig, err)
 	}
+	flag.Parse()
 
-	err = action.UpdateAction(ctx, action.Config{
-		InputAction:     *inputAction,
-		InputConfigPath: *inputConfig,
-		OutputAction:    *outputAction,
-	})
+	err = action.Generate(ctx, *inputConfig, *outputFolder)
 	if err != nil {
 		log.Fatal(err)
 	}

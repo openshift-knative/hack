@@ -2,14 +2,12 @@ package action
 
 import (
 	"bytes"
-	"cmp"
 	"context"
 	"fmt"
 	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 
@@ -18,12 +16,6 @@ import (
 	"github.com/openshift-knative/hack/pkg/dependabotgen"
 	"github.com/openshift-knative/hack/pkg/prowgen"
 )
-
-type Config struct {
-	InputAction     string
-	InputConfigPath string
-	OutputAction    string
-}
 
 func UpdateAction(ctx context.Context, cfg Config) error {
 	var steps []interface{}
@@ -225,59 +217,4 @@ gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$t
 		}
 	}
 	return cloneSteps, steps, nil
-}
-
-func AddNestedField(node *yaml.Node, value interface{}, prepend bool, fields ...string) error {
-
-	for i, n := range node.Content {
-
-		if i > 0 && node.Content[i-1].Value == fields[0] {
-
-			// Base case for scalar nodes
-			if len(fields) == 1 && n.Kind == yaml.ScalarNode {
-				n.SetString(fmt.Sprintf("%s", value))
-				break
-			}
-			// base case for sequence node
-			if len(fields) == 1 && n.Kind == yaml.SequenceNode {
-
-				if v, ok := value.([]interface{}); ok {
-					var s yaml.Node
-
-					b, err := yaml.Marshal(v)
-					if err != nil {
-						return err
-					}
-					if err := yaml.NewDecoder(bytes.NewBuffer(b)).Decode(&s); err != nil {
-						return err
-					}
-
-					if prepend {
-						n.Content = append(s.Content[0].Content, n.Content...)
-					} else {
-						n.Content = append(n.Content, s.Content[0].Content...)
-					}
-				}
-				break
-			}
-
-			// Continue to the next level
-			return AddNestedField(n, value, prepend, fields[1:]...)
-		}
-
-		if node.Kind == yaml.DocumentNode {
-			return AddNestedField(n, value, prepend, fields...)
-		}
-	}
-
-	return nil
-}
-
-func sortedKeys[K cmp.Ordered, V any](m map[K]V) []K {
-	keys := make([]K, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
-	return keys
 }
