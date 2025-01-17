@@ -19,7 +19,7 @@ RUN wget https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && 
 RUN ./get-helm-3 --version v3.11.3 --no-sudo && helm version
 
 RUN GOFLAGS='' go install github.com/mikefarah/yq/v3@latest
-RUN GOFLAGS='' go install -tags="exclude_graphdriver_btrfs containers_image_openpgp" github.com/containers/skopeo/cmd/skopeo@v1.16.1
+RUN GOFLAGS='' go install -tags="exclude_graphdriver_btrfs containers_image_openpgp" github.com/containers/skopeo/cmd/skopeo@v1.17.0
 
 # go install creates $GOPATH/.cache with root permissions, we delete it here
 # to avoid permission issues with the runtime users
