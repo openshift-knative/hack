@@ -52,4 +52,4 @@ spec:
           value: "pipelines/rh-advisories/rh-advisories.yaml"
     serviceAccountName: {{{ .PipelineSA }}}
     timeouts:
-      pipeline: "6h0m0s"
+      pipeline: "10h0m0s"
