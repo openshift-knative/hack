@@ -17,7 +17,7 @@ jobs:
       - name: Checkout serverless operator
         uses: actions/checkout@v4
         with:
-          ref: "${{ inputs.branch }}"
+          ref: "${{ inputs.revision }}"
           repository: 'openshift-knative/serverless-operator'
 
       - name: Setup kubeconfig
