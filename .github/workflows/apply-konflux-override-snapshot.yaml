@@ -2,8 +2,8 @@ name: Apply Konflux Override Snapshot
 on:
   workflow_dispatch:
     inputs:
-      branch:
-        description: "SO branch with the manifests"
+      revision:
+        description: "SO branch or revision with the manifests"
         default: "main"
         required: true
 defaults:
