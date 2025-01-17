@@ -8,6 +8,8 @@ spec:
       value: {{{ .ECPolicyConfiguration }}}
     - name: TIMEOUT
       value: "120m"
+    - name: WORKERS
+      value: "8"
   application: {{{ truncate ( sanitize .ApplicationName ) }}}
   contexts:
     {{{- range .Contexts }}}
