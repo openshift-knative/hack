@@ -2,8 +2,6 @@ apiVersion: appstudio.redhat.com/v1alpha1
 kind: Release
 metadata:
   name: serverless-operator-135-fbc-415-1350-prod
-  labels:
-    release.appstudio.openshift.io/author: 'system_serviceaccount_ocp-serverless-tenant_gh-action'
 spec:
   releasePlan: serverless-operator-135-fbc-415-1350-prod
   snapshot: serverless-operator-135-fbc-415-override-snapshot-cr6th
