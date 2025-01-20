@@ -13,6 +13,7 @@ rules:
   - integrationtestscenarios
   - releaseplans
   - releases
+  - snapshots
   verbs:
   - get
   - list
