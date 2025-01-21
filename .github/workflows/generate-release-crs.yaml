@@ -1,0 +1,97 @@
+name: Apply Konflux Override Snapshot and create Release CR PR
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: "SO branch or revision with the manifests"
+        default: "main"
+        required: true
+      environment:
+        description: "Environment to release to"
+        type: choice
+        options:
+          - stage
+          - prod
+        required: true
+      type:
+        description: "Type to release"
+        type: choice
+        options:
+          - components
+          - FBCs
+        required: true
+      skip-apply:
+        description: "Skip override-snapshot apply"
+        type: boolean
+        required: false
+        default: "false"
+defaults:
+  run:
+    shell: bash
+jobs:
+  snapshot-apply:
+    name: Apply Konflux Override Snapshot
+    runs-on: ubuntu-latest
+    if: ${{ inputs.skip-apply == 'false' }}
+    steps:
+      - name: Checkout serverless operator
+        uses: actions/checkout@v4
+        with:
+          ref: "${{ inputs.revision }}"
+          repository: 'openshift-knative/serverless-operator'
+          path: ./src/github.com/openshift-knative/serverless-operator
+
+      - name: Setup kubeconfig
+        env:
+          KONFLUX_TOKEN: ${{ secrets.KONFLUX_SA_TOKEN }}
+        run: |
+          kubectl config set-credentials konflux-sa --token "$KONFLUX_TOKEN"
+          kubectl config set-cluster konflux --server=https://api.stone-prd-rh01.pg1f.p1.openshiftapps.com:6443
+          kubectl config set-context konflux-sa@konflux --user=konflux-sa --namespace=ocp-serverless-tenant --cluster=konflux
+          kubectl config use-context konflux-sa@konflux
+
+      - name: Apply Override Snapshots
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serverless-operator
+        run: make apply-override-snapshot
+
+  generate-release-crs:
+    name: Generate Release CRs
+    runs-on: ubuntu-latest
+    needs: snapshot-apply
+    steps:
+      - name: Checkout openshift-knative/hack
+        uses: actions/checkout@v4
+        with:
+          repository: openshift-knative/hack
+          path: ./src/github.com/openshift-knative/hack
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
+
+      - name: Generate Konflux release CR
+        working-directory: ./src/github.com/openshift-knative/hack
+        run: |
+          make generate-konflux-release ARGS="--environment ${{ inputs.environment }} --so-revision ${{ inputs.revision }} --type ${{inputs.type}}"
+
+      - name: Create release CR Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        run: |
+          set -x
+          git remote add fork "https://github.com/serverless-qe/hack.git"
+          branch="release-crs-${{inputs.revision}}-${{inputs.type}}-${{inputs.environment}}"
+          branch=${branch,,} #lower case of branch name
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/hack.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch fork "$branch"
+          if git diff --quiet "fork/$branch" "$branch"; then
+            echo "Branches are identical. No need to force push."
+          else
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/hack.git" "$branch:$branch" -f
+          fi
+          title="Add ${{inputs.type}} Release CRs from ${{inputs.revision}} revision for ${{inputs.environment}}"
+          gh pr create --base main --head "serverless-qe:$branch" --title "$title" --body "$title" --label "do-not-merge/hold" || true
+        # Use the repository cloned by the konflux-release-gen tool
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/hack

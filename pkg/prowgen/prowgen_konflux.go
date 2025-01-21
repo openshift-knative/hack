@@ -171,7 +171,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 
 					cfg := konfluxgen.Config{
 						OpenShiftReleasePath: openshiftRelease.RepositoryDirectory(),
-						ApplicationName:      fmt.Sprintf("serverless-operator %s", soBranchName),
+						ApplicationName:      konfluxgen.AppName(soBranchName),
 						BuildArgs:            buildArgs,
 						Includes: []string{
 							fmt.Sprintf("ci-operator/config/%s/.*%s.*.yaml", r.RepositoryDirectory(), branchName),
@@ -362,7 +362,7 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 
 		cfg := konfluxgen.Config{
 			OpenShiftReleasePath: openshiftRelease.RepositoryDirectory(),
-			ApplicationName:      fmt.Sprintf("serverless-operator %s", release),
+			ApplicationName:      konfluxgen.AppName(release),
 			BuildArgs:            buildArgs,
 			ComponentNameFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
 				return fmt.Sprintf("%s-%s", ib.To, release)
@@ -504,15 +504,15 @@ func getPrefetchDeps(repo Repository, branch string) (*konfluxgen.PrefetchDeps, 
 func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repository, r Repository, branch string, release string, resourceOutputPath string, buildArgs []string) error {
 	fbcApps := make([]string, 0, len(soMetadata.Requirements.OcpVersion.List))
 
-	for _, v := range soMetadata.Requirements.OcpVersion.List {
+	for _, ocpVersion := range soMetadata.Requirements.OcpVersion.List {
 
-		opmImage, err := getOPMImage(v)
+		opmImage, err := getOPMImage(ocpVersion)
 		if err != nil {
-			return fmt.Errorf("failed to get OPM image ref for OCP %q: %w", v, err)
+			return fmt.Errorf("failed to get OPM image ref for OCP %q: %w", ocpVersion, err)
 		}
 		buildArgs := append(buildArgs, fmt.Sprintf("OPM_IMAGE=%s", opmImage))
 
-		fbcAppName := fmt.Sprintf("serverless-operator %s FBC %s", release, v)
+		fbcAppName := konfluxgen.FBCAppName(release, ocpVersion)
 
 		c := konfluxgen.Config{
 			OpenShiftReleasePath: openshiftRelease.RepositoryDirectory(),
@@ -524,7 +524,7 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 				return fmt.Sprintf("&& ("+
 					" files.all.exists(x, x.matches('^olm-catalog/serverless-operator-index/v%s/')) ||"+
 					" files.all.exists(x, x.matches('^.tekton/'))"+
-					" )", v)
+					" )", ocpVersion)
 			},
 			AdditionalComponentConfigs: []konfluxgen.TemplateConfig{
 				{
@@ -536,10 +536,10 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 						},
 						Images: []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration{
 							{
-								To: cioperatorapi.PipelineImageStreamTagReference(fmt.Sprintf("serverless-index-%s-fbc-%s", release, v)),
+								To: cioperatorapi.PipelineImageStreamTagReference(fmt.Sprintf("serverless-index-%s-fbc-%s", release, ocpVersion)),
 								ProjectDirectoryImageBuildInputs: cioperatorapi.ProjectDirectoryImageBuildInputs{
 									DockerfilePath: "Dockerfile",
-									ContextDir:     fmt.Sprintf("./olm-catalog/serverless-operator-index/v%s", v),
+									ContextDir:     fmt.Sprintf("./olm-catalog/serverless-operator-index/v%s", ocpVersion),
 								},
 							},
 						},
@@ -550,7 +550,7 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 				return string(ib.To)
 			},
 			FBCImages: []string{
-				fmt.Sprintf("serverless-index-%s-fbc-%s", release, v),
+				fmt.Sprintf("serverless-index-%s-fbc-%s", release, ocpVersion),
 			},
 			ResourcesOutputPathSkipRemove: true,
 			PipelinesOutputPathSkipRemove: true,
