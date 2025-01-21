@@ -29,6 +29,7 @@ const (
 	ApplicationsDirectoryName          = "applications"
 	ReleasePlanAdmissionsDirectoryName = "releaseplanadmissions"
 	ReleasePlansDirName                = "releaseplans"
+	ReleasesDirName                    = "releases"
 
 	RenovateConfigPath = "renovate.json"
 

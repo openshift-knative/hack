@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -10,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/openshift-knative/hack/pkg/konfluxgen"
+	"github.com/spf13/pflag"
 
 	"github.com/openshift-knative/hack/pkg/konfluxapply"
 )
@@ -19,10 +19,14 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer cancel()
 
-	inputConfig := flag.String("config", filepath.Join("config"), "Specify repositories config")
-	konfluxDir := flag.String("konflux-dir", filepath.Join(".konflux", konfluxgen.ApplicationsDirectoryName), "Konflux directory containing applications, components, etc")
-	releasePlansDir := flag.String("release-plans-dir", filepath.Join(".konflux", "releaseplans"), "Release plans directory")
-	flag.Parse()
+	defaultAdditionalDirs := []string{
+		filepath.Join(".konflux", konfluxgen.ReleasePlansDirName),
+		filepath.Join(".konflux", konfluxgen.ReleasesDirName),
+	}
+	inputConfig := pflag.String("config", filepath.Join("config"), "Specify repositories config")
+	konfluxDir := pflag.String("konflux-dir", filepath.Join(".konflux", konfluxgen.ApplicationsDirectoryName), "Konflux directory containing applications, components, etc")
+	additionalDirs := pflag.StringArray("additional-dirs", defaultAdditionalDirs, "Additional directories to apply")
+	pflag.Parse()
 
 	err := konfluxapply.Apply(ctx, konfluxapply.ApplyConfig{
 		InputConfigPath: *inputConfig,
@@ -32,11 +36,13 @@ func main() {
 		log.Fatal(fmt.Sprintf("Failed to apply dir %q: %v", *konfluxDir, err))
 	}
 
-	err = konfluxapply.Apply(ctx, konfluxapply.ApplyConfig{
-		InputConfigPath: *inputConfig,
-		KonfluxDir:      *releasePlansDir,
-	})
-	if err != nil {
-		log.Fatal(fmt.Sprintf("Failed to apply dir %q: %v", *releasePlansDir, err))
+	for _, dir := range *additionalDirs {
+		err = konfluxapply.Apply(ctx, konfluxapply.ApplyConfig{
+			InputConfigPath: *inputConfig,
+			KonfluxDir:      dir,
+		})
+		if err != nil {
+			log.Fatal(fmt.Sprintf("Failed to apply dir %q: %v", dir, err))
+		}
 	}
 }
