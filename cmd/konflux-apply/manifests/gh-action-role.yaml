@@ -12,6 +12,7 @@ rules:
   - imagerepositories
   - integrationtestscenarios
   - releaseplans
+  - releases
   verbs:
   - get
   - list
