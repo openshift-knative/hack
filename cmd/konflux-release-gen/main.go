@@ -28,13 +28,25 @@ func main() {
 func run() error {
 	ctx := context.TODO()
 
+	const (
+		componentReleaseType = "component"
+		fbcReleaseType       = "fbc"
+
+		stageEnv = "stage"
+		prodEnv  = "prod"
+	)
+
 	var environment, soRevision, overrideSnapshotDir, output, releaseType string
-	pflag.StringVar(&environment, "environment", "prod", "Environment to use. Available values: [stage, prod]")
+	pflag.StringVar(&environment, "environment", "prod", fmt.Sprintf("Environment to use. Available values: [%s, %s]", stageEnv, prodEnv))
 	pflag.StringVar(&soRevision, "so-revision", "main", "SO revision to get snapshots from")
-	pflag.StringVar(&releaseType, "type", "component", "Type of the release. Available values: [component, fbc]")
+	pflag.StringVar(&releaseType, "type", "component", fmt.Sprintf("Type of the release. Available values: [%s, %s]", componentReleaseType, fbcReleaseType))
 	pflag.StringVar(&overrideSnapshotDir, "so-snapshot-directory", ".konflux-release", "The directory containing Serverless Operator override snapshots")
 	pflag.StringVar(&output, "output", ".konflux", "Path to output directory")
 	pflag.Parse()
+
+	if environment != stageEnv && environment != prodEnv {
+		return fmt.Errorf("invalid environment: %s", environment)
+	}
 
 	// clone SO repo to get metadata & snapshots for given revision
 	soRepo := prowgen.Repository{Org: "openshift-knative", Repo: "serverless-operator"}
@@ -69,8 +81,7 @@ func run() error {
 		return fmt.Errorf("could not checkout main branch of hack repo: %w", err)
 	}
 
-	releaseType = strings.ToLower(releaseType)
-	if releaseType == "component" {
+	if strings.ToLower(releaseType) == componentReleaseType {
 		snapshot, err := componentSnapshotName(overrideSnapshotsPath)
 		if err != nil {
 			return fmt.Errorf("could not get snapshot name: %w", err)
@@ -88,7 +99,7 @@ func run() error {
 		if err := konfluxgen.GenerateRelease(cfg); err != nil {
 			return fmt.Errorf("could not generate release: %w", err)
 		}
-	} else if releaseType == "fbc" {
+	} else if strings.ToLower(releaseType) == fbcReleaseType {
 		for _, ocpVersion := range soMetadata.Requirements.OcpVersion.List {
 			ocpVersionFlat := strings.ReplaceAll(ocpVersion, ".", "")
 
@@ -115,7 +126,7 @@ func run() error {
 		return fmt.Errorf("invalid releaseType: %s", releaseType)
 	}
 
-	pushBranch := fmt.Sprintf("release-crs-%s-%s-%s", soRevision, releaseType, environment)
+	pushBranch := strings.ToLower(fmt.Sprintf("release-crs-%s-%s-%s", soRevision, releaseType, environment))
 	commitMsg := fmt.Sprintf("Add %s Release CRs from %s revision for %s", releaseType, soRevision, environment)
 
 	if err := prowgen.PushBranch(ctx, hackRepo, nil, pushBranch, commitMsg); err != nil {

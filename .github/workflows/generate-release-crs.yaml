@@ -17,8 +17,8 @@ on:
         description: "Type to release"
         type: choice
         options:
-          - components
-          - FBCs
+          - component
+          - FBC
         required: true
       skip-apply:
         description: "Skip override-snapshot apply"
