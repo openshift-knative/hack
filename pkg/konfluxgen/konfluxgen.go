@@ -713,8 +713,7 @@ func replace(input interface{}, old, new string) string {
 }
 
 func removeAllExcept(dir string, excludedFiles ...string) error {
-	if _, err := os.Stat(dir); err != nil {
-		// directory does not exist anyhow
+	if !fileExists(dir) {
 		return nil
 	}
 
@@ -729,11 +728,25 @@ func removeAllExcept(dir string, excludedFiles ...string) error {
 
 		for _, excludedFile := range excludedFiles {
 			if path == excludedFile {
+				// skip deletion
+				if d.IsDir() {
+					// skip whole directory, so no need to check on child files too
+					return filepath.SkipDir
+				}
 				return nil
 			}
 		}
 
-		return os.RemoveAll(path)
+		if err := os.RemoveAll(path); err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			// we deleted the directory, so no need to check on child files too
+			return filepath.SkipDir
+		}
+
+		return nil
 	})
 }
 
@@ -788,7 +801,7 @@ func makeValidName(n string) string {
 }
 
 func WriteFileReplacingNewerTaskImages(name string, data []byte, perm os.FileMode) error {
-	if _, err := os.Stat(name); err != nil {
+	if !fileExists(name) {
 		return os.WriteFile(name, data, perm)
 	}
 
