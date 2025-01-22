@@ -91,7 +91,6 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/hack.git" "$branch:$branch" -f
           fi
-          title="Add ${{inputs.type}} Release CRs from ${{inputs.revision}} revision for ${{inputs.environment}}"
-          gh pr create --base main --head "serverless-qe:$branch" --title "$title" --body "$title" --label "do-not-merge/hold" || true
+          gh pr create --base main --head "serverless-qe:$branch" --fill --label "do-not-merge/hold" || true
         # Use the repository cloned by the konflux-release-gen tool
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/hack
