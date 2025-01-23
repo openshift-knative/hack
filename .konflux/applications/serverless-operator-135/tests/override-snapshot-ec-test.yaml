@@ -8,6 +8,8 @@ spec:
       value: rhtap-releng-tenant/registry-ocp-serverless-prod
     - name: TIMEOUT
       value: "120m"
+    - name: WORKERS
+      value: "8"
   application: serverless-operator-135
   contexts:
     - description: Override Snapshot testing

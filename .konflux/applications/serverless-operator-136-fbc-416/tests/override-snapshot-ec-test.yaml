@@ -8,6 +8,8 @@ spec:
       value: rhtap-releng-tenant/fbc-standard
     - name: TIMEOUT
       value: "120m"
+    - name: WORKERS
+      value: "8"
   application: serverless-operator-136-fbc-416
   contexts:
     - description: Override Snapshot testing
