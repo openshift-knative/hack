@@ -21,7 +21,7 @@ spec:
       product_version: "{{{ .SOVersion }}}"
       references:
         - "https://docs.redhat.com/documentation/red_hat_openshift_serverless/"
-      type: "Product Enhancement Advisory"
+      type: "RHEA"
       solution: |
         The Red Hat OpenShift Serverless Operator provides a collection of APIs that
         enables containers, microservices and functions to run "serverless".
