@@ -14,13 +14,6 @@ on:
           - prod
         required: true
         default: "prod"
-      type:
-        description: "Type to release"
-        type: choice
-        options:
-          - component
-          - FBC
-        required: true
       skip-apply:
         description: "Skip override-snapshot apply"
         type: boolean
@@ -67,19 +60,48 @@ jobs:
           path: ./src/github.com/openshift-knative/hack
           token: ${{ secrets.SERVERLESS_QE_ROBOT }}
 
-      - name: Generate Konflux release CR
+      - name: Generate Konflux component release CR
         working-directory: ./src/github.com/openshift-knative/hack
         run: |
-          make generate-konflux-release ARGS="--environment ${{ inputs.environment }} --so-revision ${{ inputs.revision }} --type ${{inputs.type}}"
+          make generate-konflux-release ARGS="--environment ${{ inputs.environment }} --so-revision ${{ inputs.revision }} --type component"
 
-      - name: Create release CR Pull Request
+      - name: Create component release CR Pull Request
         env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
         run: |
           set -x
           git remote add fork "https://github.com/serverless-qe/hack.git"
-          branch="release-crs-${{inputs.revision}}-${{inputs.type}}-${{inputs.environment}}"
+          branch="release-crs-${{inputs.revision}}-component-${{inputs.environment}}"
+          branch=${branch,,} #lower case of branch name
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/hack.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch fork "$branch"
+          if git diff --quiet "fork/$branch" "$branch"; then
+            echo "Branches are identical. No need to force push."
+          else
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/hack.git" "$branch:$branch" -f
+          fi
+          gh pr create --base main --head "serverless-qe:$branch" --fill --label "do-not-merge/hold" || true
+        # Use the repository cloned by the konflux-release-gen tool
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/hack
+
+      - name: Generate Konflux FBC release CRs
+        working-directory: ./src/github.com/openshift-knative/hack
+        run: |
+          make generate-konflux-release ARGS="--environment ${{ inputs.environment }} --so-revision ${{ inputs.revision }} --type fbc"
+
+      - name: Create FBC release CR Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        run: |
+          set -x
+          git remote add fork "https://github.com/serverless-qe/hack.git"
+          branch="release-crs-${{inputs.revision}}-fbc-${{inputs.environment}}"
           branch=${branch,,} #lower case of branch name
           remote_exists=$(git ls-remote --heads fork "$branch")
           if [ -z "$remote_exists" ]; then
