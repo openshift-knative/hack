@@ -8,6 +8,8 @@ spec:
       value: rhtap-releng-tenant/fbc-stage
     - name: TIMEOUT
       value: "120m"
+    - name: WORKERS
+      value: "8"
   application: serverless-operator-136-fbc-417
   contexts:
     - description: Application testing
