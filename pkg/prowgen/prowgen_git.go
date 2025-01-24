@@ -96,7 +96,7 @@ func CmpBranches(a string, b string) int {
 	if strings.HasPrefix(a, "serverless-") {
 		av = soversion.ToUpstreamVersion(a)
 	} else {
-		av, err = semverFromReleaseBranch(a)
+		av, err = SemverFromReleaseBranch(a)
 		if err != nil {
 			return -1 // this is equivalent to ignoring branches that aren't parseable
 		}
@@ -105,7 +105,7 @@ func CmpBranches(a string, b string) int {
 	if strings.HasPrefix(b, "serverless-") {
 		bv = soversion.ToUpstreamVersion(b)
 	} else {
-		bv, err = semverFromReleaseBranch(b)
+		bv, err = SemverFromReleaseBranch(b)
 		if err != nil {
 			return 1 // this is equivalent to ignoring branches that aren't parseable
 		}
@@ -114,7 +114,7 @@ func CmpBranches(a string, b string) int {
 	return av.Compare(*bv)
 }
 
-func semverFromReleaseBranch(b string) (*semver.Version, error) {
+func SemverFromReleaseBranch(b string) (*semver.Version, error) {
 	b = strings.ReplaceAll(b, "release-v", "")
 	b = strings.ReplaceAll(b, "release-", "")
 	if strings.Count(b, ".") == 1 {

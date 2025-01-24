@@ -355,6 +355,11 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			return fmt.Errorf("could not get prefetchDeps: %w", err)
 		}
 
+		semverRelease, err := SemverFromReleaseBranch(release)
+		if err != nil {
+			return fmt.Errorf("Failed to get semver from release branch %q: %w", release, err)
+		}
+
 		cfg := konfluxgen.Config{
 			OpenShiftReleasePath: openshiftRelease.RepositoryDirectory(),
 			ApplicationName:      fmt.Sprintf("serverless-operator %s", release),
@@ -391,6 +396,7 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 				return []string{serverlessBundleNudge(release)}
 			},
 			ComponentReleasePlanConfig: &konfluxgen.ComponentReleasePlanConfig{
+				FirstRelease:              semverRelease,
 				ClusterServiceVersionPath: filepath.Join(r.RepositoryDirectory(), "olm-catalog", "serverless-operator", "manifests", "serverless-operator.clusterserviceversion.yaml"),
 				BundleComponentName:       "serverless-bundle",
 				BundleImageRepoName:       "serverless-operator-bundle",
