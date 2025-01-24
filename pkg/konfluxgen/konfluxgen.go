@@ -16,6 +16,7 @@ import (
 	"text/template"
 
 	"github.com/blang/semver/v4"
+	gosemver "github.com/coreos/go-semver/semver"
 
 	"github.com/openshift-knative/hack/pkg/soversion"
 	"github.com/openshift-knative/hack/pkg/util"
@@ -126,6 +127,7 @@ type PrefetchDeps struct {
 }
 
 type ComponentReleasePlanConfig struct {
+	FirstRelease              *gosemver.Version
 	ClusterServiceVersionPath string
 	BundleComponentName       string
 	BundleImageRepoName       string
@@ -530,14 +532,14 @@ func Generate(cfg Config) error {
 			return fmt.Errorf("failed to load ClusterServiceVersion: %w", err)
 		}
 
-		if err := GenerateComponentReleasePlanAdmission(csv, cfg.ComponentReleasePlanConfig.BundleComponentName, cfg.ComponentReleasePlanConfig.BundleImageRepoName, cfg.ResourcesOutputPath, cfg.ApplicationName); err != nil {
+		if err := GenerateComponentReleasePlanAdmission(cfg, csv); err != nil {
 			return fmt.Errorf("failed to generate ReleasePlanAdmission: %w", err)
 		}
 
 		if err = GenerateComponentsReleasePlans(
 			cfg.ResourcesOutputPath,
 			cfg.ApplicationName,
-			csv.Spec.Version.String(),
+			consistentVersion(cfg, csv).String(),
 			/* In this case RPA.name == RP.name */ releasePlanAdmissionName,
 			releasePlanAdmissionName,
 		); err != nil {
@@ -913,10 +915,10 @@ type rpaComponentData struct {
 	SignSecretName string
 }
 
-func GenerateComponentReleasePlanAdmission(csv *operatorsv1alpha1.ClusterServiceVersion, bundleName string, bundleRepoName string, resourceOutputPath string, appName string) error {
-	soVersion := csv.Spec.Version
+func GenerateComponentReleasePlanAdmission(cfg Config, csv *operatorsv1alpha1.ClusterServiceVersion) error {
+	soVersion := consistentVersion(cfg, csv)
 
-	outputDir := filepath.Join(resourceOutputPath, ReleasePlanAdmissionsDirectoryName)
+	outputDir := filepath.Join(cfg.ResourcesOutputPath, ReleasePlanAdmissionsDirectoryName)
 	if err := os.MkdirAll(outputDir, 0777); err != nil {
 		return fmt.Errorf("failed to create release plan admissions directory: %w", err)
 	}
@@ -928,16 +930,16 @@ func GenerateComponentReleasePlanAdmission(csv *operatorsv1alpha1.ClusterService
 
 	// append bundle component, as this is not part of the CSV
 	components = append(components, ComponentImageRepoRef{
-		ComponentName:   fmt.Sprintf("%s-%d%d", bundleName, soVersion.Major, soVersion.Minor),
-		ImageRepository: fmt.Sprintf("%s/%s", prodRegistry, bundleRepoName),
+		ComponentName:   fmt.Sprintf("%s-%d%d", cfg.ComponentReleasePlanConfig.BundleComponentName, soVersion.Major, soVersion.Minor),
+		ImageRepository: fmt.Sprintf("%s/%s", prodRegistry, cfg.ComponentReleasePlanConfig.BundleComponentName),
 	})
 
-	rpaName := releasePlanAdmissionName(appName, soVersion.String(), ProdEnv)
+	rpaName := releasePlanAdmissionName(cfg.ApplicationName, soVersion.String(), ProdEnv)
 	rpaData := rpaComponentData{
 		Name:            rpaName,
-		ApplicationName: appName,
+		ApplicationName: cfg.ApplicationName,
 		Components:      components,
-		SOVersion:       soVersion.Version,
+		SOVersion:       soVersion,
 		PyxisSecret:     "pyxis-prod-secret",
 		PyxisServer:     "production",
 		PipelineSA:      "release-registry-prod",
@@ -959,12 +961,12 @@ func GenerateComponentReleasePlanAdmission(csv *operatorsv1alpha1.ClusterService
 		})
 	}
 
-	rpaName = releasePlanAdmissionName(appName, soVersion.String(), StageEnv)
+	rpaName = releasePlanAdmissionName(cfg.ApplicationName, soVersion.String(), StageEnv)
 	rpaData = rpaComponentData{
 		Name:            rpaName,
-		ApplicationName: appName,
+		ApplicationName: cfg.ApplicationName,
 		Components:      componentWithStageRepoRef,
-		SOVersion:       soVersion.Version,
+		SOVersion:       soVersion,
 		PyxisSecret:     "pyxis-staging-secret",
 		PyxisServer:     "stage",
 		PipelineSA:      "release-registry-staging",
@@ -1176,4 +1178,17 @@ func loadClusterServiceVerion(path string) (*operatorsv1alpha1.ClusterServiceVer
 		return nil, fmt.Errorf("failed to unmarshall CSV: %w", err)
 	}
 	return csv, nil
+}
+
+func consistentVersion(cfg Config, csv *operatorsv1alpha1.ClusterServiceVersion) semver.Version {
+	version := csv.Spec.Version.Version
+	if csv.Spec.Version.Major != uint64(cfg.ComponentReleasePlanConfig.FirstRelease.Major) || csv.Spec.Version.Minor != uint64(cfg.ComponentReleasePlanConfig.FirstRelease.Minor) {
+		// Use the first release if the csv doesn't match major + minor
+		version = semver.Version{
+			Major: uint64(cfg.ComponentReleasePlanConfig.FirstRelease.Major),
+			Minor: uint64(cfg.ComponentReleasePlanConfig.FirstRelease.Minor),
+			Patch: uint64(cfg.ComponentReleasePlanConfig.FirstRelease.Patch),
+		}
+	}
+	return version
 }
