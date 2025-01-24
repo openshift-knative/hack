@@ -931,7 +931,7 @@ func GenerateComponentReleasePlanAdmission(cfg Config, csv *operatorsv1alpha1.Cl
 	// append bundle component, as this is not part of the CSV
 	components = append(components, ComponentImageRepoRef{
 		ComponentName:   fmt.Sprintf("%s-%d%d", cfg.ComponentReleasePlanConfig.BundleComponentName, soVersion.Major, soVersion.Minor),
-		ImageRepository: fmt.Sprintf("%s/%s", prodRegistry, cfg.ComponentReleasePlanConfig.BundleComponentName),
+		ImageRepository: fmt.Sprintf("%s/%s", prodRegistry, cfg.ComponentReleasePlanConfig.BundleImageRepoName),
 	})
 
 	rpaName := releasePlanAdmissionName(cfg.ApplicationName, soVersion.String(), ProdEnv)
