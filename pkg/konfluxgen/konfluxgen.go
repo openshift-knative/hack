@@ -454,7 +454,7 @@ func Generate(cfg Config) error {
 			Name:            fmt.Sprintf("%s-ec", appKey),
 			ApplicationName: cfg.ApplicationName,
 			Contexts: []IntegrationTestContext{{
-				Name:        "application",
+				Name:        "push",
 				Description: "Application testing",
 			}},
 		}
