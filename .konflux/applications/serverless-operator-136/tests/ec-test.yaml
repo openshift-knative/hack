@@ -13,7 +13,7 @@ spec:
   application: serverless-operator-136
   contexts:
     - description: Application testing
-      name: application
+      name: push
   resolverRef:
     params:
       - name: url
