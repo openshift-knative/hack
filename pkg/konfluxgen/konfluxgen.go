@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -1230,8 +1231,12 @@ func GenerateRelease(cfg ReleaseConfig) error {
 		return fmt.Errorf("failed to create directory %q: %w", fullOutputPath, err)
 	}
 
-	releaseName := unusedReleaseName(fullOutputPath, cfg.ReleasePlan)
-	releaseFileName := fmt.Sprintf("%s.yaml", releaseName)
+	releaseName, err := unusedReleaseName(fullOutputPath, cfg.ReleasePlan)
+	if err != nil {
+		return fmt.Errorf("failed to generate release name for %q: %w", cfg.ReleasePlan, err)
+	}
+
+	releaseFileName := fmt.Sprintf("%s.yaml", cfg.ReleasePlan)
 
 	data := Release{
 		Name:        releaseName,
@@ -1268,16 +1273,34 @@ func executeReleaseTemplate(data Release, outputFilePath string) error {
 	return nil
 }
 
-func unusedReleaseName(outputPath, releaseName string) string {
-	releaseFilePath := filepath.Join(outputPath, fmt.Sprintf("%s.yaml", releaseName))
-	unusedRelease := releaseName
-	for exists, i := fileExists(releaseFilePath), 2; exists; i++ {
-		unusedRelease = fmt.Sprintf("%s-%d", releaseName, i)
-		releaseFilePath = filepath.Join(outputPath, fmt.Sprintf("%s.yaml", unusedRelease))
-		exists = fileExists(releaseFilePath)
+func unusedReleaseName(outputPath, releasePlanName string) (string, error) {
+	releaseFilePath := filepath.Join(outputPath, fmt.Sprintf("%s.yaml", releasePlanName))
+	if !fileExists(releaseFilePath) {
+		return releasePlanName, nil
 	}
 
-	return unusedRelease
+	releaseMetadata, err := util.K8sMetadata(releaseFilePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to read Release metadata: %w", err)
+	}
+
+	/*
+		release name is either:
+		<releasePlanName> or <releasePlanName>-<counter>
+	*/
+	if releaseMetadata.Name == releasePlanName {
+		return fmt.Sprintf("%s-2", releasePlanName), nil
+	} else if strings.HasPrefix(releaseMetadata.Name, fmt.Sprintf("%s-", releasePlanName)) {
+		strCounter := strings.TrimPrefix(releaseMetadata.Name, fmt.Sprintf("%s-", releasePlanName))
+		counter, err := strconv.Atoi(strCounter)
+		if err != nil {
+			return "", fmt.Errorf("could not parse suffix %q of %q to number", strCounter, releaseMetadata.Name)
+		}
+
+		return fmt.Sprintf("%s-%d", releasePlanName, counter+1), nil
+	} else {
+		return "", fmt.Errorf("last release name %q does not match pattern '%s-<counter>'", releaseMetadata.Name, releasePlanName)
+	}
 }
 
 func fileExists(path string) bool {

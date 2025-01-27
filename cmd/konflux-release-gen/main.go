@@ -2,21 +2,18 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/coreos/go-semver/semver"
-	gyaml "github.com/ghodss/yaml"
 	"github.com/openshift-knative/hack/pkg/konfluxgen"
 	"github.com/openshift-knative/hack/pkg/project"
 	"github.com/openshift-knative/hack/pkg/prowgen"
 	"github.com/openshift-knative/hack/pkg/soversion"
+	"github.com/openshift-knative/hack/pkg/util"
 	"github.com/spf13/pflag"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func main() {
@@ -146,25 +143,14 @@ func componentSnapshotName(soReleaseFolder string) (string, error) {
 }
 
 func parseSnapshotName(snapshotFile string) (string, error) {
-	snapshot := metav1.PartialObjectMetadata{}
-
-	y, err := os.ReadFile(snapshotFile)
+	metadata, err := util.K8sMetadata(snapshotFile)
 	if err != nil {
-		return "", fmt.Errorf("failed to read snapshot file: %w", err)
+		return "", fmt.Errorf("could not get snapshot metadata: %w", err)
 	}
 
-	j, err := gyaml.YAMLToJSON(y)
-	if err != nil {
-		return "", fmt.Errorf("failed to convert snapshot file to json: %w", err)
-	}
-
-	if err := json.Unmarshal(j, &snapshot); err != nil {
-		return "", fmt.Errorf("failed to unmarshal snapshot file: %w", err)
-	}
-
-	if snapshot.Name == "" {
+	if metadata.Name == "" {
 		return "", fmt.Errorf("snapshot.Name is empty")
 	}
 
-	return snapshot.Name, nil
+	return metadata.Name, nil
 }
