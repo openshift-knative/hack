@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 
 	"gopkg.in/yaml.v3"
 )
@@ -127,6 +128,15 @@ func (cfg *DependabotConfig) WithMaven(dirs []string, branch string) {
 
 func (cfg *DependabotConfig) Write(repoDir string, run string) error {
 	log.Printf("Writing dependabot config %#v\n", *cfg)
+
+	sort.SliceStable(*cfg.Updates, func(i, j int) bool {
+		a := (*cfg.Updates)[i].TargetBranch
+		b := (*cfg.Updates)[j].TargetBranch
+		if a == b {
+			return (*cfg.Updates)[i].PackageEcosystem < (*cfg.Updates)[j].PackageEcosystem
+		}
+		return a < b
+	})
 
 	out, err := yaml.Marshal(*cfg)
 	if err != nil {
