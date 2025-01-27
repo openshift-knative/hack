@@ -4,7 +4,7 @@ on:
     inputs:
       revision:
         description: "SO branch or revision with the manifests"
-        default: "main"
+        default: "release-1."
         required: true
       environment:
         description: "Environment to release to"
