@@ -154,7 +154,11 @@
                                     .filter(run => run.name.includes('Konflux'))
                                     .map((run) => {
 
-                                        const testName = run.name.slice(run.app.name.length).replace(/[\t /]+/, '').trim()
+                                        const separator = run.name.indexOf('/')
+                                        let testName = run.name
+                                        if (separator >= 0 && separator < run.name.length - 1) {
+                                            testName = run.name.slice(separator+1).trim()
+                                        }
 
                                         return [
                                             branch,
