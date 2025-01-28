@@ -40,7 +40,7 @@ jobs:
           KONFLUX_TOKEN: ${{ secrets.KONFLUX_SA_TOKEN }}
         run: |
           kubectl config set-credentials konflux-sa --token "$KONFLUX_TOKEN"
-          kubectl config set-cluster konflux --server=https://api.stone-prd-rh01.pg1f.p1.openshiftapps.com:6443
+          kubectl config set-cluster konflux --server=https://api.kflux-prd-rh02.0fk9.p1.openshiftapps.com:6443
           kubectl config set-context konflux-sa@konflux --user=konflux-sa --namespace=ocp-serverless-tenant --cluster=konflux
           kubectl config use-context konflux-sa@konflux
 
