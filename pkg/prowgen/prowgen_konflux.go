@@ -29,11 +29,20 @@ const (
 	NudgeFilesAnnotationName = "build.appstudio.openshift.io/build-nudge-files"
 )
 
+var hackRepo = Repository{Org: "openshift-knative", Repo: "hack"}
+
 func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs []*Config) error {
 
 	operatorVersions, err := ServerlessOperatorKonfluxVersions(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get konflux versions for serverless-operator: %w", err)
+	}
+
+	if err := GitMirror(ctx, hackRepo); err != nil {
+		return err
+	}
+	if err := GitCheckout(ctx, hackRepo, "main"); err != nil {
+		return err
 	}
 
 	for _, config := range configs {
@@ -176,12 +185,13 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						Includes: []string{
 							fmt.Sprintf("ci-operator/config/%s/.*%s.*.yaml", r.RepositoryDirectory(), branchName),
 						},
-						Excludes:            b.Konflux.Excludes,
-						ExcludesImages:      b.Konflux.ExcludesImages,
-						JavaImages:          b.Konflux.JavaImages,
-						ResourcesOutputPath: fmt.Sprintf("%s/.konflux", r.RepositoryDirectory()),
-						PipelinesOutputPath: fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
-						Nudges:              nudges,
+						Excludes:                  b.Konflux.Excludes,
+						ExcludesImages:            b.Konflux.ExcludesImages,
+						JavaImages:                b.Konflux.JavaImages,
+						ResourcesOutputPath:       fmt.Sprintf("%s/.konflux", r.RepositoryDirectory()),
+						GlobalResourcesOutputPath: fmt.Sprintf("%s/.konflux", hackRepo.RepositoryDirectory()),
+						PipelinesOutputPath:       fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
+						Nudges:                    nudges,
 						// Preserve the version tag as first tag in any instance since SO, when bumping the patch version
 						// will change it before merging the PR.
 						// See `openshift-knative/serverless-operator/hack/generate/update-pipelines.sh` for more details.
@@ -215,6 +225,11 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 			}
 
 		}
+	}
+
+	commitMsg := fmt.Sprintf("Sync Konflux configurations for serverless operator")
+	if err := PushBranch(ctx, hackRepo, nil, fmt.Sprintf("%s%s", KonfluxBranchPrefix, "main"), commitMsg); err != nil {
+		return err
 	}
 
 	return nil
@@ -289,14 +304,6 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 	konfluxVersions, err := ServerlessOperatorKonfluxVersions(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get Konflux versions for serverless operator: %w", err)
-	}
-
-	hackRepo := Repository{Org: "openshift-knative", Repo: "hack"}
-	if err := GitMirror(ctx, hackRepo); err != nil {
-		return err
-	}
-	if err := GitCheckout(ctx, hackRepo, "main"); err != nil {
-		return err
 	}
 	log.Println("Recreating konflux configurations for serverless operator")
 
@@ -387,6 +394,7 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			// main with the same name but different "revision" (branch).
 			ResourcesOutputPathSkipRemove: true,
 			ResourcesOutputPath:           resourceOutputPath,
+			GlobalResourcesOutputPath:     resourceOutputPath,
 			PipelinesOutputPath:           fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
 			Nudges:                        b.Konflux.Nudges,
 			NudgesFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) []string {
@@ -446,11 +454,6 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 
 		// This is a special GH log format: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#example-grouping-log-lines
 		log.Printf("::endgroup::\n\n")
-	}
-
-	commitMsg := fmt.Sprintf("Sync Konflux configurations for serverless operator")
-	if err := PushBranch(ctx, hackRepo, nil, fmt.Sprintf("%s%s", KonfluxBranchPrefix, "main"), commitMsg); err != nil {
-		return err
 	}
 
 	if err := writeDependabotConfig(ctx, dependabotConfig, r); err != nil {

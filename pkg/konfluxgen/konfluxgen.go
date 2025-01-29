@@ -95,6 +95,7 @@ type Config struct {
 
 	ResourcesOutputPathSkipRemove bool
 	ResourcesOutputPath           string
+	GlobalResourcesOutputPath     string
 
 	PipelinesOutputPathSkipRemove bool
 	PipelinesOutputPath           string
@@ -357,7 +358,7 @@ func Generate(cfg Config) error {
 		for componentKey, config := range components {
 			buf := &bytes.Buffer{}
 
-			appPath := filepath.Join(cfg.ResourcesOutputPath, ApplicationsDirectoryName, appKey, fmt.Sprintf("%s.yaml", appKey))
+			appPath := filepath.Join(cfg.GlobalResourcesOutputPath, ApplicationsDirectoryName, appKey, fmt.Sprintf("%s.yaml", appKey))
 			if err := os.MkdirAll(filepath.Dir(appPath), 0777); err != nil {
 				return fmt.Errorf("failed to create directory for %q: %w", appPath, err)
 			}
@@ -465,7 +466,7 @@ func Generate(cfg Config) error {
 			config.ECPolicyConfiguration = "rhtap-releng-tenant/registry-standard-stage"
 		}
 
-		ecTestDir := filepath.Join(cfg.ResourcesOutputPath, ApplicationsDirectoryName, appKey, "tests")
+		ecTestDir := filepath.Join(cfg.GlobalResourcesOutputPath, ApplicationsDirectoryName, appKey, "tests")
 		if err := os.MkdirAll(ecTestDir, 0777); err != nil {
 			return fmt.Errorf("failed to create directory for %q: %w", appKey, err)
 		}
