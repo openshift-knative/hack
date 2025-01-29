@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/coreos/go-semver/semver"
 	"github.com/jinzhu/copier"
 
 	gyaml "github.com/ghodss/yaml"
@@ -64,7 +65,7 @@ func discover(ctx context.Context, path string) error {
 		return err
 	}
 
-	inConfig, err := removeUnsupportedBranches(inConfig)
+	inConfig, err := removeUnsupportedBranches(ctx, inConfig)
 	if err != nil {
 		return fmt.Errorf("failed to remove unsupported branches: %w", err)
 	}
@@ -164,7 +165,7 @@ type Unsupported struct {
 	Date    string `json:"date" yaml:"date"`
 }
 
-func removeUnsupportedBranches(in *prowgen.Config) (*prowgen.Config, error) {
+func removeUnsupportedBranches(ctx context.Context, in *prowgen.Config) (*prowgen.Config, error) {
 
 	const unsupportedConfig = "pkg/discover/unsupported.yaml"
 
@@ -173,7 +174,7 @@ func removeUnsupportedBranches(in *prowgen.Config) (*prowgen.Config, error) {
 		return nil, err
 	}
 
-	futureUnsupportedBranches := make([]Unsupported, 0)
+	futureUnsupportedBranchesMap := make(map[string]Unsupported, 2)
 
 	for branch := range in.Config.Branches {
 		for _, un := range unsupportedBranches {
@@ -182,26 +183,41 @@ func removeUnsupportedBranches(in *prowgen.Config) (*prowgen.Config, error) {
 				return in, fmt.Errorf("failed to parse date %q: %v", un.Date, err)
 			}
 			if time.Now().UTC().Before(when) {
-				futureUnsupportedBranches = append(futureUnsupportedBranches, un)
+				futureUnsupportedBranchesMap[un.Version] = un
 				continue
 			}
-			dv := soversion.FromUpstreamVersion(branch).String()
-
-			if strings.Contains(branch, un.Version) || strings.Contains(dv, un.Version) {
+			dv := soversion.FromUpstreamVersion(branch)
+			if strings.Contains(branch, un.Version) || strings.Contains(dv.String(), un.Version) {
+				removeKonfluxResources(ctx, un, dv)
 				delete(in.Config.Branches, branch)
 			}
 
 		}
 	}
 
-	if err := writeYaml(unsupportedConfig, unsupportedBranches); err != nil {
+	futureUnsupportedBranches := make([]Unsupported, 0, len(futureUnsupportedBranchesMap))
+	for _, v := range futureUnsupportedBranchesMap {
+		futureUnsupportedBranches = append(futureUnsupportedBranches, v)
+	}
+	slices.SortStableFunc(futureUnsupportedBranches, func(a, b Unsupported) int {
+		return strings.Compare(a.Version, b.Version)
+	})
+	if err := writeYaml(unsupportedConfig, futureUnsupportedBranches); err != nil {
 		return in, err
 	}
 
 	return in, nil
 }
 
+func removeKonfluxResources(ctx context.Context, un Unsupported, dv *semver.Version) {
+	prowgen.Run(ctx, prowgen.Repository{}, "rm", "-rf",
+		fmt.Sprintf(".konflux/**/serverless-operator-%s*", strings.ReplaceAll(un.Version, ".", "")))
+	prowgen.Run(ctx, prowgen.Repository{}, "rm", "-rf",
+		fmt.Sprintf(".konflux/**/serverless-operator-%d%d*", dv.Major, dv.Minor))
+}
+
 func readYaml(path string, out any) error {
+	log.Println("Reading YAML from", path)
 	// Going directly from YAML raw input produces unexpected configs (due to missing YAML tags),
 	// so we convert YAML to JSON and unmarshal the struct from the JSON object.
 	y, err := os.ReadFile(path)
@@ -221,6 +237,7 @@ func readYaml(path string, out any) error {
 }
 
 func writeYaml(path string, out any) error {
+	log.Println("Writing YAML to", path)
 	// Going directly from struct to YAML produces unexpected configs (due to missing YAML tags),
 	// so we produce JSON and then convert it to YAML.
 	j, err := json.Marshal(out)
