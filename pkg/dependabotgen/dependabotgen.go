@@ -11,13 +11,13 @@ import (
 )
 
 const (
-	DependabotConfigVersion = "2"
+	DependabotConfigVersion = 2
 	SyncBranchPrefix        = "sync-dependabot-"
 	DefaultTargetBranch     = "main"
 )
 
 type DependabotConfig struct {
-	Version string             `yaml:"version,omitempty"`
+	Version int                `yaml:"version,omitempty"`
 	Updates *DependabotUpdates `yaml:"updates,omitempty"`
 }
 
