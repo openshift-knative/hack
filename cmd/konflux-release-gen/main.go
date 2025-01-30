@@ -8,11 +8,11 @@ import (
 	"strings"
 
 	"github.com/coreos/go-semver/semver"
+	"github.com/openshift-knative/hack/pkg/k8sresource"
 	"github.com/openshift-knative/hack/pkg/konfluxgen"
 	"github.com/openshift-knative/hack/pkg/project"
 	"github.com/openshift-knative/hack/pkg/prowgen"
 	"github.com/openshift-knative/hack/pkg/soversion"
-	"github.com/openshift-knative/hack/pkg/util"
 	"github.com/spf13/pflag"
 )
 
@@ -93,7 +93,7 @@ func run() error {
 			ResourcesOutputPath: outputDir,
 		}
 
-		if err := konfluxgen.GenerateRelease(cfg); err != nil {
+		if err := konfluxgen.GenerateRelease(ctx, cfg); err != nil {
 			return fmt.Errorf("could not generate release: %w", err)
 		}
 	} else if strings.ToLower(releaseType) == fbcReleaseType {
@@ -115,7 +115,7 @@ func run() error {
 				ResourcesOutputPath: outputDir,
 			}
 
-			if err := konfluxgen.GenerateRelease(cfg); err != nil {
+			if err := konfluxgen.GenerateRelease(ctx, cfg); err != nil {
 				return fmt.Errorf("could not generate release: %w", err)
 			}
 		}
@@ -143,7 +143,7 @@ func componentSnapshotName(soReleaseFolder string) (string, error) {
 }
 
 func parseSnapshotName(snapshotFile string) (string, error) {
-	metadata, err := util.K8sMetadata(snapshotFile)
+	metadata, err := k8sresource.Metadata(snapshotFile)
 	if err != nil {
 		return "", fmt.Errorf("could not get snapshot metadata: %w", err)
 	}

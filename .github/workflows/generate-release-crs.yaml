@@ -14,19 +14,15 @@ on:
           - prod
         required: true
         default: "prod"
-      skip-apply:
-        description: "Skip override-snapshot apply"
-        type: boolean
-        required: false
-        default: "false"
 defaults:
   run:
     shell: bash
 jobs:
-  snapshot-apply:
+  gen-release-cr:
     name: Apply Konflux Override Snapshot
     runs-on: ubuntu-latest
-    if: ${{ inputs.skip-apply == 'false' }}
+    env:
+      KUBECONFIG: ~/.kube/config
     steps:
       - name: Checkout serverless operator
         uses: actions/checkout@v4
@@ -48,11 +44,6 @@ jobs:
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serverless-operator
         run: make apply-override-snapshot
 
-  generate-release-crs:
-    name: Generate Release CRs
-    runs-on: ubuntu-latest
-    needs: snapshot-apply
-    steps:
       - name: Checkout openshift-knative/hack
         uses: actions/checkout@v4
         with:

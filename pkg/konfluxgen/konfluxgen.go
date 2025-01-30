@@ -2,6 +2,7 @@ package konfluxgen
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"embed"
 	"encoding/json"
@@ -13,13 +14,20 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"text/template"
 
 	"github.com/blang/semver/v4"
 	gosemver "github.com/coreos/go-semver/semver"
+	"github.com/openshift-knative/hack/pkg/k8sresource"
 	"github.com/openshift-knative/hack/pkg/soversion"
 	"github.com/openshift-knative/hack/pkg/util"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/tools/clientcmd"
 
 	gyaml "github.com/ghodss/yaml"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
@@ -1222,30 +1230,167 @@ type Release struct {
 	ReleasePlan string
 }
 
-func GenerateRelease(cfg ReleaseConfig) error {
+func GenerateRelease(ctx context.Context, cfg ReleaseConfig) error {
 	fullOutputPath := filepath.Join(cfg.ResourcesOutputPath, ReleasesDirName)
 	// make sure output path exists
 	if err := os.MkdirAll(fullOutputPath, os.ModePerm); err != nil {
 		return fmt.Errorf("failed to create directory %q: %w", fullOutputPath, err)
 	}
 
-	releaseFileName := fmt.Sprintf("%s.yaml", cfg.ReleasePlan)
-	if fileExists(releaseFileName) {
-		// we already have a release file
-		return nil
+	releaseFile := filepath.Join(fullOutputPath, fmt.Sprintf("%s.yaml", cfg.ReleasePlan))
+
+	relName, err := releaseName(ctx, releaseFile, cfg)
+	if err != nil {
+		return fmt.Errorf("failed to get release name for %q: %w", cfg.ReleasePlan, err)
 	}
 
 	data := Release{
-		Name:        cfg.ReleasePlan,
+		Name:        relName,
 		Snapshot:    cfg.Snapshot,
 		ReleasePlan: cfg.ReleasePlan,
 	}
 
-	if err := executeReleaseTemplate(data, filepath.Join(fullOutputPath, releaseFileName)); err != nil {
+	if err := executeReleaseTemplate(data, releaseFile); err != nil {
 		return fmt.Errorf("failed to execute release template: %w", err)
 	}
 
 	return nil
+}
+
+func releaseName(ctx context.Context, releaseFile string, cfg ReleaseConfig) (string, error) {
+	/*
+		if [ no existing release file ]: return RPA name
+		else
+			get release name from file
+			if [ release with name exists in cluster ]
+				if [ release is for same snapshot & same releaseplan]
+					if [ release failed ]
+						return unused release name to give another try
+					else
+						// release either succeeded or still running
+						return same release name
+				else
+					// release was for another/older snapshot
+					return unused release name
+			else
+				// release not applied yet
+				return release name from file
+	*/
+
+	if !fileExists(releaseFile) {
+		// we don't have a release file yet -> simply use the default (RPA) name
+		return cfg.ReleasePlan, nil
+	}
+
+	releaseFromFile, err := k8sresource.KonfluxReleaseFromFile(releaseFile)
+	if err != nil {
+		return "", fmt.Errorf("failed to get release from file %q: %w", releaseFile, err)
+	}
+
+	// check state of release in konflux cluster
+	releaseInCluster, err := loadReleaseFromCluster(ctx, releaseFromFile.Name)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			// release from file is not applied yet in cluster -> use same name
+			return releaseFromFile.Name, nil
+		} else {
+			return "", fmt.Errorf("failed to get release from cluster %q: %w", releaseFromFile.Name, err)
+		}
+	}
+
+	// release exists in cluster
+	if releaseInCluster.Spec.Snapshot == releaseFromFile.Spec.Snapshot &&
+		releaseInCluster.Spec.ReleasePlan == releaseFromFile.Spec.ReleasePlan {
+
+		// release in cluster is for same snapshot & RP -> check status
+		for _, condition := range releaseInCluster.Status.Conditions {
+			if condition.Type == "Released" {
+				if condition.Reason == "Failed" {
+					// release failed -> use another name
+					nextRN, err := nextReleaseName(releaseFromFile.Name, cfg.ReleasePlan)
+					if err != nil {
+						return "", fmt.Errorf("failed to get next release name from release %q: %w", releaseFromFile.Name, err)
+					}
+					return nextRN, nil
+				} else {
+					// release succeeded or is still running -> no need to update name (we could also skip CR generation/update)
+					return releaseFromFile.Name, nil
+				}
+			}
+		}
+
+		return "", fmt.Errorf("could not find 'Released' condition from release %s", releaseFromFile.Name)
+	}
+
+	// release in cluster is for another snapshot & RP -> use another name
+	nextRN, err := nextReleaseName(releaseFromFile.Name, cfg.ReleasePlan)
+	if err != nil {
+		return "", fmt.Errorf("failed to get next release name from release %q: %w", releaseFromFile.Name, err)
+	}
+	return nextRN, nil
+}
+
+func nextReleaseName(currentReleaseName string, releasePlanName string) (string, error) {
+	/*
+		release name is either:
+		<releasePlanName> or <releasePlanName>-<counter>
+	*/
+	if currentReleaseName == releasePlanName {
+		return fmt.Sprintf("%s-2", releasePlanName), nil
+	} else if strings.HasPrefix(currentReleaseName, fmt.Sprintf("%s-", releasePlanName)) {
+		strCounter := strings.TrimPrefix(currentReleaseName, fmt.Sprintf("%s-", releasePlanName))
+		counter, err := strconv.Atoi(strCounter)
+		if err != nil {
+			return "", fmt.Errorf("could not parse suffix %q of %q to number", strCounter, currentReleaseName)
+		}
+
+		return fmt.Sprintf("%s-%d", releasePlanName, counter+1), nil
+	} else {
+		return "", fmt.Errorf("last release name %q does not match pattern '%s-<counter>'", currentReleaseName, releasePlanName)
+	}
+}
+
+func loadReleaseFromCluster(ctx context.Context, name string) (*k8sresource.KonfluxRelease, error) {
+	kubeconfigPath, found := os.LookupEnv("KUBECONFIG")
+	if !found || kubeconfigPath == "" {
+		return nil, fmt.Errorf("KUBECONFIG environment variable not set")
+	}
+
+	restConfig, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build config from KUBECONFIG: %w", err)
+	}
+
+	clientConfig, err := clientcmd.LoadFromFile(kubeconfigPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config from KUBECONFIG: %w", err)
+	}
+
+	currentContext, ok := clientConfig.Contexts[clientConfig.CurrentContext]
+	if !ok {
+		return nil, fmt.Errorf("failed to find current context in KUBECONFIG")
+	}
+	namespace := currentContext.Namespace
+
+	dynamicClient, err := dynamic.NewForConfig(restConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build dynamic client: %w", err)
+	}
+
+	releaseObj := k8sresource.KonfluxRelease{}
+	us, err := dynamicClient.Resource(k8sresource.KonfluxReleaseGVR).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, fmt.Errorf("release %s not found: %w", name, err)
+		}
+		return nil, fmt.Errorf("failed to get release %s: %w", name, err)
+	}
+
+	if err = runtime.DefaultUnstructuredConverter.FromUnstructured(us.Object, &releaseObj); err != nil {
+		return nil, fmt.Errorf("failed to decode release %s: %w", name, err)
+	}
+
+	return &releaseObj, nil
 }
 
 func executeReleaseTemplate(data Release, outputFilePath string) error {
