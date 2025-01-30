@@ -14,12 +14,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/coreos/go-semver/semver"
 	"github.com/jinzhu/copier"
 
 	gyaml "github.com/ghodss/yaml"
 
 	"github.com/openshift-knative/hack/pkg/action"
+	"github.com/openshift-knative/hack/pkg/konfluxgen"
 	"github.com/openshift-knative/hack/pkg/prowgen"
 	"github.com/openshift-knative/hack/pkg/soversion"
 )
@@ -188,7 +188,8 @@ func removeUnsupportedBranches(ctx context.Context, in *prowgen.Config) (*prowge
 			}
 			dv := soversion.FromUpstreamVersion(branch)
 			if strings.Contains(branch, un.Version) || strings.Contains(dv.String(), un.Version) {
-				removeKonfluxResources(ctx, un, dv)
+				removeKonfluxResources(un.Version)
+				removeKonfluxResources(fmt.Sprintf("%d.%d", dv.Major, dv.Minor))
 				delete(in.Config.Branches, branch)
 			}
 
@@ -209,11 +210,16 @@ func removeUnsupportedBranches(ctx context.Context, in *prowgen.Config) (*prowge
 	return in, nil
 }
 
-func removeKonfluxResources(ctx context.Context, un Unsupported, dv *semver.Version) {
-	prowgen.Run(ctx, prowgen.Repository{}, "rm", "-rf",
-		fmt.Sprintf(".konflux/**/serverless-operator-%s*", strings.ReplaceAll(un.Version, ".", "")))
-	prowgen.Run(ctx, prowgen.Repository{}, "rm", "-rf",
-		fmt.Sprintf(".konflux/**/serverless-operator-%d%d*", dv.Major, dv.Minor))
+func removeKonfluxResources(version string) {
+	matches, err := filepath.Glob(fmt.Sprintf(".konflux/**/serverless-operator-%s*", konfluxgen.Sanitize(version)))
+	if err != nil {
+		panic(err)
+	}
+	for _, match := range matches {
+		if err := os.RemoveAll(match); err != nil {
+			panic(err)
+		}
+	}
 }
 
 func readYaml(path string, out any) error {
