@@ -164,6 +164,23 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						return err
 					}
 
+					pushBranch := fmt.Sprintf("%s%s", KonfluxBranchPrefix, branchName)
+
+					if run := r.RunDockefileGenCommand(); run != "" {
+						commitMsg := fmt.Sprintf("Generate dockerfiles with %q", run)
+						commands := strings.Split(run, " ")
+						var args []string
+						if len(commands) > 1 {
+							args = commands[1:]
+						}
+						if out, err := Run(ctx, r, commands[0], args...); err != nil {
+							return fmt.Errorf("failed to %s for %q [%s]: %w - %s", commitMsg, r.RepositoryDirectory(), targetBranch, err, string(out))
+						}
+						if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
+							return err
+						}
+					}
+
 					nudges := b.Konflux.Nudges
 					if soBranchName != "release-next" {
 						_, ok := operatorVersions[soBranchName]
@@ -208,9 +225,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						return fmt.Errorf("failed to generate Konflux configurations for %s (%s): %w", r.RepositoryDirectory(), branchName, err)
 					}
 
-					pushBranch := fmt.Sprintf("%s%s", KonfluxBranchPrefix, branchName)
 					commitMsg := fmt.Sprintf("[%s] Sync Konflux configurations", targetBranch)
-
 					if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
 						return err
 					}
