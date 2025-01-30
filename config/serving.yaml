@@ -45,6 +45,19 @@ config:
         version: "4.17"
       - onDemand: true
         version: "4.13"
+    release-v1.17:
+      konflux:
+        enabled: true
+      openShiftVersions:
+      - useClusterPool: true
+        version: "4.17"
+      - onDemand: true
+        version: "4.13"
+      skipDockerFilesMatches:
+      - openshift/ci-operator/knative-perf-images.*
+      skipE2EMatches:
+      - perf-tests$
+      - .*e2e-tls$
 repositories:
 - dockerfiles:
     excludes:
