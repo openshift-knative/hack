@@ -58,7 +58,7 @@ spec:
         - name: revision
           value: production
         - name: pathInRepo
-          value: "pipelines/rh-advisories/rh-advisories.yaml"
+          value: "pipelines/managed/rh-advisories/rh-advisories.yaml"
     serviceAccountName: {{{ .PipelineSA }}}
     timeouts:
       pipeline: "10h0m0s"
