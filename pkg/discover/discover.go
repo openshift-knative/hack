@@ -12,12 +12,14 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/jinzhu/copier"
 
 	gyaml "github.com/ghodss/yaml"
 
 	"github.com/openshift-knative/hack/pkg/action"
+	"github.com/openshift-knative/hack/pkg/konfluxgen"
 	"github.com/openshift-knative/hack/pkg/prowgen"
 	"github.com/openshift-knative/hack/pkg/soversion"
 )
@@ -58,20 +60,14 @@ func Main() {
 }
 
 func discover(ctx context.Context, path string) error {
-	// Going directly from YAML raw input produces unexpected configs (due to missing YAML tags),
-	// so we convert YAML to JSON and unmarshal the struct from the JSON object.
-	y, err := os.ReadFile(path)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	j, err := gyaml.YAMLToJSON(y)
-	if err != nil {
-		log.Fatalln(err)
+	inConfig := &prowgen.Config{}
+	if err := readYaml(path, inConfig); err != nil {
+		return err
 	}
 
-	inConfig := &prowgen.Config{}
-	if err := json.Unmarshal(j, inConfig); err != nil {
-		log.Fatalln("Unmarshal input config", err)
+	inConfig, err := removeUnsupportedBranches(ctx, inConfig)
+	if err != nil {
+		return fmt.Errorf("failed to remove unsupported branches: %w", err)
 	}
 
 	for _, r := range inConfig.Repositories {
@@ -161,16 +157,103 @@ func discover(ctx context.Context, path string) error {
 		}
 	}
 
+	return writeYaml(path, inConfig)
+}
+
+type Unsupported struct {
+	Version string `json:"version" yaml:"version"`
+	Date    string `json:"date" yaml:"date"`
+}
+
+func removeUnsupportedBranches(ctx context.Context, in *prowgen.Config) (*prowgen.Config, error) {
+
+	const unsupportedConfig = "pkg/discover/unsupported.yaml"
+
+	unsupportedBranches := make([]Unsupported, 0)
+	if err := readYaml(unsupportedConfig, &unsupportedBranches); err != nil {
+		return nil, err
+	}
+
+	futureUnsupportedBranchesMap := make(map[string]Unsupported, 2)
+
+	for branch := range in.Config.Branches {
+		for _, un := range unsupportedBranches {
+			when, err := time.Parse("2006-01-02", un.Date)
+			if err != nil {
+				return in, fmt.Errorf("failed to parse date %q: %v", un.Date, err)
+			}
+			if time.Now().UTC().Before(when) {
+				futureUnsupportedBranchesMap[un.Version] = un
+				continue
+			}
+			dv := soversion.FromUpstreamVersion(branch)
+			if strings.Contains(branch, un.Version) || strings.Contains(dv.String(), un.Version) {
+				removeKonfluxResources(un.Version)
+				removeKonfluxResources(fmt.Sprintf("%d.%d", dv.Major, dv.Minor))
+				delete(in.Config.Branches, branch)
+			}
+
+		}
+	}
+
+	futureUnsupportedBranches := make([]Unsupported, 0, len(futureUnsupportedBranchesMap))
+	for _, v := range futureUnsupportedBranchesMap {
+		futureUnsupportedBranches = append(futureUnsupportedBranches, v)
+	}
+	slices.SortStableFunc(futureUnsupportedBranches, func(a, b Unsupported) int {
+		return strings.Compare(a.Version, b.Version)
+	})
+	if err := writeYaml(unsupportedConfig, futureUnsupportedBranches); err != nil {
+		return in, err
+	}
+
+	return in, nil
+}
+
+func removeKonfluxResources(version string) {
+	matches, err := filepath.Glob(fmt.Sprintf(".konflux/**/serverless-operator-%s*", konfluxgen.Sanitize(version)))
+	if err != nil {
+		panic(err)
+	}
+	for _, match := range matches {
+		if err := os.RemoveAll(match); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func readYaml(path string, out any) error {
+	log.Println("Reading YAML from", path)
+	// Going directly from YAML raw input produces unexpected configs (due to missing YAML tags),
+	// so we convert YAML to JSON and unmarshal the struct from the JSON object.
+	y, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("failed to read %q: %w", path, err)
+	}
+	j, err := gyaml.YAMLToJSON(y)
+	if err != nil {
+		return fmt.Errorf("failed to convert %q to JSON: %w", path, err)
+	}
+
+	if err := json.Unmarshal(j, out); err != nil {
+		return fmt.Errorf("failed to unmarshal config %q: %w", path, err)
+	}
+
+	return nil
+}
+
+func writeYaml(path string, out any) error {
+	log.Println("Writing YAML to", path)
 	// Going directly from struct to YAML produces unexpected configs (due to missing YAML tags),
 	// so we produce JSON and then convert it to YAML.
-	out, err := json.Marshal(inConfig)
+	j, err := json.Marshal(out)
 	if err != nil {
 		return err
 	}
-	out, err = gyaml.JSONToYAML(out)
+	y, err := gyaml.JSONToYAML(j)
 	if err != nil {
 		return err
 	}
 
-	return os.WriteFile(path, out, 0777)
+	return os.WriteFile(path, y, 0644)
 }
