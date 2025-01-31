@@ -25,8 +25,6 @@ import (
 
 const (
 	KonfluxBranchPrefix = "sync-konflux-"
-
-	NudgeFilesAnnotationName = "build.appstudio.openshift.io/build-nudge-files"
 )
 
 var hackRepo = Repository{Org: "openshift-knative", Repo: "hack"}
@@ -412,12 +410,6 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			GlobalResourcesOutputPath:     resourceOutputPath,
 			PipelinesOutputPath:           fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
 			Nudges:                        b.Konflux.Nudges,
-			NudgesFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) []string {
-				if strings.Contains(string(ib.To), "serverless-bundle") {
-					return serverlessIndexNudges(release, soMetadata.Requirements.OcpVersion.List)
-				}
-				return []string{serverlessBundleNudge(release)}
-			},
 			ComponentReleasePlanConfig: &konfluxgen.ComponentReleasePlanConfig{
 				FirstRelease:              semverRelease,
 				ClusterServiceVersionPath: filepath.Join(r.RepositoryDirectory(), "olm-catalog", "serverless-operator", "manifests", "serverless-operator.clusterserviceversion.yaml"),
@@ -429,20 +421,6 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			// See `openshift-knative/serverless-operator/hack/generate/update-pipelines.sh` for more details.
 			Tags:         []string{soMetadata.Project.Version},
 			PrefetchDeps: *prefetchDeps,
-			PipelineRunAnnotationsFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) map[string]string {
-				return map[string]string{
-					NudgeFilesAnnotationName: strings.Join(
-						// Customized version of the default value to avoid unwanted updates.
-						// Default value: https://github.com/konflux-ci/build-service/blob/f2ddc2ebd6d9bd228808a2b2f1c7670f79d16010/controllers/component_dependency_update_controller.go#L75C48-L75C65
-						[]string{
-							".*Dockerfile.*",
-							"olm-catalog/.*.yaml",
-							"olm-catalog/.*.yml",
-							".*Containerfile.*",
-						},
-						","),
-				}
-			},
 		}
 		if len(cfg.ExcludesImages) == 0 {
 			cfg.ExcludesImages = []string{
