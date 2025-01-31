@@ -188,7 +188,7 @@ jobs:
 
       - name: Generate files
         working-directory: ./src/github.com/${{ github.repository }}
-        run: %s
+        run: %[1]s
 
       - name: git push
         working-directory: ./src/github.com/${{ github.repository }}
@@ -198,7 +198,7 @@ jobs:
             git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git config --local user.name "github-actions[bot]"
             git add .
-            git commit -m "Run generate release"
+            git commit -m "Run %[1]s"
             git push
           fi
 `, run))
