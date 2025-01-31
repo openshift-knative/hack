@@ -43,6 +43,10 @@ discover-branches: clean
 	go run github.com/openshift-knative/hack/cmd/discover $(ARGS)
 .PHONY: discover-branches
 
+generate-konflux-release: clean
+	go run github.com/openshift-knative/hack/cmd/konflux-release-gen $(ARGS)
+.PHONY: discover-branches
+
 generate-ci-action:
 	go run github.com/openshift-knative/hack/cmd/generate-ci-action
 .PHONY: generate-ci-action

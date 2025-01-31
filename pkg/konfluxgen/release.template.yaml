@@ -1,0 +1,7 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Release
+metadata:
+  name: {{{ .Name }}}
+spec:
+  snapshot: {{{ .Snapshot }}}
+  releasePlan: {{{ .ReleasePlan }}}

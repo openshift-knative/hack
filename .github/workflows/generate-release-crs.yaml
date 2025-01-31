@@ -1,0 +1,110 @@
+name: Apply Konflux Override Snapshot and create Release CR PR
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: "SO branch or revision with the manifests"
+        default: "release-1."
+        required: true
+      environment:
+        description: "Environment to release to"
+        type: choice
+        options:
+          - stage
+          - prod
+        required: true
+        default: "prod"
+defaults:
+  run:
+    shell: bash
+jobs:
+  gen-release-cr:
+    name: Apply Konflux Override Snapshot
+    runs-on: ubuntu-latest
+    env:
+      KUBECONFIG: ~/.kube/config
+    steps:
+      - name: Checkout serverless operator
+        uses: actions/checkout@v4
+        with:
+          ref: "${{ inputs.revision }}"
+          repository: 'openshift-knative/serverless-operator'
+          path: ./src/github.com/openshift-knative/serverless-operator
+
+      - name: Setup kubeconfig
+        env:
+          KONFLUX_TOKEN: ${{ secrets.KONFLUX_SA_TOKEN }}
+        run: |
+          kubectl config set-credentials konflux-sa --token "$KONFLUX_TOKEN"
+          kubectl config set-cluster konflux --server=https://api.kflux-prd-rh02.0fk9.p1.openshiftapps.com:6443
+          kubectl config set-context konflux-sa@konflux --user=konflux-sa --namespace=ocp-serverless-tenant --cluster=konflux
+          kubectl config use-context konflux-sa@konflux
+
+      - name: Apply Override Snapshots
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serverless-operator
+        run: make apply-override-snapshot
+
+      - name: Checkout openshift-knative/hack
+        uses: actions/checkout@v4
+        with:
+          repository: openshift-knative/hack
+          path: ./src/github.com/openshift-knative/hack
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
+
+      - name: Generate Konflux component release CR
+        working-directory: ./src/github.com/openshift-knative/hack
+        run: |
+          make generate-konflux-release ARGS="--environment ${{ inputs.environment }} --so-revision ${{ inputs.revision }} --type component"
+
+      - name: Create component release CR Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        run: |
+          set -x
+          git remote add fork "https://github.com/serverless-qe/hack.git"
+          branch="release-crs-${{inputs.revision}}-component-${{inputs.environment}}"
+          branch=${branch,,} #lower case of branch name
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/hack.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch fork "$branch"
+          if git diff --quiet "fork/$branch" "$branch"; then
+            echo "Branches are identical. No need to force push."
+          else
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/hack.git" "$branch:$branch" -f
+          fi
+          gh pr create --base main --head "serverless-qe:$branch" --fill --label "do-not-merge/hold" || true
+        # Use the repository cloned by the konflux-release-gen tool
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/hack
+
+      - name: Generate Konflux FBC release CRs
+        working-directory: ./src/github.com/openshift-knative/hack
+        run: |
+          make generate-konflux-release ARGS="--environment ${{ inputs.environment }} --so-revision ${{ inputs.revision }} --type fbc"
+
+      - name: Create FBC release CR Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        run: |
+          set -x
+          git remote add fork "https://github.com/serverless-qe/hack.git"
+          branch="release-crs-${{inputs.revision}}-fbc-${{inputs.environment}}"
+          branch=${branch,,} #lower case of branch name
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/hack.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch fork "$branch"
+          if git diff --quiet "fork/$branch" "$branch"; then
+            echo "Branches are identical. No need to force push."
+          else
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/hack.git" "$branch:$branch" -f
+          fi
+          gh pr create --base main --head "serverless-qe:$branch" --fill --label "do-not-merge/hold" || true
+        # Use the repository cloned by the konflux-release-gen tool
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/hack

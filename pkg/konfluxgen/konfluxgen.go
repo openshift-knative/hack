@@ -2,9 +2,11 @@ package konfluxgen
 
 import (
 	"bytes"
+	"context"
 	"crypto/md5"
 	"embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"log"
@@ -12,14 +14,20 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"text/template"
 
 	"github.com/blang/semver/v4"
 	gosemver "github.com/coreos/go-semver/semver"
-
+	"github.com/openshift-knative/hack/pkg/k8sresource"
 	"github.com/openshift-knative/hack/pkg/soversion"
 	"github.com/openshift-knative/hack/pkg/util"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/tools/clientcmd"
 
 	gyaml "github.com/ghodss/yaml"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
@@ -76,6 +84,9 @@ var FBCReleasePlanAdmissionsTemplate embed.FS
 
 //go:embed releaseplan.template.yaml
 var ReleasePlanTemplate embed.FS
+
+//go:embed release.template.yaml
+var ReleaseTemplate embed.FS
 
 //go:embed renovate.template.json
 var RenovateTemplate embed.FS
@@ -200,8 +211,8 @@ func Generate(cfg Config) error {
 	}
 
 	if !cfg.ResourcesOutputPathSkipRemove {
-		if err := os.RemoveAll(cfg.ResourcesOutputPath); err != nil {
-			return fmt.Errorf("failed to remove %q directory: %w", cfg.ResourcesOutputPath, err)
+		if err := removeAllExcept(cfg.ResourcesOutputPath, filepath.Join(cfg.ResourcesOutputPath, ReleasesDirName)); err != nil {
+			return fmt.Errorf("failed to clean %q directory: %w", cfg.ResourcesOutputPath, err)
 		}
 	}
 
@@ -541,8 +552,8 @@ func Generate(cfg Config) error {
 			cfg.ResourcesOutputPath,
 			cfg.ApplicationName,
 			consistentVersion(cfg, csv).String(),
-			/* In this case RPA.name == RP.name */ releasePlanAdmissionName,
-			releasePlanAdmissionName,
+			/* In this case RPA.name == RP.name */ ReleasePlanAdmissionName,
+			ReleasePlanAdmissionName,
 		); err != nil {
 			return fmt.Errorf("failed to generate ReleasePlan: %w", err)
 		}
@@ -710,8 +721,7 @@ func replace(input interface{}, old, new string) string {
 }
 
 func removeAllExcept(dir string, excludedFiles ...string) error {
-	if _, err := os.Stat(dir); err != nil {
-		// directory does not exist anyhow
+	if !fileExists(dir) {
 		return nil
 	}
 
@@ -726,11 +736,25 @@ func removeAllExcept(dir string, excludedFiles ...string) error {
 
 		for _, excludedFile := range excludedFiles {
 			if path == excludedFile {
+				// skip deletion
+				if d.IsDir() {
+					// skip whole directory, so no need to check on child files too
+					return filepath.SkipDir
+				}
 				return nil
 			}
 		}
 
-		return os.RemoveAll(path)
+		if err := os.RemoveAll(path); err != nil {
+			return err
+		}
+
+		if d.IsDir() {
+			// we deleted the directory, so no need to check on child files too
+			return filepath.SkipDir
+		}
+
+		return nil
 	})
 }
 
@@ -785,7 +809,7 @@ func makeValidName(n string) string {
 }
 
 func WriteFileReplacingNewerTaskImages(name string, data []byte, perm os.FileMode) error {
-	if _, err := os.Stat(name); err != nil {
+	if !fileExists(name) {
 		return os.WriteFile(name, data, perm)
 	}
 
@@ -861,7 +885,7 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 		return fmt.Errorf("failed to parse SO version %q: %w", soVersion, err)
 	}
 
-	rpaName := fbcReleasePlanAdmissionName(appName, soVersion, ProdEnv)
+	rpaName := FBCReleasePlanAdmissionName(appName, soVersion, ProdEnv)
 	fbcData := rpaFBCData{
 		Name:                  rpaName,
 		Applications:          applications,
@@ -880,7 +904,7 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 	}
 
 	// generate RPA for stage
-	rpaName = fbcReleasePlanAdmissionName(appName, soVersion, StageEnv)
+	rpaName = FBCReleasePlanAdmissionName(appName, soVersion, StageEnv)
 	fbcData = rpaFBCData{
 		Name:                  rpaName,
 		Applications:          applications,
@@ -935,7 +959,7 @@ func GenerateComponentReleasePlanAdmission(cfg Config, csv *operatorsv1alpha1.Cl
 		ImageRepository: fmt.Sprintf("%s/%s", prodRegistry, cfg.ComponentReleasePlanConfig.BundleImageRepoName),
 	})
 
-	rpaName := releasePlanAdmissionName(cfg.ApplicationName, soVersion.String(), ProdEnv)
+	rpaName := ReleasePlanAdmissionName(cfg.ApplicationName, soVersion.String(), ProdEnv)
 	rpaData := rpaComponentData{
 		Name:            rpaName,
 		ApplicationName: cfg.ApplicationName,
@@ -962,7 +986,7 @@ func GenerateComponentReleasePlanAdmission(cfg Config, csv *operatorsv1alpha1.Cl
 		})
 	}
 
-	rpaName = releasePlanAdmissionName(cfg.ApplicationName, soVersion.String(), StageEnv)
+	rpaName = ReleasePlanAdmissionName(cfg.ApplicationName, soVersion.String(), StageEnv)
 	rpaData = rpaComponentData{
 		Name:            rpaName,
 		ApplicationName: cfg.ApplicationName,
@@ -1037,11 +1061,11 @@ func (f releasePlanNameFunc) forceAppName(appName string) releasePlanNameFunc {
 	}
 }
 
-func releasePlanAdmissionName(appName, soVersion, env string) string {
+func ReleasePlanAdmissionName(appName, soVersion, env string) string {
 	return Truncate(Sanitize(fmt.Sprintf("%s-%s-%s", appName, soVersion, env)))
 }
 
-func fbcReleasePlanAdmissionName(appName, soVersion, env string) string {
+func FBCReleasePlanAdmissionName(appName, soVersion, env string) string {
 	return Truncate(Sanitize(fmt.Sprintf("%s-%s-fbc-%s", appName, soVersion, env)))
 }
 
@@ -1088,10 +1112,10 @@ func GenerateReleasePlans(applications []string, resourceOutputPath string, appN
 	for _, app := range applications {
 
 		// There is only a single RPA for all FBC applications and the name uses `appName` vs the FBC-specific application name.
-		var rpaNameFunc releasePlanNameFunc = fbcReleasePlanAdmissionName
+		var rpaNameFunc releasePlanNameFunc = FBCReleasePlanAdmissionName
 		rpaNameFunc = rpaNameFunc.forceAppName(appName)
 
-		if err := GenerateComponentsReleasePlans(resourceOutputPath, app, soVersion, releasePlanAdmissionName, rpaNameFunc); err != nil {
+		if err := GenerateComponentsReleasePlans(resourceOutputPath, app, soVersion, ReleasePlanAdmissionName, rpaNameFunc); err != nil {
 			return fmt.Errorf("failed to generate release plan for %q: %w", app, err)
 		}
 	}
@@ -1192,4 +1216,212 @@ func consistentVersion(cfg Config, csv *operatorsv1alpha1.ClusterServiceVersion)
 		}
 	}
 	return version
+}
+
+type ReleaseConfig struct {
+	Snapshot            string
+	ReleasePlan         string
+	Environment         string
+	ResourcesOutputPath string
+}
+
+type Release struct {
+	Name        string
+	Snapshot    string
+	ReleasePlan string
+}
+
+func GenerateRelease(ctx context.Context, cfg ReleaseConfig) error {
+	fullOutputPath := filepath.Join(cfg.ResourcesOutputPath, ReleasesDirName)
+	// make sure output path exists
+	if err := os.MkdirAll(fullOutputPath, os.ModePerm); err != nil {
+		return fmt.Errorf("failed to create directory %q: %w", fullOutputPath, err)
+	}
+
+	releaseFile := filepath.Join(fullOutputPath, fmt.Sprintf("%s.yaml", cfg.ReleasePlan))
+
+	relName, err := releaseName(ctx, releaseFile, cfg)
+	if err != nil {
+		return fmt.Errorf("failed to get release name for %q: %w", cfg.ReleasePlan, err)
+	}
+
+	data := Release{
+		Name:        relName,
+		Snapshot:    cfg.Snapshot,
+		ReleasePlan: cfg.ReleasePlan,
+	}
+
+	if err := executeReleaseTemplate(data, releaseFile); err != nil {
+		return fmt.Errorf("failed to execute release template: %w", err)
+	}
+
+	return nil
+}
+
+func releaseName(ctx context.Context, releaseFile string, cfg ReleaseConfig) (string, error) {
+	/*
+		if [ no existing release file ]: return RPA name
+		else
+			get release name from file
+			if [ release with name exists in cluster ]
+				if [ release is for same snapshot & same releaseplan]
+					if [ release failed ]
+						return unused release name to give another try
+					else
+						// release either succeeded or still running
+						return same release name
+				else
+					// release was for another/older snapshot
+					return unused release name
+			else
+				// release not applied yet
+				return release name from file
+	*/
+
+	if !fileExists(releaseFile) {
+		// we don't have a release file yet -> simply use the default (RPA) name
+		return cfg.ReleasePlan, nil
+	}
+
+	releaseFromFile, err := k8sresource.KonfluxReleaseFromFile(releaseFile)
+	if err != nil {
+		return "", fmt.Errorf("failed to get release from file %q: %w", releaseFile, err)
+	}
+
+	// check state of release in konflux cluster
+	releaseInCluster, err := loadReleaseFromCluster(ctx, releaseFromFile.Name)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			// release from file is not applied yet in cluster -> use same name
+			return releaseFromFile.Name, nil
+		} else {
+			return "", fmt.Errorf("failed to get release from cluster %q: %w", releaseFromFile.Name, err)
+		}
+	}
+
+	// release exists in cluster
+	if releaseInCluster.Spec.Snapshot == releaseFromFile.Spec.Snapshot &&
+		releaseInCluster.Spec.ReleasePlan == releaseFromFile.Spec.ReleasePlan {
+
+		// release in cluster is for same snapshot & RP -> check status
+		for _, condition := range releaseInCluster.Status.Conditions {
+			if condition.Type == "Released" {
+				if condition.Reason == "Failed" {
+					// release failed -> use another name
+					nextRN, err := nextReleaseName(releaseFromFile.Name, cfg.ReleasePlan)
+					if err != nil {
+						return "", fmt.Errorf("failed to get next release name from release %q: %w", releaseFromFile.Name, err)
+					}
+					return nextRN, nil
+				} else {
+					// release succeeded or is still running -> no need to update name (we could also skip CR generation/update)
+					return releaseFromFile.Name, nil
+				}
+			}
+		}
+
+		return "", fmt.Errorf("could not find 'Released' condition from release %s", releaseFromFile.Name)
+	}
+
+	// release in cluster is for another snapshot & RP -> use another name
+	nextRN, err := nextReleaseName(releaseFromFile.Name, cfg.ReleasePlan)
+	if err != nil {
+		return "", fmt.Errorf("failed to get next release name from release %q: %w", releaseFromFile.Name, err)
+	}
+	return nextRN, nil
+}
+
+func nextReleaseName(currentReleaseName string, releasePlanName string) (string, error) {
+	/*
+		release name is either:
+		<releasePlanName> or <releasePlanName>-<counter>
+	*/
+	if currentReleaseName == releasePlanName {
+		return fmt.Sprintf("%s-2", releasePlanName), nil
+	} else if strings.HasPrefix(currentReleaseName, fmt.Sprintf("%s-", releasePlanName)) {
+		strCounter := strings.TrimPrefix(currentReleaseName, fmt.Sprintf("%s-", releasePlanName))
+		counter, err := strconv.Atoi(strCounter)
+		if err != nil {
+			return "", fmt.Errorf("could not parse suffix %q of %q to number", strCounter, currentReleaseName)
+		}
+
+		return fmt.Sprintf("%s-%d", releasePlanName, counter+1), nil
+	} else {
+		return "", fmt.Errorf("last release name %q does not match pattern '%s-<counter>'", currentReleaseName, releasePlanName)
+	}
+}
+
+func loadReleaseFromCluster(ctx context.Context, name string) (*k8sresource.KonfluxRelease, error) {
+	kubeconfigPath, found := os.LookupEnv("KUBECONFIG")
+	if !found || kubeconfigPath == "" {
+		return nil, fmt.Errorf("KUBECONFIG environment variable not set")
+	}
+
+	restConfig, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build config from KUBECONFIG: %w", err)
+	}
+
+	clientConfig, err := clientcmd.LoadFromFile(kubeconfigPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config from KUBECONFIG: %w", err)
+	}
+
+	currentContext, ok := clientConfig.Contexts[clientConfig.CurrentContext]
+	if !ok {
+		return nil, fmt.Errorf("failed to find current context in KUBECONFIG")
+	}
+	namespace := currentContext.Namespace
+
+	dynamicClient, err := dynamic.NewForConfig(restConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build dynamic client: %w", err)
+	}
+
+	releaseObj := k8sresource.KonfluxRelease{}
+	us, err := dynamicClient.Resource(k8sresource.KonfluxReleaseGVR).Namespace(namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return nil, fmt.Errorf("release %s not found: %w", name, err)
+		}
+		return nil, fmt.Errorf("failed to get release %s: %w", name, err)
+	}
+
+	if err = runtime.DefaultUnstructuredConverter.FromUnstructured(us.Object, &releaseObj); err != nil {
+		return nil, fmt.Errorf("failed to decode release %s: %w", name, err)
+	}
+
+	return &releaseObj, nil
+}
+
+func executeReleaseTemplate(data Release, outputFilePath string) error {
+	tpl, err := template.New("release.template.yaml").Delims("{{{", "}}}").ParseFS(ReleaseTemplate, "*.yaml")
+	if err != nil {
+		return fmt.Errorf("failed to parse Release template: %w", err)
+	}
+
+	buf := &bytes.Buffer{}
+	if err := tpl.Execute(buf, data); err != nil {
+		return fmt.Errorf("failed to execute template for Release: %w", err)
+	}
+	if err := os.WriteFile(outputFilePath, buf.Bytes(), 0777); err != nil {
+		return fmt.Errorf("failed to write Release file %q: %w", outputFilePath, err)
+	}
+
+	return nil
+}
+
+func fileExists(path string) bool {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+	return true
+}
+
+func AppName(soBranch string) string {
+	return fmt.Sprintf("serverless-operator %s", soBranch)
+}
+
+func FBCAppName(soBranch, ocpVersion string) string {
+	return fmt.Sprintf("serverless-operator %s FBC %s", soBranch, ocpVersion)
 }
