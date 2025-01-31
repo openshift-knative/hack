@@ -38,6 +38,14 @@ config:
         version: "4.17"
       - onDemand: true
         version: "4.13"
+    release-v1.17:
+      konflux:
+        enabled: true
+      openShiftVersions:
+      - useClusterPool: true
+        version: "4.17"
+      - onDemand: true
+        version: "4.13"
 repositories:
 - dockerfiles: {}
   e2e:
