@@ -20,6 +20,10 @@ config:
       konflux:
         enabled: true
       openShiftVersions:
+      - candidateRelease: true
+        onDemand: true
+        skipCron: true
+        version: "4.18"
       - skipCron: true
         useClusterPool: true
         version: "4.17"
