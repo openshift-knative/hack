@@ -99,6 +99,9 @@ func (cfg *DependabotConfig) WithGo(branch string) {
 				UpdateTypes: []string{"patch"},
 				Patterns:    []string{"*"},
 				AppliesTo:   "version-updates",
+				ExcludePatterns: []string{
+					"*alpha*",
+				},
 			},
 			"minor": {
 				UpdateTypes: []string{"minor"},
@@ -109,6 +112,7 @@ func (cfg *DependabotConfig) WithGo(branch string) {
 					"k8s.io/*",
 					"github.com/openshift/*",
 					"sigs.k8s.io/controller-runtime*",
+					"*alpha*",
 				},
 			},
 			"major": {
@@ -120,6 +124,7 @@ func (cfg *DependabotConfig) WithGo(branch string) {
 					"k8s.io/*",
 					"github.com/openshift/*",
 					"sigs.k8s.io/controller-runtime*",
+					"*alpha*",
 				},
 			},
 			"security": {
