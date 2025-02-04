@@ -100,7 +100,7 @@ func (cfg *DependabotConfig) WithGo(branch string) {
 				Patterns:    []string{"*"},
 				AppliesTo:   "version-updates",
 				ExcludePatterns: []string{
-					"*alpha*",
+					"istio.io/*",
 				},
 			},
 			"minor": {
@@ -112,7 +112,7 @@ func (cfg *DependabotConfig) WithGo(branch string) {
 					"k8s.io/*",
 					"github.com/openshift/*",
 					"sigs.k8s.io/controller-runtime*",
-					"*alpha*",
+					"istio.io/*",
 				},
 			},
 			"major": {
@@ -121,10 +121,10 @@ func (cfg *DependabotConfig) WithGo(branch string) {
 				AppliesTo:   "version-updates",
 				ExcludePatterns: []string{
 					"knative.dev/*",
+					"istio.io/*",
 					"k8s.io/*",
 					"github.com/openshift/*",
 					"sigs.k8s.io/controller-runtime*",
-					"*alpha*",
 				},
 			},
 			"security": {
