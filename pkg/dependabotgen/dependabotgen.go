@@ -29,10 +29,11 @@ func NewDependabotConfig() *DependabotConfig {
 }
 
 type DependabotUpdate struct {
-	PackageEcosystem string         `yaml:"package-ecosystem,omitempty"`
-	Directories      []string       `yaml:"directories,omitempty"`
-	Schedule         ScheduleUpdate `yaml:"schedule,omitempty"`
-	Ignore           []IgnoreUpdate `yaml:"ignore,omitempty"`
+	PackageEcosystem string           `yaml:"package-ecosystem,omitempty"`
+	Directories      []string         `yaml:"directories,omitempty"`
+	Schedule         ScheduleUpdate   `yaml:"schedule,omitempty"`
+	Ignore           []IgnoreUpdate   `yaml:"ignore,omitempty"`
+	Groups           map[string]Group `yaml:"groups,omitempty"`
 
 	TargetBranch string `yaml:"target-branch,omitempty"`
 
@@ -55,6 +56,35 @@ type IgnoreUpdate struct {
 
 type CommitMessageUpdate struct {
 	Prefix string `yaml:"prefix,omitempty"`
+}
+
+type Group struct {
+	UpdateTypes []string `yaml:"update-types,omitempty"`
+	Patterns    []string `yaml:"patterns,omitempty"`
+	AppliesTo   string   `yaml:"applies-to,omitempty"`
+}
+
+var defaultGroups = map[string]Group{
+	"patch": {
+		UpdateTypes: []string{"patch"},
+		Patterns:    []string{"*"},
+		AppliesTo:   "version-updates",
+	},
+	"minor": {
+		UpdateTypes: []string{"minor"},
+		Patterns:    []string{"*"},
+		AppliesTo:   "version-updates",
+	},
+	"major": {
+		UpdateTypes: []string{"major"},
+		Patterns:    []string{"*"},
+		AppliesTo:   "version-updates",
+	},
+	"security": {
+		UpdateTypes: []string{"patch", "minor", "major"},
+		Patterns:    []string{"*"},
+		AppliesTo:   "security-updates",
+	},
 }
 
 func (cfg *DependabotConfig) WithGo(branch string) {
@@ -86,6 +116,10 @@ func (cfg *DependabotConfig) WithGo(branch string) {
 				UpdateTypes:    []string{"version-update:semver-major", "version-update:semver-minor"},
 			},
 		},
+		Groups: map[string]Group{},
+	}
+	for k, v := range defaultGroups {
+		u.Groups[k] = v
 	}
 
 	*cfg.Updates = append(*cfg.Updates, u)
@@ -121,6 +155,10 @@ func (cfg *DependabotConfig) WithMaven(dirs []string, branch string) {
 				UpdateTypes:    []string{"version-update:semver-major", "version-update:semver-minor"},
 			},
 		},
+		Groups: map[string]Group{},
+	}
+	for k, v := range defaultGroups {
+		u.Groups[k] = v
 	}
 
 	*cfg.Updates = append(*cfg.Updates, u)
