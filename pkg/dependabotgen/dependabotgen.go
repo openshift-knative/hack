@@ -200,6 +200,11 @@ func (cfg *DependabotConfig) WithMaven(dirs []string, branch string) {
 	*cfg.Updates = append(*cfg.Updates, u)
 }
 
+const (
+	ghDir        = ".github"
+	workflowsDir = "workflows"
+)
+
 func (cfg *DependabotConfig) Write(repoDir string, run string) error {
 	log.Printf("Writing dependabot config %#v\n", *cfg)
 
@@ -217,9 +222,6 @@ func (cfg *DependabotConfig) Write(repoDir string, run string) error {
 		return fmt.Errorf("failed to marshal dependabot config: %w", err)
 	}
 
-	const ghDir = ".github"
-	const workflowsDir = "workflows"
-
 	if err := os.MkdirAll(filepath.Join(repoDir, ghDir, workflowsDir), 0755); err != nil {
 		return fmt.Errorf("failed to create .github directory: %w", err)
 	}
@@ -227,6 +229,14 @@ func (cfg *DependabotConfig) Write(repoDir string, run string) error {
 		return fmt.Errorf("failed to write dependabot config file: %w", err)
 	}
 
+	if err := WriteDependabotWorkflow(repoDir, run); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func WriteDependabotWorkflow(repoDir string, run string) error {
 	if run == "" {
 		return nil
 	}
@@ -277,7 +287,7 @@ jobs:
           fi
 `, run))
 	if err := os.WriteFile(filepath.Join(repoDir, ghDir, workflowsDir, "dependabot-deps.yaml"), workflow, 0644); err != nil {
-		return fmt.Errorf("failed to write dependabot workflow file: %w", err)
+		return fmt.Errorf("failed to write dependabot workflow file in %q: %w", repoDir, err)
 	}
 
 	return nil
