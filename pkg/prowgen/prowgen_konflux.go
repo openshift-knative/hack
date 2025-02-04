@@ -223,6 +223,10 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						return fmt.Errorf("failed to generate Konflux configurations for %s (%s): %w", r.RepositoryDirectory(), branchName, err)
 					}
 
+					if err := dependabotgen.WriteDependabotWorkflow(r.RepositoryDirectory(), r.RunCodegenCommand()); err != nil {
+						return fmt.Errorf("[%s][%s] failed to write dependabot workflow: %w", r.RepositoryDirectory(), branchName, err)
+					}
+
 					commitMsg := fmt.Sprintf("[%s] Sync Konflux configurations", targetBranch)
 					if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
 						return err
@@ -436,6 +440,10 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 
 		if err := generateFBCApplications(soMetadata, openshiftRelease, r, branch, release, resourceOutputPath, buildArgs); err != nil {
 			return fmt.Errorf("failed to generate FBC applications for %s (%s): %w", r.RepositoryDirectory(), branch, err)
+		}
+
+		if err := dependabotgen.WriteDependabotWorkflow(r.RepositoryDirectory(), r.RunCodegenCommand()); err != nil {
+			return fmt.Errorf("[%s][%s] failed to write dependabot workflow: %w", r.RepositoryDirectory(), branch, err)
 		}
 
 		pushBranch := fmt.Sprintf("%s%s", KonfluxBranchPrefix, branch)
