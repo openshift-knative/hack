@@ -241,6 +241,10 @@ func WriteDependabotWorkflow(repoDir string, run string) error {
 		return nil
 	}
 
+	if err := os.MkdirAll(filepath.Join(repoDir, ghDir, workflowsDir), 0755); err != nil {
+		return fmt.Errorf("failed to create .github directory: %w", err)
+	}
+
 	workflow := []byte(fmt.Sprintf(`
 name: Dependabot
 
