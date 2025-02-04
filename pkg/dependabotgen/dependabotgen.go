@@ -59,32 +59,10 @@ type CommitMessageUpdate struct {
 }
 
 type Group struct {
-	UpdateTypes []string `yaml:"update-types,omitempty"`
-	Patterns    []string `yaml:"patterns,omitempty"`
-	AppliesTo   string   `yaml:"applies-to,omitempty"`
-}
-
-var defaultGroups = map[string]Group{
-	"patch": {
-		UpdateTypes: []string{"patch"},
-		Patterns:    []string{"*"},
-		AppliesTo:   "version-updates",
-	},
-	"minor": {
-		UpdateTypes: []string{"minor"},
-		Patterns:    []string{"*"},
-		AppliesTo:   "version-updates",
-	},
-	"major": {
-		UpdateTypes: []string{"major"},
-		Patterns:    []string{"*"},
-		AppliesTo:   "version-updates",
-	},
-	"security": {
-		UpdateTypes: []string{"patch", "minor", "major"},
-		Patterns:    []string{"*"},
-		AppliesTo:   "security-updates",
-	},
+	UpdateTypes     []string `yaml:"update-types,omitempty"`
+	Patterns        []string `yaml:"patterns,omitempty"`
+	AppliesTo       string   `yaml:"applies-to,omitempty"`
+	ExcludePatterns []string `yaml:"exclude-patterns,omitempty"`
 }
 
 func (cfg *DependabotConfig) WithGo(branch string) {
@@ -116,10 +94,40 @@ func (cfg *DependabotConfig) WithGo(branch string) {
 				UpdateTypes:    []string{"version-update:semver-major", "version-update:semver-minor"},
 			},
 		},
-		Groups: map[string]Group{},
-	}
-	for k, v := range defaultGroups {
-		u.Groups[k] = v
+		Groups: map[string]Group{
+			"patch": {
+				UpdateTypes: []string{"patch"},
+				Patterns:    []string{"*"},
+				AppliesTo:   "version-updates",
+			},
+			"minor": {
+				UpdateTypes: []string{"minor"},
+				Patterns:    []string{"*"},
+				AppliesTo:   "version-updates",
+				ExcludePatterns: []string{
+					"knative.dev/*",
+					"k8s.io/*",
+					"github.com/openshift/*",
+					"sigs.k8s.io/controller-runtime*",
+				},
+			},
+			"major": {
+				UpdateTypes: []string{"major"},
+				Patterns:    []string{"*"},
+				AppliesTo:   "version-updates",
+				ExcludePatterns: []string{
+					"knative.dev/*",
+					"k8s.io/*",
+					"github.com/openshift/*",
+					"sigs.k8s.io/controller-runtime*",
+				},
+			},
+			"security": {
+				UpdateTypes: []string{"patch", "minor", "major"},
+				Patterns:    []string{"*"},
+				AppliesTo:   "security-updates",
+			},
+		},
 	}
 
 	*cfg.Updates = append(*cfg.Updates, u)
@@ -155,10 +163,38 @@ func (cfg *DependabotConfig) WithMaven(dirs []string, branch string) {
 				UpdateTypes:    []string{"version-update:semver-major", "version-update:semver-minor"},
 			},
 		},
-		Groups: map[string]Group{},
-	}
-	for k, v := range defaultGroups {
-		u.Groups[k] = v
+		Groups: map[string]Group{
+			"patch": {
+				UpdateTypes: []string{"patch"},
+				Patterns:    []string{"*"},
+				AppliesTo:   "version-updates",
+			},
+			"minor": {
+				UpdateTypes: []string{"minor"},
+				Patterns:    []string{"*"},
+				AppliesTo:   "version-updates",
+				ExcludePatterns: []string{
+					"io.vertx*",
+					"com.redhat.quarkus.platform*",
+					"io.quarkus*",
+				},
+			},
+			"major": {
+				UpdateTypes: []string{"major"},
+				Patterns:    []string{"*"},
+				AppliesTo:   "version-updates",
+				ExcludePatterns: []string{
+					"io.vertx*",
+					"com.redhat.quarkus.platform*",
+					"io.quarkus*",
+				},
+			},
+			"security": {
+				UpdateTypes: []string{"patch", "minor", "major"},
+				Patterns:    []string{"*"},
+				AppliesTo:   "security-updates",
+			},
+		},
 	}
 
 	*cfg.Updates = append(*cfg.Updates, u)
