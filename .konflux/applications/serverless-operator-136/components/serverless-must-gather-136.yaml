@@ -9,11 +9,6 @@ spec:
   componentName: serverless-must-gather-136
   application: serverless-operator-136
    
-  build-nudges-ref:
-    
-    - "serverless-bundle-136"
-    
-  
   source:
     git:
       url: https://github.com/openshift-knative/serverless-operator.git

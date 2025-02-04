@@ -9,11 +9,6 @@ spec:
   componentName: serverless-metadata-webhook-135
   application: serverless-operator-135
    
-  build-nudges-ref:
-    
-    - "serverless-bundle-135"
-    
-  
   source:
     git:
       url: https://github.com/openshift-knative/serverless-operator.git
