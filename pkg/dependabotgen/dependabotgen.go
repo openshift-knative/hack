@@ -99,6 +99,9 @@ func (cfg *DependabotConfig) WithGo(branch string) {
 				UpdateTypes: []string{"patch"},
 				Patterns:    []string{"*"},
 				AppliesTo:   "version-updates",
+				ExcludePatterns: []string{
+					"istio.io/*",
+				},
 			},
 			"minor": {
 				UpdateTypes: []string{"minor"},
@@ -109,6 +112,7 @@ func (cfg *DependabotConfig) WithGo(branch string) {
 					"k8s.io/*",
 					"github.com/openshift/*",
 					"sigs.k8s.io/controller-runtime*",
+					"istio.io/*",
 				},
 			},
 			"major": {
@@ -117,6 +121,7 @@ func (cfg *DependabotConfig) WithGo(branch string) {
 				AppliesTo:   "version-updates",
 				ExcludePatterns: []string{
 					"knative.dev/*",
+					"istio.io/*",
 					"k8s.io/*",
 					"github.com/openshift/*",
 					"sigs.k8s.io/controller-runtime*",
@@ -239,6 +244,10 @@ func (cfg *DependabotConfig) Write(repoDir string, run string) error {
 func WriteDependabotWorkflow(repoDir string, run string) error {
 	if run == "" {
 		return nil
+	}
+
+	if err := os.MkdirAll(filepath.Join(repoDir, ghDir, workflowsDir), 0755); err != nil {
+		return fmt.Errorf("failed to create .github directory: %w", err)
 	}
 
 	workflow := []byte(fmt.Sprintf(`
