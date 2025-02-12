@@ -34,12 +34,19 @@ func Main() {
 	outputAction := flag.String("output", filepath.Join(".github", "workflows", "release-generate-ci.yaml"), "Output action")
 	flag.Parse()
 
+	const unsupportedConfig = "pkg/discover/unsupported.yaml"
+
+	unsupportedBranches := make([]Unsupported, 0)
+	if err := readYaml(unsupportedConfig, &unsupportedBranches); err != nil {
+		log.Fatalln(err)
+	}
+
 	err := filepath.Walk(*inputConfig, func(path string, info fs.FileInfo, err error) error {
 		if info.IsDir() || !strings.HasSuffix(path, ".yaml") {
 			return nil
 		}
 
-		if err := discover(ctx, path); err != nil {
+		if err := discover(ctx, path, unsupportedBranches); err != nil {
 			return fmt.Errorf("failed to discover config for %s: %w", path, err)
 		}
 
@@ -57,15 +64,19 @@ func Main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	if err := updateUnsupportedBranches(unsupportedBranches, unsupportedConfig); err != nil {
+		log.Fatalln(err)
+	}
 }
 
-func discover(ctx context.Context, path string) error {
+func discover(ctx context.Context, path string, unsupported []Unsupported) error {
 	inConfig := &prowgen.Config{}
 	if err := readYaml(path, inConfig); err != nil {
 		return err
 	}
 
-	inConfig, err := removeUnsupportedBranches(ctx, inConfig)
+	inConfig, err := removeUnsupportedBranches(ctx, inConfig, unsupported)
 	if err != nil {
 		return fmt.Errorf("failed to remove unsupported branches: %w", err)
 	}
@@ -165,49 +176,56 @@ type Unsupported struct {
 	Date    string `json:"date" yaml:"date"`
 }
 
-func removeUnsupportedBranches(ctx context.Context, in *prowgen.Config) (*prowgen.Config, error) {
-
-	const unsupportedConfig = "pkg/discover/unsupported.yaml"
-
-	unsupportedBranches := make([]Unsupported, 0)
-	if err := readYaml(unsupportedConfig, &unsupportedBranches); err != nil {
-		return nil, err
+func (un Unsupported) IsAfter() bool {
+	when, err := time.Parse("2006-01-02", un.Date)
+	if err != nil {
+		panic(fmt.Errorf("failed to parse date %q: %v", un.Date, err))
 	}
+	return when.After(time.Now().UTC())
+}
 
-	futureUnsupportedBranchesMap := make(map[string]Unsupported, 2)
+func removeUnsupportedBranches(_ context.Context, in *prowgen.Config, unsupportedBranches []Unsupported) (*prowgen.Config, error) {
 
 	for branch := range in.Config.Branches {
 		for _, un := range unsupportedBranches {
-			when, err := time.Parse("2006-01-02", un.Date)
-			if err != nil {
-				return in, fmt.Errorf("failed to parse date %q: %v", un.Date, err)
-			}
-			if time.Now().UTC().Before(when) {
-				futureUnsupportedBranchesMap[un.Version] = un
+			if un.IsAfter() {
 				continue
 			}
-			dv := soversion.FromUpstreamVersion(branch)
-			if strings.Contains(branch, un.Version) || strings.Contains(dv.String(), un.Version) {
-				removeKonfluxResources(un.Version)
-				removeKonfluxResources(fmt.Sprintf("%d.%d", dv.Major, dv.Minor))
-				delete(in.Config.Branches, branch)
-			}
+			func() {
+				defer func() {
+					// This can happen if the branch is not convertible to SemVer (for example "main")
+					if err := recover(); err != nil {
+						log.Println("recovered from panic:", err)
+					}
+				}()
 
+				dv := soversion.FromUpstreamVersion(branch)
+				if strings.Contains(branch, un.Version) || strings.Contains(dv.String(), un.Version) {
+					removeKonfluxResources(un.Version)
+					removeKonfluxResources(fmt.Sprintf("%d.%d", dv.Major, dv.Minor))
+					delete(in.Config.Branches, branch)
+				}
+			}()
 		}
 	}
 
-	futureUnsupportedBranches := make([]Unsupported, 0, len(futureUnsupportedBranchesMap))
-	for _, v := range futureUnsupportedBranchesMap {
-		futureUnsupportedBranches = append(futureUnsupportedBranches, v)
+	return in, nil
+}
+
+func updateUnsupportedBranches(unsupportedBranches []Unsupported, unsupportedConfig string) error {
+	futureUnsupportedBranches := make([]Unsupported, 0, len(unsupportedBranches))
+	for _, un := range unsupportedBranches {
+		if un.IsAfter() {
+			futureUnsupportedBranches = append(futureUnsupportedBranches, un)
+		}
 	}
 	slices.SortStableFunc(futureUnsupportedBranches, func(a, b Unsupported) int {
 		return strings.Compare(a.Version, b.Version)
 	})
 	if err := writeYaml(unsupportedConfig, futureUnsupportedBranches); err != nil {
-		return in, err
+		return err
 	}
-
-	return in, nil
+	return nil
 }
 
 func removeKonfluxResources(version string) {
