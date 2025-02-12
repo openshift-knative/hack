@@ -191,12 +191,21 @@ func removeUnsupportedBranches(_ context.Context, in *prowgen.Config, unsupporte
 			if un.IsAfter() {
 				continue
 			}
-			dv := soversion.FromUpstreamVersion(branch)
-			if strings.Contains(branch, un.Version) || strings.Contains(dv.String(), un.Version) {
-				removeKonfluxResources(un.Version)
-				removeKonfluxResources(fmt.Sprintf("%d.%d", dv.Major, dv.Minor))
-				delete(in.Config.Branches, branch)
-			}
+			func() {
+				defer func() {
+					// This can happen if the branch is not convertible to SemVer (for example "main")
+					if err := recover(); err != nil {
+						log.Println("recovered from panic:", err)
+					}
+				}()
+
+				dv := soversion.FromUpstreamVersion(branch)
+				if strings.Contains(branch, un.Version) || strings.Contains(dv.String(), un.Version) {
+					removeKonfluxResources(un.Version)
+					removeKonfluxResources(fmt.Sprintf("%d.%d", dv.Major, dv.Minor))
+					delete(in.Config.Branches, branch)
+				}
+			}()
 		}
 	}
 
