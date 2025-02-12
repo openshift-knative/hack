@@ -1,0 +1,11 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: ReleasePlan
+metadata:
+  labels:
+    release.appstudio.openshift.io/auto-release: 'false'
+    release.appstudio.openshift.io/releasePlanAdmission: 'serverless-operator-135-1351-prod'
+    release.appstudio.openshift.io/standing-attribution: 'true'
+  name: serverless-operator-135-1351-prod
+spec:
+  application: serverless-operator-135
+  target: rhtap-releng-tenant
