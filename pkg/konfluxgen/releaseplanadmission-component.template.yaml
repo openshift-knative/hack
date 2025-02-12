@@ -62,3 +62,4 @@ spec:
     serviceAccountName: {{{ .PipelineSA }}}
     timeouts:
       pipeline: "10h0m0s"
+      tasks: "10h0m0s"
