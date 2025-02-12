@@ -258,6 +258,7 @@ func (jcis JobConfigCopiedInjectors) Inject(prowcopyCfg *Config, prowgenCfg *pro
 func runProwCopyInjectors(config *Config, inConfig *prowgen.Config, openShiftRelease prowgen.Repository) error {
 	injectors := JobConfigCopiedInjectors{
 		prowgen.AlwaysRunInjector(),
+		prowgen.SkipIfOnlyKonfluxChangedInjector(),
 	}
 	return injectors.Inject(config, inConfig, openShiftRelease)
 }
