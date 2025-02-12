@@ -343,6 +343,7 @@ func SkipIfOnlyKonfluxChangedInjector() JobConfigInjector {
 			for k := range jobConfig.PresubmitsStatic {
 				for i := range jobConfig.PresubmitsStatic[k] {
 					jobConfig.PresubmitsStatic[k][i].SkipIfOnlyChanged = "^.tekton/.*|^.konflux.*|^.github/.*"
+					jobConfig.PresubmitsStatic[k][i].AlwaysRun = false
 				}
 			}
 			return nil
