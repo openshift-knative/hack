@@ -27,7 +27,8 @@ COPY LICENSE /licenses/
 
 RUN ln -s {{.app_file}} /usr/local/bin/deploy && \
 	ln -s {{.app_file}} /usr/local/bin/scaffold && \
-	ln -s {{.app_file}} /usr/local/bin/s2i
+	ln -s {{.app_file}} /usr/local/bin/s2i && \
+	ln -s {{.app_file}} /usr/local/bin/s2i-generate
 
 USER 65532
 
