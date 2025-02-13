@@ -6,12 +6,6 @@ config:
         version: "4.17"
       - onDemand: true
         version: "4.13"
-    release-v1.12:
-      openShiftVersions:
-      - useClusterPool: true
-        version: "4.16"
-      - onDemand: true
-        version: "4.12"
     release-v1.14:
       openShiftVersions:
       - useClusterPool: true
