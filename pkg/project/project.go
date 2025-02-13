@@ -32,6 +32,12 @@ type OcpVersion struct {
 	List  []string `json:"list" yaml:"list"`
 }
 
+func DefaultMetadata() *Metadata {
+	return &Metadata{
+		Requirements: &Requirements{},
+	}
+}
+
 func ReadMetadataFile(path string) (*Metadata, error) {
 	bytes, err := os.ReadFile(path)
 	if err != nil {

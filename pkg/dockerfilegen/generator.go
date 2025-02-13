@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -58,6 +59,12 @@ var (
 func GenerateDockerfiles(params Params) error {
 	if params.RootDir == "" {
 		return fmt.Errorf("%w: root-dir cannot be empty", ErrBadConf)
+	}
+	if !path.IsAbs(params.Output) {
+		params.Output = path.Join(params.RootDir, params.Output)
+	}
+	if !path.IsAbs(params.ProjectFilePath) {
+		params.ProjectFilePath = path.Join(params.RootDir, params.ProjectFilePath)
 	}
 
 	if err := os.Chdir(params.RootDir); err != nil {
@@ -164,8 +171,8 @@ func generateDockerfile(params Params, mainPackagesPaths sets.String) error {
 			return fmt.Errorf("%w: Failed to read project metadata file: %w",
 				ErrBadConf, errors.WithStack(err))
 		}
-		log.Println("File ", params.ProjectFilePath, " not found")
-		metadata = nil
+		log.Println("File not found:", params.ProjectFilePath, "(Using defaults)")
+		metadata = project.DefaultMetadata()
 	}
 
 	d := map[string]interface{}{
@@ -174,6 +181,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.String) error {
 	if _, err = saveDockerfile(d, DockerfileBuildImageTemplate, params.Output, params.DockerfilesBuildDir); err != nil {
 		return err
 	}
+
 	if _, err = saveDockerfile(d, DockerfileSourceImageTemplate, params.Output, params.DockerfilesSourceDir); err != nil {
 		return err
 	}
@@ -241,7 +249,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.String) error {
 				ErrBadConf, params.TemplateName)
 		}
 
-		t, err := template.ParseFS(DockerfileTemplate, "dockerfile-templates/*.template")
+		t, err := template.ParseFS(DockerfileTemplate, "dockerfile-templates/*.tmpl")
 		if err != nil {
 			return fmt.Errorf("%w: Parsing failed: %w",
 				ErrBadTemplate, errors.WithStack(err))
@@ -310,10 +318,12 @@ func generateDockerfile(params Params, mainPackagesPaths sets.String) error {
 	// For example:
 	// github.com/openshift-knative/hack/cmd/prowgen: registry.ci.openshift.org/openshift/knative-prowgen:knative-v1.8
 	// github.com/openshift-knative/hack/cmd/testselect: registry.ci.openshift.org/openshift/knative-test-testselect:knative-v1.8
-	if err := os.WriteFile(filepath.Join(params.Output, "images.yaml"), mapping, fs.ModePerm); err != nil {
-		return fmt.Errorf("%w: Write images mapping file failed: %w",
-			ErrIO, errors.WithStack(err))
+	immapPath := filepath.Join(params.Output, "images.yaml")
+	if err := os.WriteFile(immapPath, mapping, fs.ModePerm); err != nil {
+		return fmt.Errorf("%w: Write images mapping file failed `%s`: %w",
+			ErrIO, immapPath, errors.WithStack(err))
 	}
+	log.Println("Images mapping file written:", immapPath)
 	return nil
 }
 
@@ -465,7 +475,7 @@ func downloadImagesFrom(r string, branch string, urlFmt string) (map[string]stri
 }
 
 func saveDockerfile(d map[string]interface{}, imageTemplate embed.FS, output string, dir string) (string, error) {
-	bt, err := template.ParseFS(imageTemplate, "dockerfile-templates/*.template")
+	bt, err := template.ParseFS(imageTemplate, "dockerfile-templates/*.tmpl")
 	if err != nil {
 		return "", fmt.Errorf("%w: Failed creating template: %w",
 			ErrBadTemplate, errors.WithStack(err))
@@ -491,6 +501,7 @@ func saveDockerfile(d map[string]interface{}, imageTemplate embed.FS, output str
 			ErrIO, dockerfilePath, errors.WithStack(err))
 	}
 
+	log.Println("Dockerfile written:", dockerfilePath)
 	return dockerfilePath, nil
 }
 
