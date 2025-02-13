@@ -182,8 +182,12 @@ func generateDockerfile(params Params, mainPackagesPaths sets.String) error {
 		return err
 	}
 
-	if _, err = saveDockerfile(d, DockerfileSourceImageTemplate, params.Output, params.DockerfilesSourceDir); err != nil {
-		return err
+	if dirExists(path.Join(params.RootDir, "vendor")) {
+		if _, err = saveDockerfile(d, DockerfileSourceImageTemplate, params.Output, params.DockerfilesSourceDir); err != nil {
+			return err
+		}
+	} else {
+		log.Println("Skipping source dockerfile for vendorless projects")
 	}
 
 	var additionalInstructions []string
@@ -547,4 +551,9 @@ func writeRPMLockFile(rpmsLockTemplate fs.FS, rootDir string) error {
 			ErrIO, errors.WithStack(err))
 	}
 	return nil
+}
+
+func dirExists(pth string) bool {
+	fi, err := os.Stat(pth)
+	return err == nil && fi.IsDir()
 }
