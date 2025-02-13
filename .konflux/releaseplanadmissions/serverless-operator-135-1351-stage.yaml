@@ -152,6 +152,12 @@ spec:
     pyxis:
       secret: pyxis-staging-secret
       server: stage
+      # This causes the release pipeline to not upload layer size information
+      # to pyxis which will save on runtime at the cost of data completeness in
+      # pyxis. The side-effects are:
+      # * If you are a base image, like ubi9, then partners cannot certify that they build on top of you.
+      # * Size information is not displayed in the catalog. This is very low business impact.
+      skipLayers: true
     sign:
       configMapName: hacbs-signing-pipeline-config-staging-redhatrelease2
       cosignSecretName: konflux-cosign-signing-stage
@@ -168,3 +174,4 @@ spec:
     serviceAccountName: release-registry-staging
     timeouts:
       pipeline: "10h0m0s"
+      tasks: "10h0m0s"

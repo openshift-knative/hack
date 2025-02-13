@@ -60,3 +60,4 @@ spec:
     serviceAccountName: release-index-image-staging
     timeouts:
       pipeline: "4h0m0s"
+      tasks: "4h0m0s"

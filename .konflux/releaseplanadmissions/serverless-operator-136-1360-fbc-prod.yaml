@@ -59,3 +59,4 @@ spec:
     serviceAccountName: release-index-image-prod
     timeouts:
       pipeline: "4h0m0s"
+      tasks: "4h0m0s"
