@@ -206,8 +206,10 @@ func generateDockerfile(params Params, mainPackagesPaths sets.String) error {
 		additionalInstructions = append(additionalInstructions, fmt.Sprintf("RUN microdnf install %s", strings.Join(params.AdditionalPackages, " ")))
 	}
 
+	buildEnvs := make([]string, 0, len(DefaultBuildEnvVars())+len(params.AdditionalBuildEnvVars))
+	buildEnvs = append(buildEnvs, DefaultBuildEnvVars()...)
 	if len(params.AdditionalBuildEnvVars) > 0 {
-		DefaultBuildEnvVar = append(DefaultBuildEnvVar, params.AdditionalBuildEnvVars...)
+		buildEnvs = append(buildEnvs, params.AdditionalBuildEnvVars...)
 	}
 
 	rpmsLockFileWritten := false
@@ -230,7 +232,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.String) error {
 			"component":               capitalize(p),
 			"component_dashcase":      dashcase(p),
 			"additional_instructions": additionalInstructions,
-			"build_env_vars":          DefaultBuildEnvVar,
+			"build_env_vars":          buildEnvs,
 		}
 
 		var DockerfileTemplate embed.FS
