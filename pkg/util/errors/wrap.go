@@ -5,6 +5,11 @@ import (
 	"io"
 )
 
+// Rewrap the error to make sure the errors support the Format function, to
+// dump the details. In Golang SDK the fmt.Errorf returns errors which do not
+// support the Format, especially with details `%+v`, so the details are hidden.
+// This function rewraps the error to similar structs as fmt.Errorf does, but
+// with Format support.
 func Rewrap(err error) error {
 	if _, ok := err.(interface{ Format(s fmt.State, verb rune) }); ok {
 		return err
