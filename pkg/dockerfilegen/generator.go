@@ -25,8 +25,8 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/exp/slices"
 	"golang.org/x/mod/modfile"
+	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"sigs.k8s.io/yaml"
 )
 
 const (

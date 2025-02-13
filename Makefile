@@ -74,7 +74,7 @@ unit-tests:
 	mkdir -p openshift
 	go run ./cmd/generate-ci-action --input ".github/workflows/release-generate-ci-template.yaml" --config "config/" --output "openshift/release-generate-ci.yaml"
 	# If the following fails, please run 'make generate-ci-action'
-	diff -r "openshift/release-generate-ci.yaml" ".github/workflows/release-generate-ci.yaml"
+	diff -u -r "openshift/release-generate-ci.yaml" ".github/workflows/release-generate-ci.yaml"
 
 	go run ./cmd/generate/ --generators dockerfile \
 		--project-file pkg/project/testdata/project.yaml \
@@ -84,7 +84,7 @@ unit-tests:
 		--images-from "hack" \
 		--images-from-url-format "https://raw.githubusercontent.com/openshift-knative/%s/%s/pkg/project/testdata/additional-images.yaml" \
 		--output "openshift/project/testoutput/openshift"
-	diff -r "pkg/project/testoutput" "openshift/project/testoutput"
+	diff -u -r "pkg/project/testoutput" "openshift/project/testoutput"
 
 .PHONY: unit-tests
 
