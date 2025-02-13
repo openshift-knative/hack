@@ -47,11 +47,11 @@ const (
 )
 
 var (
-	ErrUnexpected      = errors.New("Unexpected")
-	ErrIO              = fmt.Errorf("%w: System IO failed", ErrUnexpected)
-	ErrBadConf         = errors.New("Bad configuration")
-	ErrUnsupportedRepo = errors.New("Unsupported repo structure")
-	ErrBadTemplate     = errors.New("Bad template")
+	ErrUnexpected      = fmt.Errorf("unexpected")
+	ErrIO              = fmt.Errorf("%w: system IO failed", ErrUnexpected)
+	ErrBadConf         = fmt.Errorf("bad configuration")
+	ErrUnsupportedRepo = fmt.Errorf("unsupported repo structure")
+	ErrBadTemplate     = fmt.Errorf("bad template")
 )
 
 // GenerateDockerfiles will generate Dockerfile files

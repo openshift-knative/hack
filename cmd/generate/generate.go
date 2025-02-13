@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/openshift-knative/hack/pkg/dockerfilegen"
+	"github.com/openshift-knative/hack/pkg/util/errors"
 	"github.com/spf13/pflag"
 )
 
@@ -40,6 +41,6 @@ func main() {
 	pflag.Parse()
 
 	if err = dockerfilegen.GenerateDockerfiles(params); err != nil {
-		log.Fatal(err)
+		log.Fatalf("🔥 Error: %+v\n", errors.Rewrap(err))
 	}
 }
