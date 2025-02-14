@@ -38,6 +38,10 @@ func main() {
 	pflag.StringArrayVar(&params.AdditionalBuildEnvVars, "additional-build-env", defs.AdditionalBuildEnvVars, "Additional env vars to be added to builder in the image")
 	pflag.StringVar(&params.TemplateName, "template-name", defs.TemplateName, fmt.Sprintf("Dockerfile template name to use. Supported values are [%s, %s]", dockerfilegen.DefaultDockerfileTemplateName, dockerfilegen.FuncUtilDockerfileTemplateName))
 	pflag.BoolVar(&params.RpmsLockFileEnabled, "generate-rpms-lock-file", defs.RpmsLockFileEnabled, "Enable the creation of the rpms.lock.yaml file")
+	pflag.BoolVar(&params.ScanImports, "scan-imports", defs.ScanImports, "Should the imports be scanned for main packages")
+	pflag.StringArrayVar(&params.ScanImportsSubPackages, "scan-imports-subpackages", defs.ScanImportsSubPackages, "Which sub-packages to scan for main imports")
+	pflag.StringArrayVar(&params.ScanImportsTags, "scan-imports-tags", defs.ScanImportsTags, "Which build tags use to limit the scan")
+
 	pflag.Parse()
 
 	if err = dockerfilegen.GenerateDockerfiles(params); err != nil {

@@ -10,7 +10,7 @@ COPY . .
 {{ $c }}
 {{- end }}
 
-RUN go build -tags strictfipsruntime -o /usr/bin/main ./{{.main}}
+RUN go build -tags strictfipsruntime -o /usr/bin/main {{.main}}
 
 FROM $GO_RUNTIME
 
