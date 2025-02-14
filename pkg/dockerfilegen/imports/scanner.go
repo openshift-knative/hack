@@ -22,6 +22,9 @@ var (
 	ErrIO           = fmt.Errorf("io fail")
 )
 
+// ScanForMains will scan a root dir, in specified packages to collect the
+// packages that have a main() function. It works for vendorless and vendorful
+// projects.
 func ScanForMains(rootDir string, packages []string, tags []string) (sets.Set[string], error) {
 	pkgs := sets.New[string]()
 	collctr, err := collector(rootDir, pkgs)
@@ -64,6 +67,12 @@ func collector(rootDir string, pkgs sets.Set[string]) (collectOnlyMainFn, error)
 }
 
 func isDepMainPackage(rootDir string, gm *modfile.File, imprt string) (bool, error) {
+	// within repo
+	if strings.HasPrefix(imprt, gm.Module.Mod.Path) {
+		subimprt := strings.TrimPrefix(imprt, gm.Module.Mod.Path)
+		pkgPath := path.Join(rootDir, subimprt)
+		return isMainPkg(pkgPath)
+	}
 	// try vendor
 	pkgPath := path.Join(rootDir, "vendor", imprt)
 	fi, err := os.Stat(pkgPath)
