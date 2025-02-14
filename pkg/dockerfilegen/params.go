@@ -24,6 +24,9 @@ type Params struct {
 	AdditionalBuildEnvVars       []string
 	TemplateName                 string
 	RpmsLockFileEnabled          bool
+	ScanImports                  bool
+	ScanImportsSubPackages       []string
+	ScanImportsTags              []string
 }
 
 func DefaultParams(wd string) Params {
@@ -53,6 +56,8 @@ func DefaultParams(wd string) Params {
 		AdditionalBuildEnvVars:       nil,
 		TemplateName:                 DefaultDockerfileTemplateName,
 		RpmsLockFileEnabled:          false,
+		ScanImportsSubPackages:       []string{"hack"},
+		ScanImportsTags:              []string{"tools"},
 	}
 }
 

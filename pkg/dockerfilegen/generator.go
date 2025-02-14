@@ -125,10 +125,17 @@ func GenerateDockerfiles(params Params) error {
 			return nil
 		}
 
-		mainPackagesPaths.Insert(filepath.Dir(path))
+		mainPackagesPaths.Insert("./" + filepath.Dir(path))
 		return nil
 	}); err != nil {
 		return errors.WithStack(err)
+	}
+
+	if params.ScanImports {
+		if err := scanImports(mainPackagesPaths, params.RootDir,
+			params.ScanImportsSubPackages, params.ScanImportsTags); err != nil {
+			return err
+		}
 	}
 
 	for _, p := range mainPackagesPaths.UnsortedList() {
