@@ -83,7 +83,7 @@ func GenerateDockerfiles(params Params) error {
 	includesRegex := util.MustToRegexp(params.Includes)
 	excludesRegex := util.MustToRegexp(params.Excludes)
 
-	mainPackagesPaths := sets.NewString()
+	mainPackagesPaths := sets.New[string]()
 
 	if err := filepath.Walk(params.RootDir, func(path string, info fs.FileInfo, err error) error {
 		if info.IsDir() || !strings.HasSuffix(info.Name(), ".go") {
@@ -131,8 +131,8 @@ func GenerateDockerfiles(params Params) error {
 		return errors.WithStack(err)
 	}
 
-	for _, p := range mainPackagesPaths.List() {
-		log.Println("Main package path", p)
+	for _, p := range mainPackagesPaths.UnsortedList() {
+		log.Println("Main package path:", p)
 	}
 
 	if params.Generators == GenerateDockerfileOption {
@@ -145,7 +145,7 @@ func GenerateDockerfiles(params Params) error {
 		ErrBadConf, params.Generators)
 }
 
-func generateDockerfile(params Params, mainPackagesPaths sets.String) error {
+func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error {
 	goMod, err := getGoMod(params.RootDir)
 	if err != nil {
 		return err
@@ -211,7 +211,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.String) error {
 	}
 
 	rpmsLockFileWritten := false
-	for _, p := range mainPackagesPaths.List() {
+	for _, p := range mainPackagesPaths.UnsortedList() {
 		appFile := fmt.Sprintf(params.AppFileFmt, appFilename(p))
 		projectName := strings.TrimPrefix(metadata.Project.ImagePrefix, "knative-")
 		var projectWithSep, projectDashCaseWithSep string
@@ -233,23 +233,23 @@ func generateDockerfile(params Params, mainPackagesPaths sets.String) error {
 			"build_env_vars":          DefaultBuildEnvVar,
 		}
 
-		var DockerfileTemplate embed.FS
+		var dockerfileTemplate embed.FS
 		var rpmsLockTemplate *embed.FS
 		if params.RpmsLockFileEnabled {
 			rpmsLockTemplate = &RPMsLockTemplate
 		}
 		switch params.TemplateName {
 		case DefaultDockerfileTemplateName:
-			DockerfileTemplate = DockerfileDefaultTemplate
+			dockerfileTemplate = DockerfileDefaultTemplate
 		case FuncUtilDockerfileTemplateName:
-			DockerfileTemplate = DockerfileFuncUtilTemplate
+			dockerfileTemplate = DockerfileFuncUtilTemplate
 			rpmsLockTemplate = &RPMsLockTemplate
 		default:
 			return fmt.Errorf("%w: Unknown template name: %s",
 				ErrBadConf, params.TemplateName)
 		}
 
-		t, err := template.ParseFS(DockerfileTemplate, "dockerfile-templates/*.tmpl")
+		t, err := template.ParseFS(dockerfileTemplate, "dockerfile-templates/*.tmpl")
 		if err != nil {
 			return fmt.Errorf("%w: Parsing failed: %w",
 				ErrBadTemplate, errors.WithStack(err))
@@ -268,7 +268,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.String) error {
 			out = filepath.Join(params.Output, params.DockerfilesTestDir, filepath.Base(p))
 		}
 
-		dockerfilePath, err := saveDockerfile(d, DockerfileTemplate, out, "")
+		dockerfilePath, err := saveDockerfile(d, dockerfileTemplate, out, "")
 		if err != nil {
 			return err
 		}
