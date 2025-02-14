@@ -1,0 +1,93 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: docker-java-build
+spec:
+  tasks:
+    - name: build-images-deps
+      matrix:
+        params:
+          - name: PLATFORM
+            value:
+              - $(params.build-platforms)
+      params:
+        - name: IMAGE
+          value: $(params.output-image)-deps
+        - name: DOCKERFILE
+          value: $(params.dockerfile).deps
+        - name: CONTEXT
+          value: $(params.path-context)
+        - name: HERMETIC
+          value: "false"
+        - name: PREFETCH_INPUT
+          value: $(params.prefetch-input)
+        - name: IMAGE_EXPIRES_AFTER
+          value: $(params.image-expires-after)
+        - name: COMMIT_SHA
+          value: $(tasks.clone-repository.results.commit)
+        - name: BUILD_ARGS
+          value:
+            - $(params.build-args[*])
+        - name: BUILD_ARGS_FILE
+          value: $(params.build-args-file)
+        - name: SOURCE_ARTIFACT
+          value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+        - name: CACHI2_ARTIFACT
+          value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+        - name: IMAGE_APPEND_PLATFORM
+          value: "true"
+      runAfter:
+        - prefetch-dependencies
+      taskRef:
+        params:
+          - name: name
+            value: buildah-remote-oci-ta
+          - name: bundle
+            value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.2@sha256:a01ac7eef5b4e889b5619fe397c115e16a70eafe1d39315b5654a781f2e294e1
+          - name: kind
+            value: task
+        resolver: bundles
+      when:
+        - input: $(tasks.init.results.build)
+          operator: in
+          values:
+            - "true"
+
+    - name: build-image-index-deps
+      params:
+        - name: IMAGE
+          value: $(params.output-image)-deps
+        - name: COMMIT_SHA
+          value: $(tasks.clone-repository.results.commit)
+        - name: IMAGE_EXPIRES_AFTER
+          value: $(params.image-expires-after)
+        - name: ALWAYS_BUILD_INDEX
+          value: $(params.build-image-index)
+        - name: IMAGES
+          value:
+            - $(tasks.build-images-deps.results.IMAGE_REF[*])
+      runAfter:
+        - build-images-deps
+      taskRef:
+        params:
+          - name: name
+            value: build-image-index
+          - name: bundle
+            value: quay.io/konflux-ci/tekton-catalog/task-build-image-index:0.1@sha256:e4871851566d8b496966b37bcb8c5ce9748a52487f116373d96c6cd28ef684c6
+          - name: kind
+            value: task
+        resolver: bundles
+      when:
+        - input: $(tasks.init.results.build)
+          operator: in
+          values:
+            - "true"
+
+    - name: build-images
+      params:
+        - name: BUILD_ARGS
+          value:
+            - DEPS_IMAGE=$(tasks.build-image-index-deps.results.IMAGE_URL)@$(tasks.build-image-index-deps.results.IMAGE_DIGEST)
+            - $(params.build-args[*])
+      runAfter:
+        - build-image-index-deps

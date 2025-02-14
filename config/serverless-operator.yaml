@@ -1,23 +1,95 @@
 config:
   branches:
     main:
+      konflux:
+        enabled: true
+        excludes:
+        - .*rosa.*
+        imageOverrides:
+        - name: GO_BUILDER
+          pullSpec: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.22
+        - name: GO_RUNTIME
+          pullSpec: registry.access.redhat.com/ubi8/ubi-minimal
+        - name: JAVA_BUILDER
+          pullSpec: registry.access.redhat.com/ubi8/openjdk-21
+        - name: JAVA_RUNTIME
+          pullSpec: registry.access.redhat.com/ubi8/openjdk-21-runtime
       openShiftVersions:
-      - generateCustomConfigs: true
-        version: "4.15"
+      - candidateRelease: true
+        customConfigs:
+          enabled: true
+          includes:
+          - .*ocp4.18-lp-interop.*
+        onDemand: true
+        version: "4.18"
+      - customConfigs:
+          enabled: true
+          excludes:
+          - .*ocp4.18-lp-interop.*
+        useClusterPool: true
+        version: "4.17"
       - onDemand: true
-        version: "4.12"
+        version: "4.13"
+    release-1.35:
+      konflux:
+        enabled: true
+        excludes:
+        - .*rosa.*
+        imageOverrides:
+        - name: GO_BUILDER
+          pullSpec: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.22
+        - name: GO_RUNTIME
+          pullSpec: registry.access.redhat.com/ubi8/ubi-minimal
+        - name: JAVA_BUILDER
+          pullSpec: registry.access.redhat.com/ubi8/openjdk-21
+        - name: JAVA_RUNTIME
+          pullSpec: registry.access.redhat.com/ubi8/openjdk-21-runtime
+      openShiftVersions:
+      - candidateRelease: true
+        onDemand: true
+        version: "4.18"
+      - useClusterPool: true
+        version: "4.17"
+      - onDemand: true
+        version: "4.13"
+      prowgen:
+        disabled: true
+    release-1.36:
+      konflux:
+        enabled: true
+        excludes:
+        - .*rosa.*
+        imageOverrides:
+        - name: GO_BUILDER
+          pullSpec: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.22
+        - name: GO_RUNTIME
+          pullSpec: registry.access.redhat.com/ubi8/ubi-minimal
+        - name: JAVA_BUILDER
+          pullSpec: registry.access.redhat.com/ubi8/openjdk-21
+        - name: JAVA_RUNTIME
+          pullSpec: registry.access.redhat.com/ubi8/openjdk-21-runtime
+      openShiftVersions:
+      - candidateRelease: true
+        onDemand: true
+        version: "4.18"
+      - useClusterPool: true
+        version: "4.17"
+      - onDemand: true
+        version: "4.13"
+      prowgen:
+        disabled: true
 repositories:
 - customConfigs:
-  - name: aws-ovn
+  - name: 417-aws-ovn
     releaseBuildConfiguration:
       tests:
       - as: e2e-aws-ovn-continuous
-        cron: 0 0 * * 0
+        cron: 25 0 * * 6
         steps:
           cluster_profile: aws
           test:
           - as: operator-e2e
-            commands: make test-e2e-with-kafka
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-e2e-with-kafka
             from: serverless-source-image
             resources:
               limits:
@@ -26,7 +98,7 @@ repositories:
                 cpu: 100m
                 memory: 200Mi
           - as: knative-serving-eventing-e2e
-            commands: make test-upstream-e2e-no-upgrade
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-upstream-e2e-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -35,7 +107,7 @@ repositories:
                 cpu: 100m
                 memory: 200Mi
           - as: knative-eventing-kafka-broker-e2e
-            commands: make test-upstream-e2e-kafka-no-upgrade
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-upstream-e2e-kafka-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -49,16 +121,16 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: azure
+  - name: 417-azure
     releaseBuildConfiguration:
       tests:
       - as: e2e-azure-continuous
-        cron: 0 0 * * 0
+        cron: 6 7 * * 6
         steps:
           cluster_profile: azure4
           test:
           - as: operator-e2e
-            commands: make test-e2e-with-kafka
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-e2e-with-kafka
             from: serverless-source-image
             resources:
               limits:
@@ -67,7 +139,7 @@ repositories:
                 cpu: 100m
                 memory: 200Mi
           - as: knative-serving-eventing-e2e
-            commands: make test-upstream-e2e-no-upgrade
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-upstream-e2e-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -76,7 +148,7 @@ repositories:
                 cpu: 100m
                 memory: 200Mi
           - as: knative-eventing-kafka-broker-e2e
-            commands: make test-upstream-e2e-kafka-no-upgrade
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-upstream-e2e-kafka-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -90,16 +162,16 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: gcp
+  - name: 417-gcp
     releaseBuildConfiguration:
       tests:
       - as: e2e-gcp-continuous
-        cron: 0 0 * * 0
+        cron: 10 14 * * 6
         steps:
           cluster_profile: gcp
           test:
           - as: operator-e2e
-            commands: make test-e2e-with-kafka
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-e2e-with-kafka
             from: serverless-source-image
             resources:
               limits:
@@ -108,7 +180,7 @@ repositories:
                 cpu: 100m
                 memory: 200Mi
           - as: knative-serving-eventing-e2e
-            commands: make test-upstream-e2e-no-upgrade
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-upstream-e2e-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -117,7 +189,7 @@ repositories:
                 cpu: 100m
                 memory: 200Mi
           - as: knative-eventing-kafka-broker-e2e
-            commands: make test-upstream-e2e-kafka-no-upgrade
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-upstream-e2e-kafka-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -131,35 +203,36 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: hypershift
+  - name: 417-hypershift
     releaseBuildConfiguration:
       base_images:
         hypershift-operator:
-          name: "4.15"
+          name: "4.17"
           namespace: ocp
           tag: hypershift-operator
         upi-installer:
-          name: "4.15"
+          name: "4.17"
           namespace: ocp
           tag: upi-installer
       releases:
         latest:
           integration:
             include_built_images: true
-            name: "4.15"
+            name: "4.17"
             namespace: ocp
       tests:
       - as: e2e-hypershift-continuous
-        cron: 0 0 * * 0
+        cron: 43 20 * * 6
         steps:
           cluster_profile: aws-cspi-qe
           env:
             BASE_DOMAIN: cspilp.interop.ccitredhat.com
             HYPERSHIFT_BASE_DOMAIN: cspilp.interop.ccitredhat.com
-            HYPERSHIFT_NODE_COUNT: "5"
+            HYPERSHIFT_NODE_COUNT: "6"
           test:
           - as: operator-e2e
-            commands: make USER_MANAGEMENT_ALLOWED=false test-e2e-with-kafka
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin USER_MANAGEMENT_ALLOWED=false
+              make test-e2e-with-kafka
             from: serverless-source-image
             resources:
               limits:
@@ -168,7 +241,7 @@ repositories:
                 cpu: 100m
                 memory: 200Mi
           - as: knative-serving-eventing-e2e
-            commands: make test-upstream-e2e-no-upgrade
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-upstream-e2e-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -177,7 +250,7 @@ repositories:
                 cpu: 100m
                 memory: 200Mi
           - as: knative-eventing-kafka-broker-e2e
-            commands: make test-upstream-e2e-kafka-no-upgrade
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-upstream-e2e-kafka-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -191,7 +264,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: osd
+  - name: 417-osd
     releaseBuildConfiguration:
       base_images:
         cli-ocm:
@@ -200,12 +273,12 @@ repositories:
           tag: latest
       tests:
       - as: e2e-osd-continuous
-        cron: 0 0 * * 0
+        cron: 31 3 * * 0
         steps:
           cluster_profile: osd-ephemeral
           env:
             CLUSTER_DURATION: "10800"
-            CLUSTER_VERSION: "4.15"
+            CLUSTER_VERSION: "4.17"
             COMPUTE_NODES: "4"
           post:
           - chain: gather
@@ -215,7 +288,7 @@ repositories:
           - ref: osd-create-create
           test:
           - as: operator-e2e
-            commands: make test-e2e-with-kafka
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-e2e-with-kafka
             from: serverless-source-image
             resources:
               limits:
@@ -224,7 +297,7 @@ repositories:
                 cpu: 100m
                 memory: 200Mi
           - as: knative-serving-eventing-e2e
-            commands: make test-upstream-e2e-no-upgrade
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-upstream-e2e-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -237,16 +310,16 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: single-node
+  - name: 417-single-node
     releaseBuildConfiguration:
       tests:
       - as: e2e-sno-continuous
-        cron: 0 0 * * 0
+        cron: 24 10 * * 0
         steps:
           cluster_profile: gcp
           test:
           - as: operator-e2e
-            commands: make HA=false test-e2e-with-kafka
+            commands: HA=false GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-e2e-with-kafka-no-tracing
             from: serverless-source-image
             resources:
               limits:
@@ -260,21 +333,21 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: vsphere
+  - name: 417-vsphere
     releaseBuildConfiguration:
       base_images:
         upi-installer:
-          name: "4.15"
+          name: "4.17"
           namespace: ocp
           tag: upi-installer
       tests:
       - as: e2e-vsphere-continuous
-        cron: 0 0 * * 0
+        cron: 35 17 * * 0
         steps:
-          cluster_profile: vsphere-2
+          cluster_profile: vsphere-elastic
           test:
           - as: operator-e2e
-            commands: make HA=false test-e2e-with-kafka
+            commands: HA=false GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-e2e-with-kafka
             from: serverless-source-image
             resources:
               limits:
@@ -287,6 +360,203 @@ repositories:
         branch: ""
         org: ""
         repo: ""
+  - name: ocp4.17-lp-rosa-classic
+    releaseBuildConfiguration:
+      base_images:
+        cli:
+          name: "4.17"
+          namespace: ocp
+          tag: cli
+        cli-ocm:
+          name: cli-ocm
+          namespace: ci
+          tag: latest
+        rosa-aws-cli:
+          name: rosa-aws-cli
+          namespace: ci
+          tag: latest
+      releases:
+        latest:
+          integration:
+            include_built_images: true
+            name: "4.17"
+            namespace: ocp
+      tests:
+      - as: operator-e2e-rosa-aws
+        cron: 0 23 31 2 *
+        steps:
+          cluster_profile: aws-cspi-qe
+          env:
+            CHANNEL_GROUP: candidate
+            FIREWATCH_CONFIG: |
+              {
+                "failure_rules":
+                  [
+                    {"step": "knative-eventing-kafka-broker-e2e", "failure_type": "test_failure", "classification": "knative-eventing-kafka-broker-e2e Test Failure", "jira_project": "SRVCOM", "jira_additional_labels": ["!default"]},
+                    {"step": "knative-serving-eventing-e2e", "failure_type": "test_failure", "classification": "knative-serving-eventing-e2e Test Failure", "jira_project": "SRVCOM", "jira_additional_labels": ["!default"]},
+                    {"step": "operator-e2e", "failure_type": "test_failure", "classification": "operator-e2e Test Failure", "jira_project": "SRVCOM", "jira_additional_labels": ["!default"]},
+                    {"step": "knative-*", "failure_type": "pod_failure", "classification": "knative Test Execution", "jira_additional_labels": ["!default"]},
+                    {"step": "operator-e2e", "failure_type": "pod_failure", "classification": "operator-e2e Test Execution", "jira_additional_labels": ["!default"]}
+                  ]
+              }
+            FIREWATCH_CONFIG_FILE_PATH: https://raw.githubusercontent.com/CSPI-QE/cspi-utils/main/firewatch-base-configs/rosa/lp-interop.json
+            FIREWATCH_DEFAULT_JIRA_ADDITIONAL_LABELS: '["4.17-lp","rosa-classic-lp","serverless-lp"]'
+            FIREWATCH_DEFAULT_JIRA_PROJECT: LPINTEROP
+            FIREWATCH_FAIL_WITH_TEST_FAILURES: "true"
+            OCM_LOGIN_ENV: staging
+            OPENSHIFT_VERSION: "4.17"
+          test:
+          - ref: cucushift-installer-check-cluster-health
+          - as: knative-eventing-kafka-broker-e2e
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true
+              make test-upstream-e2e-kafka-no-upgrade
+            from: serverless-source-image
+            resources:
+              requests:
+                cpu: 100m
+                memory: 200Mi
+          - as: operator-e2e
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true
+              DELETE_CRD_ON_TEARDOWN=false make teardown test-e2e-with-kafka
+            from: serverless-source-image
+            resources:
+              requests:
+                cpu: 100m
+                memory: 200Mi
+          - as: knative-serving-eventing-e2e
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true
+              make test-upstream-e2e-no-upgrade
+            from: serverless-source-image
+            resources:
+              requests:
+                cpu: 100m
+                memory: 200Mi
+          workflow: firewatch-rosa-aws-sts
+        timeout: 8h0m0s
+      zz_generated_metadata:
+        branch: ""
+        org: ""
+        repo: ""
+  - name: ocp4.18-lp-interop
+    releaseBuildConfiguration:
+      tests:
+      - as: operator-e2e-interop-aws-ocp418
+        cron: 0 23 31 2 *
+        steps:
+          cluster_profile: aws-cspi-qe
+          env:
+            BASE_DOMAIN: cspilp.interop.ccitredhat.com
+            FIREWATCH_CONFIG: |
+              {
+                "failure_rules":
+                  [
+                    {"step": "knative-eventing-kafka-broker-e2e", "failure_type": "test_failure", "classification": "knative-eventing-kafka-broker-e2e Test Failure", "jira_project": "SRVCOM", "jira_additional_labels": ["!default","interop-tests"]},
+                    {"step": "knative-serving-eventing-e2e", "failure_type": "test_failure", "classification": "knative-serving-eventing-e2e Test Failure", "jira_project": "SRVCOM", "jira_additional_labels": ["!default","interop-tests"]},
+                    {"step": "operator-e2e", "failure_type": "test_failure", "classification": "operator-e2e Test Failure", "jira_project": "SRVCOM", "jira_additional_labels": ["!default","interop-tests"]},
+                    {"step": "knative-*", "failure_type": "pod_failure", "classification": "knative Test Execution", "jira_additional_labels": ["!default","interop-tests"]},
+                    {"step": "operator-e2e", "failure_type": "pod_failure", "classification": "operator-e2e Test Execution", "jira_additional_labels": ["!default","interop-tests"]}
+                  ]
+              }
+            FIREWATCH_CONFIG_FILE_PATH: https://raw.githubusercontent.com/CSPI-QE/cspi-utils/main/firewatch-base-configs/aws-ipi/lp-interop.json
+            FIREWATCH_DEFAULT_JIRA_ADDITIONAL_LABELS: '["4.18-lp","self-managed-lp","serverless-lp"]'
+            FIREWATCH_DEFAULT_JIRA_ASSIGNEE: maschmid@redhat.com
+            FIREWATCH_DEFAULT_JIRA_PROJECT: LPINTEROP
+            USER_TAGS: |
+              scenario serverless
+          test:
+          - as: operator-e2e
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true
+              make test-e2e-with-kafka
+            from: serverless-source-image
+            resources:
+              limits:
+                memory: 8Gi
+              requests:
+                cpu: 100m
+                memory: 200Mi
+          - as: knative-serving-eventing-e2e
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true
+              make test-upstream-e2e-no-upgrade
+            from: serverless-source-image
+            resources:
+              limits:
+                memory: 8Gi
+              requests:
+                cpu: 100m
+                memory: 200Mi
+          - as: knative-eventing-kafka-broker-e2e
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true
+              make test-upstream-e2e-kafka-no-upgrade
+            from: serverless-source-image
+            resources:
+              limits:
+                memory: 10Gi
+              requests:
+                cpu: 100m
+                memory: 200Mi
+          workflow: firewatch-ipi-aws
+        timeout: 8h0m0s
+      - as: operator-e2e-interop-aws-ocp418-fips
+        cron: 0 23 31 2 *
+        steps:
+          cluster_profile: aws-cspi-qe
+          env:
+            BASE_DOMAIN: cspilp.interop.ccitredhat.com
+            FIPS_ENABLED: "true"
+            FIREWATCH_CONFIG: |
+              {
+                "failure_rules":
+                  [
+                    {"step": "knative-eventing-kafka-broker-e2e", "failure_type": "test_failure", "classification": "knative-eventing-kafka-broker-e2e Test Failure", "jira_project": "SRVCOM", "jira_additional_labels": ["!default","interop-tests"]},
+                    {"step": "knative-serving-eventing-e2e", "failure_type": "test_failure", "classification": "knative-serving-eventing-e2e Test Failure", "jira_project": "SRVCOM", "jira_additional_labels": ["!default","interop-tests"]},
+                    {"step": "operator-e2e", "failure_type": "test_failure", "classification": "operator-e2e Test Failure", "jira_project": "SRVCOM", "jira_additional_labels": ["!default","interop-tests"]},
+                    {"step": "knative-*", "failure_type": "pod_failure", "classification": "knative Test Execution", "jira_additional_labels": ["!default","interop-tests"]},
+                    {"step": "operator-e2e", "failure_type": "pod_failure", "classification": "operator-e2e Test Execution", "jira_additional_labels": ["!default","interop-tests"]}
+                  ]
+              }
+            FIREWATCH_CONFIG_FILE_PATH: https://raw.githubusercontent.com/CSPI-QE/cspi-utils/main/firewatch-base-configs/aws-ipi/lp-interop.json
+            FIREWATCH_DEFAULT_JIRA_ADDITIONAL_LABELS: '["4.18-lp","self-managed-lp","serverless-lp","fips"]'
+            FIREWATCH_DEFAULT_JIRA_ASSIGNEE: maschmid@redhat.com
+            FIREWATCH_DEFAULT_JIRA_PROJECT: LPINTEROP
+            USER_TAGS: |
+              scenario serverless
+          test:
+          - as: operator-e2e
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true
+              make test-e2e-with-kafka
+            from: serverless-source-image
+            resources:
+              limits:
+                memory: 8Gi
+              requests:
+                cpu: 100m
+                memory: 200Mi
+          - as: knative-serving-eventing-e2e
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true
+              make test-upstream-e2e-no-upgrade
+            from: serverless-source-image
+            resources:
+              limits:
+                memory: 8Gi
+              requests:
+                cpu: 100m
+                memory: 200Mi
+          - as: knative-eventing-kafka-broker-e2e
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true
+              make test-upstream-e2e-kafka-no-upgrade
+            from: serverless-source-image
+            resources:
+              limits:
+                memory: 10Gi
+              requests:
+                cpu: 100m
+                memory: 200Mi
+          workflow: firewatch-ipi-aws
+        timeout: 8h0m0s
+      zz_generated_metadata:
+        branch: ""
+        org: ""
+        repo: ""
   dockerfiles:
     matches:
     - knative-operator/.*
@@ -294,10 +564,13 @@ repositories:
     - serving/metadata-webhook/.*
     - serving/ingress/.*
     - olm-catalog/serverless-operator/Dockerfile
-    - olm-catalog/serverless-operator/index/Dockerfile
+    - olm-catalog/serverless-operator-index/Dockerfile
+    - must-gather/.*
   e2e:
   - match: ^operator-e2e$
-  - match: ^test-upgrade$
+  - jobTimeout: 5h0m0s
+    match: ^test-upgrade$
+    timeout: 1h30m0s
   - ignoreError: true
     match: ^upstream-e2e$
     skipCron: true
@@ -316,6 +589,11 @@ repositories:
     onDemand: true
     runIfChanged: test/ui
   - ignoreError: true
+    match: ^test-soak$
+    onDemand: true
+    runIfChanged: test/soak
+    timeout: 4h0m0s
+  - ignoreError: true
     match: ^kitchensink-e2e$
     onDemand: true
   - ignoreError: true
@@ -324,11 +602,9 @@ repositories:
   ignoreConfigs:
     matches:
     - .*main.yaml$
-    - .*lp-interop.*
-    - .*lp-interop.*
-    - .*lp-rosa-classic.*
   imageNameOverrides:
     serverless-operator: bundle
+    serverless-operator-index: index
   imagePrefix: serverless
   org: openshift-knative
   promotion:

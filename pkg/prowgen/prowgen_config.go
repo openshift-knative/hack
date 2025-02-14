@@ -10,9 +10,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/coreos/go-semver/semver"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
-	prowapi "k8s.io/test-infra/prow/apis/prowjobs/v1"
+	prowapi "sigs.k8s.io/prow/pkg/apis/prowjobs/v1"
+
+	"github.com/openshift-knative/hack/pkg/util"
 )
 
 type Repository struct {
@@ -41,10 +42,12 @@ type E2ETest struct {
 	SkipCron   bool              `json:"skipCron,omitempty" yaml:"skipCron,omitempty"`
 	SkipImages []string          `json:"skipImages,omitempty" yaml:"skipImages,omitempty"`
 	Timeout    *prowapi.Duration `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	JobTimeout *prowapi.Duration `json:"jobTimeout,omitempty" yaml:"jobTimeout,omitempty"`
 }
 
 type Dockerfiles struct {
-	Matches []string `json:"matches,omitempty" yaml:"matches,omitempty"`
+	Matches  []string `json:"matches,omitempty" yaml:"matches,omitempty"`
+	Excludes []string `json:"excludes,omitempty" yaml:"excludes,omitempty"`
 }
 
 type IgnoreConfigs struct {
@@ -53,10 +56,11 @@ type IgnoreConfigs struct {
 
 type Promotion struct {
 	Namespace string `json:"namespace,omitempty" yaml:"namespace,omitempty"`
+	Template  string `json:"template,omitempty" yaml:"template,omitempty"`
 }
 
 type CustomConfigs struct {
-	// Name will be used together with OpenShift version to generate a specific variant.
+	// Name will be used to generate a specific variant.
 	Name string `json:"name,omitempty" yaml:"name,omitempty"`
 	// ReleaseBuildConfiguration allows defining configuration manually. The final configuration
 	// is extended with images and test steps with dependencies.
@@ -64,30 +68,60 @@ type CustomConfigs struct {
 }
 
 func (r Repository) RepositoryDirectory() string {
+	if r.Org == "" && r.Repo == "" {
+		return ""
+	}
 	return filepath.Join(r.Org, r.Repo)
 }
 
 type Branch struct {
+	Prowgen                *Prowgen    `json:"prowgen,omitempty" yaml:"prowgen,omitempty"`
 	OpenShiftVersions      []OpenShift `json:"openShiftVersions,omitempty" yaml:"openShiftVersions,omitempty"`
 	SkipE2EMatches         []string    `json:"skipE2EMatches,omitempty" yaml:"skipE2EMatches,omitempty"`
 	SkipDockerFilesMatches []string    `json:"skipDockerFilesMatches,omitempty" yaml:"skipDockerFilesMatches,omitempty"`
 	Konflux                *Konflux    `json:"konflux,omitempty" yaml:"konflux,omitempty"`
+
+	// DependabotEnabled enabled if `nil`.
+	DependabotEnabled *bool `json:"dependabotEnabled,omitempty" yaml:"dependabotEnabled,omitempty"`
 }
 
 type Konflux struct {
 	Enabled bool `json:"enabled,omitempty" yaml:"enabled,omitempty"`
 
 	Nudges []string `json:"nudges,omitempty" yaml:"nudges,omitempty"`
+
+	Excludes       []string `json:"excludes,omitempty" yaml:"excludes,omitempty"`
+	ExcludesImages []string `json:"excludesImages,omitempty" yaml:"excludesImages,omitempty"`
+
+	JavaImages []string `json:"javaImages,omitempty" yaml:"javaImages,omitempty"`
+
+	ImageOverrides []Image `json:"imageOverrides,omitempty" yaml:"imageOverrides,omitempty"`
+}
+
+type Prowgen struct {
+	Disabled bool `json:"disabled,omitempty" yaml:"disabled,omitempty"`
 }
 
 type OpenShift struct {
-	Version string `json:"version,omitempty" yaml:"version,omitempty"`
-	Cron    string `json:"cron,omitempty" yaml:"cron,omitempty"`
+	Version        string `json:"version,omitempty" yaml:"version,omitempty"`
+	UseClusterPool bool   `json:"useClusterPool,omitempty" yaml:"useClusterPool,omitempty"`
+	Cron           string `json:"cron,omitempty" yaml:"cron,omitempty"`
 	// SkipCron ensures that no periodic jobs are generated for tests running on the given OpenShift version.
-	SkipCron              bool `json:"skipCron,omitempty" yaml:"skipCron,omitempty"`
-	OnDemand              bool `json:"onDemand,omitempty" yaml:"onDemand,omitempty"`
-	GenerateCustomConfigs bool `json:"generateCustomConfigs,omitempty" yaml:"generateCustomConfigs,omitempty"`
-	CandidateRelease      bool `json:"candidateRelease,omitempty" yaml:"candidateRelease,omitempty"`
+	SkipCron         bool                     `json:"skipCron,omitempty" yaml:"skipCron,omitempty"`
+	OnDemand         bool                     `json:"onDemand,omitempty" yaml:"onDemand,omitempty"`
+	CustomConfigs    *CustomConfigsEnablement `json:"customConfigs,omitempty" yaml:"customConfigs,omitempty"`
+	CandidateRelease bool                     `json:"candidateRelease,omitempty" yaml:"candidateRelease,omitempty"`
+}
+
+type CustomConfigsEnablement struct {
+	Enabled  bool     `json:"enabled,omitempty" yaml:"enabled,omitempty"`
+	Includes []string `json:"includes,omitempty" yaml:"includes,omitempty"`
+	Excludes []string `json:"excludes,omitempty" yaml:"excludes,omitempty"`
+}
+
+type Image struct {
+	Name     string `json:"name" yaml:"name"`
+	PullSpec string `json:"pullSpec" yaml:"pullSpec"`
 }
 
 type CommonConfig struct {
@@ -126,18 +160,20 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 	slices.Sort(branches)
 
 	for _, branchName := range branches {
+
+		// This is a special GH log format: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#example-grouping-log-lines
+		log.Printf("::group::prowgen %s %s\n", r.RepositoryDirectory(), branchName)
+
 		branch := cc.Branches[branchName]
+		if branch.Prowgen != nil && branch.Prowgen.Disabled {
+			continue
+		}
 
 		if err := GitCheckout(ctx, r, branchName); err != nil {
 			return nil, fmt.Errorf("[%s] failed to checkout branch %s", r.RepositoryDirectory(), branchName)
 		}
 
-		var err error
 		openshiftVersions := branch.OpenShiftVersions
-		openshiftVersions, err = addCandidateRelease(branch.OpenShiftVersions)
-		if err != nil {
-			return nil, err
-		}
 
 		for i, ov := range openshiftVersions {
 			log.Println(r.RepositoryDirectory(), "Generating config", branchName, "OpenShiftVersion", ov)
@@ -255,12 +291,19 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				Branch:                    branchName,
 			})
 
-			if !ov.GenerateCustomConfigs {
+			if ov.CustomConfigs == nil || !ov.CustomConfigs.Enabled {
 				continue
 			}
 
 			// Generate custom configs.
 			for _, customCfg := range r.CustomConfigs {
+				shouldInclude, err := shouldIncludeCustomConfig(ov, customCfg.Name)
+				if err != nil {
+					return nil, err
+				}
+				if !shouldInclude {
+					continue
+				}
 				customBuildCfg := customCfg.ReleaseBuildConfiguration.DeepCopy()
 				customBuildCfg.Metadata = metadata
 				if customBuildCfg.BuildRootImage == nil {
@@ -292,7 +335,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 
 				buildConfigPath = filepath.Join(
 					r.RepositoryDirectory(),
-					r.Org+"-"+r.Repo+"-"+branchName+"__"+variant+"-"+customCfg.Name+".yaml",
+					r.Org+"-"+r.Repo+"-"+branchName+"__"+customCfg.Name+".yaml",
 				)
 
 				cfgs = append(cfgs, ReleaseBuildConfiguration{
@@ -302,9 +345,37 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				})
 			}
 		}
+
+		// This is a special GH log format: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#example-grouping-log-lines
+		log.Printf("::endgroup::\n\n")
 	}
 
 	return cfgs, nil
+}
+
+func shouldIncludeCustomConfig(ov OpenShift, customCfgName string) (bool, error) {
+	includes, err := util.ToRegexp(ov.CustomConfigs.Includes)
+	if err != nil {
+		return false, fmt.Errorf("failed to create regular expressions for %+v: %w", ov.CustomConfigs.Includes, err)
+	}
+	excludes, err := util.ToRegexp(ov.CustomConfigs.Excludes)
+	if err != nil {
+		return false, fmt.Errorf("failed to create regular expressions for %+v: %w", ov.CustomConfigs.Excludes, err)
+	}
+	// Empty includes means we want everything. Configs can still be excluded later.
+	// If both "includes" and "excludes" match the config name then excludes take precedence.
+	shouldInclude := len(includes) == 0
+	for _, i := range includes {
+		if i.MatchString(customCfgName) {
+			shouldInclude = true
+		}
+	}
+	for _, x := range excludes {
+		if x.MatchString(customCfgName) {
+			shouldInclude = false
+		}
+	}
+	return shouldInclude, nil
 }
 
 // TODO: In 2023 we need to move forward to use the new `eventing` or `serving`, for _new_ repos,
@@ -330,7 +401,7 @@ func withNamePromotion(r Repository, branchName string) ReleaseBuildConfiguratio
 			Targets: []cioperatorapi.PromotionTarget{
 				{
 					Namespace: ns,
-					Name:      strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
+					Name:      createPromotionName(r.Promotion, branchName),
 					AdditionalImages: map[string]string{
 						// Add source image
 						transformLegacyKnativeSourceImageName(r): "src",
@@ -352,7 +423,7 @@ func withTagPromotion(r Repository, branchName string) ReleaseBuildConfiguration
 			Targets: []cioperatorapi.PromotionTarget{
 				{
 					Namespace:   ns,
-					Tag:         strings.ReplaceAll(strings.ReplaceAll(branchName, "release", "knative"), "next", "nightly"),
+					Tag:         createPromotionName(r.Promotion, branchName),
 					TagByCommit: false, // TODO: revisit this later
 					AdditionalImages: map[string]string{
 						// Add source image
@@ -365,32 +436,16 @@ func withTagPromotion(r Repository, branchName string) ReleaseBuildConfiguration
 	}
 }
 
-func addCandidateRelease(openshiftVersions []OpenShift) ([]OpenShift, error) {
-	semVersions := make([]*semver.Version, 0, len(openshiftVersions))
-	for _, ov := range openshiftVersions {
-		v := ov.Version
-		// Make sure version strings are in the format MAJOR.MINOR.MICRO
-		if len(strings.SplitN(v, ".", 3)) != 3 {
-			v = v + ".0"
-		}
-		ovSemVer, err := semver.NewVersion(v)
-		if err != nil {
-			return nil, err
-		}
-		semVersions = append(semVersions, ovSemVer)
+func createPromotionName(p Promotion, branchName string) string {
+	tpl := "knative-${version}"
+	if p.Template != "" {
+		tpl = p.Template
 	}
-	semver.Sort(semVersions)
-
-	latest := *semVersions[len(semVersions)-1]
-	latest.BumpMinor()
-
-	extendedVersions := append(openshiftVersions, OpenShift{
-		Version:          fmt.Sprintf("%d.%d", latest.Major, latest.Minor),
-		OnDemand:         true,
-		CandidateRelease: true},
-	)
-
-	return extendedVersions, nil
+	version := strings.Replace(branchName, "release-", "", 1)
+	if version == "next" {
+		version = "nightly"
+	}
+	return strings.ReplaceAll(tpl, "${version}", version)
 }
 
 func applyOptions(cfg *cioperatorapi.ReleaseBuildConfiguration, opts ...ReleaseBuildConfigurationOption) error {
@@ -400,4 +455,44 @@ func applyOptions(cfg *cioperatorapi.ReleaseBuildConfiguration, opts ...ReleaseB
 		}
 	}
 	return nil
+}
+
+func (r Repository) IsServerlessOperator() bool {
+	return r.Org == "openshift-knative" && r.Repo == "serverless-operator"
+}
+
+func (r Repository) IsEKB() bool {
+	return r.Org == "openshift-knative" && r.Repo == "eventing-kafka-broker"
+}
+
+func (r Repository) IsFunc() bool {
+	return r.Org == "openshift-knative" && r.Repo == "kn-plugin-func"
+}
+
+func (r Repository) IsEventPlugin() bool {
+	return r.Org == "openshift-knative" && r.Repo == "kn-plugin-event"
+}
+
+func (r Repository) RunCodegenCommand() string {
+	run := "make generate-release"
+	if r.IsFunc() || r.IsEventPlugin() {
+		// These repos don't use vendor, so they don't patch dependencies.
+		run = ""
+	}
+	if r.IsServerlessOperator() {
+		run = "make generated-files"
+	}
+	return run
+}
+
+func (r Repository) RunDockefileGenCommand() string {
+	run := r.RunCodegenCommand()
+	if r.IsFunc() {
+		run = "./openshift/scripts/generate-dockerfiles.sh"
+	}
+	if r.IsServerlessOperator() {
+		// SO has its own scheduled workflow (Validate).
+		run = ""
+	}
+	return run
 }

@@ -1,0 +1,13 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: ImageRepository
+metadata:
+  annotations:
+    image-controller.appstudio.redhat.com/update-component-image: "true"
+  labels:
+    appstudio.redhat.com/application: {{ truncate ( sanitize .ApplicationName ) }}
+    appstudio.redhat.com/component: {{ sanitize .ComponentName }}
+  name: {{ sanitize .ComponentName }}
+spec:
+  image:
+    name: {{ truncate ( sanitize .ApplicationName ) }}/{{ truncate ( sanitize .ProjectDirectoryImageBuildStepConfiguration.To ) }}
+    visibility: public

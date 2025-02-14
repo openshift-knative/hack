@@ -1,0 +1,8 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: docker-build
+spec:
+  params:
+    - name: build-source-image
+      default: "true"

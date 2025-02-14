@@ -1,26 +1,43 @@
 config:
   branches:
-    release-v1.10:
-      openShiftVersions:
-      - skipCron: true
-        version: "4.15"
-    release-v1.11:
-      openShiftVersions:
-      - skipCron: true
-        version: "4.15"
-      - onDemand: true
-        skipCron: true
-        version: "4.12"
-    release-v1.12:
-      openShiftVersions:
-      - version: "4.15"
-      - onDemand: true
-        version: "4.12"
     release-v1.14:
       openShiftVersions:
-      - version: "4.15"
+      - useClusterPool: true
+        version: "4.16"
       - onDemand: true
-        version: "4.12"
+        version: "4.13"
+    release-v1.15:
+      konflux:
+        enabled: true
+      openShiftVersions:
+      - useClusterPool: true
+        version: "4.17"
+      - onDemand: true
+        version: "4.13"
+    release-v1.16:
+      konflux:
+        enabled: true
+      openShiftVersions:
+      - candidateRelease: true
+        onDemand: true
+        skipCron: true
+        version: "4.18"
+      - useClusterPool: true
+        version: "4.17"
+      - onDemand: true
+        version: "4.13"
+    release-v1.17:
+      konflux:
+        enabled: true
+      openShiftVersions:
+      - candidateRelease: true
+        onDemand: true
+        skipCron: true
+        version: "4.18"
+      - useClusterPool: true
+        version: "4.17"
+      - onDemand: true
+        version: "4.14"
 repositories:
 - dockerfiles: {}
   ignoreConfigs: {}

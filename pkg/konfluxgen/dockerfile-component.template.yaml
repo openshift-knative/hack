@@ -2,12 +2,12 @@ apiVersion: appstudio.redhat.com/v1alpha1
 kind: Component
 metadata:
   annotations:
-    image.redhat.com/generate: "true"
-    appstudio.openshift.io/pac-provision: request
-  name: {{ truncate ( sanitize .ProjectDirectoryImageBuildStepConfiguration.To ) }}
+    build.appstudio.openshift.io/pipeline: '{"name":"docker-build","bundle":"latest"}'
+    build.appstudio.openshift.io/request: configure-pac-no-mr
+  name: {{ sanitize .ComponentName }}
 spec:
-  componentName: {{ .ProjectDirectoryImageBuildStepConfiguration.To }}
-  application: {{ sanitize .ApplicationName }}
+  componentName: {{ sanitize .ComponentName }}
+  application: {{ truncate ( sanitize .ApplicationName ) }}
   {{ $nudgesN := len .Nudges }} {{ if ne $nudgesN 0 }}
   build-nudges-ref:
     {{ range $nudge := .Nudges }}
@@ -18,5 +18,5 @@ spec:
     git:
       url: https://github.com/{{ .ReleaseBuildConfiguration.Metadata.Org }}/{{ .ReleaseBuildConfiguration.Metadata.Repo }}.git
       context: {{ .ProjectDirectoryImageBuildStepConfiguration.ProjectDirectoryImageBuildInputs.ContextDir }}
-      dockerfileUrl: {{ .ProjectDirectoryImageBuildStepConfiguration.ProjectDirectoryImageBuildInputs.DockerfilePath }}
+      dockerfileUrl: {{ .DockerfilePath }}
       revision: {{ .ReleaseBuildConfiguration.Metadata.Branch }}

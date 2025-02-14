@@ -1,0 +1,13 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: ImageRepository
+metadata:
+  annotations:
+    image-controller.appstudio.redhat.com/update-component-image: "true"
+  labels:
+    appstudio.redhat.com/application: serverless-operator-135
+    appstudio.redhat.com/component: serverless-openshift-kn-operator-135
+  name: serverless-openshift-kn-operator-135
+spec:
+  image:
+    name: serverless-operator-135/serverless-openshift-kn-operator
+    visibility: public

@@ -1,0 +1,17 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Component
+metadata:
+  annotations:
+    build.appstudio.openshift.io/pipeline: '{"name":"docker-build","bundle":"latest"}'
+    build.appstudio.openshift.io/request: configure-pac-no-mr
+  name: serverless-index-136-fbc-416
+spec:
+  componentName: serverless-index-136-fbc-416
+  application: serverless-operator-136-fbc-416
+   
+  source:
+    git:
+      url: https://github.com/openshift-knative/serverless-operator.git
+      context: ./olm-catalog/serverless-operator-index/v4.16
+      dockerfileUrl: Dockerfile
+      revision: main

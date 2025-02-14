@@ -1,0 +1,27 @@
+apiVersion: appstudio.redhat.com/v1beta2
+kind: IntegrationTestScenario
+metadata:
+  name: {{{ truncate ( sanitize .Name ) }}}
+spec:
+  params: 
+    - name: POLICY_CONFIGURATION
+      value: {{{ .ECPolicyConfiguration }}}
+    - name: TIMEOUT
+      value: "120m"
+    - name: WORKERS
+      value: "8"
+  application: {{{ truncate ( sanitize .ApplicationName ) }}}
+  contexts:
+    {{{- range .Contexts }}}
+    - description: {{{ .Description }}}
+      name: {{{ .Name }}}
+    {{{- end }}}
+  resolverRef:
+    params:
+      - name: url
+        value: 'https://github.com/redhat-appstudio/build-definitions'
+      - name: revision
+        value: main
+      - name: pathInRepo
+        value: pipelines/enterprise-contract.yaml
+    resolver: git

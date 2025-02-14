@@ -15,9 +15,9 @@ import (
 
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
 	"k8s.io/apimachinery/pkg/util/sets"
-	prowapi "k8s.io/test-infra/prow/apis/prowjobs/v1"
 	"k8s.io/utils/pointer"
 	"k8s.io/utils/strings/slices"
+	prowapi "sigs.k8s.io/prow/pkg/apis/prowjobs/v1"
 )
 
 const (
@@ -31,13 +31,18 @@ const (
 	// in AWS under rh-serverless account. The cluster profile defined earlier has permissions
 	// to create subdomains for new clusters.
 	devclusterBaseDomain = "serverless.devcluster.openshift.com"
-	// Holds version of the existing cluster pool dedicated to OpenShift Serverless in CI.
-	// See https://docs.ci.openshift.org/docs/how-tos/cluster-claim/#existing-cluster-pools
-	clusterPoolVersion = "4.15"
 	// Name of the owner for the existing cluster pool.
 	// Introduced in https://github.com/openshift/release/pull/49904
 	clusterPoolOwner = "serverless-ci"
+	// Phony targets in Makefile that should be skipped.
+	makefilePhonyTarget = ".PHONY"
 )
+
+// Makefile targets can be defined in multiple ways:
+// - as a single target: "operator-e2e:"
+// - as a target with dependencies: "test-upstream-e2e-no-upgrade: upstream-e2e"
+// this matches the target in the first capturing group
+var makefileTargetPattern = regexp.MustCompile("^(\\S+):\\s*(.*)$")
 
 func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, skipE2ETestMatch []string, random *rand.Rand) ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
@@ -48,17 +53,19 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 
 		for i := range tests {
 			test := &tests[i]
-			as := ToName(r, test, openShift.Version)
+			as := ToName(r, test)
 
 			var testTimeout *prowapi.Duration
 			var jobTimeout *prowapi.Duration
 
+			// Use 4h test timeout by default
+			testTimeout = &prowapi.Duration{Duration: 4 * time.Hour}
 			if test.Timeout != nil {
 				testTimeout = test.Timeout
-				jobTimeout = &prowapi.Duration{Duration: test.Timeout.Duration + time.Hour} // test time + 3 * 20m must-gathers
-			} else {
-				// Use 4h test timeout by default
-				testTimeout = &prowapi.Duration{Duration: 4 * time.Hour}
+			}
+			jobTimeout = &prowapi.Duration{Duration: testTimeout.Duration + time.Hour} // test time + 3 * 20m must-gathers
+			if test.JobTimeout != nil {
+				jobTimeout = test.JobTimeout
 			}
 
 			var (
@@ -68,9 +75,8 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				env            cioperatorapi.TestEnvironment
 			)
 
-			useClusterPool := openShift.Version == clusterPoolVersion
 			// Make sure to use the existing cluster pool if available for the given OpenShift version.
-			if useClusterPool {
+			if openShift.UseClusterPool {
 				// ClusterClaim references the existing cluster pool.
 				// Mutually exclusive with ClusterProfile.
 				clusterClaim = &cioperatorapi.ClusterClaim{
@@ -87,9 +93,14 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				clusterProfile = serverlessClusterProfile
 				env = map[string]string{
 					"BASE_DOMAIN": devclusterBaseDomain,
+					// Use single zone to save costs. See https://red.ht/3Y8g7Ar
+					"ZONES_COUNT":    "1",
+					"SPOT_INSTANCES": "true",
 				}
 				workflow = pointer.String("ipi-aws")
 			}
+
+			testCommand := fmt.Sprintf("GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true make %s", test.Command)
 			testConfiguration := cioperatorapi.TestStepConfiguration{
 				As:           as,
 				ClusterClaim: clusterClaim,
@@ -104,7 +115,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 							LiteralTestStep: &cioperatorapi.LiteralTestStep{
 								As:       "test",
 								From:     sourceImageName,
-								Commands: fmt.Sprintf("SKIP_MESH_AUTH_POLICY_GENERATION=true make %s", test.Command),
+								Commands: testCommand,
 								Resources: cioperatorapi.ResourceRequirements{
 									Requests: cioperatorapi.ResourceList{
 										"cpu": "100m",
@@ -117,6 +128,22 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 						},
 					},
 					Post: []cioperatorapi.TestStep{
+						{
+							LiteralTestStep: &cioperatorapi.LiteralTestStep{
+								As:       "testlog-gather",
+								From:     sourceImageName,
+								Commands: `cp -v ${SHARED_DIR}/debuglog-*.log ${SHARED_DIR}/stdout-*.log ${SHARED_DIR}/stderr-*.log "${ARTIFACT_DIR}/" || true`,
+								Resources: cioperatorapi.ResourceRequirements{
+									Requests: cioperatorapi.ResourceList{
+										"cpu": "100m",
+									},
+								},
+								Timeout:           &prowapi.Duration{Duration: 1 * time.Minute},
+								BestEffort:        pointer.Bool(true),
+								OptionalOnSuccess: pointer.Bool(true),
+								Cli:               "latest",
+							},
+						},
 						{
 							LiteralTestStep: &cioperatorapi.LiteralTestStep{
 								As:       "knative-must-gather",
@@ -172,7 +199,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				},
 			}
 
-			if !useClusterPool {
+			if !openShift.UseClusterPool {
 				testConfiguration.MultiStageTestConfiguration.Post =
 					append(testConfiguration.MultiStageTestConfiguration.Post,
 						cioperatorapi.TestStep{
@@ -226,7 +253,10 @@ func DependenciesForTestSteps() ReleaseBuildConfigurationOption {
 		for _, testConfig := range cfg.Tests {
 			if testConfig.MultiStageTestConfiguration != nil {
 				for _, testStep := range testConfig.MultiStageTestConfiguration.Test {
-					testStep.Dependencies = dependenciesFromImages(cfg.Images, nil)
+					// Add dependencies only if it's LiteralTestStep.
+					if testStep.Reference == nil {
+						testStep.Dependencies = dependenciesFromImages(cfg.Images, nil)
+					}
 				}
 			}
 		}
@@ -246,6 +276,7 @@ type Test struct {
 	SkipCron     bool
 	SkipImages   []string
 	Timeout      *prowapi.Duration
+	JobTimeout   *prowapi.Duration
 }
 
 func (t *Test) HexSha() string {
@@ -271,13 +302,19 @@ func discoverE2ETests(r Repository, skipE2ETestMatch []string) ([]Test, error) {
 	commands := sets.NewString()
 
 	for _, l := range lines {
-		l := strings.TrimSpace(l)
-		for _, e2e := range r.E2ETests {
-			if slices.Contains(skipE2ETestMatch, e2e.Match) {
+		if makefileTargetPattern.MatchString(l) {
+			target := makefileTargetPattern.FindStringSubmatch(l)[1]
+			// Skip phony targets
+			if strings.HasPrefix(target, makefilePhonyTarget) {
 				continue
 			}
-			if err := createTest(r, l, e2e, &targets, commands); err != nil {
-				return nil, err
+			for _, e2e := range r.E2ETests {
+				if slices.Contains(skipE2ETestMatch, e2e.Match) {
+					continue
+				}
+				if err := createTest(r, target, e2e, &targets, commands); err != nil {
+					return nil, err
+				}
 			}
 		}
 	}
@@ -289,22 +326,17 @@ func discoverE2ETests(r Repository, skipE2ETestMatch []string) ([]Test, error) {
 	return targets, nil
 }
 
-func createTest(r Repository, line string, e2e E2ETest, tests *[]Test, commands sets.String) error {
-	if strings.HasSuffix(line, ":") {
-		line := strings.TrimSuffix(line, ":")
+func createTest(r Repository, target string, e2e E2ETest, tests *[]Test, commands sets.String) error {
+	log.Println(r.RepositoryDirectory(), "Comparing", target, "to match", e2e.Match)
 
-		log.Println(r.RepositoryDirectory(), "Comparing", line, "to match", e2e.Match)
-
-		matches, err := regexp.Match(e2e.Match, []byte(line))
-		if err != nil {
-			return fmt.Errorf("[%s] failed to match test %s: %w", r.RepositoryDirectory(), e2e.Match, err)
-		}
-		if matches && !commands.Has(line) {
-			*tests = append(*tests, Test{Command: line, OnDemand: e2e.OnDemand, IgnoreError: e2e.IgnoreError, RunIfChanged: e2e.RunIfChanged, SkipCron: e2e.SkipCron, SkipImages: e2e.SkipImages, Timeout: e2e.Timeout})
-			commands.Insert(line)
-		}
+	matches, err := regexp.Match(e2e.Match, []byte(target))
+	if err != nil {
+		return fmt.Errorf("[%s] failed to match test %s: %w", r.RepositoryDirectory(), e2e.Match, err)
 	}
-
+	if matches && !commands.Has(target) {
+		*tests = append(*tests, Test{Command: target, OnDemand: e2e.OnDemand, IgnoreError: e2e.IgnoreError, RunIfChanged: e2e.RunIfChanged, SkipCron: e2e.SkipCron, SkipImages: e2e.SkipImages, Timeout: e2e.Timeout, JobTimeout: e2e.JobTimeout})
+		commands.Insert(target)
+	}
 	return nil
 }
 

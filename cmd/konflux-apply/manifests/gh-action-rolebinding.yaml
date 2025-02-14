@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: ocp-serverless-tenant
+  name: gh-action
+subjects:
+- kind: ServiceAccount
+  name: gh-action
+  apiGroup: ""
+roleRef:
+  kind: Role
+  name: gh-action-runner
+  apiGroup: rbac.authorization.k8s.io

@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Serverless Build Status</title>
+    <style>
+        #build-status-table {
+            background-color: #e0e0e0;
+            width: 100%;
+        }
+        #build-status-table tr:nth-child(even) {
+            background-color: #c0c0c0;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.dataTables.css" />
+</head>
+<body>
+<div>
+    <h1>Release Build Status</h1>
+    <table>
+        <tr>
+            <td>
+                <label for="pat">Personal Access token</label>
+            </td>
+            <td>
+                <input type="password" name="pat" id="pat"/>
+                (create a fine-grained token without permissions for public repositories <a
+                    href="https://github.com/settings/tokens" target="_blank">here</a>)
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="branches">Branches</label>
+            </td>
+            <td>
+                <input type="text" name="branches" id="branches"/>
+                (Comma separated list of branches to filter on, all by default, for example <code>release-1.35,release-v1.15</code>)
+            </td>
+        </tr>
+    </table>
+    <br/>
+    <button type="button" id="trigger">Run</button>
+    <table id="build-status-table">
+        <thead>
+        <tr>
+            <th>Branch</th>
+            <th>Repository</th>
+            <th>Run Name</th>
+            <th>Status</th>
+            <th>Started</th>
+            <th>Trigger retest</th>
+            <th>Run</th>
+        </tr>
+        </thead>
+    </table>
+</div>
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"
+        integrity="sha512-CSBhVREyzHAjAFfBlIBakjoRUKp5h7VSweP0InR/pAJyptH7peuhCsqAI/snV+TwZmXZqoUklpXp6R6wMnYf5Q=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.js"></script>
+<script>
+    const baseConfigURL = 'https://raw.githubusercontent.com/openshift-knative/hack/refs/heads/main/config'
+    document.getElementById('trigger').addEventListener('click', e => {
+        const urlParams = new URLSearchParams(window.location.search);
+        let branches = urlParams.get('branches');
+        if (document.getElementById('branches').value.trim() !== '') {
+            branches = document.getElementById('branches').value;
+        } else if (branches != null) {
+            document.getElementById('branches').value = branches
+        }
+
+        if (branches) {
+            branches = branches.split(',').map(b => b.trim())
+        }
+
+        yamls = [
+            `${baseConfigURL}/serverless-operator.yaml`,
+            `${baseConfigURL}/serving.yaml`,
+            `${baseConfigURL}/eventing.yaml`,
+            `${baseConfigURL}/eventing-kafka-broker.yaml`,
+            `${baseConfigURL}/eventing-istio.yaml`,
+            `${baseConfigURL}/client.yaml`,
+            `${baseConfigURL}/kn-plugin-event.yaml`,
+            `${baseConfigURL}/kn-plugin-func.yaml`,
+            `${baseConfigURL}/serving-net-istio.yaml`,
+            `${baseConfigURL}/serving-net-kourier.yaml`,
+            `${baseConfigURL}/backstage-plugins.yaml`,
+        ]
+
+        Promise.all(
+            yamls
+                .flatMap(async (u) => {
+                    const yaml = await fetch(u)
+                    const b = await yaml.text()
+                    const doc = jsyaml.load(b);
+                    return doc.repositories
+                        .flatMap(r => {
+                            return Object.keys(doc.config.branches)
+                                .filter(b => {
+                                    if (branches) {
+                                        return branches.includes(b)
+                                    }
+                                    return b !== "release-next"
+                                })
+                                .map(async (b) => {
+                                    let headers = {}
+                                    if (document.getElementById("pat").value !== '') {
+                                        headers = {
+                                            "Authorization": `Bearer ${document.getElementById("pat").value}`
+                                        }
+                                    }
+                                    const res = await fetch(`https://api.github.com/repos/${r.org}/${r.repo}/commits/${b}/check-runs?per_page=100`, {
+                                        headers: headers
+                                    })
+                                    const json = await res.json()
+
+                                    return {
+                                        branch: b,
+                                        org: r.org,
+                                        repo: r.repo,
+                                        runs: json,
+                                    }
+                                })
+                        })
+                })
+        ).then(c => {
+            c = c.flat()
+            console.log("configs:", c)
+
+            return Promise.all(c).then(c => {
+                console.log("config: ", c)
+
+                const configsByBranch = c
+                    .reduce((acc, v) => {
+                        if (!acc.get(v.branch)) {
+                            acc.set(v.branch, [])
+                        }
+                        acc.get(v.branch).push(v)
+                        return acc
+                    }, new Map())
+
+                console.log("configsByBranch:", configsByBranch)
+
+                return Array.from(configsByBranch).map(([branch, item]) => {
+                        return item
+                            .filter(item => item.runs.status == null)
+                            .flatMap(item => {
+                                return item.runs.check_runs
+                                    .filter(run => run.name.includes('Konflux'))
+                                    .map((run) => {
+
+                                        const separator = run.name.indexOf('/')
+                                        let testName = run.name
+                                        if (separator >= 0 && separator < run.name.length - 1) {
+                                            testName = run.name.slice(separator+1).trim()
+                                        }
+
+                                        return [
+                                            branch,
+                                            item.repo,
+                                            run.name,
+                                            run.output.title,
+                                            new Date(run.started_at).toLocaleString(),
+                                            `<button onClick="retriggerTest('${item.org}', '${item.repo}', '${item.branch}', '${run.head_sha}', '${testName}')">retest</button>`,
+                                            `<a href="${run.html_url}" target="_blank">link</a>`
+                                        ]
+                                    })
+                            })
+                        }
+                    ).flat()
+            })
+        }).then(data => {
+            console.log("data", data)
+
+            new DataTable('#build-status-table', {
+                destroy: true,
+                paging: false,
+                data: data,
+                search: {
+                    search: '!-ec '
+                },
+            })
+        })
+    })
+
+    async function retriggerTest(org, repo, branch, commitSha, testName) {
+        const url = `https://api.github.com/repos/${org}/${repo}/commits/${commitSha}/comments`;
+
+        if (document.getElementById("pat").value.trim().length === 0) {
+            alert("Token required to retigger a run")
+            return
+        }
+
+        let headers = {
+            "Authorization": `Bearer ${document.getElementById("pat").value}`
+        }
+        const comment = `/retest ${testName} branch:${branch}`
+
+        try {
+            const response = await fetch(url, {
+                method: "POST",
+                headers: headers,
+                body: JSON.stringify({
+                    body: comment
+                })
+            });
+
+            if (response.ok) {
+                const responseData = await response.json();
+                console.log("Successfully retriggered:", responseData);
+                alert("Run retriggered!");
+            } else {
+                const responseText = await response.text()
+                console.error("Failed to retrigger run:", response.status, responseText);
+                alert(`Failed to retrigger run: ${responseText}`);
+            }
+        } catch (err) {
+            console.error("Failed to retrigger run:", err);
+            alert(`Failed to retrigger run: ${err}`);
+        }
+    }
+</script>
+</html>

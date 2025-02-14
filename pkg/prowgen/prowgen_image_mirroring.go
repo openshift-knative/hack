@@ -66,7 +66,7 @@ func GenerateImageMirroringConfigs(openshiftRelease Repository, cfgs []ReleaseBu
 	return mirroringConfigs
 }
 
-func ReconcileImageMirroringConfig(mirroring ImageMirroringConfig) error {
+func ReconcileImageMirroringConfig(cfg *Config, mirroring ImageMirroringConfig) error {
 	matching := filepath.Join(filepath.Dir(mirroring.Path), "*"+mirroring.Release+"_"+mirroring.Metadata.Repo+QuayMirroringSuffix)
 	existing, err := filepath.Glob(matching)
 	if err != nil {
@@ -77,6 +77,12 @@ func ReconcileImageMirroringConfig(mirroring ImageMirroringConfig) error {
 		if err := os.Remove(f); err != nil {
 			return fmt.Errorf("failed to delete file %s: %w", f, err)
 		}
+	}
+
+	konflux := cfg.Config.Branches[mirroring.Metadata.Branch].Konflux
+	// Do not set up image mirroring for Konflux branches as images built by Konflux are already in Quay.io.
+	if konflux != nil && konflux.Enabled {
+		return nil
 	}
 
 	if err := os.WriteFile(mirroring.Path, []byte(mirroring.Content), os.ModePerm); err != nil {

@@ -3,15 +3,14 @@ package prowgen
 import (
 	"fmt"
 	"math/rand"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
 	"k8s.io/apimachinery/pkg/api/equality"
-	prowapi "k8s.io/test-infra/prow/apis/prowjobs/v1"
 	"k8s.io/utils/pointer"
+	prowapi "sigs.k8s.io/prow/pkg/apis/prowjobs/v1"
 )
 
 func TestDiscoverTestsServing(t *testing.T) {
@@ -99,7 +98,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 
 	expectedTests := []cioperatorapi.TestStepConfiguration{
 		{
-			As: "perf-tests-aws-412",
+			As: "perf-tests",
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
 				Test: []cioperatorapi.TestStep{
@@ -121,9 +120,10 @@ func TestDiscoverTestsServing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
-			As:       "test-e2e-aws-412",
+			As:       "test-e2e",
 			Optional: true,
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
@@ -146,9 +146,10 @@ func TestDiscoverTestsServing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
-			As:   "test-e2e-aws-412-c",
+			As:   "test-e2e-c",
 			Cron: cron,
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
@@ -171,9 +172,10 @@ func TestDiscoverTestsServing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
-			As: "test-e2e-tls-aws-412",
+			As: "test-e2e-tls",
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
 				Test: []cioperatorapi.TestStep{
@@ -195,9 +197,10 @@ func TestDiscoverTestsServing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
-			As:   "test-e2e-tls-aws-412-c",
+			As:   "test-e2e-tls-c",
 			Cron: cron,
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
@@ -220,9 +223,10 @@ func TestDiscoverTestsServing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
-			As:           "ui-e2e-aws-412",
+			As:           "ui-e2e",
 			RunIfChanged: "test/ui",
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
@@ -245,6 +249,7 @@ func TestDiscoverTestsServing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 	}
 
@@ -255,7 +260,9 @@ func TestDiscoverTestsServing(t *testing.T) {
 			optionalOnSuccess = false
 		}
 		expectedTests[i].MultiStageTestConfiguration.Environment = cioperatorapi.TestEnvironment{
-			"BASE_DOMAIN": devclusterBaseDomain,
+			"BASE_DOMAIN":    devclusterBaseDomain,
+			"SPOT_INSTANCES": "true",
+			"ZONES_COUNT":    "1",
 		}
 		expectedTests[i].MultiStageTestConfiguration.AllowBestEffortPostSteps = pointer.Bool(true)
 		expectedTests[i].MultiStageTestConfiguration.AllowSkipOnSuccess = pointer.Bool(true)
@@ -313,7 +320,7 @@ func TestDiscoverTestsServingClusterClaim(t *testing.T) {
 	servingSourceImage := "knative-serving-source-image"
 	options := []ReleaseBuildConfigurationOption{
 		DiscoverImages(r, []string{"skip-images/.*"}),
-		DiscoverTests(r, OpenShift{Version: clusterPoolVersion, Cron: *cron}, servingSourceImage, []string{"skip-e2e$"}, random),
+		DiscoverTests(r, OpenShift{Version: "4.16", UseClusterPool: true, Cron: *cron}, servingSourceImage, []string{"skip-e2e$"}, random),
 	}
 
 	perfDependencies := []cioperatorapi.StepDependency{
@@ -329,10 +336,10 @@ func TestDiscoverTestsServingClusterClaim(t *testing.T) {
 
 	expectedTests := []cioperatorapi.TestStepConfiguration{
 		{
-			As: fmt.Sprintf("perf-tests-aws-%s", strings.ReplaceAll(clusterPoolVersion, ".", "")),
+			As: "perf-tests",
 			ClusterClaim: &cioperatorapi.ClusterClaim{
 				Product:      cioperatorapi.ReleaseProductOCP,
-				Version:      clusterPoolVersion,
+				Version:      "4.16",
 				Architecture: cioperatorapi.ReleaseArchitectureAMD64,
 				Cloud:        cioperatorapi.CloudAWS,
 				Owner:        "serverless-ci",
@@ -358,6 +365,7 @@ func TestDiscoverTestsServingClusterClaim(t *testing.T) {
 				},
 				Workflow: pointer.String("generic-claim"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 	}
 
@@ -402,7 +410,9 @@ func TestDiscoverTestsEventing(t *testing.T) {
 				Match: "test-e2e$",
 			},
 			{
-				Match: "test-reconcile.*",
+				Match:      "test-reconcile.*",
+				Timeout:    &prowapi.Duration{Duration: 2 * time.Hour},
+				JobTimeout: &prowapi.Duration{Duration: 4 * time.Hour},
 			},
 			{
 				Match: "test-conformance.*",
@@ -436,7 +446,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 
 	expectedTests := []cioperatorapi.TestStepConfiguration{
 		{
-			As: "test-conformance-aws-412",
+			As: "test-conformance",
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
 				Test: []cioperatorapi.TestStep{
@@ -458,9 +468,10 @@ func TestDiscoverTestsEventing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
-			As:   "test-conformance-aws-412-c",
+			As:   "test-conformance-c",
 			Cron: pointer.String("23 1 * * 2,6"),
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
@@ -483,9 +494,10 @@ func TestDiscoverTestsEventing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
-			As: "test-conformance-long-lo-510e96a-aws-412",
+			As: "test-conformance-long-long-long-80ea36d",
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
 				Test: []cioperatorapi.TestStep{
@@ -493,7 +505,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     eventingSourceImage,
-							Commands: formatCommand("make test-conformance-long-long-long-command"),
+							Commands: formatCommand("make test-conformance-long-long-long-long-long-command"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -507,9 +519,10 @@ func TestDiscoverTestsEventing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
-			As:   "test-conformance-long-lo-510e96a-aws-412-c",
+			As:   "test-conformance-long-long-long-80ea36d-c",
 			Cron: pointer.String("43 1 * * 2,6"),
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
@@ -518,7 +531,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 						LiteralTestStep: &cioperatorapi.LiteralTestStep{
 							As:       "test",
 							From:     eventingSourceImage,
-							Commands: formatCommand("make test-conformance-long-long-long-command"),
+							Commands: formatCommand("make test-conformance-long-long-long-long-long-command"),
 							Resources: cioperatorapi.ResourceRequirements{
 								Requests: cioperatorapi.ResourceList{
 									"cpu": "100m",
@@ -532,9 +545,10 @@ func TestDiscoverTestsEventing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
-			As: "test-e2e-aws-412",
+			As: "test-e2e",
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
 				Test: []cioperatorapi.TestStep{
@@ -556,9 +570,10 @@ func TestDiscoverTestsEventing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
-			As:   "test-e2e-aws-412-c",
+			As:   "test-e2e-c",
 			Cron: pointer.String("4 1 * * 2,6"),
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
@@ -581,9 +596,10 @@ func TestDiscoverTestsEventing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 5 * time.Hour},
 		},
 		{
-			As: "test-reconciler-aws-412",
+			As: "test-reconciler",
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
 				Test: []cioperatorapi.TestStep{
@@ -597,7 +613,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 									"cpu": "100m",
 								},
 							},
-							Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
+							Timeout:      &prowapi.Duration{Duration: 2 * time.Hour},
 							Dependencies: dependencies,
 							Cli:          "latest",
 						},
@@ -605,9 +621,10 @@ func TestDiscoverTestsEventing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 4 * time.Hour},
 		},
 		{
-			As:   "test-reconciler-aws-412-c",
+			As:   "test-reconciler-c",
 			Cron: pointer.String("16 5 * * 2,6"),
 			MultiStageTestConfiguration: &cioperatorapi.MultiStageTestConfiguration{
 				ClusterProfile: serverlessClusterProfile,
@@ -622,7 +639,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 									"cpu": "100m",
 								},
 							},
-							Timeout:      &prowapi.Duration{Duration: 4 * time.Hour},
+							Timeout:      &prowapi.Duration{Duration: 2 * time.Hour},
 							Dependencies: dependencies,
 							Cli:          "latest",
 						},
@@ -630,6 +647,7 @@ func TestDiscoverTestsEventing(t *testing.T) {
 				},
 				Workflow: pointer.String("ipi-aws"),
 			},
+			Timeout: &prowapi.Duration{Duration: 4 * time.Hour},
 		},
 	}
 
@@ -640,7 +658,9 @@ func TestDiscoverTestsEventing(t *testing.T) {
 			optionalOnSuccess = false
 		}
 		expectedTests[i].MultiStageTestConfiguration.Environment = cioperatorapi.TestEnvironment{
-			"BASE_DOMAIN": devclusterBaseDomain,
+			"BASE_DOMAIN":    devclusterBaseDomain,
+			"SPOT_INSTANCES": "true",
+			"ZONES_COUNT":    "1",
 		}
 		expectedTests[i].MultiStageTestConfiguration.AllowBestEffortPostSteps = pointer.Bool(true)
 		expectedTests[i].MultiStageTestConfiguration.AllowSkipOnSuccess = pointer.Bool(true)
@@ -670,6 +690,22 @@ func TestDiscoverTestsEventing(t *testing.T) {
 
 func mustGatherSteps(sourceImage string, optionalOnSuccess bool) []cioperatorapi.TestStep {
 	return []cioperatorapi.TestStep{
+		{
+			LiteralTestStep: &cioperatorapi.LiteralTestStep{
+				As:       "testlog-gather",
+				From:     sourceImage,
+				Commands: `cp -v ${SHARED_DIR}/debuglog-*.log ${SHARED_DIR}/stdout-*.log ${SHARED_DIR}/stderr-*.log "${ARTIFACT_DIR}/" || true`,
+				Resources: cioperatorapi.ResourceRequirements{
+					Requests: cioperatorapi.ResourceList{
+						"cpu": "100m",
+					},
+				},
+				Timeout:           &prowapi.Duration{Duration: 1 * time.Minute},
+				BestEffort:        pointer.Bool(true),
+				OptionalOnSuccess: &optionalOnSuccess,
+				Cli:               "latest",
+			},
+		},
 		{
 			LiteralTestStep: &cioperatorapi.LiteralTestStep{
 				As:       "knative-must-gather",
@@ -724,5 +760,5 @@ func mustGatherSteps(sourceImage string, optionalOnSuccess bool) []cioperatorapi
 }
 
 func formatCommand(cmd string) string {
-	return fmt.Sprintf("SKIP_MESH_AUTH_POLICY_GENERATION=true %s", cmd)
+	return fmt.Sprintf("GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true %s", cmd)
 }

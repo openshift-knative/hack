@@ -15,7 +15,9 @@ const (
 	includesFlag             = "includes"
 	excludesFlag             = "excludes"
 	excludeImagesFlag        = "exclude-images"
+	fbcBuilderImagesFlag     = "fbc-images"
 	outputFlag               = "output"
+	pipelineOutputFlag       = "pipeline-output"
 )
 
 func main() {
@@ -31,9 +33,11 @@ func run() error {
 	pflag.StringVar(&cfg.OpenShiftReleasePath, openShiftReleasePathFlag, "", "openshift/release repository path")
 	pflag.StringVar(&cfg.ApplicationName, applicationNameFlag, "", "Konflux application name")
 	pflag.StringVar(&cfg.ResourcesOutputPath, outputFlag, "", "output path")
+	pflag.StringVar(&cfg.PipelinesOutputPath, pipelineOutputFlag, ".tekton", "output path for pipelines")
 	pflag.StringArrayVar(&cfg.Includes, includesFlag, nil, "Regex to select CI config files to include")
 	pflag.StringArrayVar(&cfg.Excludes, excludesFlag, nil, "Regex to select CI config files to exclude")
 	pflag.StringArrayVar(&cfg.ExcludesImages, excludeImagesFlag, nil, "Regex to select CI config images to exclude")
+	pflag.StringArrayVar(&cfg.FBCImages, fbcBuilderImagesFlag, nil, "Regex to select File-Based Catalog images")
 	pflag.Parse()
 
 	if cfg.OpenShiftReleasePath == "" {

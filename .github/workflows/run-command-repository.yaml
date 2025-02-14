@@ -21,11 +21,9 @@ jobs:
   run-command:
     name: run-command ${{ inputs.repository }} - ${{ inputs.command }}
     runs-on: ubuntu-latest
-    env:
-      GOPATH: ${{ github.workspace }}
     steps:
       - name: Checkout ${{ inputs.repository }}
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: '${{ inputs.repository }}'
           path: "./src/github.com/${{ inputs.repository }}"
@@ -34,6 +32,7 @@ jobs:
       - name: Setup Golang
         uses: actions/setup-go@v5
         with:
+          cache: false
           go-version-file: "./src/github.com/${{ inputs.repository }}/go.mod"
 
       - name: Install prerequisites
@@ -65,3 +64,10 @@ jobs:
           delete-branch: true
           body: |
             Run `make ${{ inputs.command }}` using openshift-knative/hack.
+
+      - name: Debug
+        if: always()
+        working-directory: "./src/github.com/${{ inputs.repository }}"
+        run: |
+          tree
+          git --no-pager diff

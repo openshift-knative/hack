@@ -1,0 +1,35 @@
+# DO NOT EDIT! Generated Dockerfile for {{.main}}.
+ARG CLI_ARTIFACTS={{ .oc_cli_artifacts }}
+ARG RUNTIME=registry.access.redhat.com/ubi8/ubi-minimal
+FROM $CLI_ARTIFACTS AS cli-artifacts
+
+FROM $RUNTIME
+
+ARG TARGETARCH
+
+COPY --from=cli-artifacts /usr/share/openshift/linux_$TARGETARCH/{{ .oc_binary_name }} /usr/bin/oc
+
+# Copy all collection scripts to /usr/bin
+COPY must-gather/bin/* /usr/bin/
+COPY LICENSE /licenses/
+
+RUN microdnf install -y rsync tar
+
+ENV LOGS_DIR="/must-gather"
+RUN mkdir -p $LOGS_DIR && \
+    chown -R 65532:65532 $LOGS_DIR
+
+USER 65532
+
+LABEL \
+      com.redhat.component="openshift-serverless-1-{{.project_dashcase}}rhel8-container" \
+      name="openshift-serverless-1/svls-{{.project_dashcase}}rhel8" \
+      version={{.version}} \
+      summary="Red Hat OpenShift Serverless 1 {{.project}}" \
+      maintainer="serverless-support@redhat.com" \
+      description="Red Hat OpenShift Serverless 1 {{.project}}" \
+      io.k8s.display-name="Red Hat OpenShift Serverless 1 {{.project}}" \
+      io.k8s.description="Red Hat OpenShift Serverless {{.project}}" \
+      io.openshift.tags="{{.main}}"
+
+ENTRYPOINT /usr/bin/gather

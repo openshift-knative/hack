@@ -1,0 +1,90 @@
+config:
+  branches:
+    release-next:
+      openShiftVersions:
+      - skipCron: true
+        useClusterPool: true
+        version: "4.17"
+    release-v1.15:
+      konflux:
+        enabled: true
+      openShiftVersions:
+      - skipCron: true
+        useClusterPool: true
+        version: "4.17"
+    release-v1.16:
+      konflux:
+        enabled: true
+      openShiftVersions:
+      - candidateRelease: true
+        onDemand: true
+        skipCron: true
+        version: "4.18"
+      - skipCron: true
+        useClusterPool: true
+        version: "4.17"
+    release-v1.17:
+      konflux:
+        enabled: true
+        imageOverrides:
+        - name: GO_BUILDER
+          pullSpec: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.23
+      openShiftVersions:
+      - candidateRelease: true
+        onDemand: true
+        skipCron: true
+        version: "4.18"
+      - skipCron: true
+        useClusterPool: true
+        version: "4.17"
+    serverless-1.34:
+      openShiftVersions:
+      - skipCron: true
+        useClusterPool: true
+        version: "4.16"
+repositories:
+- dockerfiles: {}
+  ignoreConfigs: {}
+  imagePrefix: knative-kn-plugin-func
+  org: openshift-knative
+  promotion:
+    namespace: openshift
+  repo: kn-plugin-func
+  resources:
+    '*':
+      limits:
+        memory: 8Gi
+      requests:
+        cpu: 100m
+        memory: 200Mi
+  slackChannel: '#knative-functions'
+  tests:
+  - as: unit
+    commands: GOPATH=/tmp/go GOFLAGS="" make test
+    container:
+      from: src
+  - as: e2e-oncluster-test
+    cluster_claim:
+      architecture: amd64
+      cloud: aws
+      owner: serverless-ci
+      product: ocp
+      timeout: 1h0m0s
+      version: "4.16"
+    steps:
+      test:
+      - as: test
+        commands: |
+          export GOPATH=/tmp/go
+          export GOFLAGS=""
+          openshift/cluster-prepare.sh
+          openshift/e2e_oncluster_tests.sh
+        dependencies:
+        - env: FUNC_UTILS_IMG
+          name: knative-kn-plugin-func-func-util
+        from: src
+        resources:
+          requests:
+            cpu: 100m
+        timeout: 1h0m0s
+      workflow: generic-claim

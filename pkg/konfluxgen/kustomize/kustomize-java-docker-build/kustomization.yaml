@@ -1,0 +1,52 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../docker-build.yaml
+patches:
+  - path: ../patch_additional_tags.patch.yaml
+    target:
+      kind: Pipeline
+  - path: ../patch_prefetch-input_dev-package-managers.patch.yaml
+    target:
+      kind: Pipeline
+  - path: ../patch_source_image.patch.yaml
+    target:
+      kind: Pipeline
+  - path: ../patch_snyk_args.patch.yaml
+    target:
+      kind: Pipeline
+  - path: patch_java_build.patch.yaml
+    target:
+      kind: Pipeline
+  - path: ../patch_build_platforms_default.patch.yaml
+    target:
+      kind: Pipeline
+  - path: ../patch_sast_coverity_check.patch.yaml
+    target:
+      kind: Pipeline
+  - patch: |-
+      - op: replace
+        path: /metadata/name
+        value: docker-java-build
+    target:
+      kind: Pipeline
+replacements:
+  - source:
+      kind: Pipeline
+      fieldPath: spec.tasks.[name=build-images].taskRef.params.[name=bundle].value
+    targets:
+      - select:
+          kind: Pipeline
+        fieldPaths:
+          - spec.tasks.[name=build-images-deps].taskRef.params.[name=bundle].value
+  - source:
+      kind: Pipeline
+      fieldPath: spec.tasks.[name=build-image-index].taskRef.params.[name=bundle].value
+    targets:
+      - select:
+          kind: Pipeline
+        fieldPaths:
+          - spec.tasks.[name=build-image-index-deps].taskRef.params.[name=bundle].value
+openapi:
+  path: ../pipeline_schema.json

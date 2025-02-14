@@ -1,0 +1,17 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Component
+metadata:
+  annotations:
+    build.appstudio.openshift.io/pipeline: '{"name":"docker-build","bundle":"latest"}'
+    build.appstudio.openshift.io/request: configure-pac-no-mr
+  name: serverless-kn-operator-136
+spec:
+  componentName: serverless-kn-operator-136
+  application: serverless-operator-136
+   
+  source:
+    git:
+      url: https://github.com/openshift-knative/serverless-operator.git
+      context: 
+      dockerfileUrl: knative-operator/Dockerfile
+      revision: main

@@ -7,14 +7,17 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
+
+	"github.com/openshift-knative/hack/pkg/soversion"
 
 	"github.com/coreos/go-semver/semver"
 )
 
 func GitCheckout(ctx context.Context, r Repository, branch string) error {
-	_, err := run(ctx, r, "git", "checkout", branch)
+	_, err := Run(ctx, r, "git", "checkout", branch)
 	return err
 }
 
@@ -26,23 +29,45 @@ func GitClone(ctx context.Context, r Repository) error {
 	return gitClone(ctx, r, false)
 }
 
+var (
+
+	/* Example outputs:
+	$ git --no-pager branch --list "release-*"
+	  release-1.33
+	  release-1.34
+	* release-1.35
+
+	$ git --no-pager branch --list "release-1.33*"
+	  release-1.33
+	*/
+	branchParsingRegexes = []*regexp.Regexp{
+		regexp.MustCompile("([ \t]+|^)(release-[0-9]+.[0-9]+)"),
+		regexp.MustCompile("([ \t]+|^)(release-v[0-9]+.[0-9]+)"),
+	}
+)
+
 func Branches(ctx context.Context, r Repository) ([]string, error) {
 	if err := GitMirror(ctx, r); err != nil {
 		return nil, err
 	}
 
 	// git --no-pager branch --list "release-v*"
-	branchesBytes, err := run(ctx, r, "git", "--no-pager", "branch", "--list", "release-*")
+	branchesBytes, err := Run(ctx, r, "git", "--no-pager", "branch", "--list", "release-*")
 	if err != nil {
 		return nil, err
 	}
 
 	branchesList := string(branchesBytes)
 
-	sortedBranches := strings.Split(branchesList, "\n")
-	for i, b := range sortedBranches {
-		b = strings.TrimSpace(b)
-		sortedBranches[i] = b
+	var sortedBranches []string
+	for _, branch := range strings.Split(branchesList, "\n") {
+		for _, regex := range branchParsingRegexes {
+			match := regex.FindStringSubmatch(branch)
+			if len(match) == 3 {
+				sortedBranches = append(sortedBranches, match[2])
+				break
+			}
+		}
 	}
 	slices.SortFunc(sortedBranches, CmpBranches)
 
@@ -65,24 +90,38 @@ func CmpBranches(a string, b string) int {
 		}
 	}
 
-	a = strings.ReplaceAll(a, "release-v", "")
-	b = strings.ReplaceAll(b, "release-v", "")
-	if strings.Count(a, ".") == 1 {
-		a += ".0"
+	var av, bv *semver.Version
+	var err error
+
+	if strings.HasPrefix(a, "serverless-") {
+		av = soversion.ToUpstreamVersion(a)
+	} else {
+		av, err = SemverFromReleaseBranch(a)
+		if err != nil {
+			return -1 // this is equivalent to ignoring branches that aren't parseable
+		}
 	}
-	if strings.Count(b, ".") == 1 {
-		b += ".0"
-	}
-	av, err := semver.NewVersion(a)
-	if err != nil {
-		return -1 // this is equivalent to ignoring branches that aren't parseable
-	}
-	bv, err := semver.NewVersion(b)
-	if err != nil {
-		return 1 // this is equivalent to ignoring branches that aren't parseable
+
+	if strings.HasPrefix(b, "serverless-") {
+		bv = soversion.ToUpstreamVersion(b)
+	} else {
+		bv, err = SemverFromReleaseBranch(b)
+		if err != nil {
+			return 1 // this is equivalent to ignoring branches that aren't parseable
+		}
 	}
 
 	return av.Compare(*bv)
+}
+
+func SemverFromReleaseBranch(b string) (*semver.Version, error) {
+	b = strings.ReplaceAll(b, "release-v", "")
+	b = strings.ReplaceAll(b, "release-", "")
+	if strings.Count(b, ".") == 1 {
+		b += ".0"
+	}
+
+	return semver.NewVersion(b)
 }
 
 func gitClone(ctx context.Context, r Repository, mirror bool) error {
@@ -111,7 +150,7 @@ func gitClone(ctx context.Context, r Repository, mirror bool) error {
 		if _, err := runNoRepo(ctx, "git", "clone", "--mirror", remoteRepo, filepath.Join(r.RepositoryDirectory(), ".git")); err != nil {
 			return fmt.Errorf("[%s] failed to clone repository: %w", r.RepositoryDirectory(), err)
 		}
-		if _, err := run(ctx, r, "git", "config", "--bool", "core.bare", "false"); err != nil {
+		if _, err := Run(ctx, r, "git", "config", "--bool", "core.bare", "false"); err != nil {
 			return fmt.Errorf("[%s] failed to set config for repository: %w", r.RepositoryDirectory(), err)
 		}
 	} else {
@@ -125,18 +164,18 @@ func gitClone(ctx context.Context, r Repository, mirror bool) error {
 }
 
 func GitMerge(ctx context.Context, r Repository, sha string) error {
-	_, err := run(ctx, r, "git", "merge", sha, "--no-ff", "-m", "Merge "+sha)
+	_, err := Run(ctx, r, "git", "merge", sha, "--no-ff", "-m", "Merge "+sha)
 	return err
 }
 
 func GitFetch(ctx context.Context, r Repository, sha string) error {
 	remoteRepo := fmt.Sprintf("https://github.com/%s/%s.git", r.Org, r.Repo)
-	_, err := run(ctx, r, "git", "fetch", remoteRepo, sha)
+	_, err := Run(ctx, r, "git", "fetch", remoteRepo, sha)
 	return err
 }
 
 func GitDiffNameOnly(ctx context.Context, r Repository, sha string) ([]string, error) {
-	out, err := run(ctx, r, "git", "diff", "--name-only", sha)
+	out, err := Run(ctx, r, "git", "diff", "--name-only", sha)
 	if err != nil {
 		return nil, err
 	}

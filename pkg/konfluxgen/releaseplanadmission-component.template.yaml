@@ -1,0 +1,71 @@
+---
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: ReleasePlanAdmission
+metadata:
+  labels:
+    release.appstudio.openshift.io/auto-release: "true"
+    pp.engineering.redhat.com/business-unit: hybrid-platforms
+  name: {{{ truncate ( sanitize .Name ) }}}
+  namespace: rhtap-releng-tenant
+spec:
+  applications: [{{{ truncate ( sanitize .ApplicationName ) }}}]
+  origin: ocp-serverless-tenant
+  policy: {{{ .Policy }}}
+  data:
+    releaseNotes:
+      product_id: 579
+      product_name: "OpenShift Serverless"
+      product_version: "{{{ .SOVersion }}}"
+      references:
+        - "https://docs.redhat.com/documentation/red_hat_openshift_serverless/"
+      type: "RHEA"
+      solution: |
+        The Red Hat OpenShift Serverless Operator provides a collection of APIs that
+        enables containers, microservices and functions to run "serverless".
+        Serverless applications can scale up and down (to zero) on demand and be triggered by a
+        number of event sources. OpenShift Serverless integrates with a number of
+        platform services, such as Monitoring and it is based on the open
+        source project Knative.
+      description: "The {{{ .SOVersion }}} release of Red Hat OpenShift Serverless Operator."
+      topic: |
+        The {{{ .SOVersion }}} GA release of Red Hat OpenShift Serverless Operator.
+        For more details see [product documentation](https://docs.redhat.com/documentation/red_hat_openshift_serverless).
+      synopsis: "Red Hat OpenShift Serverless Release {{{ .SOVersion }}}"
+    mapping:
+      components:
+      {{{- range $component := .Components }}}
+        - name: {{{ $component.ComponentName }}}
+          repository: {{{ $component.ImageRepository }}}
+          pushSourceContainer: true
+      {{{- end }}}
+      defaults:
+        tags:
+          - "{{ git_sha }}"
+          - "{{ git_short_sha }}"
+          - "{{{ .SOVersion }}}"
+    pyxis:
+      secret: {{{ .PyxisSecret }}}
+      server: {{{ .PyxisServer }}}
+      # This causes the release pipeline to not upload layer size information
+      # to pyxis which will save on runtime at the cost of data completeness in
+      # pyxis. The side-effects are:
+      # * If you are a base image, like ubi9, then partners cannot certify that they build on top of you.
+      # * Size information is not displayed in the catalog. This is very low business impact.
+      skipLayers: true
+    sign:
+      configMapName: {{{ .SignCMName }}}
+      cosignSecretName: {{{ .SignSecretName }}}
+  pipeline:
+    pipelineRef:
+      resolver: git
+      params:
+        - name: url
+          value: "https://github.com/konflux-ci/release-service-catalog.git"
+        - name: revision
+          value: production
+        - name: pathInRepo
+          value: "pipelines/managed/rh-advisories/rh-advisories.yaml"
+    serviceAccountName: {{{ .PipelineSA }}}
+    timeouts:
+      pipeline: "10h0m0s"
+      tasks: "10h0m0s"
