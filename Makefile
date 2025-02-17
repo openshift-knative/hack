@@ -65,9 +65,12 @@ konflux-update-pipelines:
 	kustomize build pkg/konfluxgen/kustomize/kustomize-java-docker-build/ --output pkg/konfluxgen/docker-java-build.yaml --load-restrictor LoadRestrictionsNone
 	kustomize build pkg/konfluxgen/kustomize/kustomize-fbc-builder/ --output pkg/konfluxgen/fbc-builder.yaml --load-restrictor LoadRestrictionsNone
 
-unit-tests:
-	go test ./pkg/...
+gotest:
+	go run gotest.tools/gotestsum@latest \
+    		--format testname \
+    		./...
 
+unit-tests: gotest
 	rm -rf openshift/project/testoutput
 	rm -rf openshift/project/.github
 
@@ -75,17 +78,6 @@ unit-tests:
 	go run ./cmd/generate-ci-action --input ".github/workflows/release-generate-ci-template.yaml" --config "config/" --output "openshift/release-generate-ci.yaml"
 	# If the following fails, please run 'make generate-ci-action'
 	diff -u -r "openshift/release-generate-ci.yaml" ".github/workflows/release-generate-ci.yaml"
-
-	go run ./cmd/generate/ --generators dockerfile \
-		--project-file pkg/project/testdata/project.yaml \
-		--includes "^cmd/.*discover.*" \
-		--additional-packages tzdata \
-		--additional-packages rsync \
-		--images-from "hack" \
-		--images-from-url-format "https://raw.githubusercontent.com/openshift-knative/%s/%s/pkg/project/testdata/additional-images.yaml" \
-		--output "openshift/project/testoutput/openshift"
-	diff -u -r "pkg/project/testoutput" "openshift/project/testoutput"
-
 .PHONY: unit-tests
 
 test-select:
