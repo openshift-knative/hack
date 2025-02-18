@@ -41,7 +41,7 @@ jobs:
           kubectl config use-context konflux-sa@konflux
 
       - name: Apply Override Snapshots
-        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serverless-operator
+        working-directory: ./src/github.com/openshift-knative/serverless-operator
         run: make apply-override-snapshot
 
       - name: Checkout openshift-knative/hack
