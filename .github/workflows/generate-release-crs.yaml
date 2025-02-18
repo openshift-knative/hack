@@ -21,8 +21,6 @@ jobs:
   gen-release-cr:
     name: Apply Konflux Override Snapshot
     runs-on: ubuntu-latest
-    env:
-      KUBECONFIG: ~/.kube/config
     steps:
       - name: Checkout serverless operator
         uses: actions/checkout@v4
