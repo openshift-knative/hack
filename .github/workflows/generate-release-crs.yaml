@@ -42,6 +42,11 @@ jobs:
         working-directory: ./src/github.com/openshift-knative/serverless-operator
         run: make apply-override-snapshot
 
+      - name: Configure Git user
+        run: |
+          git config --global user.email "serverless-support@redhat.com"
+          git config --global user.name "serverless-qe"
+
       - name: Checkout openshift-knative/hack
         uses: actions/checkout@v4
         with:
