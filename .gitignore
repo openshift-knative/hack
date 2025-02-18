@@ -17,6 +17,8 @@
 /openshift
 /openshift-knative
 /konflux-gen/out
+# TODO: Remove
+rpms.lock.yaml
 
 # MacOS
 .DS_Store
