@@ -68,6 +68,7 @@ jobs:
           git remote add fork "https://github.com/serverless-qe/hack.git"
           branch="release-crs-${{inputs.revision}}-component-${{inputs.environment}}"
           branch=${branch,,} #lower case of branch name
+          title="Add component Release CRs from ${{inputs.revision}} revision for ${{inputs.environment}}"
           remote_exists=$(git ls-remote --heads fork "$branch")
           if [ -z "$remote_exists" ]; then
             # remote doesn't exist.
@@ -79,7 +80,7 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/hack.git" "$branch:$branch" -f
           fi
-          gh pr create --base main --head "serverless-qe:$branch" --fill --label "do-not-merge/hold" || true
+          gh pr create --base main --head "serverless-qe:$branch" --title "$title" --body "$title" --label "do-not-merge/hold" || true
         # Use the repository cloned by the konflux-release-gen tool
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/hack
 
@@ -97,6 +98,7 @@ jobs:
           git remote add fork "https://github.com/serverless-qe/hack.git"
           branch="release-crs-${{inputs.revision}}-fbc-${{inputs.environment}}"
           branch=${branch,,} #lower case of branch name
+          title="Add FBC Release CRs from ${{inputs.revision}} revision for ${{inputs.environment}}"
           remote_exists=$(git ls-remote --heads fork "$branch")
           if [ -z "$remote_exists" ]; then
             # remote doesn't exist.
@@ -108,6 +110,6 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/hack.git" "$branch:$branch" -f
           fi
-          gh pr create --base main --head "serverless-qe:$branch" --fill --label "do-not-merge/hold" || true
+          gh pr create --base main --head "serverless-qe:$branch" --title "$title" --body "$title" --label "do-not-merge/hold" || true
         # Use the repository cloned by the konflux-release-gen tool
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/hack
