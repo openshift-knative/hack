@@ -20,14 +20,15 @@ import (
 
 	"github.com/blang/semver/v4"
 	gosemver "github.com/coreos/go-semver/semver"
-	"github.com/openshift-knative/hack/pkg/k8sresource"
-	"github.com/openshift-knative/hack/pkg/soversion"
-	"github.com/openshift-knative/hack/pkg/util"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/clientcmd"
+
+	"github.com/openshift-knative/hack/pkg/k8sresource"
+	"github.com/openshift-knative/hack/pkg/soversion"
+	"github.com/openshift-knative/hack/pkg/util"
 
 	gyaml "github.com/ghodss/yaml"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
@@ -106,6 +107,7 @@ type Config struct {
 
 	ResourcesOutputPathSkipRemove bool
 	ResourcesOutputPath           string
+	RepositoryRootPath            string
 	GlobalResourcesOutputPath     string
 
 	PipelinesOutputPathSkipRemove bool
@@ -523,7 +525,7 @@ func Generate(cfg Config) error {
 		if err := renovateTemplate.Execute(buf, nil); err != nil {
 			return fmt.Errorf("failed to execute template for mintmaker config: %w", err)
 		}
-		if err := os.WriteFile(RenovateConfigPath, buf.Bytes(), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(cfg.RepositoryRootPath, RenovateConfigPath), buf.Bytes(), 0644); err != nil {
 			return fmt.Errorf("failed to write mintmaker config file: %w", err)
 		}
 	}
