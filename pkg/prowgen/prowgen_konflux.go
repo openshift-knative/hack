@@ -204,6 +204,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						ExcludesImages:            b.Konflux.ExcludesImages,
 						JavaImages:                b.Konflux.JavaImages,
 						ResourcesOutputPath:       fmt.Sprintf("%s/.konflux", r.RepositoryDirectory()),
+						RepositoryRootPath:        r.RepositoryDirectory(),
 						GlobalResourcesOutputPath: fmt.Sprintf("%s/.konflux", hackRepo.RepositoryDirectory()),
 						PipelinesOutputPath:       fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
 						Nudges:                    nudges,
@@ -411,6 +412,7 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			// main with the same name but different "revision" (branch).
 			ResourcesOutputPathSkipRemove: true,
 			ResourcesOutputPath:           resourceOutputPath,
+			RepositoryRootPath:            r.RepositoryDirectory(),
 			GlobalResourcesOutputPath:     resourceOutputPath,
 			PipelinesOutputPath:           fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
 			Nudges:                        b.Konflux.Nudges,
@@ -523,6 +525,7 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 			ApplicationName:      fbcAppName,
 			BuildArgs:            buildArgs,
 			ResourcesOutputPath:  resourceOutputPath,
+			RepositoryRootPath:   r.RepositoryDirectory(),
 			PipelinesOutputPath:  fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
 			AdditionalTektonCELExpressionFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
 				return fmt.Sprintf("&& ("+
