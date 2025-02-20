@@ -22,7 +22,7 @@ config:
         version: "4.18"
       - version: "4.17"
       - onDemand: true
-        version: "4.13"
+        version: "4.14"
     release-v1.17:
       konflux:
         enabled: true
@@ -33,7 +33,7 @@ config:
         version: "4.18"
       - version: "4.17"
       - onDemand: true
-        version: "4.13"
+        version: "4.14"
 repositories:
 - dockerfiles: {}
   e2e:

@@ -9,7 +9,7 @@ config:
       - useClusterPool: true
         version: "4.17"
       - onDemand: true
-        version: "4.13"
+        version: "4.14"
       skipDockerFilesMatches:
       - .*hermetic.*
     release-v1.14:
@@ -45,7 +45,7 @@ config:
       - useClusterPool: true
         version: "4.17"
       - onDemand: true
-        version: "4.13"
+        version: "4.14"
       skipDockerFilesMatches:
       - .*hermetic.*
     release-v1.17:
