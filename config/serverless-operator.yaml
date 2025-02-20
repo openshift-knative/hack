@@ -29,7 +29,7 @@ config:
         useClusterPool: true
         version: "4.17"
       - onDemand: true
-        version: "4.13"
+        version: "4.14"
     release-1.35:
       konflux:
         enabled: true
@@ -75,7 +75,7 @@ config:
       - useClusterPool: true
         version: "4.17"
       - onDemand: true
-        version: "4.13"
+        version: "4.14"
       prowgen:
         disabled: true
 repositories:

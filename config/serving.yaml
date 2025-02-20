@@ -5,7 +5,7 @@ config:
       - useClusterPool: true
         version: "4.17"
       - onDemand: true
-        version: "4.13"
+        version: "4.14"
       skipDockerFilesMatches:
       - openshift/ci-operator/knative-perf-images.*
       skipE2EMatches:
@@ -36,7 +36,7 @@ config:
       - useClusterPool: true
         version: "4.17"
       - onDemand: true
-        version: "4.13"
+        version: "4.14"
     release-v1.17:
       konflux:
         enabled: true
