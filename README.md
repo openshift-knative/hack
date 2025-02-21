@@ -45,6 +45,50 @@ Limitations:
 
 - It is not currently possible to disable periodics per job
 
+# Konflux
+
+## Overview
+
+In Konflux, an `Application` is a named group of `Component`s and a `Component` is ultimately a
+release-able artifact, for example, a container image.
+Generally, the definition of _group_, in this context, is not really strict since a component in one
+application can reference and therefore depend on a component in another application (directly,
+regardless of the application they use) as well as a repository, in particular, a branch of a
+repository can have components with different appplications.
+
+For `serverless-operator`, we use (primarily) regular container image components and (File-Based
+Catalog) FBC components (also known as OLM catalog index images).
+While this distinction is not evident in the `Component` API Spec nor in the `Application` API spec,
+the difference is in the pipeline we run to build them. The pipelines are directly taken from the
+shared [`konflux-ci/build-definitions`](https://github.com/konflux-ci/build-definitions) and then
+we apply Kustomize [patches](./pkg/konfluxgen/kustomize) to configure them according to our needs.
+
+When we were deciding the overall applications and components architecture we settled on having:
+
+1. one application per OCP version for FBC components;
+2. one application per major `serverless-operator` version, containing all the regular container
+   images;
+
+For point 1), this is a requirement of the Konflux Release Service for releasing FBC components, for
+point 2), we had more flexibility on how many applications and how to group components, but we
+decided to use a single application for all the components for the following benefits:
+
+- It's easier to automate the creation of the configurations as we would not need to distinguish
+  what belongs to which application.
+- It's less fragmented, and we can attach full-product integration tests
+
+// TODO more details on the alternatives
+
+## Konflux configuration architecture diagram
+
+The architecture of the Konflux configuration architecture is summarized in this diagram:
+
+![Konflux applications and components diagram](./docs/assets/konflux-serverless-operator-architecture.png)
+
+while the following summarizes the Konflux release configuration architecture:
+
+![Konflux release diagram](./docs/assets/konflux-serverless-operator-architecture-release.png)
+
 ## Apply Konflux configurations
 
 1. Follow the instructions to access the Konflux instance
