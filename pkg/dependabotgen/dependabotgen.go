@@ -1,11 +1,14 @@
 package dependabotgen
 
 import (
+	"bytes"
+	"embed"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"sort"
+	"text/template"
 
 	"gopkg.in/yaml.v3"
 )
@@ -14,7 +17,12 @@ const (
 	DependabotConfigVersion = 2
 	SyncBranchPrefix        = "sync-dependabot-"
 	DefaultTargetBranch     = "main"
+
+	RenovateConfigPath = "renovate.json"
 )
+
+//go:embed renovate.template.json
+var RenovateTemplate embed.FS
 
 type DependabotConfig struct {
 	Version int                `yaml:"version,omitempty"`
@@ -236,6 +244,20 @@ func (cfg *DependabotConfig) Write(repoDir string, run string) error {
 
 	if err := WriteDependabotWorkflow(repoDir, run); err != nil {
 		return err
+	}
+
+	buf := &bytes.Buffer{}
+	renovateTemplate, err := template.
+		New("renovate.template.json").
+		ParseFS(RenovateTemplate, "*.json")
+	if err != nil {
+		return fmt.Errorf("failed to parse renovate template: %w", err)
+	}
+	if err := renovateTemplate.Execute(buf, nil); err != nil {
+		return fmt.Errorf("failed to execute template for mintmaker config: %w", err)
+	}
+	if err := os.WriteFile(filepath.Join(repoDir, RenovateConfigPath), buf.Bytes(), 0644); err != nil {
+		return fmt.Errorf("failed to write mintmaker (renovate) config file: %w", err)
 	}
 
 	return nil
