@@ -41,8 +41,6 @@ const (
 	ReleasePlansDirName                = "releaseplans"
 	ReleasesDirName                    = "releases"
 
-	RenovateConfigPath = "renovate.json"
-
 	StageEnv = "stage"
 	ProdEnv  = "prod"
 
@@ -88,9 +86,6 @@ var ReleasePlanTemplate embed.FS
 
 //go:embed release.template.yaml
 var ReleaseTemplate embed.FS
-
-//go:embed renovate.template.json
-var RenovateTemplate embed.FS
 
 type Config struct {
 	OpenShiftReleasePath string
@@ -290,11 +285,6 @@ func Generate(cfg Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to parse integration test scenario template: %w", err)
 	}
-	renovateTemplate, err := template.New("renovate.template.json").Delims("{{{", "}}}").Funcs(funcs).ParseFS(RenovateTemplate, "*.json")
-	if err != nil {
-		return fmt.Errorf("failed to parse renovate template: %w", err)
-	}
-
 	applications := make(map[string]map[string]DockerfileApplicationConfig, 8)
 	for _, c := range configs {
 		appKey := Truncate(Sanitize(cfg.ApplicationName))
@@ -521,13 +511,6 @@ func Generate(cfg Config) error {
 		}
 
 		buf.Reset()
-
-		if err := renovateTemplate.Execute(buf, nil); err != nil {
-			return fmt.Errorf("failed to execute template for mintmaker config: %w", err)
-		}
-		if err := os.WriteFile(filepath.Join(cfg.RepositoryRootPath, RenovateConfigPath), buf.Bytes(), 0644); err != nil {
-			return fmt.Errorf("failed to write mintmaker config file: %w", err)
-		}
 	}
 
 	buf := &bytes.Buffer{}
