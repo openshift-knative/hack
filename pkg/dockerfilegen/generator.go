@@ -34,11 +34,6 @@ const (
 	GenerateMustGatherDockerfileOption = "must-gather-dockerfile"
 	DefaultDockerfileTemplateName      = "default"
 	FuncUtilDockerfileTemplateName     = "func-util"
-	// BuilderImageFmt defines the default pattern for the builder image.
-	// At the given places, the Go version from the projects go.mod will be inserted.
-	// Keep in mind to also update the tools image in the ImageBuilderDockerfile, when the RHEL
-	// version in the pattern gets updated (line 10).
-	BuilderImageFmt = "registry.ci.openshift.org/openshift/release:rhel-8-release-golang-%s-openshift-%s"
 
 	defaultAppFilename               = "main"
 	mustGatherDockerfileTemplateName = "must-gather"
@@ -157,17 +152,14 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 		goVersion = strings.Join(strings.Split(goVersion, ".")[0:2], ".")
 	}
 
-	ocpImageVersion, err := ocpImageVersionForGoVersion(goVersion)
-	if err != nil {
-		return fmt.Errorf("%w could not get OCP image version by Golang version: %w", ErrBadConf, err)
-	}
-
-	// Builder image might be provided without formatting '%s' string as plain value
 	builderImage := params.DockerfileImageBuilderFmt
-	if strings.Count(params.DockerfileImageBuilderFmt, "%s") == 1 {
-		builderImage = fmt.Sprintf(params.DockerfileImageBuilderFmt, goVersion)
-	} else if strings.Count(params.DockerfileImageBuilderFmt, "%s") == 2 {
-		builderImage = fmt.Sprintf(params.DockerfileImageBuilderFmt, goVersion, ocpImageVersion)
+	if builderImage == "" {
+		builderImage = builderImageForGoVersion(goVersion)
+	} else {
+		// Builder image might be provided without formatting '%s' string as plain value
+		if strings.Count(params.DockerfileImageBuilderFmt, "%s") == 1 {
+			builderImage = fmt.Sprintf(params.DockerfileImageBuilderFmt, goVersion)
+		}
 	}
 
 	goPackageToImageMapping := map[string]string{}
@@ -183,8 +175,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 	}
 
 	d := map[string]interface{}{
-		"builder":    builderImage,
-		"ocpVersion": ocpImageVersion,
+		"builder": builderImage,
 	}
 	if _, err = saveDockerfile(d, DockerfileBuildImageTemplate, params.Output, params.DockerfilesBuildDir); err != nil {
 		return err
@@ -559,15 +550,17 @@ func writeRPMLockFile(rpmsLockTemplate fs.FS, rootDir string) error {
 	return nil
 }
 
-func ocpImageVersionForGoVersion(goVersion string) (string, error) {
+func builderImageForGoVersion(goVersion string) string {
+	builderImageFmt := "registry.ci.openshift.org/openshift/release:rhel-8-release-golang-%s-openshift-%s"
+
 	switch goVersion {
 	case "1.21":
-		return "4.16", nil
+		return fmt.Sprintf(builderImageFmt, goVersion, "4.16")
 	case "1.22":
-		return "4.17", nil
+		return fmt.Sprintf(builderImageFmt, goVersion, "4.17")
 	case "1.23":
 		fallthrough
 	default:
-		return "4.19", nil
+		return fmt.Sprintf(builderImageFmt, goVersion, "4.19")
 	}
 }
