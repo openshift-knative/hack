@@ -58,7 +58,6 @@ func DefaultParams(wd string) Params {
 		DockerfilesBuildDir:          path.Join("ci-operator", "build-image"),
 		DockerfilesSourceDir:         path.Join("ci-operator", "source-image"),
 		ProjectFilePath:              path.Join("openshift", "project.yaml"),
-		DockerfileImageBuilderFmt:    BuilderImageFmt,
 		AppFileFmt:                   "/usr/bin/%s",
 		RegistryImageFmt:             "registry.ci.openshift.org/openshift/%s:%s",
 		ImagesFromRepositories:       nil,

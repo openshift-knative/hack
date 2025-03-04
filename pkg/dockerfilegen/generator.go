@@ -34,11 +34,6 @@ const (
 	GenerateMustGatherDockerfileOption = "must-gather-dockerfile"
 	DefaultDockerfileTemplateName      = "default"
 	FuncUtilDockerfileTemplateName     = "func-util"
-	// BuilderImageFmt defines the default pattern for the builder image.
-	// At the given places, the Go version from the projects go.mod will be inserted.
-	// Keep in mind to also update the tools image in the ImageBuilderDockerfile, when the OCP / RHEL
-	// version in the pattern gets updated (line 3 and 10).
-	BuilderImageFmt = "registry.ci.openshift.org/openshift/release:rhel-8-release-golang-%s-openshift-4.17"
 
 	defaultAppFilename               = "main"
 	mustGatherDockerfileTemplateName = "must-gather"
@@ -157,10 +152,14 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 		goVersion = strings.Join(strings.Split(goVersion, ".")[0:2], ".")
 	}
 
-	// Builder image might be provided without formatting '%s' string as plain value
 	builderImage := params.DockerfileImageBuilderFmt
-	if strings.Count(params.DockerfileImageBuilderFmt, "%s") == 1 {
-		builderImage = fmt.Sprintf(params.DockerfileImageBuilderFmt, goVersion)
+	if builderImage == "" {
+		builderImage = builderImageForGoVersion(goVersion)
+	} else {
+		// Builder image might be provided without formatting '%s' string as plain value
+		if strings.Count(params.DockerfileImageBuilderFmt, "%s") == 1 {
+			builderImage = fmt.Sprintf(params.DockerfileImageBuilderFmt, goVersion)
+		}
 	}
 
 	goPackageToImageMapping := map[string]string{}
@@ -549,4 +548,19 @@ func writeRPMLockFile(rpmsLockTemplate fs.FS, rootDir string) error {
 			ErrIO, errors.WithStack(err))
 	}
 	return nil
+}
+
+func builderImageForGoVersion(goVersion string) string {
+	builderImageFmt := "registry.ci.openshift.org/openshift/release:rhel-8-release-golang-%s-openshift-%s"
+
+	switch goVersion {
+	case "1.21":
+		return fmt.Sprintf(builderImageFmt, goVersion, "4.16")
+	case "1.22":
+		return fmt.Sprintf(builderImageFmt, goVersion, "4.17")
+	case "1.23":
+		fallthrough
+	default:
+		return fmt.Sprintf(builderImageFmt, goVersion, "4.19")
+	}
 }
