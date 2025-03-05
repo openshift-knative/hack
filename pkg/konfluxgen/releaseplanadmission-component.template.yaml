@@ -55,6 +55,8 @@ spec:
     sign:
       configMapName: {{{ .SignCMName }}}
       cosignSecretName: {{{ .SignSecretName }}}
+    atlas:
+      server: {{{ .AtlasServer }}}
   pipeline:
     pipelineRef:
       resolver: git

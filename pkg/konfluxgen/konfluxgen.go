@@ -857,6 +857,7 @@ type rpaFBCData struct {
 	StagedIndex           bool
 	SignCMName            string
 	SignSecretName        string
+	AtlasServer           string
 }
 
 func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath string, appName string, soVersion string) error {
@@ -882,6 +883,7 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 		PipelineSA:            "release-index-image-prod",
 		SignCMName:            "hacbs-signing-pipeline-config-redhatrelease2",
 		SignSecretName:        "konflux-cosign-signing-production",
+		AtlasServer:           "production",
 	}
 	outputFilePath := filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeFBCReleasePlanAdmissionTemplate(fbcData, outputFilePath); err != nil {
@@ -902,6 +904,7 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 		StagedIndex:           true,
 		SignCMName:            "hacbs-signing-pipeline-config-staging-redhatrelease2",
 		SignSecretName:        "konflux-cosign-signing-stage",
+		AtlasServer:           "stage",
 	}
 	outputFilePath = filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeFBCReleasePlanAdmissionTemplate(fbcData, outputFilePath); err != nil {
@@ -923,6 +926,7 @@ type rpaComponentData struct {
 	PipelineSA     string
 	SignCMName     string
 	SignSecretName string
+	AtlasServer    string
 }
 
 func GenerateComponentReleasePlanAdmission(cfg Config, csv *operatorsv1alpha1.ClusterServiceVersion) error {
@@ -955,6 +959,7 @@ func GenerateComponentReleasePlanAdmission(cfg Config, csv *operatorsv1alpha1.Cl
 		PipelineSA:      "release-registry-prod",
 		SignCMName:      "hacbs-signing-pipeline-config-redhatrelease2",
 		SignSecretName:  "konflux-cosign-signing-production",
+		AtlasServer:     "production",
 		Policy:          "registry-ocp-serverless-prod",
 	}
 	outputFilePath := filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
@@ -982,6 +987,7 @@ func GenerateComponentReleasePlanAdmission(cfg Config, csv *operatorsv1alpha1.Cl
 		PipelineSA:      "release-registry-staging",
 		SignCMName:      "hacbs-signing-pipeline-config-staging-redhatrelease2",
 		SignSecretName:  "konflux-cosign-signing-stage",
+		AtlasServer:     "stage",
 		Policy:          "registry-standard-stage",
 	}
 	outputFilePath = filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
