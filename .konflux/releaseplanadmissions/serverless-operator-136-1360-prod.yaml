@@ -161,6 +161,8 @@ spec:
     sign:
       configMapName: hacbs-signing-pipeline-config-redhatrelease2
       cosignSecretName: konflux-cosign-signing-production
+    atlas:
+      server: production
   pipeline:
     pipelineRef:
       resolver: git
