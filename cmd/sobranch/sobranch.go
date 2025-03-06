@@ -14,5 +14,5 @@ func main() {
 	soVersion := soversion.FromUpstreamVersion(*upstreamVersion)
 	soBranch := soversion.BranchName(soVersion)
 
-	fmt.Printf(soBranch)
+	fmt.Print(soBranch)
 }
