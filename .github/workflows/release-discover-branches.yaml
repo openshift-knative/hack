@@ -49,11 +49,29 @@ jobs:
         working-directory: ./src/github.com/openshift-knative/hack
         run: make konflux-update-pipelines
 
+      # The runner runs on Ubuntu and we need to have python3-dnf installed, so we'll use a container to run the rpm-lockfile-prototype
+      - name: Checkout rpm-lockfile-prototype
+        uses: actions/checkout@v3
+        with:
+          repository: 'konflux-ci/rpm-lockfile-prototype'
+          path: ./src/github.com/openshift-knative/rpm-lockfile-prototype
+          ref: '283ee2cd7938a2142d8ac98de33ba0d0e3ac146f'
+
+      - name: Build rpm-lockfile-prototype
+        working-directory: ./src/github.com/openshift-knative/rpm-lockfile-prototype
+        run: docker build -t localhost/rpm-lockfile-prototype:latest -f Containerfile .
+
       - name: Update RPMs lock files
         working-directory: ./src/github.com/openshift-knative/hack
         run: |
-          python3 -m pip install --user https://github.com/konflux-ci/rpm-lockfile-prototype/archive/refs/tags/v0.13.2.tar.gz || exit $?
-          rpm-lockfile-prototype --outfile=./pkg/dockerfilegen/ubi8.rpms.lock.yaml ./pkg/dockerfilegen/ubi8.rpms.in.yaml || exit $?
+          container_dir=/work
+          docker run \
+            --user $(id -u):$(id -g) \
+            --rm \
+            -v ${PWD}:${container_dir} \
+            localhost/rpm-lockfile-prototype:latest \
+            --outfile=${container_dir}/pkg/dockerfilegen/ubi8.rpms.lock.yaml \
+            ${container_dir}/pkg/dockerfilegen/ubi8.rpms.in.yaml || exit $?
 
       - name: Create Discovery Pull Request
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main'
