@@ -141,13 +141,6 @@ func Main() {
 						return err
 					}
 				}
-
-				// Generate and write image mirroring configurations.
-				for _, imageMirroring := range GenerateImageMirroringConfigs(openShiftRelease, cfgs) {
-					if err := ReconcileImageMirroringConfig(inConfig, imageMirroring); err != nil {
-						return err
-					}
-				}
 				return nil
 			})
 		}
@@ -547,15 +540,6 @@ func InitializeOpenShiftReleaseRepository(ctx context.Context, openShiftRelease 
 				return err
 			}
 			if err := deleteConfigsIfNeeded(r.IgnoreConfigs.Matches, matchesForDeletion, ""); err != nil {
-				return err
-			}
-			mirrorPath := filepath.Join(openShiftRelease.RepositoryDirectory(), ImageMirroringConfigPath, ImageMirroringConfigFilePrefix+"*"+r.Repo+"*")
-			matchesForDeletion, err = filepath.Glob(mirrorPath)
-			if err != nil {
-				return err
-			}
-
-			if err := deleteConfigsIfNeeded([]string{"serverless-operator", "client", "nightly"}, matchesForDeletion, ""); err != nil {
 				return err
 			}
 		}
