@@ -49,6 +49,34 @@ jobs:
         working-directory: ./src/github.com/openshift-knative/hack
         run: make konflux-update-pipelines
 
+      # The runner runs on Ubuntu and we need to have python3-dnf installed, so we'll use a container to run the rpm-lockfile-prototype
+      - name: Checkout rpm-lockfile-prototype
+        uses: actions/checkout@v3
+        with:
+          repository: 'konflux-ci/rpm-lockfile-prototype'
+          path: ./src/github.com/openshift-knative/rpm-lockfile-prototype
+          ref: '283ee2cd7938a2142d8ac98de33ba0d0e3ac146f'
+
+      - name: Install podman
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install podman
+
+      - name: Build rpm-lockfile-prototype
+        working-directory: ./src/github.com/openshift-knative/rpm-lockfile-prototype
+        run: podman build -t localhost/rpm-lockfile-prototype:latest -f Containerfile .
+
+      - name: Update RPMs lock files
+        working-directory: ./src/github.com/openshift-knative/hack
+        run: |
+          container_dir=~/work
+          podman run --privileged \
+            --rm \
+            -v ${PWD}:${container_dir} \
+            localhost/rpm-lockfile-prototype:latest \
+            --outfile=${container_dir}/pkg/dockerfilegen/ubi8.rpms.lock.yaml \
+            ${container_dir}/pkg/dockerfilegen/ubi8.rpms.in.yaml || exit $?
+
       - name: Create Discovery Pull Request
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main'
         uses: peter-evans/create-pull-request@v5

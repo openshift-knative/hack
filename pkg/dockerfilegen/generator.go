@@ -237,14 +237,14 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 		var dockerfileTemplate embed.FS
 		var rpmsLockTemplate *embed.FS
 		if params.RpmsLockFileEnabled {
-			rpmsLockTemplate = &RPMsLockTemplate
+			rpmsLockTemplate = &RPMsLockTemplateUbi8
 		}
 		switch params.TemplateName {
 		case DefaultDockerfileTemplateName:
 			dockerfileTemplate = DockerfileDefaultTemplate
 		case FuncUtilDockerfileTemplateName:
 			dockerfileTemplate = DockerfileFuncUtilTemplate
-			rpmsLockTemplate = &RPMsLockTemplate
+			rpmsLockTemplate = &RPMsLockTemplateUbi8
 		default:
 			return fmt.Errorf("%w: Unknown template name: %s",
 				ErrBadConf, params.TemplateName)
@@ -358,7 +358,7 @@ func generateMustGatherDockerfile(params Params) error {
 	if _, err = saveDockerfile(d, DockerfileMustGatherTemplate, out, ""); err != nil {
 		return err
 	}
-	rpmsLockTemplate = &RPMsLockTemplate
+	rpmsLockTemplate = &RPMsLockTemplateUbi8
 	if err = writeRPMLockFile(rpmsLockTemplate, params.RootDir); err != nil {
 		return err
 	}
@@ -526,7 +526,7 @@ func getGoMod(rootDir string) (*modfile.File, error) {
 
 func writeRPMLockFile(rpmsLockTemplate fs.FS, rootDir string) error {
 	// Parse the template file
-	t, err := template.ParseFS(rpmsLockTemplate, "rpms.lock.yaml")
+	t, err := template.ParseFS(rpmsLockTemplate, "*.rpms.lock.yaml")
 	if err != nil {
 		return fmt.Errorf("%w: Failed to parse RPM template: %w",
 			ErrBadTemplate, errors.WithStack(err))
