@@ -25,7 +25,7 @@ jobs:
           path: ./src/github.com/openshift-knative/hack
 
       - name: Setup Golang
-        uses: ./actions/setup-go
+        uses: ./src/github.com/openshift-knative/hack/actions/setup-go
 
       - uses: tektoncd/actions/setup-tektoncd-cli@main
         with:

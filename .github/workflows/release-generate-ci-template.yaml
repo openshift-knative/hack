@@ -30,7 +30,7 @@ jobs:
           path: ./src/github.com/openshift-knative/hack
 
       - name: Setup Golang
-        uses: ./actions/setup-go
+        uses: ./src/github.com/openshift-knative/hack/actions/setup-go
 
       - name: Install yq
         run: go install github.com/mikefarah/yq/v3@latest
