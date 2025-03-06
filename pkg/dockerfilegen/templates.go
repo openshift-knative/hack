@@ -17,5 +17,5 @@ var DockerfileSourceImageTemplate embed.FS
 //go:embed dockerfile-templates/MustGather.dockerfile.tmpl
 var DockerfileMustGatherTemplate embed.FS
 
-//go:embed rpms.lock.yaml
-var RPMsLockTemplate embed.FS
+//go:embed ubi8.rpms.lock.yaml
+var RPMsLockTemplateUbi8 embed.FS

@@ -1,0 +1,27 @@
+contentOrigin:
+  # Define at least one source of packages, but you can have as many as you want.
+  repofiles:
+    # Either local path or url pointing to .repo file
+    - 'https://raw.githubusercontent.com/konflux-ci/bazel-builder/0401ac3b893532a8e2afabd1cd3814cd5b962f69/bazel5-ubi8/ubi8.repo'
+packages:
+  # list of rpm names to resolve
+  - socat
+  - tar
+  - rsync
+
+reinstallPackages:
+  - tzdata
+
+arches:
+  # The list of architectures can be set in the config file. Any `--arch` option set
+  # on the command line will override this list.
+  - x86_64
+  - aarch64
+  - s390x
+  - ppc64le
+
+context:
+  # Alternative to setting command line options. Usually you will only want
+  # to include one of these options, with the exception of `flatpak` that
+  # can be combined with `image` and `containerfile`
+  containerfile: ubi8.Containerfile

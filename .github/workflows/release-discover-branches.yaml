@@ -49,6 +49,12 @@ jobs:
         working-directory: ./src/github.com/openshift-knative/hack
         run: make konflux-update-pipelines
 
+      - name: Update RPMs lock files
+        working-directory: ./src/github.com/openshift-knative/hack
+        run: |
+          python3 -m pip install --user https://github.com/konflux-ci/rpm-lockfile-prototype/archive/refs/tags/v0.13.2.tar.gz || exit $?
+          rpm-lockfile-prototype --outfile=./pkg/dockerfilegen/ubi8.rpms.lock.yaml ./pkg/dockerfilegen/ubi8.rpms.in.yaml || exit $?
+
       - name: Create Discovery Pull Request
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main'
         uses: peter-evans/create-pull-request@v5
