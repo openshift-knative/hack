@@ -394,7 +394,7 @@ func AlwaysRunInjector() JobConfigInjector {
 					// Prevent sneaking in wrong settings from previous runs of "make jobs".
 					// Make sure we reset it to default.
 					jobConfig.PresubmitsStatic[k][i].AlwaysRun = false
-					jobConfig.PresubmitsStatic[k][i].SkipIfOnlyChanged = "^.tekton/.*|^.konflux.*|^.github/.*"
+					jobConfig.PresubmitsStatic[k][i].SkipIfOnlyChanged = "^.tekton/.*|^.konflux.*|^.github/.*|^rpms.lock.yaml$|^hack/.*|^OWNERS.*|.*\\.md"
 
 					// Build images in pre-submit phase only for OpenShift versions that are mandatory to test.
 					if strings.HasSuffix(jobConfig.PresubmitsStatic[k][i].Name, "-images") {
