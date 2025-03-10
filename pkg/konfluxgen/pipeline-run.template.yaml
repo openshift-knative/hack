@@ -74,7 +74,7 @@ spec:
     - name: prefetch-input-dev-package-managers
       value: '{{{ .PrefetchDeps.DevPackageManagers }}}'
     {{{- end }}}
-  {{{- if eq .Pipeline "docker-build" }}}
+  {{{- if or (eq .Pipeline "docker-build") (eq .Pipeline "docker-java-build")}}}
   taskRunSpecs:
     - pipelineTaskName: sast-shell-check
       stepSpecs:
