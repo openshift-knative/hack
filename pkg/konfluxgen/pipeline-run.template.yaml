@@ -74,6 +74,17 @@ spec:
     - name: prefetch-input-dev-package-managers
       value: '{{{ .PrefetchDeps.DevPackageManagers }}}'
     {{{- end }}}
+  {{{- if eq .Pipeline "docker-build" }}}
+  taskRunSpecs:
+    - pipelineTaskName: sast-shell-check
+      stepSpecs:
+        - name: sast-shell-check
+          computeResources:
+            requests:
+              memory: 4Gi
+            limits:
+              memory: 4Gi
+  {{{- end }}}
   pipelineRef:
     name: {{{ .Pipeline }}}
   taskRunTemplate: {}
