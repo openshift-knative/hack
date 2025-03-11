@@ -222,7 +222,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 					}
 					if len(cfg.ExcludesImages) == 0 {
 						cfg.ExcludesImages = []string{
-							".*source.*",
+							".*-source-.*",
 						}
 					}
 
@@ -437,7 +437,7 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 		if len(cfg.ExcludesImages) == 0 {
 			cfg.ExcludesImages = []string{
 				".*operator-src.*",
-				".*source.*",
+				".*-source-.*",
 				".*serverless-index.*",
 			}
 		}
