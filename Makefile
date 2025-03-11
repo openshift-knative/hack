@@ -19,6 +19,7 @@ generate-eventing-ci:
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-istio.yaml $(ARGS)
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-kafka-broker.yaml $(ARGS)
 	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-hyperfoil-benchmark.yaml $(ARGS)
+	go run github.com/openshift-knative/hack/cmd/prowgen --config config/eventing-integrations.yaml $(ARGS)
 .PHONY: generate-eventing-ci
 
 generate-serving-ci:

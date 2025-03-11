@@ -483,6 +483,11 @@ func (r Repository) RunCodegenCommand() string {
 		// These repos don't use vendor, so they don't patch dependencies.
 		run = ""
 	}
+	if r.IsEventingIntegrations() {
+		// eventing-integrations does not have a make target yet
+		// TODO: remove when eventing-integrations Makefile is setup properly
+		run = ""
+	}
 	if r.IsServerlessOperator() {
 		run = "make generated-files"
 	}
