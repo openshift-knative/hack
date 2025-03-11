@@ -213,6 +213,49 @@ func (cfg *DependabotConfig) WithMaven(dirs []string, branch string) {
 	*cfg.Updates = append(*cfg.Updates, u)
 }
 
+func (cfg *DependabotConfig) WithNPM(dirs []string, branch string) {
+	if len(dirs) == 0 {
+		dirs = []string{"/"}
+	}
+
+	u := DependabotUpdate{
+		PackageEcosystem: "npm",
+		Directories:      dirs,
+		Schedule: ScheduleUpdate{
+			Interval: "weekly",
+		},
+		TargetBranch: branch,
+		CommitMessage: CommitMessageUpdate{
+			Prefix: fmt.Sprintf("[%s][%s]", branch, "npm"),
+		},
+		OpenPullRequestLimit: 10,
+		Groups: map[string]Group{
+			"patch": {
+				UpdateTypes: []string{"patch"},
+				Patterns:    []string{"*"},
+				AppliesTo:   "version-updates",
+			},
+			"minor": {
+				UpdateTypes: []string{"minor"},
+				Patterns:    []string{"*"},
+				AppliesTo:   "version-updates",
+			},
+			"major": {
+				UpdateTypes: []string{"major"},
+				Patterns:    []string{"*"},
+				AppliesTo:   "version-updates",
+			},
+			"security": {
+				UpdateTypes: []string{"patch", "minor", "major"},
+				Patterns:    []string{"*"},
+				AppliesTo:   "security-updates",
+			},
+		},
+	}
+
+	*cfg.Updates = append(*cfg.Updates, u)
+}
+
 const (
 	ghDir        = ".github"
 	workflowsDir = "workflows"

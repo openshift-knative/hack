@@ -77,6 +77,12 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 							if r.IsEKB() {
 								dependabotConfig.WithMaven([]string{"/data-plane"}, branchName)
 							}
+							if r.IsEventingIntegrations() {
+								dependabotConfig.WithNPM([]string{
+									"/transform-jsonata",
+								}, branchName)
+								dependabotConfig.WithMaven([]string{"/"}, branchName)
+							}
 							if r.IsFunc() {
 								dependabotConfig.WithMaven([]string{
 									"/templates/quarkus/http",
@@ -502,6 +508,10 @@ func getPrefetchDeps(repo Repository, branch string) (*konfluxgen.PrefetchDeps, 
 			// If it's a Go project and no vendor dir is present enable Go caching
 			prefetchDeps.WithUnvendoredGo("." /* root of the repository */)
 		}
+	}
+
+	if repo.IsEventingIntegrations() {
+		prefetchDeps.WithNPM("transform-jsonata")
 	}
 
 	return &prefetchDeps, nil

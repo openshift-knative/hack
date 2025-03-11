@@ -461,6 +461,10 @@ func (r Repository) IsServerlessOperator() bool {
 	return r.Org == "openshift-knative" && r.Repo == "serverless-operator"
 }
 
+func (r Repository) IsEventingIntegrations() bool {
+	return r.Org == "openshift-knative" && r.Repo == "eventing-integrations"
+}
+
 func (r Repository) IsEKB() bool {
 	return r.Org == "openshift-knative" && r.Repo == "eventing-kafka-broker"
 }
