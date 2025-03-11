@@ -28,7 +28,6 @@ repositories:
   e2e:
   - match: .*e2e$
   - match: .*reconciler.*
-  - match: .*conformance.*
   ignoreConfigs: {}
   imagePrefix: knative-eventing-integrations
   org: openshift-knative
