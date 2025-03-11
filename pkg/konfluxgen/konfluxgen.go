@@ -177,6 +177,24 @@ func (pd *PrefetchDeps) WithUnvendoredGo(path string) {
 	pd.PrefetchInput = string(b)
 }
 
+func (pd *PrefetchDeps) WithNPM(path string) {
+	types := make([]map[string]interface{}, 0)
+	if pd.PrefetchInput != "" {
+		if err := json.Unmarshal([]byte(pd.PrefetchInput), &types); err != nil {
+			log.Fatal("Failed to unmarshal prefetch input: ", err)
+		}
+	}
+	types = append(types, map[string]interface{}{
+		"type": "npm",
+		"path": path,
+	})
+	b, err := json.Marshal(types)
+	if err != nil {
+		log.Fatal("Failed to marshal prefetch input: ", err)
+	}
+	pd.PrefetchInput = string(b)
+}
+
 func Generate(cfg Config) error {
 	fbcBuildPipelinePath := filepath.Join(cfg.PipelinesOutputPath, "fbc-builder.yaml")
 	containerBuildPipelinePath := filepath.Join(cfg.PipelinesOutputPath, "docker-build.yaml")
