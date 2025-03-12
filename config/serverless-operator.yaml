@@ -14,6 +14,10 @@ config:
           pullSpec: registry.access.redhat.com/ubi8/openjdk-21
         - name: JAVA_RUNTIME
           pullSpec: registry.access.redhat.com/ubi8/openjdk-21-runtime
+        - name: NODE_BUILDER
+          pullSpec: registry.access.redhat.com/ubi8/nodejs-20
+        - name: NODE_RUNTIME
+          pullSpec: registry.access.redhat.com/ubi8/nodejs-20
       openShiftVersions:
       - candidateRelease: true
         customConfigs:
@@ -68,6 +72,10 @@ config:
           pullSpec: registry.access.redhat.com/ubi8/openjdk-21
         - name: JAVA_RUNTIME
           pullSpec: registry.access.redhat.com/ubi8/openjdk-21-runtime
+        - name: NODE_BUILDER
+          pullSpec: registry.access.redhat.com/ubi8/nodejs-20
+        - name: NODE_RUNTIME
+          pullSpec: registry.access.redhat.com/ubi8/nodejs-20
       openShiftVersions:
       - candidateRelease: true
         onDemand: true
