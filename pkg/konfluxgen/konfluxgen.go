@@ -232,7 +232,8 @@ func Generate(cfg Config) error {
 	}
 
 	if !cfg.PipelinesOutputPathSkipRemove {
-		if err := removeAllExcept(cfg.PipelinesOutputPath, fbcBuildPipelinePath, containerBuildPipelinePath, containerJavaBuildPipelinePath); err != nil {
+		imageDigestMirrorSetPath := filepath.Join(cfg.PipelinesOutputPath, "images-mirror-set.yaml")
+		if err := removeAllExcept(cfg.PipelinesOutputPath, fbcBuildPipelinePath, containerBuildPipelinePath, containerJavaBuildPipelinePath, imageDigestMirrorSetPath); err != nil {
 			return fmt.Errorf("failed to clean %q directory: %w", cfg.PipelinesOutputPath, err)
 		}
 	}
