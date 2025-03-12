@@ -153,26 +153,36 @@ func Main() {
 	if err := repositoriesGenerateConfigs.Wait(); err != nil {
 		log.Fatalln("Failed waiting for repositories generator", err)
 	}
-	if *build {
-		if err := RunOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
-			log.Fatalln("Failed to run openshift/release generator:", err)
+
+	openshiftGeneratorGroup := errgroup.Group{}
+	openshiftGeneratorGroup.Go(func() error {
+		if *build {
+			if err := RunOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
+				return fmt.Errorf("failed running OpenShiftReleaseGenerator: %w", err)
+			}
+			if err := runJobConfigInjectors(inConfigs, openShiftRelease); err != nil {
+				return fmt.Errorf("failed running JobConfigInjectors: %w", err)
+			}
+			if err := RunOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
+				return fmt.Errorf("failed running OpenShiftReleaseGenerator (2): %w", err)
+			}
 		}
-		if err := runJobConfigInjectors(inConfigs, openShiftRelease); err != nil {
-			log.Fatalln("Failed to inject Slack reporter", err)
+		if *push {
+			if err := PushBranch(ctx, openShiftRelease, remote, *branch, "Sync Serverless CI "+*inputConfig); err != nil {
+				return fmt.Errorf("failed to push branch to openshift/release fork %s: %w", *remote, err)
+			}
 		}
-		if err := RunOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
-			log.Fatalln("Failed to run openshift/release generator after injecting Slack reporter", err)
-		}
-	}
-	if *push {
-		if err := PushBranch(ctx, openShiftRelease, remote, *branch, "Sync Serverless CI "+*inputConfig); err != nil {
-			log.Fatalln("Failed to push branch to openshift/release fork", *remote, err)
-		}
-	}
+		return nil
+	})
+
 	if *konflux {
 		if err := GenerateKonflux(ctx, openShiftRelease, inConfigs); err != nil {
 			log.Fatalln("Failed to generate Konflux configurations: %w", err)
 		}
+	}
+
+	if err := openshiftGeneratorGroup.Wait(); err != nil {
+		log.Fatalln(err)
 	}
 }
 
