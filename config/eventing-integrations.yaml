@@ -1,5 +1,13 @@
 config:
   branches:
+    release-next:
+      openShiftVersions:
+        - useClusterPool: true
+          version: "4.17"
+        - onDemand: true
+          version: "4.14"
+      skipDockerFilesMatches:
+        - .*hermetic.*
     release-v1.16:
       konflux:
         enabled: true
