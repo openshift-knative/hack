@@ -102,11 +102,38 @@ spec:
         - name: kn-eventing-mtping-116
           repository: registry.redhat.io/openshift-serverless-1/kn-eventing-mtping-rhel8
           pushSourceContainer: true
+        - name: kn-eventing-jobsink-116
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-jobsink-rhel8
+          pushSourceContainer: true
         - name: kn-eventing-apiserver-receive-adapter-116
           repository: registry.redhat.io/openshift-serverless-1/kn-eventing-apiserver-receive-adapter-rhel8
           pushSourceContainer: true
-        - name: kn-eventing-jobsink-116
-          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-jobsink-rhel8
+        - name: kn-eventing-integrations-transform-jsonata-116
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-integrations-transform-jsonata-rhel8
+          pushSourceContainer: true
+        - name: kn-eventing-integrations-timer-source-116
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-integrations-timer-source-rhel8
+          pushSourceContainer: true
+        - name: kn-eventing-integrations-aws-s3-source-116
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-integrations-aws-s3-source-rhel8
+          pushSourceContainer: true
+        - name: kn-eventing-integrations-aws-sqs-source-116
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-integrations-aws-sqs-source-rhel8
+          pushSourceContainer: true
+        - name: kn-eventing-integrations-aws-ddb-streams-source-116
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-integrations-aws-ddb-streams-source-rhel8
+          pushSourceContainer: true
+        - name: kn-eventing-integrations-log-sink-116
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-integrations-log-sink-rhel8
+          pushSourceContainer: true
+        - name: kn-eventing-integrations-aws-s3-sink-116
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-integrations-aws-s3-sink-rhel8
+          pushSourceContainer: true
+        - name: kn-eventing-integrations-aws-sqs-sink-116
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-integrations-aws-sqs-sink-rhel8
+          pushSourceContainer: true
+        - name: kn-eventing-integrations-aws-sns-sink-116
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-integrations-aws-sns-sink-rhel8
           pushSourceContainer: true
         - name: kn-backstage-plugins-eventmesh-116
           repository: registry.redhat.io/openshift-serverless-1/kn-backstage-plugins-eventmesh-rhel8
