@@ -11,9 +11,11 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/openshift-knative/hack/pkg/dependabotgen"
 	"github.com/openshift-knative/hack/pkg/soversion"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/coreos/go-semver/semver"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
@@ -43,212 +45,231 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 		return err
 	}
 
+	eg := &errgroup.Group{}
+	soMutex := &sync.Mutex{}
+
 	for _, config := range configs {
-		for _, r := range config.Repositories {
+		config := config
+		eg.Go(func() error {
 
-			// Special case serverless-operator
-			if r.IsServerlessOperator() {
-				if err := GenerateKonfluxServerlessOperator(ctx, openshiftRelease, r, config); err != nil {
-					return fmt.Errorf("failed to generate konflux for %q: %w", r.RepositoryDirectory(), err)
+			for _, r := range config.Repositories {
+
+				// Special case serverless-operator
+				if r.IsServerlessOperator() {
+					soMutex.Lock()
+					if err := GenerateKonfluxServerlessOperator(ctx, openshiftRelease, r, config); err != nil {
+						soMutex.Unlock()
+						return fmt.Errorf("failed to generate konflux for %q: %w", r.RepositoryDirectory(), err)
+					}
+					soMutex.Unlock()
+					continue
 				}
-				continue
-			}
 
-			dependabotConfig := dependabotgen.NewDependabotConfig()
+				dependabotConfig := dependabotgen.NewDependabotConfig()
 
-			for branchName, b := range config.Config.Branches {
-				if b.Konflux != nil && b.Konflux.Enabled {
+				for branchName, b := range config.Config.Branches {
+					if b.Konflux != nil && b.Konflux.Enabled {
 
-					// This is a special GH log format: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#example-grouping-log-lines
-					log.Printf("::group::konfluxgen %s %s\n", r.RepositoryDirectory(), branchName)
+						// This is a special GH log format: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#example-grouping-log-lines
+						log.Printf("::group::konfluxgen %s %s\n", r.RepositoryDirectory(), branchName)
 
-					var soVersion *semver.Version
-					// Special case "release-next"
-					targetBranch := branchName
-					soBranchName := "main"
-					if branchName == "release-next" {
-						targetBranch = "main"
-					} else {
-						soVersion = soversion.FromUpstreamVersion(branchName)
-						soBranchName = soversion.BranchName(soVersion)
+						var soVersion *semver.Version
+						// Special case "release-next"
+						targetBranch := branchName
+						soBranchName := "main"
+						if branchName == "release-next" {
+							targetBranch = "main"
+						} else {
+							soVersion = soversion.FromUpstreamVersion(branchName)
+							soBranchName = soversion.BranchName(soVersion)
 
-						if b.DependabotEnabled == nil || *b.DependabotEnabled {
-							dependabotConfig.WithGo(branchName)
-							if r.IsEKB() {
-								dependabotConfig.WithMaven([]string{"/data-plane"}, branchName)
-							}
-							if r.IsEventingIntegrations() {
-								dependabotConfig.WithNPM([]string{
-									"/transform-jsonata",
-								}, branchName)
-								dependabotConfig.WithMaven([]string{"/"}, branchName)
-							}
-							if r.IsFunc() {
-								dependabotConfig.WithMaven([]string{
-									"/templates/quarkus/http",
-									"/templates/quarkus/cloudevents",
-									"/templates/springboot/http",
-									"/templates/springboot/cloudevents",
-								}, branchName)
+							if b.DependabotEnabled == nil || *b.DependabotEnabled {
+								dependabotConfig.WithGo(branchName)
+								if r.IsEKB() {
+									dependabotConfig.WithMaven([]string{"/data-plane"}, branchName)
+								}
+								if r.IsEventingIntegrations() {
+									dependabotConfig.WithNPM([]string{
+										"/transform-jsonata",
+									}, branchName)
+									dependabotConfig.WithMaven([]string{"/"}, branchName)
+								}
+								if r.IsFunc() {
+									dependabotConfig.WithMaven([]string{
+										"/templates/quarkus/http",
+										"/templates/quarkus/cloudevents",
+										"/templates/springboot/http",
+										"/templates/springboot/cloudevents",
+									}, branchName)
+								}
 							}
 						}
-					}
 
-					log.Printf("targetBranch: %s, soBranchName: %s, soVersion: %s\n", targetBranch, soBranchName, soVersion)
+						log.Printf("targetBranch: %s, soBranchName: %s, soVersion: %s\n", targetBranch, soBranchName, soVersion)
 
-					// Checkout s-o to get the right release version from project.yaml (e.g. 1.34.1)
-					soRepo := Repository{Org: "openshift-knative", Repo: "serverless-operator"}
-					if err := GitMirror(ctx, soRepo); err != nil {
-						return err
-					}
-
-					versionLabel := soBranchName
-					var buildArgs []string
-					if err := GitCheckout(ctx, soRepo, soBranchName); err != nil {
-						if !strings.Contains(err.Error(), "failed to run git [checkout") {
-							return err
-						}
-						// For non-existent branches we use the `.0` patch version if soVersion is set.
-						if soVersion != nil {
-							versionLabel = soVersion.String()
-						}
-						// For non-existent branches we keep going and use downstreamVersion for versionLabel.
-					} else {
-						soProjectYamlPath := filepath.Join(soRepo.RepositoryDirectory(),
-							"olm-catalog", "serverless-operator", "project.yaml")
-						soMetadata, err := project.ReadMetadataFile(soProjectYamlPath)
-						if err != nil {
+						soMutex.Lock()
+						// Checkout s-o to get the right release version from project.yaml (e.g. 1.34.1)
+						soRepo := Repository{Org: "openshift-knative", Repo: "serverless-operator"}
+						if err := GitMirror(ctx, soRepo); err != nil {
 							return err
 						}
 
-						versionLabel = soMetadata.Project.Version
-					}
-					log.Println("Version label:", versionLabel)
-					buildArgs = append(buildArgs, fmt.Sprintf("VERSION=%s", versionLabel))
+						versionLabel := soBranchName
+						var buildArgs []string
+						if err := GitCheckout(ctx, soRepo, soBranchName); err != nil {
+							if !strings.Contains(err.Error(), "failed to run git [checkout") {
+								soMutex.Unlock()
+								return err
+							}
+							// For non-existent branches we use the `.0` patch version if soVersion is set.
+							if soVersion != nil {
+								versionLabel = soVersion.String()
+							}
+							// For non-existent branches we keep going and use downstreamVersion for versionLabel.
+						} else {
+							soProjectYamlPath := filepath.Join(soRepo.RepositoryDirectory(),
+								"olm-catalog", "serverless-operator", "project.yaml")
+							soMetadata, err := project.ReadMetadataFile(soProjectYamlPath)
+							if err != nil {
+								soMutex.Unlock()
+								return err
+							}
 
-					soConfig, loadErr := LoadConfig("config/serverless-operator.yaml")
-					if loadErr != nil {
-						return fmt.Errorf("failed to load config for serverless-operator: %w", loadErr)
-					}
-					br, ok := soConfig.Config.Branches[soBranchName]
-					if !ok {
-						br, ok = soConfig.Config.Branches["main"]
+							versionLabel = soMetadata.Project.Version
+						}
+						soMutex.Unlock()
+						log.Println("Version label:", versionLabel)
+						buildArgs = append(buildArgs, fmt.Sprintf("VERSION=%s", versionLabel))
+
+						soConfig, loadErr := LoadConfig("config/serverless-operator.yaml")
+						if loadErr != nil {
+							return fmt.Errorf("failed to load config for serverless-operator: %w", loadErr)
+						}
+						br, ok := soConfig.Config.Branches[soBranchName]
 						if !ok {
-							return fmt.Errorf("main or %s branch configuration not found for serverless-operator", soBranchName)
+							br, ok = soConfig.Config.Branches["main"]
+							if !ok {
+								return fmt.Errorf("main or %s branch configuration not found for serverless-operator", soBranchName)
+							}
 						}
-					}
 
-					overrides := make(map[string]string)
-					// add overrides from SO config
-					for _, img := range br.Konflux.ImageOverrides {
-						if img.Name == "" || img.PullSpec == "" {
-							return fmt.Errorf("image override missing name or pull spec: %#v", img)
+						overrides := make(map[string]string)
+						// add overrides from SO config
+						for _, img := range br.Konflux.ImageOverrides {
+							if img.Name == "" || img.PullSpec == "" {
+								return fmt.Errorf("image override missing name or pull spec: %#v", img)
+							}
+							overrides[img.Name] = img.PullSpec
 						}
-						overrides[img.Name] = img.PullSpec
-					}
 
-					// add overrides from this branch config and let them override the ones from SO
-					for _, img := range b.Konflux.ImageOverrides {
-						if img.Name == "" || img.PullSpec == "" {
-							return fmt.Errorf("image override missing name or pull spec: %#v", img)
+						// add overrides from this branch config and let them override the ones from SO
+						for _, img := range b.Konflux.ImageOverrides {
+							if img.Name == "" || img.PullSpec == "" {
+								return fmt.Errorf("image override missing name or pull spec: %#v", img)
+							}
+							overrides[img.Name] = img.PullSpec
 						}
-						overrides[img.Name] = img.PullSpec
-					}
 
-					for name, pullSpec := range overrides {
-						buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", name, pullSpec))
-					}
-					slices.Sort(buildArgs)
-
-					if err := GitMirror(ctx, r); err != nil {
-						return err
-					}
-
-					if err := GitCheckout(ctx, r, targetBranch); err != nil {
-						return err
-					}
-
-					pushBranch := fmt.Sprintf("%s%s", KonfluxBranchPrefix, branchName)
-
-					if run := r.RunDockefileGenCommand(); run != "" {
-						commitMsg := fmt.Sprintf("Generate dockerfiles with %q", run)
-						commands := strings.Split(run, " ")
-						var args []string
-						if len(commands) > 1 {
-							args = commands[1:]
+						for name, pullSpec := range overrides {
+							buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", name, pullSpec))
 						}
-						if out, err := Run(ctx, r, commands[0], args...); err != nil {
-							return fmt.Errorf("failed to %s for %q [%s]: %w - %s", commitMsg, r.RepositoryDirectory(), targetBranch, err, string(out))
+						slices.Sort(buildArgs)
+
+						if err := GitMirror(ctx, r); err != nil {
+							return err
 						}
+
+						if err := GitCheckout(ctx, r, targetBranch); err != nil {
+							return err
+						}
+
+						pushBranch := fmt.Sprintf("%s%s", KonfluxBranchPrefix, branchName)
+
+						if run := r.RunDockefileGenCommand(); run != "" {
+							commitMsg := fmt.Sprintf("Generate dockerfiles with %q", run)
+							commands := strings.Split(run, " ")
+							var args []string
+							if len(commands) > 1 {
+								args = commands[1:]
+							}
+							if out, err := Run(ctx, r, commands[0], args...); err != nil {
+								return fmt.Errorf("failed to %s for %q [%s]: %w - %s", commitMsg, r.RepositoryDirectory(), targetBranch, err, string(out))
+							}
+							if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
+								return err
+							}
+						}
+
+						nudges := b.Konflux.Nudges
+						if soBranchName != "release-next" {
+							_, ok := operatorVersions[soBranchName]
+							if ok {
+								nudges = append(nudges, serverlessBundleNudge(soBranchName))
+							}
+							log.Printf("[%s] created nudges (%v) - operatorVersions: %#v - downstreamVersion: %v): %#v", r.RepositoryDirectory(), ok, operatorVersions, soBranchName, nudges)
+						}
+
+						prefetchDeps, err := getPrefetchDeps(r, targetBranch)
+						if err != nil {
+							return fmt.Errorf("could not get prefetchDeps: %w", err)
+						}
+
+						cfg := konfluxgen.Config{
+							OpenShiftReleasePath: openshiftRelease.RepositoryDirectory(),
+							ApplicationName:      konfluxgen.AppName(soBranchName),
+							BuildArgs:            buildArgs,
+							Includes: []string{
+								fmt.Sprintf("ci-operator/config/%s/.*%s.*.yaml", r.RepositoryDirectory(), branchName),
+							},
+							Excludes:                  b.Konflux.Excludes,
+							ExcludesImages:            b.Konflux.ExcludesImages,
+							JavaImages:                b.Konflux.JavaImages,
+							ResourcesOutputPath:       fmt.Sprintf("%s/.konflux", r.RepositoryDirectory()),
+							RepositoryRootPath:        r.RepositoryDirectory(),
+							GlobalResourcesOutputPath: fmt.Sprintf("%s/.konflux", hackRepo.RepositoryDirectory()),
+							PipelinesOutputPath:       fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
+							Nudges:                    nudges,
+							// Preserve the version tag as first tag in any instance since SO, when bumping the patch version
+							// will change it before merging the PR.
+							// See `openshift-knative/serverless-operator/hack/generate/update-pipelines.sh` for more details.
+							Tags:         []string{versionLabel},
+							PrefetchDeps: *prefetchDeps,
+						}
+						if len(cfg.ExcludesImages) == 0 {
+							cfg.ExcludesImages = []string{
+								".*-source-.*",
+							}
+						}
+
+						if err := konfluxgen.Generate(cfg); err != nil {
+							return fmt.Errorf("failed to generate Konflux configurations for %s (%s): %w", r.RepositoryDirectory(), branchName, err)
+						}
+
+						if err := dependabotgen.WriteDependabotWorkflow(r.RepositoryDirectory(), r.RunCodegenCommand()); err != nil {
+							return fmt.Errorf("[%s][%s] failed to write dependabot workflow: %w", r.RepositoryDirectory(), branchName, err)
+						}
+
+						commitMsg := fmt.Sprintf("[%s] Sync Konflux configurations", targetBranch)
 						if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
 							return err
 						}
-					}
 
-					nudges := b.Konflux.Nudges
-					if soBranchName != "release-next" {
-						_, ok := operatorVersions[soBranchName]
-						if ok {
-							nudges = append(nudges, serverlessBundleNudge(soBranchName))
-						}
-						log.Printf("[%s] created nudges (%v) - operatorVersions: %#v - downstreamVersion: %v): %#v", r.RepositoryDirectory(), ok, operatorVersions, soBranchName, nudges)
+						// This is a special GH log format: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#example-grouping-log-lines
+						log.Printf("::endgroup::\n\n")
 					}
-
-					prefetchDeps, err := getPrefetchDeps(r, targetBranch)
-					if err != nil {
-						return fmt.Errorf("could not get prefetchDeps: %w", err)
-					}
-
-					cfg := konfluxgen.Config{
-						OpenShiftReleasePath: openshiftRelease.RepositoryDirectory(),
-						ApplicationName:      konfluxgen.AppName(soBranchName),
-						BuildArgs:            buildArgs,
-						Includes: []string{
-							fmt.Sprintf("ci-operator/config/%s/.*%s.*.yaml", r.RepositoryDirectory(), branchName),
-						},
-						Excludes:                  b.Konflux.Excludes,
-						ExcludesImages:            b.Konflux.ExcludesImages,
-						JavaImages:                b.Konflux.JavaImages,
-						ResourcesOutputPath:       fmt.Sprintf("%s/.konflux", r.RepositoryDirectory()),
-						RepositoryRootPath:        r.RepositoryDirectory(),
-						GlobalResourcesOutputPath: fmt.Sprintf("%s/.konflux", hackRepo.RepositoryDirectory()),
-						PipelinesOutputPath:       fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
-						Nudges:                    nudges,
-						// Preserve the version tag as first tag in any instance since SO, when bumping the patch version
-						// will change it before merging the PR.
-						// See `openshift-knative/serverless-operator/hack/generate/update-pipelines.sh` for more details.
-						Tags:         []string{versionLabel},
-						PrefetchDeps: *prefetchDeps,
-					}
-					if len(cfg.ExcludesImages) == 0 {
-						cfg.ExcludesImages = []string{
-							".*-source-.*",
-						}
-					}
-
-					if err := konfluxgen.Generate(cfg); err != nil {
-						return fmt.Errorf("failed to generate Konflux configurations for %s (%s): %w", r.RepositoryDirectory(), branchName, err)
-					}
-
-					if err := dependabotgen.WriteDependabotWorkflow(r.RepositoryDirectory(), r.RunCodegenCommand()); err != nil {
-						return fmt.Errorf("[%s][%s] failed to write dependabot workflow: %w", r.RepositoryDirectory(), branchName, err)
-					}
-
-					commitMsg := fmt.Sprintf("[%s] Sync Konflux configurations", targetBranch)
-					if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
-						return err
-					}
-
-					// This is a special GH log format: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#example-grouping-log-lines
-					log.Printf("::endgroup::\n\n")
 				}
-			}
 
-			if err := writeDependabotConfig(ctx, dependabotConfig, r); err != nil {
-				return err
-			}
+				if err := writeDependabotConfig(ctx, dependabotConfig, r); err != nil {
+					return err
+				}
 
-		}
+			}
+			return nil
+		})
+	}
+
+	if err := eg.Wait(); err != nil {
+		return fmt.Errorf("eg.Wait(): %w", err)
 	}
 
 	commitMsg := fmt.Sprintf("Sync Konflux configurations for serverless operator")
