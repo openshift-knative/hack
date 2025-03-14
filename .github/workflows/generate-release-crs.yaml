@@ -57,7 +57,7 @@ jobs:
       - name: Generate Konflux component release CR
         working-directory: ./src/github.com/openshift-knative/hack
         run: |
-          make generate-konflux-release ARGS="--environment ${{ inputs.environment }} --so-revision ${{ inputs.revision }} --type component"
+          KUBECONFIG=$HOME/.kube/config make generate-konflux-release ARGS="--environment ${{ inputs.environment }} --so-revision ${{ inputs.revision }} --type component"
 
       - name: Create component release CR Pull Request
         env:
@@ -87,7 +87,7 @@ jobs:
       - name: Generate Konflux FBC release CRs
         working-directory: ./src/github.com/openshift-knative/hack
         run: |
-          make generate-konflux-release ARGS="--environment ${{ inputs.environment }} --so-revision ${{ inputs.revision }} --type fbc"
+          KUBECONFIG=$HOME/.kube/config make generate-konflux-release ARGS="--environment ${{ inputs.environment }} --so-revision ${{ inputs.revision }} --type fbc"
 
       - name: Create FBC release CR Pull Request
         env:
