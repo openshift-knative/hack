@@ -2,7 +2,7 @@ contentOrigin:
   # Define at least one source of packages, but you can have as many as you want.
   repofiles:
     # Either local path or url pointing to .repo file
-    - 'https://raw.githubusercontent.com/konflux-ci/bazel-builder/0401ac3b893532a8e2afabd1cd3814cd5b962f69/bazel5-ubi8/ubi8.repo'
+    - 'https://raw.githubusercontent.com/konflux-ci/bazel-builder/d712bf2dbac5e5aa714ed91dfc8f7309d1cb2902/bazel5-ubi8/ubi8.repo'
 packages:
   # list of rpm names to resolve
   - socat
