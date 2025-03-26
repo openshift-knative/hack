@@ -465,6 +465,10 @@ func (r Repository) IsEventingIntegrations() bool {
 	return r.Org == "openshift-knative" && r.Repo == "eventing-integrations"
 }
 
+func (r Repository) IsBackstagePlugins() bool {
+	return r.Org == "openshift-knative" && r.Repo == "backstage-plugins"
+}
+
 func (r Repository) IsEKB() bool {
 	return r.Org == "openshift-knative" && r.Repo == "eventing-kafka-broker"
 }
