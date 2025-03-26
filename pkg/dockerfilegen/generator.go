@@ -185,9 +185,12 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 		return err
 	}
 
+	if len(params.AdditionalPackages) > 0 {
+		params.RpmsLockFileEnabled = true
+	}
+
 	var additionalInstructions []string
 	if slices.Contains(params.AdditionalPackages, "tzdata") {
-		params.RpmsLockFileEnabled = true
 		// https://access.redhat.com/solutions/5616681
 		additionalInstructions = append(additionalInstructions, fmt.Sprintf("RUN microdnf update tzdata -y && microdnf reinstall tzdata -y"))
 		idx := -1
