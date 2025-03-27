@@ -94,6 +94,15 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 									}, branchName)
 									dependabotConfig.WithMaven([]string{"/"}, branchName)
 								}
+								if r.IsBackstagePlugins() {
+									dependabotConfig.WithNPM([]string{
+										"/backstage",
+										"/backstage/plugins/knative-event-mesh-backend",
+										"/backstage/packages/app",
+										"/backstage/packages/backend",
+										"/backstage/plugins/knative-event-mesh-backend/dist-dynamic",
+									}, branchName)
+								}
 								if r.IsFunc() {
 									dependabotConfig.WithMaven([]string{
 										"/templates/quarkus/http",
