@@ -33,11 +33,6 @@ var hackRepo = Repository{Org: "openshift-knative", Repo: "hack"}
 
 func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs []*Config) error {
 
-	operatorVersions, err := ServerlessOperatorKonfluxVersions(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get konflux versions for serverless-operator: %w", err)
-	}
-
 	if err := GitMirror(ctx, hackRepo); err != nil {
 		return err
 	}
@@ -210,13 +205,6 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						}
 
 						nudges := b.Konflux.Nudges
-						if soBranchName != "release-next" {
-							_, ok := operatorVersions[soBranchName]
-							if ok {
-								nudges = append(nudges, serverlessBundleNudge(soBranchName))
-							}
-							log.Printf("[%s] created nudges (%v) - operatorVersions: %#v - downstreamVersion: %v): %#v", r.RepositoryDirectory(), ok, operatorVersions, soBranchName, nudges)
-						}
 
 						prefetchDeps, err := getPrefetchDeps(r, targetBranch)
 						if err != nil {
@@ -645,18 +633,4 @@ func getOPMImage(v string) (string, error) {
 		// use RHEL9 variant for OCP version >= 4.15
 		return fmt.Sprintf("brew.registry.redhat.io/rh-osbs/openshift-ose-operator-registry-rhel9:v4.%d", minor), nil
 	}
-}
-
-func serverlessBundleNudge(downstreamVersion string) string {
-	return konfluxgen.Truncate(konfluxgen.Sanitize(fmt.Sprintf("%s-%s", "serverless-bundle", downstreamVersion)))
-}
-
-func serverlessIndexNudges(downstreamVersion string, ocpVersions []string) []string {
-	indexes := make([]string, 0, len(ocpVersions))
-
-	for _, v := range ocpVersions {
-		indexes = append(indexes, konfluxgen.Truncate(konfluxgen.Sanitize(fmt.Sprintf("serverless-index-%s-fbc-%s-index", downstreamVersion, v))))
-	}
-
-	return indexes
 }
