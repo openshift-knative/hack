@@ -1,0 +1,7 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Release
+metadata:
+  name: serverless-operator-135-fbc-414-1351-stage
+spec:
+  snapshot: serverless-operator-135-fbc-414-override-snapshot-9eb80b7f
+  releasePlan: serverless-operator-135-fbc-414-1351-stage
