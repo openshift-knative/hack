@@ -1,7 +1,7 @@
 apiVersion: appstudio.redhat.com/v1alpha1
 kind: Release
 metadata:
-  name: serverless-operator-135-1351-stage-5
+  name: serverless-operator-135-1351-stage-6
 spec:
   snapshot: serverless-operator-135-override-snapshot-d32c6ab0
   releasePlan: serverless-operator-135-1351-stage
