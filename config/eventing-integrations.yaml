@@ -31,6 +31,16 @@ config:
         version: "4.14"
       skipDockerFilesMatches:
       - .*hermetic.*
+    release-v1.17:
+      konflux:
+        enabled: true
+      openShiftVersions:
+      - useClusterPool: true
+        version: "4.17"
+      - onDemand: true
+        version: "4.14"
+      skipDockerFilesMatches:
+      - .*hermetic.*
 repositories:
 - dockerfiles: {}
   e2e:
