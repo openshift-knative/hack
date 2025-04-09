@@ -12,6 +12,9 @@ packages:
 reinstallPackages:
   - tzdata
 
+upgradePackages:
+  - tzdata
+
 arches:
   # The list of architectures can be set in the config file. Any `--arch` option set
   # on the command line will override this list.
