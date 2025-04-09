@@ -53,7 +53,7 @@ jobs:
         with:
           repository: 'konflux-ci/rpm-lockfile-prototype'
           path: ./src/github.com/openshift-knative/rpm-lockfile-prototype
-          ref: '6d222512f5e7b89c59fdcf9bddc9f4d535f3f255'
+          ref: 'v0.15.0'
 
       - name: Install podman
         run: |
