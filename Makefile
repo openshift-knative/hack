@@ -62,9 +62,11 @@ konflux-apply-no-clean:
 konflux-update-pipelines:
 	tkn bundle list quay.io/konflux-ci/tekton-catalog/pipeline-docker-build-multi-platform-oci-ta:devel -o=yaml > pkg/konfluxgen/kustomize/docker-build.yaml
 	tkn bundle list quay.io/konflux-ci/tekton-catalog/pipeline-fbc-builder:devel -o=yaml > pkg/konfluxgen/kustomize/fbc-builder.yaml
+	tkn bundle list quay.io/konflux-ci/tekton-catalog/pipeline-tekton-bundle-builder-oci-ta:devel -o=yaml > pkg/konfluxgen/kustomize/bundle-builder.yaml
 	kustomize build pkg/konfluxgen/kustomize/kustomize-docker-build/ --output pkg/konfluxgen/docker-build.yaml --load-restrictor LoadRestrictionsNone
 	kustomize build pkg/konfluxgen/kustomize/kustomize-java-docker-build/ --output pkg/konfluxgen/docker-java-build.yaml --load-restrictor LoadRestrictionsNone
 	kustomize build pkg/konfluxgen/kustomize/kustomize-fbc-builder/ --output pkg/konfluxgen/fbc-builder.yaml --load-restrictor LoadRestrictionsNone
+	kustomize build pkg/konfluxgen/kustomize/kustomize-bundle-builder/ --output pkg/konfluxgen/bundle-builder.yaml --load-restrictor LoadRestrictionsNone
 
 gotest:
 	go run gotest.tools/gotestsum@latest \
