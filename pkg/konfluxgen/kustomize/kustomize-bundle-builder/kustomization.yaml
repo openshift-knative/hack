@@ -7,7 +7,7 @@ patches:
   - path: ../patch_additional_tags.patch.yaml
     target:
       kind: Pipeline
-  - path: ../patch_source_image.patch.yaml
+  - path: ../patch_prefetch-input_dev-package-managers.patch.yaml
     target:
       kind: Pipeline
   - patch: |-
