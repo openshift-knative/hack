@@ -49,9 +49,11 @@ spec:
       value: 5d
     - name: output-image
       value: quay.io/redhat-user-workloads/ocp-serverless-tenant/{{{ truncate ( sanitize .ApplicationName ) }}}/{{{ truncate ( sanitize .ProjectDirectoryImageBuildStepConfiguration.To ) }}}:on-pr-{{revision}}
+      {{{- if ne .Pipeline "bundle-builder" }}}
     - name: build-platforms
       value:
         - linux/x86_64
+      {{{- end }}}
     {{{- else }}}
     - name: output-image
       value: quay.io/redhat-user-workloads/ocp-serverless-tenant/{{{ truncate ( sanitize .ApplicationName ) }}}/{{{ truncate ( sanitize .ProjectDirectoryImageBuildStepConfiguration.To ) }}}:{{revision}}
@@ -74,7 +76,7 @@ spec:
     - name: prefetch-input-dev-package-managers
       value: '{{{ .PrefetchDeps.DevPackageManagers }}}'
     {{{- end }}}
-  {{{- if or (eq .Pipeline "docker-build") (eq .Pipeline "docker-java-build")}}}
+  {{{- if or (eq .Pipeline "docker-build") (eq .Pipeline "docker-java-build") (eq .Pipeline "bundle-builder")}}}
   taskRunSpecs:
     - pipelineTaskName: sast-shell-check
       stepSpecs:
