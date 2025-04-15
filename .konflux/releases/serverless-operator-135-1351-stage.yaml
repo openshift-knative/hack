@@ -3,5 +3,5 @@ kind: Release
 metadata:
   name: serverless-operator-135-1351-stage-9
 spec:
-  snapshot: serverless-operator-135-override-snapshot-d32c6ab0
+  snapshot: serverless-operator-135-override-snapshot-dc63cabe
   releasePlan: serverless-operator-135-1351-stage
