@@ -152,7 +152,7 @@ spec:
           - "1.35.1-{{ timestamp }}"
     pyxis:
       secret: pyxis-prod-secret
-      server: production-internal
+      server: production
       # This causes the release pipeline to not upload layer size information
       # to pyxis which will save on runtime at the cost of data completeness in
       # pyxis. The side-effects are:

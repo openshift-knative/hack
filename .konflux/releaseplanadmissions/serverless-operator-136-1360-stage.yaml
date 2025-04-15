@@ -179,7 +179,7 @@ spec:
           - "1.36.0-{{ timestamp }}"
     pyxis:
       secret: pyxis-staging-secret
-      server: stage-internal
+      server: stage
       # This causes the release pipeline to not upload layer size information
       # to pyxis which will save on runtime at the cost of data completeness in
       # pyxis. The side-effects are:
