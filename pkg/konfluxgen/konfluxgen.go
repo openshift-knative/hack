@@ -863,21 +863,35 @@ func defaultIsHermetic(_ cioperatorapi.ReleaseBuildConfiguration, _ cioperatorap
 	return true
 }
 
-type rpaFBCData struct {
-	Name         string
-	Applications []string
-	SOVersion    semver.Version
+type rpaBaseData struct {
+	Name string
 
-	Policy                string
+	SOVersion      semver.Version
+	Policy         string
+	PipelineSA     string
+	SignCMName     string
+	SignSecretName string
+	AtlasServer    string
+	Intention      string
+}
+
+type rpaFBCData struct {
+	rpaBaseData
+
+	Applications          []string
 	FromIndex             string
 	TargetIndex           string
 	PublishingCredentials string
-	PipelineSA            string
 	StagedIndex           bool
-	SignCMName            string
-	SignSecretName        string
-	AtlasServer           string
-	Intention             string
+}
+
+type rpaComponentData struct {
+	rpaBaseData
+
+	ApplicationName string
+	Components      []ComponentImageRepoRef
+	PyxisSecret     string
+	PyxisServer     string
 }
 
 func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath string, appName string, soVersion string) error {
@@ -893,18 +907,20 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 
 	rpaName := FBCReleasePlanAdmissionName(appName, soVersion, ProdEnv)
 	fbcData := rpaFBCData{
-		Name:                  rpaName,
+		rpaBaseData: rpaBaseData{
+			Name:           rpaName,
+			SOVersion:      *semv,
+			Policy:         "fbc-standard",
+			PipelineSA:     "release-index-image-prod",
+			SignCMName:     "hacbs-signing-pipeline-config-redhatrelease2",
+			SignSecretName: "konflux-cosign-signing-production",
+			AtlasServer:    "production",
+			Intention:      "production",
+		},
 		Applications:          applications,
-		SOVersion:             *semv,
-		Policy:                "fbc-standard",
 		FromIndex:             "registry-proxy.engineering.redhat.com/rh-osbs/iib-pub:{{ OCP_VERSION }}",
 		TargetIndex:           "quay.io/redhat-prod/redhat----redhat-operator-index:{{ OCP_VERSION }}",
 		PublishingCredentials: "fbc-production-publishing-credentials-redhat-prod",
-		PipelineSA:            "release-index-image-prod",
-		SignCMName:            "hacbs-signing-pipeline-config-redhatrelease2",
-		SignSecretName:        "konflux-cosign-signing-production",
-		AtlasServer:           "production",
-		Intention:             "production",
 	}
 	outputFilePath := filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeFBCReleasePlanAdmissionTemplate(fbcData, outputFilePath); err != nil {
@@ -914,19 +930,21 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 	// generate RPA for stage
 	rpaName = FBCReleasePlanAdmissionName(appName, soVersion, StageEnv)
 	fbcData = rpaFBCData{
-		Name:                  rpaName,
+		rpaBaseData: rpaBaseData{
+			Name:           rpaName,
+			SOVersion:      *semv,
+			Policy:         "fbc-stage",
+			PipelineSA:     "release-index-image-staging",
+			SignCMName:     "hacbs-signing-pipeline-config-staging-redhatrelease2",
+			SignSecretName: "konflux-cosign-signing-stage",
+			AtlasServer:    "stage",
+			Intention:      "staging",
+		},
 		Applications:          applications,
-		SOVersion:             *semv,
-		Policy:                "fbc-stage",
 		FromIndex:             "registry-proxy.engineering.redhat.com/rh-osbs/iib-pub-pending:{{ OCP_VERSION }}",
 		TargetIndex:           "",
 		PublishingCredentials: "staged-index-fbc-publishing-credentials",
-		PipelineSA:            "release-index-image-staging",
 		StagedIndex:           true,
-		SignCMName:            "hacbs-signing-pipeline-config-staging-redhatrelease2",
-		SignSecretName:        "konflux-cosign-signing-stage",
-		AtlasServer:           "stage",
-		Intention:             "staging",
 	}
 	outputFilePath = filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeFBCReleasePlanAdmissionTemplate(fbcData, outputFilePath); err != nil {
@@ -934,22 +952,6 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 	}
 
 	return nil
-}
-
-type rpaComponentData struct {
-	Name            string
-	ApplicationName string
-	Components      []ComponentImageRepoRef
-
-	Policy         string
-	SOVersion      semver.Version
-	PyxisSecret    string
-	PyxisServer    string
-	PipelineSA     string
-	SignCMName     string
-	SignSecretName string
-	AtlasServer    string
-	Intention      string
 }
 
 func GenerateComponentReleasePlanAdmission(cfg Config, csv *operatorsv1alpha1.ClusterServiceVersion) error {
@@ -973,17 +975,20 @@ func GenerateComponentReleasePlanAdmission(cfg Config, csv *operatorsv1alpha1.Cl
 
 	rpaName := ReleasePlanAdmissionName(cfg.ApplicationName, soVersion.String(), ProdEnv)
 	rpaData := rpaComponentData{
-		Name:            rpaName,
+		rpaBaseData: rpaBaseData{
+			Name:           rpaName,
+			SOVersion:      soVersion,
+			PipelineSA:     "release-registry-prod",
+			SignCMName:     "hacbs-signing-pipeline-config-redhatrelease2",
+			SignSecretName: "konflux-cosign-signing-production",
+			AtlasServer:    "production",
+			Policy:         "registry-ocp-serverless-prod",
+			Intention:      "production",
+		},
 		ApplicationName: cfg.ApplicationName,
 		Components:      components,
-		SOVersion:       soVersion,
 		PyxisSecret:     "pyxis-prod-secret",
 		PyxisServer:     "production",
-		PipelineSA:      "release-registry-prod",
-		SignCMName:      "hacbs-signing-pipeline-config-redhatrelease2",
-		SignSecretName:  "konflux-cosign-signing-production",
-		AtlasServer:     "production",
-		Policy:          "registry-ocp-serverless-prod",
 	}
 	outputFilePath := filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeComponentReleasePlanAdmissionTemplate(rpaData, outputFilePath); err != nil {
@@ -1001,17 +1006,20 @@ func GenerateComponentReleasePlanAdmission(cfg Config, csv *operatorsv1alpha1.Cl
 
 	rpaName = ReleasePlanAdmissionName(cfg.ApplicationName, soVersion.String(), StageEnv)
 	rpaData = rpaComponentData{
-		Name:            rpaName,
+		rpaBaseData: rpaBaseData{
+			Name:           rpaName,
+			SOVersion:      soVersion,
+			PipelineSA:     "release-registry-staging",
+			SignCMName:     "hacbs-signing-pipeline-config-staging-redhatrelease2",
+			SignSecretName: "konflux-cosign-signing-stage",
+			AtlasServer:    "stage",
+			Policy:         "registry-standard-stage",
+			Intention:      "staging",
+		},
 		ApplicationName: cfg.ApplicationName,
 		Components:      componentWithStageRepoRef,
-		SOVersion:       soVersion,
 		PyxisSecret:     "pyxis-staging-secret",
 		PyxisServer:     "stage",
-		PipelineSA:      "release-registry-staging",
-		SignCMName:      "hacbs-signing-pipeline-config-staging-redhatrelease2",
-		SignSecretName:  "konflux-cosign-signing-stage",
-		AtlasServer:     "stage",
-		Policy:          "registry-standard-stage",
 	}
 	outputFilePath = filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeComponentReleasePlanAdmissionTemplate(rpaData, outputFilePath); err != nil {
