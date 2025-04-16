@@ -1,0 +1,79 @@
+name: Go Module bump (template)
+
+on:
+  workflow_dispatch: # Manual workflow trigger
+    inputs:
+      go-module:
+        description: "Go module to bump"
+        required: true
+      version:
+        description: "Go module version"
+        default: "latest"
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  go-mod-bump:
+    name: Go Module bump (template)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # Keep running if one leg fails.
+      matrix:
+        include: []
+
+    steps:
+      - name: Configure Git user
+        run: |
+          git config --global user.email "serverless-support@redhat.com"
+          git config --global user.name "serverless-qe"
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          repository: openshift-knative/${{ matrix.repo }}
+          ref: ${{ matrix.branch }}
+
+      - name: Check if ${{ inputs.go-module }} is in go.mod
+        id: gomod-check
+        run: |
+          if grep -iP "\t${{ inputs.go-module }} " go.mod; then
+            echo "${{ inputs.go-module }} found in projects go.mod"
+            echo "module-exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "${{ inputs.go-module }} not found in projects go.mod"
+            echo "module-exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bump Go module
+        if: steps.gomod-check.outputs.module-exists == 'true'
+        run: | 
+          go get ${{ inputs.go-module }}@${{ inputs.version }}
+          
+          if [[ -n "${{ matrix.postUpdateCmd }}" ]]; then
+            ${{ matrix.postUpdateCmd }}
+          fi
+
+      - name: Create Pull Request
+        if: steps.gomod-check.outputs.module-exists == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        run: |
+          set -x
+          git remote add fork "https://github.com/serverless-qe/hack.git"
+          branch="$(echo "bump-${{ inputs.go-module }}-${{ inputs.version }}-${{ matrix.branch }}" | tr '[:upper:]' '[:lower:]')"
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/${{ matrix.repo }}.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch fork "$branch"
+          if git diff --quiet "fork/$branch" "$branch"; then
+            echo "Branches are identical. No need to force push."
+          else
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/${{ matrix.repo }}.git" "$branch:$branch" -f
+          fi
+          gh pr create --base main --head "serverless-qe:$branch" --title "[${{ matrix.branch }}] Bump ${{ inputs.go-module }} to ${{ inputs.version }}" --body "Bumping ${{ inputs.go-module }} to ${{ inputs.version }}" || true
