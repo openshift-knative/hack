@@ -871,7 +871,6 @@ type rpaBaseData struct {
 	PipelineSA     string
 	SignCMName     string
 	SignSecretName string
-	AtlasServer    string
 	Intention      string
 }
 
@@ -892,6 +891,7 @@ type rpaComponentData struct {
 	Components      []ComponentImageRepoRef
 	PyxisSecret     string
 	PyxisServer     string
+	AtlasServer     string
 }
 
 func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath string, appName string, soVersion string) error {
@@ -914,7 +914,6 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 			PipelineSA:     "release-index-image-prod",
 			SignCMName:     "hacbs-signing-pipeline-config-redhatrelease2",
 			SignSecretName: "konflux-cosign-signing-production",
-			AtlasServer:    "production",
 			Intention:      "production",
 		},
 		Applications:          applications,
@@ -937,7 +936,6 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 			PipelineSA:     "release-index-image-staging",
 			SignCMName:     "hacbs-signing-pipeline-config-staging-redhatrelease2",
 			SignSecretName: "konflux-cosign-signing-stage",
-			AtlasServer:    "stage",
 			Intention:      "staging",
 		},
 		Applications:          applications,
@@ -981,7 +979,6 @@ func GenerateComponentReleasePlanAdmission(cfg Config, csv *operatorsv1alpha1.Cl
 			PipelineSA:     "release-registry-prod",
 			SignCMName:     "hacbs-signing-pipeline-config-redhatrelease2",
 			SignSecretName: "konflux-cosign-signing-production",
-			AtlasServer:    "production",
 			Policy:         "registry-ocp-serverless-prod",
 			Intention:      "production",
 		},
@@ -989,6 +986,7 @@ func GenerateComponentReleasePlanAdmission(cfg Config, csv *operatorsv1alpha1.Cl
 		Components:      components,
 		PyxisSecret:     "pyxis-prod-secret",
 		PyxisServer:     "production",
+		AtlasServer:     "production",
 	}
 	outputFilePath := filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeComponentReleasePlanAdmissionTemplate(rpaData, outputFilePath); err != nil {
@@ -1020,6 +1018,7 @@ func GenerateComponentReleasePlanAdmission(cfg Config, csv *operatorsv1alpha1.Cl
 		Components:      componentWithStageRepoRef,
 		PyxisSecret:     "pyxis-staging-secret",
 		PyxisServer:     "stage",
+		AtlasServer:     "stage",
 	}
 	outputFilePath = filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeComponentReleasePlanAdmissionTemplate(rpaData, outputFilePath); err != nil {

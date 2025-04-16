@@ -47,8 +47,6 @@ spec:
     sign:
       configMapName: {{{ .SignCMName }}}
       cosignSecretName: {{{ .SignSecretName }}}
-    atlas:
-      server: {{{ .AtlasServer }}}
     intention: {{{ .Intention }}}
   pipeline:
     pipelineRef:
