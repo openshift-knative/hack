@@ -877,6 +877,7 @@ type rpaFBCData struct {
 	SignCMName            string
 	SignSecretName        string
 	AtlasServer           string
+	Intention             string
 }
 
 func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath string, appName string, soVersion string) error {
@@ -903,6 +904,7 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 		SignCMName:            "hacbs-signing-pipeline-config-redhatrelease2",
 		SignSecretName:        "konflux-cosign-signing-production",
 		AtlasServer:           "production",
+		Intention:             "production",
 	}
 	outputFilePath := filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeFBCReleasePlanAdmissionTemplate(fbcData, outputFilePath); err != nil {
@@ -924,6 +926,7 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 		SignCMName:            "hacbs-signing-pipeline-config-staging-redhatrelease2",
 		SignSecretName:        "konflux-cosign-signing-stage",
 		AtlasServer:           "stage",
+		Intention:             "staging",
 	}
 	outputFilePath = filepath.Join(outputDir, fmt.Sprintf("%s.yaml", rpaName))
 	if err := executeFBCReleasePlanAdmissionTemplate(fbcData, outputFilePath); err != nil {
@@ -946,6 +949,7 @@ type rpaComponentData struct {
 	SignCMName     string
 	SignSecretName string
 	AtlasServer    string
+	Intention      string
 }
 
 func GenerateComponentReleasePlanAdmission(cfg Config, csv *operatorsv1alpha1.ClusterServiceVersion) error {

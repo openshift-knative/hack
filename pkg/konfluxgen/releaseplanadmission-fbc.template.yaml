@@ -16,7 +16,7 @@ spec:
   policy: {{{ .Policy }}}
   data:
     releaseNotes:
-      product_id: 579
+      product_id: [579]
       product_name: "OpenShift Serverless"
       product_version: "{{{ .SOVersion }}}"
       references:
@@ -49,6 +49,7 @@ spec:
       cosignSecretName: {{{ .SignSecretName }}}
     atlas:
       server: {{{ .AtlasServer }}}
+    intention: {{{ .Intention }}}
   pipeline:
     pipelineRef:
       resolver: git
