@@ -1,7 +1,7 @@
 apiVersion: appstudio.redhat.com/v1alpha1
 kind: Release
 metadata:
-  name: serverless-operator-135-1351-prod
+  name: serverless-operator-135-1351-prod-2
 spec:
   snapshot: serverless-operator-135-override-snapshot-dc63cabe
   releasePlan: serverless-operator-135-1351-prod
