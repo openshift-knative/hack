@@ -65,6 +65,7 @@ konflux-update-pipelines:
 	kustomize build pkg/konfluxgen/kustomize/kustomize-docker-build/ --output pkg/konfluxgen/docker-build.yaml --load-restrictor LoadRestrictionsNone
 	kustomize build pkg/konfluxgen/kustomize/kustomize-java-docker-build/ --output pkg/konfluxgen/docker-java-build.yaml --load-restrictor LoadRestrictionsNone
 	kustomize build pkg/konfluxgen/kustomize/kustomize-fbc-builder/ --output pkg/konfluxgen/fbc-builder.yaml --load-restrictor LoadRestrictionsNone
+	kustomize build pkg/konfluxgen/kustomize/kustomize-bundle-build/ --output pkg/konfluxgen/bundle-build.yaml --load-restrictor LoadRestrictionsNone
 
 gotest:
 	go run gotest.tools/gotestsum@latest \

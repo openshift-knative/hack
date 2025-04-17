@@ -431,6 +431,7 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			Excludes:       b.Konflux.Excludes,
 			ExcludesImages: b.Konflux.ExcludesImages,
 			JavaImages:     b.Konflux.JavaImages,
+			BundleImage:    "serverless-bundle",
 			// Use hack repo to store configurations for Serverless operator since when we cut
 			// the branch we could have conflicting components for a new release branch and
 			// main with the same name but different "revision" (branch).
