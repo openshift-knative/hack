@@ -24,6 +24,7 @@ import (
 
 	"github.com/openshift-knative/hack/pkg/util"
 	"github.com/openshift/ci-tools/pkg/api/shardprowconfig"
+	"sigs.k8s.io/yaml"
 
 	"github.com/coreos/go-semver/semver"
 	gyaml "github.com/ghodss/yaml"
@@ -283,13 +284,8 @@ func SaveProwConfig(openShiftRelease Repository, repository Repository, config s
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return err
 	}
-	// Going directly from struct to YAML produces unexpected configs (due to missing YAML tags),
-	// so we produce JSON and then convert it to YAML.
-	out, err := json.Marshal(config)
-	if err != nil {
-		return err
-	}
-	out, err = gyaml.JSONToYAML(out)
+
+	out, err := yaml.Marshal(config)
 	if err != nil {
 		return err
 	}
@@ -303,16 +299,12 @@ func SaveReleaseBuildConfiguration(outConfig *string, cfg ReleaseBuildConfigurat
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return err
 	}
-	// Going directly from struct to YAML produces unexpected configs (due to missing YAML tags),
-	// so we produce JSON and then convert it to YAML.
-	out, err := json.Marshal(cfg.ReleaseBuildConfiguration)
+
+	out, err := yaml.Marshal(cfg.ReleaseBuildConfiguration)
 	if err != nil {
 		return err
 	}
-	out, err = gyaml.JSONToYAML(out)
-	if err != nil {
-		return err
-	}
+
 	if err := os.WriteFile(filepath.Join(*outConfig, cfg.Path), out, os.ModePerm); err != nil {
 		return err
 	}
@@ -497,13 +489,7 @@ type JobConfigInjector struct {
 }
 
 func SaveJobConfig(match string, jobConfig *prowconfig.JobConfig) error {
-	// Going directly from struct to YAML produces unexpected configs (due to missing YAML tags),
-	// so we produce JSON and then convert it to YAML.
-	out, err := json.Marshal(jobConfig)
-	if err != nil {
-		return err
-	}
-	y, err := gyaml.JSONToYAML(out)
+	y, err := yaml.Marshal(jobConfig)
 	if err != nil {
 		return err
 	}
