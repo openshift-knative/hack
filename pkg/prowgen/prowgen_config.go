@@ -367,22 +367,21 @@ func NewProwConfig(r Repository) shardprowconfig.ProwConfigWithPointers {
 		"jira/invalid-bug",
 		"needs-rebase",
 	}
-	return shardprowconfig.ProwConfigWithPointers{
-		BranchProtection: &config.BranchProtection{
-			Orgs: map[string]config.Org{
-				r.Org: config.Org{
-					Repos: map[string]config.Repo{
-						r.Repo: config.Repo{
-							Branches: map[string]config.Branch{
-								"release-next": config.Branch{
-									Policy: config.Policy{
-										Protect: ptr.To(false),
-									},
+
+	branchProtection := &config.BranchProtection{
+		Orgs: map[string]config.Org{
+			r.Org: config.Org{
+				Repos: map[string]config.Repo{
+					r.Repo: config.Repo{
+						Branches: map[string]config.Branch{
+							"release-next": config.Branch{
+								Policy: config.Policy{
+									Protect: ptr.To(false),
 								},
-								"release-next-ci": config.Branch{
-									Policy: config.Policy{
-										Protect: ptr.To(false),
-									},
+							},
+							"release-next-ci": config.Branch{
+								Policy: config.Policy{
+									Protect: ptr.To(false),
 								},
 							},
 						},
@@ -390,6 +389,15 @@ func NewProwConfig(r Repository) shardprowconfig.ProwConfigWithPointers {
 				},
 			},
 		},
+	}
+
+	if r.IsServerlessOperator() {
+		// SO does not have release-next nor release-next-ci branches
+		branchProtection = nil
+	}
+
+	return shardprowconfig.ProwConfigWithPointers{
+		BranchProtection: branchProtection,
 		Tide: &shardprowconfig.TideConfig{
 			MergeType: map[string]types.PullRequestMergeType{
 				fmt.Sprintf("%s/%s", r.Org, r.Repo): types.MergeSquash,
