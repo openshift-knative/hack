@@ -3,12 +3,12 @@ config:
     release-next:
       openShiftVersions:
       - useClusterPool: true
-        version: "4.17"
+        version: "4.18"
       - onDemand: true
         version: "4.14"
     release-v1.14:
       openShiftVersions:
-      - useClusterPool: true
+      - onDemand: true
         version: "4.16"
       - onDemand: true
         version: "4.13"
@@ -17,9 +17,9 @@ config:
         enabled: true
       openShiftVersions:
       - useClusterPool: true
-        version: "4.17"
+        version: "4.18"
       - onDemand: true
-        version: "4.13"
+        version: "4.14"
     release-v1.16:
       konflux:
         enabled: true
@@ -27,9 +27,9 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.18"
+        version: "4.19"
       - useClusterPool: true
-        version: "4.16"
+        version: "4.18"
       - onDemand: true
         version: "4.14"
     release-v1.17:
@@ -39,9 +39,9 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.18"
+        version: "4.19"
       - useClusterPool: true
-        version: "4.17"
+        version: "4.18"
       - onDemand: true
         version: "4.14"
 repositories:
