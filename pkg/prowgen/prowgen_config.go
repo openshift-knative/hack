@@ -405,6 +405,28 @@ func NewProwConfig(r Repository) shardprowconfig.ProwConfigWithPointers {
 						fmt.Sprintf("%s/%s", r.Org, r.Repo),
 					},
 				},
+				config.TideQuery{
+					Labels: []string{
+						"skip-review",
+					},
+					MissingLabels: tideMissingLabels,
+					Repos: []string{
+						fmt.Sprintf("%s/%s", r.Org, r.Repo),
+					},
+					Author:                 "app/red-hat-konflux-kflux-prd-rh02",
+					ReviewApprovedRequired: false,
+				},
+				config.TideQuery{
+					Labels: []string{
+						"skip-review",
+					},
+					MissingLabels: tideMissingLabels,
+					Repos: []string{
+						fmt.Sprintf("%s/%s", r.Org, r.Repo),
+					},
+					Author:                 "serverless-qe",
+					ReviewApprovedRequired: false,
+				},
 			},
 		},
 	}
