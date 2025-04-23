@@ -11,7 +11,11 @@ import (
 	"strings"
 
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
+	"github.com/openshift/ci-tools/pkg/api/shardprowconfig"
+	"k8s.io/utils/ptr"
 	prowapi "sigs.k8s.io/prow/pkg/apis/prowjobs/v1"
+	"sigs.k8s.io/prow/pkg/config"
+	"sigs.k8s.io/prow/pkg/git/types"
 
 	"github.com/openshift-knative/hack/pkg/util"
 )
@@ -351,6 +355,81 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 	}
 
 	return cfgs, nil
+}
+
+// NewProwConfig returns a prow config for branch protection and tide config like https://github.com/openshift/release/blob/363307d181d1cf4734191bb794be20df54431b7d/core-services/prow/02_config/openshift-knative/eventing-integrations/_prowconfig.yaml
+func NewProwConfig(r Repository) shardprowconfig.ProwConfigWithPointers {
+	tideMissingLabels := []string{
+		"backports/unvalidated-commits",
+		"do-not-merge/hold",
+		"do-not-merge/invalid-owners-file",
+		"do-not-merge/work-in-progress",
+		"jira/invalid-bug",
+		"needs-rebase",
+	}
+	return shardprowconfig.ProwConfigWithPointers{
+		BranchProtection: &config.BranchProtection{
+			Orgs: map[string]config.Org{
+				r.Org: config.Org{
+					Repos: map[string]config.Repo{
+						r.Repo: config.Repo{
+							Branches: map[string]config.Branch{
+								"release-next": config.Branch{
+									Policy: config.Policy{
+										Protect: ptr.To(false),
+									},
+								},
+								"release-next-ci": config.Branch{
+									Policy: config.Policy{
+										Protect: ptr.To(false),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Tide: &shardprowconfig.TideConfig{
+			MergeType: map[string]types.PullRequestMergeType{
+				fmt.Sprintf("%s/%s", r.Org, r.Repo): types.MergeSquash,
+			},
+			Queries: config.TideQueries{
+				config.TideQuery{
+					Labels: []string{
+						"approved",
+						"lgtm",
+					},
+					MissingLabels: tideMissingLabels,
+					Repos: []string{
+						fmt.Sprintf("%s/%s", r.Org, r.Repo),
+					},
+				},
+				config.TideQuery{
+					Labels: []string{
+						"skip-review",
+					},
+					MissingLabels: tideMissingLabels,
+					Repos: []string{
+						fmt.Sprintf("%s/%s", r.Org, r.Repo),
+					},
+					Author:                 "app/red-hat-konflux-kflux-prd-rh02",
+					ReviewApprovedRequired: false,
+				},
+				config.TideQuery{
+					Labels: []string{
+						"skip-review",
+					},
+					MissingLabels: tideMissingLabels,
+					Repos: []string{
+						fmt.Sprintf("%s/%s", r.Org, r.Repo),
+					},
+					Author:                 "serverless-qe",
+					ReviewApprovedRequired: false,
+				},
+			},
+		},
+	}
 }
 
 func shouldIncludeCustomConfig(ov OpenShift, customCfgName string) (bool, error) {
