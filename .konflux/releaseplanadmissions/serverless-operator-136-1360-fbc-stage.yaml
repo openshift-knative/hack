@@ -18,7 +18,7 @@ spec:
   policy: fbc-stage
   data:
     releaseNotes:
-      product_id: 579
+      product_id: [579]
       product_name: "OpenShift Serverless"
       product_version: "1.36.0"
       references:
@@ -47,8 +47,7 @@ spec:
     sign:
       configMapName: hacbs-signing-pipeline-config-staging-redhatrelease2
       cosignSecretName: konflux-cosign-signing-stage
-    atlas:
-      server: stage
+    intention: staging
   pipeline:
     pipelineRef:
       resolver: git

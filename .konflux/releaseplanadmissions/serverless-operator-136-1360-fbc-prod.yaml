@@ -18,7 +18,7 @@ spec:
   policy: fbc-standard
   data:
     releaseNotes:
-      product_id: 579
+      product_id: [579]
       product_name: "OpenShift Serverless"
       product_version: "1.36.0"
       references:
@@ -46,8 +46,7 @@ spec:
     sign:
       configMapName: hacbs-signing-pipeline-config-redhatrelease2
       cosignSecretName: konflux-cosign-signing-production
-    atlas:
-      server: production
+    intention: production
   pipeline:
     pipelineRef:
       resolver: git
