@@ -4,14 +4,14 @@ metadata:
   annotations:
     build.appstudio.openshift.io/pipeline: '{"name":"docker-build","bundle":"latest"}'
     build.appstudio.openshift.io/request: configure-pac-no-mr
-  name: serverless-ingress-136
+  name: serverless-must-gather-137
 spec:
-  componentName: serverless-ingress-136
-  application: serverless-operator-136
+  componentName: serverless-must-gather-137
+  application: serverless-operator-137
    
   source:
     git:
       url: https://github.com/openshift-knative/serverless-operator.git
       context: 
-      dockerfileUrl: serving/ingress/Dockerfile
-      revision: release-1.36
+      dockerfileUrl: must-gather/Dockerfile
+      revision: main
