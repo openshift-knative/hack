@@ -87,7 +87,8 @@ spec:
   {{{- end }}}
   pipelineRef:
     name: {{{ .Pipeline }}}
-  taskRunTemplate: {}
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-{{{ sanitize .ComponentName }}}
   workspaces:
     - name: git-auth
       secret:
