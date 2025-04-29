@@ -1,6 +1,16 @@
 config:
   branches:
     release-next:
+      konflux:
+        javaImages:
+          - .*eventing-integrations-aws-ddb-streams-source
+          - .*eventing-integrations-aws-s3-sink
+          - .*eventing-integrations-aws-s3-source
+          - .*eventing-integrations-aws-sns-sink
+          - .*eventing-integrations-aws-sqs-sink
+          - .*eventing-integrations-aws-sqs-source
+          - .*eventing-integrations-log-sink
+          - .*eventing-integrations-timer-source
       openShiftVersions:
       - useClusterPool: true
         version: "4.17"
@@ -34,6 +44,15 @@ config:
     release-v1.17:
       konflux:
         enabled: true
+        javaImages:
+          - .*eventing-integrations-aws-ddb-streams-source
+          - .*eventing-integrations-aws-s3-sink
+          - .*eventing-integrations-aws-s3-source
+          - .*eventing-integrations-aws-sns-sink
+          - .*eventing-integrations-aws-sqs-sink
+          - .*eventing-integrations-aws-sqs-source
+          - .*eventing-integrations-log-sink
+          - .*eventing-integrations-timer-source
       openShiftVersions:
       - useClusterPool: true
         version: "4.17"
