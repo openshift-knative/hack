@@ -27,6 +27,13 @@ config:
       - skipCron: true
         useClusterPool: true
         version: "4.17"
+    release-1.18:
+      konflux:
+        enabled: true
+      openShiftVersions:
+      - skipCron: true
+        useClusterPool: true
+        version: "4.17"
     release-next:
       openShiftVersions:
       - skipCron: true
