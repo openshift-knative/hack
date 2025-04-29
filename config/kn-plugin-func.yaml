@@ -37,6 +37,13 @@ config:
       - skipCron: true
         useClusterPool: true
         version: "4.17"
+    release-v1.18:
+      konflux:
+        enabled: true
+      openShiftVersions:
+      - skipCron: true
+        useClusterPool: true
+        version: "4.17"
     serverless-1.34:
       openShiftVersions:
       - skipCron: true
