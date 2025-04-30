@@ -1,0 +1,25 @@
+apiVersion: appstudio.redhat.com/v1beta2
+kind: IntegrationTestScenario
+metadata:
+  name: serverless-operator-137-fbc-418-ec
+spec:
+  params: 
+    - name: POLICY_CONFIGURATION
+      value: rhtap-releng-tenant/fbc-stage
+    - name: TIMEOUT
+      value: "120m"
+    - name: WORKERS
+      value: "8"
+  application: serverless-operator-137-fbc-418
+  contexts:
+    - description: Application testing
+      name: push
+  resolverRef:
+    params:
+      - name: url
+        value: 'https://github.com/redhat-appstudio/build-definitions'
+      - name: revision
+        value: main
+      - name: pathInRepo
+        value: pipelines/enterprise-contract.yaml
+    resolver: git
