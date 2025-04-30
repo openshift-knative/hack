@@ -550,12 +550,13 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 		fbcAppName := konfluxgen.FBCAppName(release, ocpVersion)
 
 		c := konfluxgen.Config{
-			OpenShiftReleasePath: openshiftRelease.RepositoryDirectory(),
-			ApplicationName:      fbcAppName,
-			BuildArgs:            buildArgs,
-			ResourcesOutputPath:  resourceOutputPath,
-			RepositoryRootPath:   r.RepositoryDirectory(),
-			PipelinesOutputPath:  fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
+			OpenShiftReleasePath:      openshiftRelease.RepositoryDirectory(),
+			ApplicationName:           fbcAppName,
+			BuildArgs:                 buildArgs,
+			ResourcesOutputPath:       resourceOutputPath,
+			GlobalResourcesOutputPath: fmt.Sprintf("%s/.konflux", hackRepo.RepositoryDirectory()),
+			RepositoryRootPath:        r.RepositoryDirectory(),
+			PipelinesOutputPath:       fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
 			AdditionalTektonCELExpressionFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
 				return fmt.Sprintf("&& ("+
 					" files.all.exists(x, x.matches('^olm-catalog/serverless-operator-index/v%s/')) ||"+
