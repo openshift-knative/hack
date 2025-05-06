@@ -4,14 +4,14 @@ config:
       openShiftVersions:
       - skipCron: true
         useClusterPool: true
-        version: "4.17"
+        version: "4.18"
     release-v1.15:
       konflux:
         enabled: true
       openShiftVersions:
       - skipCron: true
         useClusterPool: true
-        version: "4.17"
+        version: "4.18"
     release-v1.16:
       konflux:
         enabled: true
@@ -19,10 +19,10 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.18"
+        version: "4.19"
       - skipCron: true
         useClusterPool: true
-        version: "4.17"
+        version: "4.18"
     release-v1.17:
       konflux:
         enabled: true
@@ -33,21 +33,21 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.18"
+        version: "4.19"
       - skipCron: true
         useClusterPool: true
-        version: "4.17"
+        version: "4.18"
     release-v1.18:
       konflux:
         enabled: true
       openShiftVersions:
       - skipCron: true
         useClusterPool: true
-        version: "4.17"
+        version: "4.18"
     serverless-1.34:
       openShiftVersions:
       - skipCron: true
-        useClusterPool: true
+        onDemand: true
         version: "4.16"
 repositories:
 - dockerfiles: {}

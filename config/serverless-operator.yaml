@@ -23,15 +23,15 @@ config:
         customConfigs:
           enabled: true
           includes:
-          - .*ocp4.18-lp-interop.*
+          - .*ocp4.19-lp-interop.*
         onDemand: true
-        version: "4.18"
+        version: "4.19"
       - customConfigs:
           enabled: true
           excludes:
-          - .*ocp4.18-lp-interop.*
+          - .*ocp4.19-lp-interop.*
         useClusterPool: true
-        version: "4.17"
+        version: "4.18"
       - onDemand: true
         version: "4.14"
     release-1.35:
@@ -51,9 +51,9 @@ config:
       openShiftVersions:
       - candidateRelease: true
         onDemand: true
-        version: "4.18"
+        version: "4.19"
       - useClusterPool: true
-        version: "4.17"
+        version: "4.18"
       - onDemand: true
         version: "4.13"
       prowgen:
@@ -79,9 +79,9 @@ config:
       openShiftVersions:
       - candidateRelease: true
         onDemand: true
-        version: "4.18"
+        version: "4.19"
       - useClusterPool: true
-        version: "4.17"
+        version: "4.18"
       - onDemand: true
         version: "4.14"
       prowgen:
@@ -107,16 +107,16 @@ config:
       openShiftVersions:
       - candidateRelease: true
         onDemand: true
-        version: "4.18"
+        version: "4.19"
       - useClusterPool: true
-        version: "4.17"
+        version: "4.18"
       - onDemand: true
         version: "4.14"
       prowgen:
         disabled: true
 repositories:
 - customConfigs:
-  - name: 417-aws-ovn
+  - name: 418-aws-ovn
     releaseBuildConfiguration:
       tests:
       - as: e2e-aws-ovn-continuous
@@ -157,7 +157,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 417-azure
+  - name: 418-azure
     releaseBuildConfiguration:
       tests:
       - as: e2e-azure-continuous
@@ -198,7 +198,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 417-gcp
+  - name: 418-gcp
     releaseBuildConfiguration:
       tests:
       - as: e2e-gcp-continuous
@@ -239,22 +239,22 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 417-hypershift
+  - name: 418-hypershift
     releaseBuildConfiguration:
       base_images:
         hypershift-operator:
-          name: "4.17"
+          name: "4.18"
           namespace: ocp
           tag: hypershift-operator
         upi-installer:
-          name: "4.17"
+          name: "4.18"
           namespace: ocp
           tag: upi-installer
       releases:
         latest:
           integration:
             include_built_images: true
-            name: "4.17"
+            name: "4.18"
             namespace: ocp
       tests:
       - as: e2e-hypershift-continuous
@@ -300,7 +300,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 417-osd
+  - name: 418-osd
     releaseBuildConfiguration:
       base_images:
         cli-ocm:
@@ -314,7 +314,7 @@ repositories:
           cluster_profile: osd-ephemeral
           env:
             CLUSTER_DURATION: "10800"
-            CLUSTER_VERSION: "4.17"
+            CLUSTER_VERSION: "4.18"
             COMPUTE_NODES: "4"
           post:
           - chain: gather
@@ -346,7 +346,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 417-single-node
+  - name: 418-single-node
     releaseBuildConfiguration:
       tests:
       - as: e2e-sno-continuous
@@ -369,11 +369,11 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 417-vsphere
+  - name: 418-vsphere
     releaseBuildConfiguration:
       base_images:
         upi-installer:
-          name: "4.17"
+          name: "4.18"
           namespace: ocp
           tag: upi-installer
       tests:
@@ -396,11 +396,11 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: ocp4.17-lp-rosa-classic
+  - name: ocp4.18-lp-rosa-classic
     releaseBuildConfiguration:
       base_images:
         cli:
-          name: "4.17"
+          name: "4.18"
           namespace: ocp
           tag: cli
         cli-ocm:
@@ -415,7 +415,7 @@ repositories:
         latest:
           integration:
             include_built_images: true
-            name: "4.17"
+            name: "4.18"
             namespace: ocp
       tests:
       - as: operator-e2e-rosa-aws
@@ -436,11 +436,11 @@ repositories:
                   ]
               }
             FIREWATCH_CONFIG_FILE_PATH: https://raw.githubusercontent.com/CSPI-QE/cspi-utils/main/firewatch-base-configs/rosa/lp-interop.json
-            FIREWATCH_DEFAULT_JIRA_ADDITIONAL_LABELS: '["4.17-lp","rosa-classic-lp","serverless-lp"]'
+            FIREWATCH_DEFAULT_JIRA_ADDITIONAL_LABELS: '["4.18-lp","rosa-classic-lp","serverless-lp"]'
             FIREWATCH_DEFAULT_JIRA_PROJECT: LPINTEROP
             FIREWATCH_FAIL_WITH_TEST_FAILURES: "true"
             OCM_LOGIN_ENV: staging
-            OPENSHIFT_VERSION: "4.17"
+            OPENSHIFT_VERSION: "4.18"
           test:
           - ref: cucushift-installer-check-cluster-health
           - as: knative-eventing-kafka-broker-e2e
@@ -473,10 +473,10 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: ocp4.18-lp-interop
+  - name: ocp4.19-lp-interop
     releaseBuildConfiguration:
       tests:
-      - as: operator-e2e-interop-aws-ocp418
+      - as: operator-e2e-interop-aws-ocp419
         cron: 0 23 31 2 *
         steps:
           cluster_profile: aws-cspi-qe
@@ -494,7 +494,7 @@ repositories:
                   ]
               }
             FIREWATCH_CONFIG_FILE_PATH: https://raw.githubusercontent.com/CSPI-QE/cspi-utils/main/firewatch-base-configs/aws-ipi/lp-interop.json
-            FIREWATCH_DEFAULT_JIRA_ADDITIONAL_LABELS: '["4.18-lp","self-managed-lp","serverless-lp"]'
+            FIREWATCH_DEFAULT_JIRA_ADDITIONAL_LABELS: '["4.19-lp","self-managed-lp","serverless-lp"]'
             FIREWATCH_DEFAULT_JIRA_ASSIGNEE: maschmid@redhat.com
             FIREWATCH_DEFAULT_JIRA_PROJECT: LPINTEROP
             USER_TAGS: |
@@ -532,7 +532,7 @@ repositories:
                 memory: 200Mi
           workflow: firewatch-ipi-aws
         timeout: 8h0m0s
-      - as: operator-e2e-interop-aws-ocp418-fips
+      - as: operator-e2e-interop-aws-ocp419-fips
         cron: 0 23 31 2 *
         steps:
           cluster_profile: aws-cspi-qe
@@ -551,7 +551,7 @@ repositories:
                   ]
               }
             FIREWATCH_CONFIG_FILE_PATH: https://raw.githubusercontent.com/CSPI-QE/cspi-utils/main/firewatch-base-configs/aws-ipi/lp-interop.json
-            FIREWATCH_DEFAULT_JIRA_ADDITIONAL_LABELS: '["4.18-lp","self-managed-lp","serverless-lp","fips"]'
+            FIREWATCH_DEFAULT_JIRA_ADDITIONAL_LABELS: '["4.19-lp","self-managed-lp","serverless-lp","fips"]'
             FIREWATCH_DEFAULT_JIRA_ASSIGNEE: maschmid@redhat.com
             FIREWATCH_DEFAULT_JIRA_PROJECT: LPINTEROP
             USER_TAGS: |
