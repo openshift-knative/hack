@@ -562,7 +562,10 @@ func builderImageForGoVersion(goVersion string) string {
 	case "1.22":
 		return fmt.Sprintf(builderImageFmt, goVersion, "4.17")
 	case "1.23":
-		fallthrough
+		return fmt.Sprintf(builderImageFmt, goVersion, "4.19")
+	case "1.24":
+		// no 1.24 golang image will be built for rhel 8 and only no-fips exists for rhel 9 -- this is a temporary measure
+		return "registry.ci.openshift.org/openshift/release:rhel-9-release-golang-1.24-nofips-openshift-4.19"
 	default:
 		return fmt.Sprintf(builderImageFmt, goVersion, "4.19")
 	}
