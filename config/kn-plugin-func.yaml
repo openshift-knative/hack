@@ -64,7 +64,7 @@ repositories:
       requests:
         cpu: 100m
         memory: 200Mi
-  slackChannel: '#knative-functions'
+  slackChannel: '#knative-functions-ci'
   tests:
   - as: unit
     commands: GOPATH=/tmp/go GOFLAGS="" make test
