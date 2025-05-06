@@ -292,6 +292,7 @@ func (cfg *DependabotConfig) Write(repoDir string, run string) error {
 	buf := &bytes.Buffer{}
 	renovateTemplate, err := template.
 		New("renovate.template.json").
+		Delims("{{{", "}}}").
 		ParseFS(RenovateTemplate, "*.json")
 	if err != nil {
 		return fmt.Errorf("failed to parse renovate template: %w", err)

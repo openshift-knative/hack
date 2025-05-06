@@ -421,7 +421,7 @@ func NewProwConfig(r Repository) shardprowconfig.ProwConfigWithPointers {
 					Repos: []string{
 						fmt.Sprintf("%s/%s", r.Org, r.Repo),
 					},
-					Author:                 "app/red-hat-konflux-kflux-prd-rh02",
+					Author:                 "red-hat-konflux-kflux-prd-rh02[bot]",
 					ReviewApprovedRequired: false,
 				},
 				config.TideQuery{

@@ -1,0 +1,7 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Application
+metadata:
+  name: serverless-operator-138
+spec:
+  description: serverless-operator release-1.38
+  displayName: serverless-operator release-1.38

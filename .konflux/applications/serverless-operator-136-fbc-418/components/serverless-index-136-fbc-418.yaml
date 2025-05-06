@@ -14,4 +14,4 @@ spec:
       url: https://github.com/openshift-knative/serverless-operator.git
       context: ./olm-catalog/serverless-operator-index/v4.18
       dockerfileUrl: Dockerfile
-      revision: main
+      revision: release-1.36

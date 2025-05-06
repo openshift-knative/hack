@@ -65,6 +65,19 @@ config:
         version: "4.14"
       skipDockerFilesMatches:
       - .*hermetic.*
+    release-v1.18:
+      konflux:
+        enabled: true
+        javaImages:
+        - .*eventing-kafka-broker-receiver
+        - .*eventing-kafka-broker-dispatcher
+      openShiftVersions:
+      - useClusterPool: true
+        version: "4.17"
+      - onDemand: true
+        version: "4.14"
+      skipDockerFilesMatches:
+      - .*hermetic.*
 repositories:
 - dockerfiles: {}
   e2e:
