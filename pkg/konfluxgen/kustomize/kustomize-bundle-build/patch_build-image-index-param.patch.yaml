@@ -6,8 +6,3 @@ spec:
   params:
     - name: build-image-index
       default: "false"
-  tasks:
-    - name: build-source-image
-      params:
-        - name: BINARY_IMAGE
-          value: $(tasks.build-image-index.results.IMAGE_URL)

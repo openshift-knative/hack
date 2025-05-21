@@ -121,34 +121,6 @@ spec:
     name: CHAINS-GIT_COMMIT
     value: $(tasks.clone-repository.results.commit)
   tasks:
-  - name: build-source-image
-    params:
-    - name: BINARY_IMAGE
-      value: $(tasks.build-image-index.results.IMAGE_URL)
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
-    - name: CACHI2_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    runAfter:
-    - build-image-index
-    taskRef:
-      params:
-      - name: name
-        value: source-build-oci-ta
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-source-build-oci-ta:0.2@sha256:56fa2cbfc04bad4765b7fe1fa8022587f4042d4e8533bb5f65311d46b43226ee
-      - name: kind
-        value: task
-      resolver: bundles
-    when:
-    - input: $(tasks.init.results.build)
-      operator: in
-      values:
-      - "true"
-    - input: $(params.build-source-image)
-      operator: in
-      values:
-      - "true"
   - name: sast-snyk-check
     params:
     - name: ARGS
@@ -344,6 +316,34 @@ spec:
       resolver: bundles
     when:
     - input: $(tasks.init.results.build)
+      operator: in
+      values:
+      - "true"
+  - name: build-source-image
+    params:
+    - name: BINARY_IMAGE
+      value: $(params.output-image)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    - name: CACHI2_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    runAfter:
+    - build-image-index
+    taskRef:
+      params:
+      - name: name
+        value: source-build-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-source-build-oci-ta:0.2@sha256:c96a73714286564a02354fd52d866da24bcfe74aad8ed5fd2d77a617dd2983ba
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(tasks.init.results.build)
+      operator: in
+      values:
+      - "true"
+    - input: $(params.build-source-image)
       operator: in
       values:
       - "true"
