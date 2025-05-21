@@ -15,7 +15,7 @@ spec:
     - serverless-operator-136-fbc-417
     - serverless-operator-136-fbc-418
   origin: ocp-serverless-tenant
-  policy: fbc-standard
+  policy: fbc-ocp-serverless-prod
   data:
     releaseNotes:
       product_id: [579]
