@@ -7,7 +7,7 @@ spec:
     - name: build-image-index
       default: "false"
   tasks:
-    - name: build-source-image
+    - name: build-images
       params:
-        - name: BINARY_IMAGE
-          value: $(tasks.build-image-index.results.IMAGE_URL)
+        - name: IMAGE_APPEND_PLATFORM
+          value: "false"
