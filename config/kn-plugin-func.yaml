@@ -46,8 +46,8 @@ config:
         version: "4.18"
     serverless-1.34:
       openShiftVersions:
-      - skipCron: true
-        onDemand: true
+      - onDemand: true
+        skipCron: true
         version: "4.16"
 repositories:
 - dockerfiles: {}
