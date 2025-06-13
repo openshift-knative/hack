@@ -518,7 +518,7 @@ func Generate(cfg Config) error {
 		}
 
 		if len(cfg.FBCImages) > 0 {
-			config.ECPolicyConfiguration = "rhtap-releng-tenant/fbc-stage"
+			config.ECPolicyConfiguration = "rhtap-releng-tenant/fbc-ocp-serverless-stage"
 		} else {
 			config.ECPolicyConfiguration = "rhtap-releng-tenant/registry-standard-stage"
 		}
@@ -548,7 +548,7 @@ func Generate(cfg Config) error {
 		}
 
 		if len(cfg.FBCImages) > 0 {
-			config.ECPolicyConfiguration = "rhtap-releng-tenant/fbc-standard"
+			config.ECPolicyConfiguration = "rhtap-releng-tenant/fbc-ocp-serverless-prod"
 		} else {
 			config.ECPolicyConfiguration = "rhtap-releng-tenant/registry-ocp-serverless-prod"
 		}
@@ -946,7 +946,7 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 		rpaBaseData: rpaBaseData{
 			Name:           rpaName,
 			SOVersion:      *semv,
-			Policy:         "fbc-standard",
+			Policy:         "fbc-ocp-serverless-prod",
 			PipelineSA:     "release-index-image-prod",
 			SignCMName:     "hacbs-signing-pipeline-config-redhatrelease2",
 			SignSecretName: "konflux-cosign-signing-production",
@@ -968,7 +968,7 @@ func GenerateFBCReleasePlanAdmission(applications []string, resourceOutputPath s
 		rpaBaseData: rpaBaseData{
 			Name:           rpaName,
 			SOVersion:      *semv,
-			Policy:         "fbc-stage",
+			Policy:         "fbc-ocp-serverless-stage",
 			PipelineSA:     "release-index-image-staging",
 			SignCMName:     "hacbs-signing-pipeline-config-staging-redhatrelease2",
 			SignSecretName: "konflux-cosign-signing-stage",
