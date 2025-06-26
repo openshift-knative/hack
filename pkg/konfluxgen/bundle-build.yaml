@@ -231,8 +231,10 @@ spec:
     params:
     - name: ADDITIONAL_TAGS
       value: $(params.additional-tags[*])
-    - name: IMAGE
+    - name: IMAGE_URL
       value: $(tasks.build-image-index.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
     runAfter:
     - build-image-index
     taskRef:
