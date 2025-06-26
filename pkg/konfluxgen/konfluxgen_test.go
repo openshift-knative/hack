@@ -390,8 +390,10 @@ spec:
       - "false"
   - name: apply-tags
     params:
-    - name: IMAGE
+    - name: IMAGE_URL
       value: $(tasks.build-container.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
     runAfter:
     - build-container
     taskRef:
@@ -785,8 +787,10 @@ spec:
       - "false"
   - name: apply-tags
     params:
-    - name: IMAGE
+    - name: IMAGE_URL
       value: $(tasks.build-container.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
     runAfter:
     - build-container
     taskRef:
@@ -1180,8 +1184,10 @@ spec:
       - "false"
   - name: apply-tags
     params:
-    - name: IMAGE
+    - name: IMAGE_URL
       value: $(tasks.build-container.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
     runAfter:
     - build-container
     taskRef:
