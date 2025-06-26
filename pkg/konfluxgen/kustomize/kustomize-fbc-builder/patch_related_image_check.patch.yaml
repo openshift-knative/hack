@@ -7,11 +7,11 @@ spec:
     - name: skip-fbc-related-image-check
       description: Skip fbc-related-image-check
       type: string
-      default: "false"
+      default: 'false'
   tasks:
     - name: fbc-related-image-check
       when:
         - input: $(params.skip-fbc-related-image-check)
           operator: in
           values:
-            - "false"
+            - 'false'
