@@ -28,9 +28,8 @@ config:
       konflux:
         enabled: true
         imageOverrides:
-          - name: CLI_ARTIFACTS
-            # TODO: swtich to 1.17 image once it is available in brew
-            pullSpec: brew.registry.redhat.io/rh-osbs/openshift-serverless-1-kn-cli-artifacts-rhel8:1.16.0
+        - name: CLI_ARTIFACTS
+          pullSpec: brew.registry.redhat.io/rh-osbs/openshift-serverless-1-kn-cli-artifacts-rhel8:1.16.0
       openShiftVersions:
       - candidateRelease: true
         onDemand: true
@@ -43,9 +42,8 @@ config:
       konflux:
         enabled: true
         imageOverrides:
-          - name: CLI_ARTIFACTS
-            # TODO: swtich to 1.18 image once it is available in brew
-            pullSpec: brew.registry.redhat.io/rh-osbs/openshift-serverless-1-kn-cli-artifacts-rhel8:1.16.0
+        - name: CLI_ARTIFACTS
+          pullSpec: brew.registry.redhat.io/rh-osbs/openshift-serverless-1-kn-cli-artifacts-rhel8:1.16.0
       openShiftVersions:
       - candidateRelease: true
         onDemand: true
