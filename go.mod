@@ -1,6 +1,6 @@
 module github.com/openshift-knative/hack
 
-go 1.22.9
+go 1.23.10
 
 require (
 	github.com/blang/semver/v4 v4.0.0
