@@ -3,7 +3,7 @@
 FROM registry.ci.openshift.org/ocp/4.17:cli-artifacts as tools
 
 # Dockerfile to bootstrap build and test in openshift-ci
-FROM registry.ci.openshift.org/openshift/release:rhel-8-release-golang-1.22-openshift-4.17 as builder
+FROM registry.ci.openshift.org/openshift/release:rhel-8-release-golang-1.23-openshift-4.19 as builder
 
 ARG TARGETARCH
 
