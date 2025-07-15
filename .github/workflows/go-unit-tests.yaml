@@ -14,10 +14,16 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v2
 
+      - name: Check Go version 1
+        run: go version || true
+
       - name: Setup Golang
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+
+      - name: Check Go version 2
+        run: go version
 
       - name: Run unit tests
         run: make unit-tests
