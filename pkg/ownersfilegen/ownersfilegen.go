@@ -2,12 +2,14 @@ package ownersfilegen
 
 import (
 	"bytes"
+	"cmp"
 	"embed"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"text/template"
 )
 
@@ -22,12 +24,15 @@ func WriteOwnersFile(repoDir string, reviewers, approvers []string) error {
 		return fmt.Errorf("failed to parse OWNERS template: %w", err)
 	}
 
+	compareIgnoreCase := func(a, b string) int {
+		return cmp.Compare(strings.ToLower(a), strings.ToLower(b))
+	}
 	sortedReviewers := make([]string, len(reviewers))
 	sortedApprovers := make([]string, len(approvers))
 	copy(sortedReviewers, reviewers)
 	copy(sortedApprovers, approvers)
-	slices.Sort(sortedReviewers)
-	slices.Sort(sortedApprovers)
+	slices.SortFunc(sortedReviewers, compareIgnoreCase)
+	slices.SortFunc(sortedApprovers, compareIgnoreCase)
 
 	d := map[string]interface{}{
 		"reviewers": sortedReviewers,
