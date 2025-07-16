@@ -55,6 +55,7 @@ func Main() {
 	build := flag.Bool("build", true, "Run the openshift/release generator")
 	push := flag.Bool("push", true, "Whether to commit and push the changes")
 	konflux := flag.Bool("konflux", true, "Whether to generate Konflux config")
+	owners := flag.Bool("owners", true, "Whether to generate OWNERS files")
 	flag.Parse()
 
 	log.Println(*inputConfig, *outConfig)
@@ -180,6 +181,11 @@ func Main() {
 	if *konflux {
 		if err := GenerateKonflux(ctx, openShiftRelease, inConfigs); err != nil {
 			log.Fatalln("Failed to generate Konflux configurations: %w", err)
+		}
+	}
+	if *owners {
+		if err := GenerateOwners(ctx, inConfigs); err != nil {
+			log.Fatalln("Failed to generate OWNERS files: %w", err)
 		}
 	}
 }

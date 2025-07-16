@@ -13,6 +13,10 @@ import (
 	"text/template"
 )
 
+const (
+	SyncBranchPrefix = "sync-owners-"
+)
+
 //go:embed owners.tmpl
 var OwnersTemplate embed.FS
 
