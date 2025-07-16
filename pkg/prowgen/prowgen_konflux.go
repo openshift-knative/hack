@@ -14,6 +14,7 @@ import (
 	"sync"
 
 	"github.com/openshift-knative/hack/pkg/dependabotgen"
+	"github.com/openshift-knative/hack/pkg/ownersfilegen"
 	"github.com/openshift-knative/hack/pkg/soversion"
 	"golang.org/x/sync/errgroup"
 
@@ -247,6 +248,15 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						}
 
 						commitMsg := fmt.Sprintf("[%s] Sync Konflux configurations", targetBranch)
+						if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
+							return err
+						}
+
+						if err := ownersfilegen.WriteOwnersFile(r.RepositoryDirectory(), r.Owners.Reviewers, r.Owners.Approvers); err != nil {
+							return fmt.Errorf("[%s][%s] failed to write OWNERS file: %w", r.RepositoryDirectory(), branchName, err)
+						}
+
+						commitMsg = fmt.Sprintf("[%s] Update OWNERS file", targetBranch)
 						if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
 							return err
 						}
