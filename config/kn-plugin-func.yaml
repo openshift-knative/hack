@@ -95,3 +95,12 @@ repositories:
             cpu: 100m
         timeout: 1h0m0s
       workflow: generic-claim
+  owners:
+    reviewers:
+      - jrangelramos
+    approvers:
+      - creydr
+      - dsimansk
+      - lkingland
+      - matejvasek
+      - gauron99

@@ -47,3 +47,12 @@ repositories:
     namespace: openshift
   repo: net-kourier
   slackChannel: '#knative-serving-ci'
+  owners:
+    reviewers:
+      - dsimansk
+      - Fedosin
+      - mvinkler
+    approvers:
+      - dsimansk
+      - Fedosin
+      - mvinkler

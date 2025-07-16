@@ -71,3 +71,13 @@ repositories:
     namespace: openshift
   repo: client
   slackChannel: '#serverless-ci'
+  owners:
+    reviewers:
+      - dsimansk
+      - Kaustubh-pande
+      - rudyredhat1
+    approvers:
+      - dsimansk
+      - Kaustubh-pande
+      - creydr
+      - rudyredhat1

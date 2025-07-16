@@ -68,3 +68,19 @@ repositories:
     commands: make unit
     container:
       from: src
+  owners:
+    reviewers:
+      - dsimansk
+      - cardil
+      - creydr
+      - maschmid
+      - mvinkler
+      - jrangelramos
+      - rudyredhat1
+      - Kaustubh-pande
+    approvers:
+      - dsimansk
+      - cardil
+      - creydr
+      - maschmid
+      - openshift-cherrypick-robot

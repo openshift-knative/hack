@@ -60,3 +60,16 @@ repositories:
     namespace: openshift
   repo: backstage-plugins
   slackChannel: '#knative-eventing-ci'
+  owners:
+    reviewers:
+      - aliok
+      - creydr
+      - lberk
+      - matzew
+      - Cali0707
+    approvers:
+      - aliok
+      - creydr
+      - lberk
+      - matzew
+      - Cali0707
