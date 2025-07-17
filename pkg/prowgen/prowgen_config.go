@@ -35,6 +35,7 @@ type Repository struct {
 	Images                []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration `json:"images,omitempty" yaml:"images,omitempty"`
 	Tests                 []cioperatorapi.TestStepConfiguration                       `json:"tests,omitempty" yaml:"tests,omitempty"`
 	Resources             cioperatorapi.ResourceConfiguration                         `json:"resources,omitempty" yaml:"resources,omitempty"`
+	Owners                Owners                                                      `json:"owners,omitempty" yaml:"owners,omitempty"`
 }
 
 type E2ETest struct {
@@ -69,6 +70,11 @@ type CustomConfigs struct {
 	// ReleaseBuildConfiguration allows defining configuration manually. The final configuration
 	// is extended with images and test steps with dependencies.
 	ReleaseBuildConfiguration cioperatorapi.ReleaseBuildConfiguration `json:"releaseBuildConfiguration,omitempty" yaml:"releaseBuildConfiguration,omitempty"`
+}
+
+type Owners struct {
+	Reviewers []string `json:"reviewers,omitempty" yaml:"reviewers,omitempty"`
+	Approvers []string `json:"approvers,omitempty" yaml:"approvers,omitempty"`
 }
 
 func (r Repository) RepositoryDirectory() string {

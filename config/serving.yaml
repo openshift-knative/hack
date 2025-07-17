@@ -112,3 +112,13 @@ repositories:
         cpu: 500m
         memory: 4Gi
   slackChannel: '#knative-serving-ci'
+  owners:
+    reviewers:
+      - dsimansk
+      - Fedosin
+      - mvinkler
+    approvers:
+      - dsimansk
+      - Fedosin
+      - mvinkler
+      - rudyredhat1

@@ -14,6 +14,8 @@ spec:
     - serverless-operator-137-fbc-416
     - serverless-operator-137-fbc-417
     - serverless-operator-137-fbc-418
+    - serverless-operator-137-fbc-419
+    - serverless-operator-137-fbc-420
   origin: ocp-serverless-tenant
   policy: fbc-stage
   data:
