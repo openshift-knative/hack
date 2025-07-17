@@ -1,0 +1,180 @@
+# those who work with konflux and need to have access for all repo's
+admins:
+  - Kaustubh-pande
+  - rudyredhat1
+repos:
+  serverless-operator:
+    reviewers:
+      - aliok
+      - creydr
+      - dsimansk
+      - matzew
+      - Kaustubh-pande
+    approvers:
+      - aliok
+      - creydr
+      - dsimansk
+      - lberk
+      - matzew
+      - openshift-cherrypick-robot
+      - Kaustubh-pande
+      - maschmid
+      - rudyredhat1
+  hack:
+    approvers:
+      - aliok
+      - creydr
+      - lberk
+      - matzew
+      - pierDipi
+      - skonto
+      - Kaustubh-pande
+
+      reviewers:
+      - aliok
+      - creydr
+      - matzew
+      - pierDipi
+      - skonto
+      - Kaustubh-pande
+  backstage-plugins:
+    reviewers:
+      - aliok
+      - creydr
+      - lberk
+      - matzew
+      - Cali0707
+    approvers:
+      - aliok
+      - creydr
+      - lberk
+      - matzew
+      - Cali0707
+      - rudyredhat1
+  eventing-hyperfoil-benchmark:
+    reviewers:
+      - aliok
+      - creydr
+      - lberk
+      - matzew
+      - Cali0707
+    approvers:
+      - aliok
+      - creydr
+      - lberk
+      - matzew
+      - Cali0707
+      - rudyredhat1
+  eventing-integrations:
+    reviewers:
+      - aliok
+      - creydr
+      - lberk
+      - matzew
+      - Cali0707
+    approvers:
+      - aliok
+      - creydr
+      - lberk
+      - matzew
+      - Cali0707
+      - rudyredhat1
+  kn-plugin-func:
+    reviewers:
+      - jrangelramos
+    approvers:
+      - creydr
+      - dsimansk
+      - lkingland
+      - matejvasek
+      - gauron99
+      - rudyredhat1
+  eventing-kafka-broker:
+    reviewers:
+      - aliok
+      - creydr
+      - lberk
+      - matzew
+      - Cali0707
+    approvers:
+      - aliok
+      - creydr
+      - lberk
+      - matzew
+      - Cali0707
+      - rudyredhat1
+  eventing-istio:
+    reviewers:
+      - aliok
+      - creydr
+      - lberk
+      - matzew
+      - Cali0707
+    approvers:
+      - aliok
+      - creydr
+      - lberk
+      - matzew
+      - Cali0707
+      - rudyredhat1
+  kn-plugin-event:
+    reviewers:
+      - dsimansk
+      - cardil
+      - creydr
+      - maschmid
+      - mvinkler
+      - jrangelramos
+      - rudyredhat1
+      - Kaustubh-pande
+    approvers:
+      - dsimansk
+      - cardil
+      - creydr
+      - maschmid
+      - openshift-cherrypick-robot
+      - rudyredhat1
+  eventing:
+    reviewers:
+      - aliok
+      - creydr
+      - lberk
+      - matzew
+      - Cali0707
+    approvers:
+      - aliok
+      - creydr
+      - lberk
+      - matzew
+      - Cali0707
+      - rudyredhat1
+  serving:
+    reviewers:
+      - dsimansk
+      - Fedosin
+      - mvinkler
+    approvers:
+      - dsimansk
+      - Fedosin
+      - mvinkler
+      - rudyredhat1
+  net-istio:
+    reviewers:
+      - dsimansk
+      - Fedosin
+      - mvinkler
+    approvers:
+      - dsimansk
+      - Fedosin
+      - mvinkler
+      - rudyredhat1
+  net-kourier:
+    reviewers:
+      - dsimansk
+      - Fedosin
+      - mvinkler
+    approvers:
+      - dsimansk
+      - Fedosin
+      - mvinkler
+      - rudyredhat1

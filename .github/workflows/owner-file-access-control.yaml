@@ -1,0 +1,315 @@
+name: Owner file workflow
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+    paths:
+      - 'config/access-control.yaml'
+  workflow_dispatch: # Add this to make it manually dispatchable
+
+env:
+  ORG_NAME: abcd  # <-- set your org name here
+  FORK_ORG_NAME: abcd   # <-- set your fork org name here
+
+jobs:
+  build-matrix:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    outputs:
+          matrix: ${{ steps.changed-repos.outputs.repos }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+            fetch-depth: 2
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install Python dependencies
+        run: pip install pyyaml
+
+      - name: Get previous access-control.yaml
+        run: |
+          git fetch origin main
+          git show origin/main^:config/access-control.yaml > previous.yaml
+
+      - name: Run Python to detect changed repo's
+        id: changed-repos
+        run: |
+          repos=$(python3 - <<'EOF'
+          import sys
+          import yaml
+          import json
+          
+          def load_yaml(path):
+              try:
+                  with open(path) as f:
+                      return yaml.safe_load(f) or {}
+              except FileNotFoundError:
+                  print(f"⚠️ File not found: {path}")
+                  return {}
+              except Exception as e:
+                  print(f"❌ Failed to load YAML from {path}: {e}")
+                  sys.exit(1)
+          
+          def normalize_list(lst):
+              if not lst:
+                  return []
+              return sorted(set(str(i) for i in lst))
+          
+          def list_changed(old_list, new_list):
+              return normalize_list(old_list) != normalize_list(new_list)
+          
+          def repo_access_changed(old_repo, new_repo):
+              for key in ['reviewers', 'approvers']:
+                  old_list = old_repo.get(key, [])
+                  new_list = new_repo.get(key, [])
+                  if list_changed(old_list, new_list):
+                      return True
+              return False
+          
+          def main():
+          
+              old_path= 'previous.yaml'
+              new_path = 'config/access-control.yaml'
+          
+              old_data = load_yaml(old_path)
+              new_data = load_yaml(new_path)
+          
+              old_admins = old_data.get('admins', [])
+              new_admins = new_data.get('admins', [])
+          
+              old_repos = old_data.get('repos', {})
+              new_repos = new_data.get('repos', {})
+          
+              # ✅ If admins changed, update all repos
+              if list_changed(old_admins, new_admins):
+                  print(json.dumps(sorted(new_repos.keys())))
+                  return
+          
+              # ✅ Compare per-repo access changes
+              changed_repos = []
+              all_repo_names = set(old_repos.keys()).union(new_repos.keys())
+          
+              for repo in sorted(all_repo_names):
+                  old_repo = old_repos.get(repo, {})
+                  new_repo = new_repos.get(repo, {})
+                  if repo_access_changed(old_repo, new_repo):
+                      changed_repos.append({"repo": repo})
+              changed_repos = json.dumps(sorted(changed_repos))
+              if not changed_repos:
+                  print("🛑 No repositories changed. Skipping.")
+                  sys.exit(0)
+              print(changed_repos)
+              
+          
+          if __name__ == "__main__":
+              main()
+          EOF
+          )
+
+          echo "Raw matrix JSON: $repos"
+          compact=$(echo "$repos" | jq -c .)
+          echo "repos=$compact" >> "$GITHUB_OUTPUT"
+
+  sync-owners:
+    name: Sync Owners
+    needs: build-matrix
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.build-matrix.outputs.matrix) }}
+
+    steps:
+      - name: Set up Git
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+  
+      - name: Checkout hack repo
+        uses: actions/checkout@v4
+        with:
+          path: hack
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install Python dependencies
+        run: pip install pyyaml requests python-dateutil
+
+      - name: Process repo branches inline
+        env:
+          GITHUB_TOKEN:  ${{ secrets.TOKEN }}
+          GITHUB_FORKED_TOKEN: ${{ secrets.TOKEN_FORKED }}
+          REPO_NAME:  ${{ matrix.repo }}
+          ORG_NAME:  ${{ env.ORG_NAME }}
+          FORK_ORG_NAME:  ${{ env.FORK_ORG_NAME }}
+          BRANCH_ACTIVE_DAYS: 90
+          ACCESS_CONTROL_PATH:  hack/config/access-control.yaml
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          python3 <<EOF
+          import os
+          import sys
+          import shutil
+          import requests
+          import yaml
+          from datetime import datetime, timedelta, timezone
+          from dateutil import parser
+          import subprocess
+          
+          ORG = os.getenv("ORG_NAME")
+          FORK_ORG = os.getenv("FORK_ORG_NAME")
+          TOKEN = os.getenv("GITHUB_TOKEN")
+          FORK_TOKEN = os.getenv("GITHUB_FORKED_TOKEN")
+
+          REPO = os.getenv("REPO_NAME")
+          PR_NUMBER = os.getenv("PR_NUMBER")
+          DAYS_ACTIVE = int(os.getenv("BRANCH_ACTIVE_DAYS", 90))
+          print("Print:===",ORG,FORK_ORG,REPO,PR_NUMBER)
+          CUTOFF = datetime.now(timezone.utc) - timedelta(days=DAYS_ACTIVE)
+          HEADERS = {"Authorization": f"token {TOKEN}"}
+          if not TOKEN or not ORG:
+              print("❌ GITHUB_TOKEN or ORG_NAME not set in environment")
+              sys.exit(1)
+  
+          def gh_api(url):
+              resp = requests.get(url, headers=HEADERS)
+              resp.raise_for_status()
+              return resp.json()
+    
+          def get_branches(repo):
+              url = f"https://api.github.com/repos/{ORG}/{repo}/branches?per_page=100"
+              return gh_api(url)
+
+          def get_commit_date(commit_url):
+              commit = gh_api(commit_url)
+              return parser.isoparse(commit["commit"]["committer"]["date"])
+
+          def generate_owners(repo_name, access_control):
+              admins = access_control.get('admins', [])
+              repo_info = access_control.get('repos', {}).get(repo_name, {})
+              reviewers = sorted(set(repo_info.get('reviewers', []) + admins))
+              approvers = sorted(set(repo_info.get('approvers', []) + admins))
+              if not reviewers or not approvers:
+                  raise ValueError("Missing reviewers or approvers")
+              with open("OWNERS", "w") as f:
+                  f.write("# Auto-generated OWNERS file\n")
+                  yaml.dump({"reviewers": reviewers, "approvers": approvers}, f)
+
+          def create_pr(base,branch):
+              print(f"Inside create_pr: base={base} branch={branch}")
+              push_failed = False
+              try:
+                # subprocess.run(["git", "checkout", "-b", branch], check=True)
+                subprocess.run(["git", "add", "OWNERS"], check=True)
+                subprocess.run(["git", "commit", "-m", "Update OWNERS file as change in hack/config/access-control.yaml"], check=True)
+                # Check if commit introduced changes
+                diff_result = subprocess.run(["git", "diff", "--cached"], capture_output=True, text=True)
+                if not diff_result.stdout.strip():
+                    print(f"🛑 No changes in OWNERS for {branch}, skipping PR creation.")
+                    return
+
+                
+                subprocess.run(["git", "push", "origin", branch], check=True)
+                subprocess.run([
+                    "gh", "pr", "create",
+                    "--repo", f"{FORK_ORG}/{REPO}",
+                    "--head", branch,
+                    "--base", base,
+                    "--title", "Update OWNERS",
+                    "--body", "This PR updates the OWNERS file."
+                ], check=True)
+              except subprocess.CalledProcessError as err:
+                push_failed = True
+                print(f"❌ Error creating PR branch {branch}: {err}")
+              finally:
+                if push_failed:
+                    print(f"🧹 Cleaning up remote branch: {branch}")
+                    try:
+                      subprocess.run(["git", "push", "origin","--delete", branch], check=True)
+                      print(f"🧹 Remote branch deleted: {branch}")
+                    except subprocess.CalledProcessError as cleanup_err:
+                      if "remote ref does not exist" in str(cleanup_err).lower():
+                          print(f"🗑️ Branch {branch} already deleted or never pushed.")
+                      elif "permission denied" in str(cleanup_err).lower():
+                          print(f"🚫 No permission to delete branch {branch}.")
+                      else:
+                          print(f"⚠️ Failed to delete branch {branch}: {cleanup_err}")
+
+          print("Print debug 1")
+          
+          access_control_path = os.environ.get("ACCESS_CONTROL_PATH", "hack/config/access-control.yaml")
+          if not os.path.isfile(access_control_path):
+            print(f"❌ Access control file not found at: {access_control_path}")
+            sys.exit(1)
+          
+          print("Print debug 2")
+          with open(access_control_path) as f:
+              access_control = yaml.safe_load(f)
+
+          branches = get_branches(REPO)
+          print("Print debug 3 branch")
+
+          # Clone repo once
+          clone_dir = f"forked-{REPO}"
+          if os.path.exists(clone_dir):
+              shutil.rmtree(clone_dir)
+          subprocess.run([
+              "git", "clone",
+              f"https://x-access-token:{FORK_TOKEN}@github.com/{FORK_ORG}/{REPO.lower()}.git",
+              clone_dir
+          ], check=True)
+          repo_path = os.path.abspath(clone_dir)
+
+          for b in branches:
+              print("Print debug 4 loop",b)
+              branch_name = b["name"]
+              # ⏭️ Skip hackrepo branches from past runs
+              if branch_name.endswith(f"-hackrepo-{PR_NUMBER}"):
+                print(f"⏭️ Skipping already-generated branch: {branch_name}")
+                continue
+              
+              commit_date = get_commit_date(b["commit"]["url"])
+              if commit_date >= CUTOFF:
+                  os.chdir(repo_path)
+                  print(f"🔁 Processing branch: {branch_name}")
+                  try:
+                    # Sanitize base branch name (in case already has -hackrepo-N suffix)
+                    base_branch = branch_name
+                    if base_branch.endswith(f"-hackrepo-{PR_NUMBER}"):
+                        base_branch = base_branch.rsplit(f"-hackrepo-", 1)[0]
+                    new_branch = f"{base_branch}-hackrepo-{PR_NUMBER}"
+
+                    # Reset any existing local changes and checkout the branch cleanly
+                    subprocess.run(["git", "reset", "--hard"], check=True)
+                    subprocess.run(["git", "clean", "-fd"], check=True)
+                    subprocess.run(["git", "remote", "remove", "upstream"], check=False)
+                    subprocess.run(["git", "remote", "add", "upstream", f"https://github.com/{ORG}/{REPO}.git"], check=True)
+                    result = subprocess.run( ["git", "ls-remote", "--heads", "upstream", branch_name],capture_output=True, text=True)
+                    if not result.stdout.strip():
+                      print(f"❌ Remote branch upstream/{branch_name} does not exist.")
+                      raise RuntimeError(f"Upstream branch '{branch_name}' not found.")
+                    
+                    subprocess.run(["git", "fetch", "upstream", branch_name], check=True)
+                    subprocess.run(["git", "checkout", "-B", new_branch, f"upstream/{base_branch}"], check=True)
+
+                    print(f"Creating PR branch: {new_branch}")
+                    # Generate OWNERS + create PR
+                    generate_owners(REPO, access_control)
+                    # newBranchName = f"{branch_name}-hackrepo-{PR_NUMBER}"
+                    create_pr(branch_name,new_branch)
+
+                  except subprocess.CalledProcessError as e:
+                    print(f"⚠️ Git error on branch {branch_name}: {e}")
+                  except Exception as e:
+                    print(f"❌ Failed branch {branch_name}: {e}")
+                  finally:
+                    os.chdir("..")
+          os.chdir("..")
+          EOF
