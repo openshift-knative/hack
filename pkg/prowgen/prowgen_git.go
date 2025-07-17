@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -28,16 +29,30 @@ func GitClone(ctx context.Context, r Repository) error {
 	return gitClone(ctx, r, false)
 }
 
-func ReleaseBranches(ctx context.Context, r Repository) ([]string, error) {
-	return Branches(ctx, r, "release-*")
-}
+var (
 
-func Branches(ctx context.Context, r Repository, pattern string) ([]string, error) {
+	/* Example outputs:
+	$ git --no-pager branch --list "release-*"
+	  release-1.33
+	  release-1.34
+	* release-1.35
+
+	$ git --no-pager branch --list "release-1.33*"
+	  release-1.33
+	*/
+	branchParsingRegexes = []*regexp.Regexp{
+		regexp.MustCompile("([ \t]+|^)(release-[0-9]+.[0-9]+)"),
+		regexp.MustCompile("([ \t]+|^)(release-v[0-9]+.[0-9]+)"),
+	}
+)
+
+func Branches(ctx context.Context, r Repository) ([]string, error) {
 	if err := GitMirror(ctx, r); err != nil {
 		return nil, err
 	}
 
-	branchesBytes, err := Run(ctx, r, "git", "--no-pager", "for-each-ref", "--format='%(refname:short)'", fmt.Sprintf("refs/heads/%s", pattern))
+	// git --no-pager branch --list "release-v*"
+	branchesBytes, err := Run(ctx, r, "git", "--no-pager", "branch", "--list", "release-*")
 	if err != nil {
 		return nil, err
 	}
@@ -46,14 +61,13 @@ func Branches(ctx context.Context, r Repository, pattern string) ([]string, erro
 
 	var sortedBranches []string
 	for _, branch := range strings.Split(branchesList, "\n") {
-		branchname := strings.TrimSpace(branch)
-		branchname = strings.TrimPrefix(branchname, "'")
-		branchname = strings.TrimSuffix(branchname, "'")
-		if len(branchname) == 0 {
-			continue
+		for _, regex := range branchParsingRegexes {
+			match := regex.FindStringSubmatch(branch)
+			if len(match) == 3 {
+				sortedBranches = append(sortedBranches, match[2])
+				break
+			}
 		}
-
-		sortedBranches = append(sortedBranches, branchname)
 	}
 	slices.SortFunc(sortedBranches, CmpBranches)
 

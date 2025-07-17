@@ -24,7 +24,7 @@ func GenerateOwners(ctx context.Context, configs []*Config) error {
 		config := config
 		eg.Go(func() error {
 			for _, r := range config.Repositories {
-				branchesInGit, err := Branches(ctx, r, "*")
+				branchesInGit, err := Branches(ctx, r)
 				if err != nil {
 					return fmt.Errorf("could not get branches for %q: %w", r.Repo, err)
 				}
