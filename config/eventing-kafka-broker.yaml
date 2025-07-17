@@ -7,7 +7,7 @@ config:
         - .*eventing-kafka-broker-dispatcher
       openShiftVersions:
       - useClusterPool: true
-        version: "4.18"
+        version: "4.19"
       - onDemand: true
         version: "4.14"
       skipDockerFilesMatches:
@@ -26,7 +26,7 @@ config:
         - .*eventing-kafka-broker-dispatcher
       openShiftVersions:
       - useClusterPool: true
-        version: "4.18"
+        version: "4.19"
       - onDemand: true
         version: "4.14"
       skipDockerFilesMatches:
@@ -41,9 +41,9 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.19"
+        version: "4.20"
       - useClusterPool: true
-        version: "4.18"
+        version: "4.19"
       - onDemand: true
         version: "4.14"
       skipDockerFilesMatches:
@@ -58,9 +58,9 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.19"
+        version: "4.20"
       - useClusterPool: true
-        version: "4.18"
+        version: "4.19"
       - onDemand: true
         version: "4.14"
       skipDockerFilesMatches:
@@ -75,9 +75,9 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.19"
+        version: "4.20"
       - useClusterPool: true
-        version: "4.18"
+        version: "4.19"
       - onDemand: true
         version: "4.14"
       skipDockerFilesMatches:
