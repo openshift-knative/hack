@@ -304,7 +304,7 @@ func writeDependabotConfig(ctx context.Context, dependabotConfig *dependabotgen.
 
 func ServerlessOperatorKonfluxVersions(ctx context.Context) (map[string]string, error) {
 	r := Repository{Org: "openshift-knative", Repo: "serverless-operator"}
-	sortedBranches, err := Branches(ctx, r)
+	sortedBranches, err := ReleaseBranches(ctx, r)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list branches for %q: %w", r.RepositoryDirectory(), err)
 	}

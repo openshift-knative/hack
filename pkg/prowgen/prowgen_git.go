@@ -43,16 +43,17 @@ var (
 	branchParsingRegexes = []*regexp.Regexp{
 		regexp.MustCompile("([ \t]+|^)(release-[0-9]+.[0-9]+)"),
 		regexp.MustCompile("([ \t]+|^)(release-v[0-9]+.[0-9]+)"),
+		regexp.MustCompile("([ \t]+|^)(main)"),
 	}
 )
 
-func Branches(ctx context.Context, r Repository) ([]string, error) {
+func Branches(ctx context.Context, r Repository, pattern string) ([]string, error) {
 	if err := GitMirror(ctx, r); err != nil {
 		return nil, err
 	}
 
 	// git --no-pager branch --list "release-v*"
-	branchesBytes, err := Run(ctx, r, "git", "--no-pager", "branch", "--list", "release-*")
+	branchesBytes, err := Run(ctx, r, "git", "--no-pager", "branch", "--list", pattern)
 	if err != nil {
 		return nil, err
 	}
@@ -74,6 +75,10 @@ func Branches(ctx context.Context, r Repository) ([]string, error) {
 	log.Println("Branches for", r.RepositoryDirectory(), sortedBranches)
 
 	return sortedBranches, nil
+}
+
+func ReleaseBranches(ctx context.Context, r Repository) ([]string, error) {
+	return Branches(ctx, r, "release-*")
 }
 
 var (
