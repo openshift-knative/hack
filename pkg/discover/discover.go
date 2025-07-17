@@ -98,7 +98,7 @@ func discover(ctx context.Context, path string, unsupported []Unsupported) error
 			latest = "release-next"
 		}
 
-		availableBranches, err := prowgen.Branches(ctx, r)
+		availableBranches, err := prowgen.ReleaseBranches(ctx, r)
 		if err != nil {
 			return err
 		}
