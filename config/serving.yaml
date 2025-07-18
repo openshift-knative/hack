@@ -97,6 +97,16 @@ repositories:
     migrate: storage-version-migration
   imagePrefix: knative-serving
   org: openshift-knative
+  owners:
+    approvers:
+    - dsimansk
+    - Fedosin
+    - mvinkler
+    - rudyredhat1
+    reviewers:
+    - dsimansk
+    - Fedosin
+    - mvinkler
   promotion:
     namespace: openshift
   repo: serving
@@ -106,13 +116,3 @@ repositories:
         cpu: 500m
         memory: 4Gi
   slackChannel: '#knative-serving-ci'
-  owners:
-    reviewers:
-      - dsimansk
-      - Fedosin
-      - mvinkler
-    approvers:
-      - dsimansk
-      - Fedosin
-      - mvinkler
-      - rudyredhat1
