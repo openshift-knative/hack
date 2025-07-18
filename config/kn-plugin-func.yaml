@@ -49,6 +49,16 @@ repositories:
   ignoreConfigs: {}
   imagePrefix: knative-kn-plugin-func
   org: openshift-knative
+  owners:
+    approvers:
+    - creydr
+    - dsimansk
+    - lkingland
+    - matejvasek
+    - gauron99
+    - rudyredhat1
+    reviewers:
+    - jrangelramos
   promotion:
     namespace: openshift
   repo: kn-plugin-func
@@ -90,13 +100,3 @@ repositories:
             cpu: 100m
         timeout: 1h0m0s
       workflow: generic-claim
-  owners:
-    reviewers:
-      - jrangelramos
-    approvers:
-      - creydr
-      - dsimansk
-      - lkingland
-      - matejvasek
-      - gauron99
-      - rudyredhat1

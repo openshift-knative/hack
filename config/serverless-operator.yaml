@@ -53,8 +53,8 @@ config:
       - candidateRelease: true
         onDemand: true
         version: "4.20"
-      - useClusterPool: true
-        onDemand: true
+      - onDemand: true
+        useClusterPool: true
         version: "4.19"
       - onDemand: true
         version: "4.13"
@@ -645,6 +645,23 @@ repositories:
     serverless-operator-index: index
   imagePrefix: serverless
   org: openshift-knative
+  owners:
+    approvers:
+    - aliok
+    - creydr
+    - dsimansk
+    - lberk
+    - matzew
+    - openshift-cherrypick-robot
+    - Kaustubh-pande
+    - maschmid
+    - rudyredhat1
+    reviewers:
+    - aliok
+    - creydr
+    - dsimansk
+    - matzew
+    - Kaustubh-pande
   promotion:
     namespace: knative
   repo: serverless-operator
@@ -656,20 +673,3 @@ repositories:
         cpu: 100m
         memory: 200Mi
   slackChannel: '#serverless-ci'
-  owners:
-    reviewers:
-      - aliok
-      - creydr
-      - dsimansk
-      - matzew
-      - Kaustubh-pande
-    approvers:
-      - aliok
-      - creydr
-      - dsimansk
-      - lberk
-      - matzew
-      - openshift-cherrypick-robot
-      - Kaustubh-pande
-      - maschmid
-      - rudyredhat1
