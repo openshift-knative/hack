@@ -6,12 +6,6 @@ config:
         version: "4.19"
       - onDemand: true
         version: "4.14"
-    release-v1.14:
-      openShiftVersions:
-      - onDemand: true
-        version: "4.16"
-      - onDemand: true
-        version: "4.13"
     release-v1.15:
       konflux:
         enabled: true
@@ -63,21 +57,21 @@ repositories:
   ignoreConfigs: {}
   imagePrefix: knative-eventing-istio
   org: openshift-knative
+  owners:
+    approvers:
+    - aliok
+    - creydr
+    - lberk
+    - matzew
+    - Cali0707
+    - rudyredhat1
+    reviewers:
+    - aliok
+    - creydr
+    - lberk
+    - matzew
+    - Cali0707
   promotion:
     namespace: openshift
   repo: eventing-istio
   slackChannel: '#knative-eventing-ci'
-  owners:
-    reviewers:
-      - aliok
-      - creydr
-      - lberk
-      - matzew
-      - Cali0707
-    approvers:
-      - aliok
-      - creydr
-      - lberk
-      - matzew
-      - Cali0707
-      - rudyredhat1

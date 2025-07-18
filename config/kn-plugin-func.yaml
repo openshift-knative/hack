@@ -44,11 +44,6 @@ config:
       - skipCron: true
         useClusterPool: true
         version: "4.19"
-    serverless-1.34:
-      openShiftVersions:
-      - onDemand: true
-        skipCron: true
-        version: "4.16"
 repositories:
 - dockerfiles: {}
   ignoreConfigs: {}

@@ -11,12 +11,6 @@ config:
       skipE2EMatches:
       - perf-tests$
       - .*e2e-tls$
-    release-v1.14:
-      openShiftVersions:
-      - onDemand: true
-        version: "4.16"
-      - onDemand: true
-        version: "4.13"
     release-v1.15:
       konflux:
         enabled: true
