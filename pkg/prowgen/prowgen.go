@@ -418,19 +418,24 @@ func AlwaysRunInjector() JobConfigInjector {
 						}
 					}
 
-					// Prevent sneaking in wrong settings from previous runs of "make jobs".
-					// Make sure we reset it to default.
-					jobConfig.PresubmitsStatic[k][i].AlwaysRun = true
-
-					// Build images in pre-submit phase only for OpenShift versions that are mandatory to test.
 					if strings.HasSuffix(jobConfig.PresubmitsStatic[k][i].Name, "-images") {
-						jobConfig.PresubmitsStatic[k][i].AlwaysRun = !onDemandForOpenShift && strings.HasSuffix(jobConfig.PresubmitsStatic[k][i].Name, ocpVersion+"-images")
+						if !onDemandForOpenShift && strings.HasSuffix(jobConfig.PresubmitsStatic[k][i].Name, ocpVersion+"-images") {
+							// Image jobs which should "always" run, still use the SkipIfOnlyChanged field, but with a valid value
+							// to run only on meaningfully changes
+							jobConfig.PresubmitsStatic[k][i].SkipIfOnlyChanged = prowSkipIfOnlyChangedFiles
+						} else {
+							// default to always_run = false for image jobs
+							// use hack from https://redhat-internal.slack.com/archives/CBN38N3MW/p1753111329185729?thread_ts=1752996614.456229&cid=CBN38N3MW to make always_run=false
+							jobConfig.PresubmitsStatic[k][i].RunIfChanged = "^non-existing$"
+						}
 					}
 
 					for _, t := range tests {
 						name := ToName(*r, &t)
 						if (t.OnDemand || t.RunIfChanged != "" || onDemandForOpenShift) && strings.Contains(jobConfig.PresubmitsStatic[k][i].Name, name) {
-							jobConfig.PresubmitsStatic[k][i].AlwaysRun = false
+							// On demand jobs don't run even when specific dir changes.
+							// use hack from https://redhat-internal.slack.com/archives/CBN38N3MW/p1753111329185729?thread_ts=1752996614.456229&cid=CBN38N3MW to make always_run=false
+							jobConfig.PresubmitsStatic[k][i].RunIfChanged = "^non-existing$"
 						}
 					}
 				}
