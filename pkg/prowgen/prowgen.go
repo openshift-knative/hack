@@ -347,12 +347,27 @@ func runJobConfigInjectors(inConfigs []*Config, openShiftRelease Repository) err
 		injectors := JobConfigInjectors{
 			AlwaysRunInjector(),
 			slackInjector(),
+			SkipIfOnlyKonfluxChangedInjector(),
 		}
 		if err := injectors.Inject(inConfig, openShiftRelease); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func SkipIfOnlyKonfluxChangedInjector() JobConfigInjector {
+	return JobConfigInjector{
+		Type: PreSubmit,
+		Update: func(r *Repository, b *Branch, branchName string, jobConfig *prowconfig.JobConfig) error {
+			for k := range jobConfig.PresubmitsStatic {
+				for i := range jobConfig.PresubmitsStatic[k] {
+					jobConfig.PresubmitsStatic[k][i].SkipIfOnlyChanged = "^.tekton/.*|^.konflux.*|^.github/.*"
+				}
+			}
+			return nil
+		},
+	}
 }
 
 func slackInjector() JobConfigInjector {
@@ -420,22 +435,17 @@ func AlwaysRunInjector() JobConfigInjector {
 
 					// Prevent sneaking in wrong settings from previous runs of "make jobs".
 					// Make sure we reset it to default.
-					jobConfig.PresubmitsStatic[k][i].AlwaysRun = false
-					jobConfig.PresubmitsStatic[k][i].SkipIfOnlyChanged = "^.tekton/.*|^.konflux.*|^.github/.*"
+					jobConfig.PresubmitsStatic[k][i].AlwaysRun = true
 
 					// Build images in pre-submit phase only for OpenShift versions that are mandatory to test.
 					if strings.HasSuffix(jobConfig.PresubmitsStatic[k][i].Name, "-images") {
-						if onDemandForOpenShift && strings.HasSuffix(jobConfig.PresubmitsStatic[k][i].Name, ocpVersion+"-images") {
-							// On demand jobs don't run even when specific dir changes.
-							jobConfig.PresubmitsStatic[k][i].SkipIfOnlyChanged = ""
-						}
+						jobConfig.PresubmitsStatic[k][i].AlwaysRun = !onDemandForOpenShift && strings.HasSuffix(jobConfig.PresubmitsStatic[k][i].Name, ocpVersion+"-images")
 					}
 
 					for _, t := range tests {
 						name := ToName(*r, &t)
 						if (t.OnDemand || t.RunIfChanged != "" || onDemandForOpenShift) && strings.Contains(jobConfig.PresubmitsStatic[k][i].Name, name) {
-							// On demand jobs don't run even when specific dir changes.
-							jobConfig.PresubmitsStatic[k][i].SkipIfOnlyChanged = ""
+							jobConfig.PresubmitsStatic[k][i].AlwaysRun = false
 						}
 					}
 				}
