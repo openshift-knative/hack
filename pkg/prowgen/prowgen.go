@@ -347,27 +347,12 @@ func runJobConfigInjectors(inConfigs []*Config, openShiftRelease Repository) err
 		injectors := JobConfigInjectors{
 			AlwaysRunInjector(),
 			slackInjector(),
-			SkipIfOnlyKonfluxChangedInjector(),
 		}
 		if err := injectors.Inject(inConfig, openShiftRelease); err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func SkipIfOnlyKonfluxChangedInjector() JobConfigInjector {
-	return JobConfigInjector{
-		Type: PreSubmit,
-		Update: func(r *Repository, b *Branch, branchName string, jobConfig *prowconfig.JobConfig) error {
-			for k := range jobConfig.PresubmitsStatic {
-				for i := range jobConfig.PresubmitsStatic[k] {
-					jobConfig.PresubmitsStatic[k][i].SkipIfOnlyChanged = "^.tekton/.*|^.konflux.*|^.github/.*"
-				}
-			}
-			return nil
-		},
-	}
 }
 
 func slackInjector() JobConfigInjector {
