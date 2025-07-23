@@ -281,6 +281,18 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				DiscoverTests(r, ov, fromImage, branch.SkipE2EMatches, random),
 			)
 
+			if !ov.OnDemand {
+				options = append(options,
+					SkipIfOnlyChanged(),
+				)
+			} else {
+
+				options = append(options,
+					// onDemand jobs, should only run tests when needed / triggered manually
+					DisableAlwaysRunForTests(),
+				)
+			}
+
 			log.Println(r.RepositoryDirectory(), "Apply input options", len(options))
 
 			if err := applyOptions(&cfg, options...); err != nil {
@@ -334,6 +346,17 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 					DiscoverImages(r, branch.SkipDockerFilesMatches),
 					DependenciesForTestSteps(),
 				)
+
+				if !ov.OnDemand {
+					customBuildOptions = append(customBuildOptions,
+						SkipIfOnlyChanged(),
+					)
+				} else {
+					customBuildOptions = append(customBuildOptions,
+						// onDemand jobs, should only run tests when needed / triggered manually
+						DisableAlwaysRunForTests(),
+					)
+				}
 
 				log.Println(r.RepositoryDirectory(), "Apply input options", len(customBuildOptions))
 

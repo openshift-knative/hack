@@ -16,6 +16,7 @@ import (
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"k8s.io/utils/strings/slices"
 	prowapi "sigs.k8s.io/prow/pkg/apis/prowjobs/v1"
 )
@@ -36,6 +37,8 @@ const (
 	clusterPoolOwner = "serverless-ci"
 	// Phony targets in Makefile that should be skipped.
 	makefilePhonyTarget = ".PHONY"
+	// Files which do not require to run builds on Prow
+	prowSkipIfOnlyChangedFiles = "^.tekton/.*|^.konflux.*|^.github/.*|^rpms.lock.yaml$|^hack/.*|^OWNERS.*|.*\\.md"
 )
 
 // Makefile targets can be defined in multiple ways:
@@ -260,6 +263,28 @@ func DependenciesForTestSteps() ReleaseBuildConfigurationOption {
 				}
 			}
 		}
+		return nil
+	}
+}
+
+func SkipIfOnlyChanged() ReleaseBuildConfigurationOption {
+	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
+		for i, testConfig := range cfg.Tests {
+			if testConfig.Cron == nil && testConfig.Interval == nil && testConfig.MinimumInterval == nil {
+				cfg.Tests[i].SkipIfOnlyChanged = prowSkipIfOnlyChangedFiles
+			}
+		}
+
+		return nil
+	}
+}
+
+func DisableAlwaysRunForTests() ReleaseBuildConfigurationOption {
+	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
+		for i := range cfg.Tests {
+			cfg.Tests[i].AlwaysRun = ptr.To(false)
+		}
+
 		return nil
 	}
 }
