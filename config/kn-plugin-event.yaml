@@ -51,6 +51,23 @@ repositories:
     kn-event-sender: sender
   imagePrefix: kn-plugin-event
   org: openshift-knative
+  owners:
+    approvers:
+    - dsimansk
+    - cardil
+    - creydr
+    - maschmid
+    - openshift-cherrypick-robot
+    - rudyredhat1
+    reviewers:
+    - dsimansk
+    - cardil
+    - creydr
+    - maschmid
+    - mvinkler
+    - jrangelramos
+    - rudyredhat1
+    - Kaustubh-pande
   promotion:
     namespace: knative
     template: release-${version}
@@ -68,20 +85,3 @@ repositories:
     commands: make unit
     container:
       from: src
-  owners:
-    reviewers:
-      - dsimansk
-      - cardil
-      - creydr
-      - maschmid
-      - mvinkler
-      - jrangelramos
-      - rudyredhat1
-      - Kaustubh-pande
-    approvers:
-      - dsimansk
-      - cardil
-      - creydr
-      - maschmid
-      - openshift-cherrypick-robot
-      - rudyredhat1

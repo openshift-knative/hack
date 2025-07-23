@@ -37,17 +37,17 @@ repositories:
   ignoreConfigs: {}
   imagePrefix: net-istio
   org: openshift-knative
+  owners:
+    approvers:
+    - dsimansk
+    - Fedosin
+    - mvinkler
+    - rudyredhat1
+    reviewers:
+    - dsimansk
+    - Fedosin
+    - mvinkler
   promotion:
     namespace: openshift
   repo: net-istio
   slackChannel: '#knative-serving-ci'
-  owners:
-    reviewers:
-      - dsimansk
-      - Fedosin
-      - mvinkler
-    approvers:
-      - dsimansk
-      - Fedosin
-      - mvinkler
-      - rudyredhat1

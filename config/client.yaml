@@ -67,17 +67,17 @@ repositories:
     - .*release-v1.1[0-4]*.yaml$
   imagePrefix: knative-client
   org: openshift-knative
+  owners:
+    approvers:
+    - dsimansk
+    - Kaustubh-pande
+    - creydr
+    - rudyredhat1
+    reviewers:
+    - dsimansk
+    - Kaustubh-pande
+    - rudyredhat1
   promotion:
     namespace: openshift
   repo: client
   slackChannel: '#serverless-ci'
-  owners:
-    reviewers:
-      - dsimansk
-      - Kaustubh-pande
-      - rudyredhat1
-    approvers:
-      - dsimansk
-      - Kaustubh-pande
-      - creydr
-      - rudyredhat1
