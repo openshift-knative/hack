@@ -13,20 +13,20 @@ repositories:
   ignoreConfigs: {}
   imagePrefix: knative-eventing-hyperfoil-benchmark
   org: openshift-knative
+  owners:
+    approvers:
+    - aliok
+    - creydr
+    - lberk
+    - matzew
+    - Cali0707
+    - rudyredhat1
+    reviewers:
+    - aliok
+    - creydr
+    - lberk
+    - matzew
+    - Cali0707
   promotion: {}
   repo: eventing-hyperfoil-benchmark
   slackChannel: '#knative-eventing-ci'
-  owners:
-    reviewers:
-      - aliok
-      - creydr
-      - lberk
-      - matzew
-      - Cali0707
-    approvers:
-      - aliok
-      - creydr
-      - lberk
-      - matzew
-      - Cali0707
-      - rudyredhat1
