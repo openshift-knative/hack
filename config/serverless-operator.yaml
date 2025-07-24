@@ -52,11 +52,13 @@ config:
       - candidateRelease: true
         onDemand: true
         version: "4.20"
+        skipCron: true
       - useClusterPool: true
-        onDemand: true
         version: "4.19"
+        skipCron: true
       - onDemand: true
         version: "4.13"
+        skipCron: true
     release-1.36:
       konflux:
         enabled: true
@@ -79,11 +81,13 @@ config:
       - candidateRelease: true
         onDemand: true
         version: "4.20"
+        skipCron: true
       - useClusterPool: true
-        onDemand: true
         version: "4.19"
+        skipCron: true
       - onDemand: true
         version: "4.14"
+        skipCron: true
     release-1.37:
       konflux:
         enabled: true
