@@ -422,6 +422,7 @@ func AlwaysRunInjector() JobConfigInjector {
 						if !onDemandForOpenShift && strings.HasSuffix(jobConfig.PresubmitsStatic[k][i].Name, ocpVersion+"-images") {
 							// Image jobs which should "always" run, still use the SkipIfOnlyChanged field, but with a valid value
 							// to run only on meaningfully changes
+							jobConfig.PresubmitsStatic[k][i].RunIfChanged = ""
 							jobConfig.PresubmitsStatic[k][i].SkipIfOnlyChanged = prowSkipIfOnlyChangedFiles
 						} else {
 							// default to always_run = false for image jobs
