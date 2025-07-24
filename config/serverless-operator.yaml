@@ -53,6 +53,7 @@ config:
         onDemand: true
         version: "4.20"
       - useClusterPool: true
+        onDemand: true
         version: "4.19"
       - onDemand: true
         version: "4.13"
@@ -79,6 +80,7 @@ config:
         onDemand: true
         version: "4.20"
       - useClusterPool: true
+        onDemand: true
         version: "4.19"
       - onDemand: true
         version: "4.14"
