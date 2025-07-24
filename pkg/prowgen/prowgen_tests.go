@@ -270,7 +270,7 @@ func DependenciesForTestSteps() ReleaseBuildConfigurationOption {
 func SkipIfOnlyChanged() ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
 		for i, testConfig := range cfg.Tests {
-			if testConfig.Cron == nil && testConfig.Interval == nil && testConfig.MinimumInterval == nil {
+			if testConfig.Cron == nil && testConfig.Interval == nil && testConfig.MinimumInterval == nil && testConfig.RunIfChanged == "" {
 				cfg.Tests[i].SkipIfOnlyChanged = prowSkipIfOnlyChangedFiles
 			}
 		}
