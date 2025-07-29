@@ -554,19 +554,18 @@ func writeRPMLockFile(rpmsLockTemplate fs.FS, rootDir string) error {
 }
 
 func builderImageForGoVersion(goVersion string) string {
-	builderImageFmt := "registry.ci.openshift.org/openshift/release:rhel-%d-release-golang-%s-openshift-%s"
+	builderImageFmt := "registry.ci.openshift.org/openshift/release:rhel-8-release-golang-%s-openshift-%s"
 
 	switch goVersion {
 	case "1.21":
-		return fmt.Sprintf(builderImageFmt, 8, goVersion, "4.16")
+		return fmt.Sprintf(builderImageFmt, goVersion, "4.16")
 	case "1.22":
-		return fmt.Sprintf(builderImageFmt, 8, goVersion, "4.17")
+		return fmt.Sprintf(builderImageFmt, goVersion, "4.17")
 	case "1.23":
-		return fmt.Sprintf(builderImageFmt, 8, goVersion, "4.19")
+		return fmt.Sprintf(builderImageFmt, goVersion, "4.19")
 	case "1.24":
-		// no 1.24 golang image will be built for rhel 8 and only no-fips exists for rhel 9 -- this is a temporary measure
 		fallthrough
 	default:
-		return fmt.Sprintf(builderImageFmt, 9, goVersion, "4.20")
+		return fmt.Sprintf(builderImageFmt, goVersion, "4.20")
 	}
 }
