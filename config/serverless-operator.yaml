@@ -7,7 +7,7 @@ config:
         - .*rosa.*
         imageOverrides:
         - name: GO_BUILDER
-          pullSpec: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.23
+          pullSpec: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_golang_1.24
         - name: GO_RUNTIME
           pullSpec: registry.access.redhat.com/ubi8/ubi-minimal
         - name: JAVA_BUILDER
