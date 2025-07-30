@@ -35,6 +35,8 @@ config:
       - onDemand: true
         version: "4.14"
     release-1.35:
+      promotion:
+        template: release-1.35.2
       konflux:
         enabled: true
         excludes:
@@ -60,6 +62,8 @@ config:
         version: "4.13"
         skipCron: true
     release-1.36:
+      promotion:
+        template: release-1.36.1
       konflux:
         enabled: true
         excludes:
