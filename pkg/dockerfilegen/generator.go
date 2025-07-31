@@ -208,8 +208,16 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 		additionalInstructions = append(additionalInstructions, fmt.Sprintf("RUN microdnf install %s", strings.Join(params.AdditionalPackages, " ")))
 	}
 
-	buildEnvs := make([]string, 0, len(DefaultBuildEnvVars())+len(params.AdditionalBuildEnvVars))
+	buildEnvs := make([]string, 0, len(DefaultBuildEnvVars())+len(params.AdditionalBuildEnvVars)+1)
 	buildEnvs = append(buildEnvs, DefaultBuildEnvVars()...)
+	vendored, err := hasVendorFolder(params.RootDir)
+	if err != nil {
+		return fmt.Errorf("could not check if project is vendorless: %w", err)
+	}
+	if !vendored {
+		buildEnvs = append(buildEnvs, "GOFLAGS='-mod=mod'")
+	}
+
 	if len(params.AdditionalBuildEnvVars) > 0 {
 		buildEnvs = append(buildEnvs, params.AdditionalBuildEnvVars...)
 	}
@@ -329,6 +337,18 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 	}
 	log.Println("Images mapping file written:", immapPath)
 	return nil
+}
+
+func hasVendorFolder(dir string) (bool, error) {
+	info, err := os.Stat(path.Join(dir, "vendor"))
+	if err == nil {
+		return info.IsDir(), nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+
+	return false, err
 }
 
 func generateMustGatherDockerfile(params Params) error {

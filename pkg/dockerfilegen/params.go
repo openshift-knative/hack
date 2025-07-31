@@ -72,7 +72,7 @@ func DefaultParams(wd string) Params {
 // DefaultBuildEnvVars is default set of FIPS flags to be used per builds
 func DefaultBuildEnvVars() []string {
 	return []string{
-		"ENV CGO_ENABLED=1",
-		"ENV GOEXPERIMENT=strictfipsruntime",
+		"CGO_ENABLED=1",
+		"GOEXPERIMENT=strictfipsruntime",
 	}
 }
