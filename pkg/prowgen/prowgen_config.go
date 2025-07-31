@@ -86,6 +86,7 @@ func (r Repository) RepositoryDirectory() string {
 
 type Branch struct {
 	Prowgen                *Prowgen    `json:"prowgen,omitempty" yaml:"prowgen,omitempty"`
+	Promotion              Promotion   `json:"promotion,omitempty" yaml:"promotion,omitempty"`
 	OpenShiftVersions      []OpenShift `json:"openShiftVersions,omitempty" yaml:"openShiftVersions,omitempty"`
 	SkipE2EMatches         []string    `json:"skipE2EMatches,omitempty" yaml:"skipE2EMatches,omitempty"`
 	SkipDockerFilesMatches []string    `json:"skipDockerFilesMatches,omitempty" yaml:"skipDockerFilesMatches,omitempty"`
@@ -258,9 +259,9 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 			options := make([]ReleaseBuildConfigurationOption, 0, len(opts))
 			copy(options, opts)
 			if i == 0 {
-				options = append(options, withNamePromotion(r, branchName))
+				options = append(options, withNamePromotion(r, branch, branchName))
 			} else if i == 1 {
-				options = append(options, withTagPromotion(r, branchName))
+				options = append(options, withTagPromotion(r, branch, branchName))
 			}
 
 			fromImage := srcImage
@@ -507,17 +508,25 @@ func transformLegacyKnativeSourceImageName(r Repository) string {
 	return srcImage
 }
 
-func withNamePromotion(r Repository, branchName string) ReleaseBuildConfigurationOption {
+func withNamePromotion(r Repository, branch Branch, branchName string) ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
+		p := r.Promotion
+		if branch.Promotion.Namespace != "" {
+			p.Namespace = branch.Promotion.Namespace
+		}
+		if branch.Promotion.Template != "" {
+			p.Template = branch.Promotion.Template
+		}
+
 		ns := "openshift"
-		if r.Promotion.Namespace != "" {
-			ns = r.Promotion.Namespace
+		if p.Namespace != "" {
+			ns = p.Namespace
 		}
 		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
 			Targets: []cioperatorapi.PromotionTarget{
 				{
 					Namespace: ns,
-					Name:      createPromotionName(r.Promotion, branchName),
+					Name:      createPromotionName(p, branchName),
 					AdditionalImages: map[string]string{
 						// Add source image
 						transformLegacyKnativeSourceImageName(r): "src",
@@ -529,17 +538,25 @@ func withNamePromotion(r Repository, branchName string) ReleaseBuildConfiguratio
 	}
 }
 
-func withTagPromotion(r Repository, branchName string) ReleaseBuildConfigurationOption {
+func withTagPromotion(r Repository, branch Branch, branchName string) ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
+		p := r.Promotion
+		if branch.Promotion.Namespace != "" {
+			p.Namespace = branch.Promotion.Namespace
+		}
+		if branch.Promotion.Template != "" {
+			p.Template = branch.Promotion.Template
+		}
+
 		ns := "openshift"
-		if r.Promotion.Namespace != "" {
-			ns = r.Promotion.Namespace
+		if p.Namespace != "" {
+			ns = p.Namespace
 		}
 		cfg.PromotionConfiguration = &cioperatorapi.PromotionConfiguration{
 			Targets: []cioperatorapi.PromotionTarget{
 				{
 					Namespace:   ns,
-					Tag:         createPromotionName(r.Promotion, branchName),
+					Tag:         createPromotionName(p, branchName),
 					TagByCommit: false, // TODO: revisit this later
 					AdditionalImages: map[string]string{
 						// Add source image
