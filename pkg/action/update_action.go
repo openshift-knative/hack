@@ -107,6 +107,7 @@ func updateAction(ctx context.Context, inConfig *prowgen.Config) ([]interface{},
 				"uses": "actions/checkout@v4",
 				"with": map[string]interface{}{
 					"repository": r.RepositoryDirectory(),
+					"ref":        "main",
 					"token":      "${{ secrets.SERVERLESS_QE_ROBOT }}",
 					"path":       fmt.Sprintf("./src/github.com/openshift-knative/hack/%s", r.RepositoryDirectory()),
 				},
