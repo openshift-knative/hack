@@ -77,7 +77,9 @@ repositories:
       - Kaustubh-pande
       - rudyredhat1
     approvers:
+      - creydr
       - dsimansk
       - Kaustubh-pande
-      - creydr
+      - maschmid
+      - mvinkler
       - rudyredhat1

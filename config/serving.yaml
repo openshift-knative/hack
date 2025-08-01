@@ -112,7 +112,10 @@ repositories:
       - Fedosin
       - mvinkler
     approvers:
+      - creydr
       - dsimansk
       - Fedosin
+      - Kaustubh-pande
+      - maschmid
       - mvinkler
       - rudyredhat1
