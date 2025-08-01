@@ -7,7 +7,7 @@ FROM $GO_BUILDER as builder
 WORKDIR /workspace
 COPY . .
 {{ range $c := .build_env_vars}}
-{{ $c }}
+ENV {{ $c }}
 {{- end }}
 
 RUN go build -tags strictfipsruntime -o /usr/bin/main ./{{.main}}
