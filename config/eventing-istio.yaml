@@ -6,6 +6,7 @@ config:
         version: "4.19"
       - onDemand: true
         version: "4.14"
+      promotion: {}
     release-v1.15:
       konflux:
         enabled: true
@@ -14,6 +15,7 @@ config:
         version: "4.19"
       - onDemand: true
         version: "4.14"
+      promotion: {}
     release-v1.16:
       konflux:
         enabled: true
@@ -26,6 +28,7 @@ config:
         version: "4.19"
       - onDemand: true
         version: "4.14"
+      promotion: {}
     release-v1.17:
       konflux:
         enabled: true
@@ -38,6 +41,7 @@ config:
         version: "4.19"
       - onDemand: true
         version: "4.14"
+      promotion: {}
     release-v1.18:
       konflux:
         enabled: true
@@ -50,6 +54,16 @@ config:
         version: "4.19"
       - onDemand: true
         version: "4.14"
+      promotion: {}
+    release-v1.19:
+      konflux:
+        enabled: true
+      openShiftVersions:
+      - useClusterPool: true
+        version: "4.19"
+      - onDemand: true
+        version: "4.14"
+      promotion: {}
 repositories:
 - dockerfiles: {}
   e2e:

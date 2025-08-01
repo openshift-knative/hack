@@ -6,6 +6,7 @@ config:
         version: "4.19"
       - onDemand: true
         version: "4.14"
+      promotion: {}
       skipDockerFilesMatches:
       - openshift/ci-operator/knative-perf-images.*
       skipE2EMatches:
@@ -19,6 +20,7 @@ config:
         version: "4.19"
       - onDemand: true
         version: "4.13"
+      promotion: {}
     release-v1.16:
       konflux:
         enabled: true
@@ -31,6 +33,7 @@ config:
         version: "4.19"
       - onDemand: true
         version: "4.14"
+      promotion: {}
     release-v1.17:
       konflux:
         enabled: true
@@ -43,6 +46,7 @@ config:
         version: "4.19"
       - onDemand: true
         version: "4.14"
+      promotion: {}
       skipDockerFilesMatches:
       - openshift/ci-operator/knative-perf-images.*
       skipE2EMatches:
@@ -60,6 +64,7 @@ config:
         version: "4.19"
       - onDemand: true
         version: "4.14"
+      promotion: {}
       skipDockerFilesMatches:
       - openshift/ci-operator/knative-perf-images.*
       skipE2EMatches:
@@ -97,6 +102,19 @@ repositories:
     migrate: storage-version-migration
   imagePrefix: knative-serving
   org: openshift-knative
+  owners:
+    approvers:
+    - creydr
+    - dsimansk
+    - Fedosin
+    - Kaustubh-pande
+    - maschmid
+    - mvinkler
+    - rudyredhat1
+    reviewers:
+    - dsimansk
+    - Fedosin
+    - mvinkler
   promotion:
     namespace: openshift
   repo: serving
@@ -106,16 +124,3 @@ repositories:
         cpu: 500m
         memory: 4Gi
   slackChannel: '#knative-serving-ci'
-  owners:
-    reviewers:
-      - dsimansk
-      - Fedosin
-      - mvinkler
-    approvers:
-      - creydr
-      - dsimansk
-      - Fedosin
-      - Kaustubh-pande
-      - maschmid
-      - mvinkler
-      - rudyredhat1
