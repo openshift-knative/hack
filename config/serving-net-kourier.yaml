@@ -8,6 +8,7 @@ config:
         version: "4.19"
       - onDemand: true
         version: "4.14"
+      promotion: {}
     release-v1.16:
       konflux:
         enabled: true
@@ -20,6 +21,7 @@ config:
         version: "4.19"
       - onDemand: true
         version: "4.14"
+      promotion: {}
     release-v1.17:
       konflux:
         enabled: true
@@ -32,25 +34,26 @@ config:
         version: "4.19"
       - onDemand: true
         version: "4.14"
+      promotion: {}
 repositories:
 - dockerfiles: {}
   ignoreConfigs: {}
   imagePrefix: net-kourier
   org: openshift-knative
+  owners:
+    approvers:
+    - creydr
+    - dsimansk
+    - Fedosin
+    - Kaustubh-pande
+    - maschmid
+    - mvinkler
+    - rudyredhat1
+    reviewers:
+    - dsimansk
+    - Fedosin
+    - mvinkler
   promotion:
     namespace: openshift
   repo: net-kourier
   slackChannel: '#knative-serving-ci'
-  owners:
-    reviewers:
-      - dsimansk
-      - Fedosin
-      - mvinkler
-    approvers:
-      - creydr
-      - dsimansk
-      - Fedosin
-      - Kaustubh-pande
-      - maschmid
-      - mvinkler
-      - rudyredhat1

@@ -6,6 +6,7 @@ config:
       openShiftVersions:
       - useClusterPool: true
         version: "4.19"
+      promotion: {}
     release-1.16:
       konflux:
         enabled: true
@@ -16,6 +17,7 @@ config:
         version: "4.20"
       - useClusterPool: true
         version: "4.19"
+      promotion: {}
     release-1.17:
       konflux:
         enabled: true
@@ -27,6 +29,7 @@ config:
       - skipCron: true
         useClusterPool: true
         version: "4.19"
+      promotion: {}
     release-1.18:
       konflux:
         enabled: true
@@ -34,11 +37,21 @@ config:
       - skipCron: true
         useClusterPool: true
         version: "4.19"
+      promotion: {}
+    release-1.19:
+      konflux:
+        enabled: true
+      openShiftVersions:
+      - skipCron: true
+        useClusterPool: true
+        version: "4.19"
+      promotion: {}
     release-next:
       openShiftVersions:
       - skipCron: true
         useClusterPool: true
         version: "4.19"
+      promotion: {}
 repositories:
 - dockerfiles: {}
   e2e:
@@ -51,6 +64,24 @@ repositories:
     kn-event-sender: sender
   imagePrefix: kn-plugin-event
   org: openshift-knative
+  owners:
+    approvers:
+    - dsimansk
+    - cardil
+    - creydr
+    - Kaustubh-pande
+    - maschmid
+    - openshift-cherrypick-robot
+    - rudyredhat1
+    reviewers:
+    - dsimansk
+    - cardil
+    - creydr
+    - maschmid
+    - mvinkler
+    - jrangelramos
+    - rudyredhat1
+    - Kaustubh-pande
   promotion:
     namespace: knative
     template: release-${version}
@@ -68,21 +99,3 @@ repositories:
     commands: make unit
     container:
       from: src
-  owners:
-    reviewers:
-      - dsimansk
-      - cardil
-      - creydr
-      - maschmid
-      - mvinkler
-      - jrangelramos
-      - rudyredhat1
-      - Kaustubh-pande
-    approvers:
-      - dsimansk
-      - cardil
-      - creydr
-      - Kaustubh-pande
-      - maschmid
-      - openshift-cherrypick-robot
-      - rudyredhat1

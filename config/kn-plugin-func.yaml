@@ -5,6 +5,7 @@ config:
       - skipCron: true
         useClusterPool: true
         version: "4.19"
+      promotion: {}
     release-v1.15:
       konflux:
         enabled: true
@@ -12,6 +13,7 @@ config:
       - skipCron: true
         useClusterPool: true
         version: "4.19"
+      promotion: {}
     release-v1.16:
       konflux:
         enabled: true
@@ -23,6 +25,7 @@ config:
       - skipCron: true
         useClusterPool: true
         version: "4.19"
+      promotion: {}
     release-v1.17:
       konflux:
         enabled: true
@@ -37,6 +40,7 @@ config:
       - skipCron: true
         useClusterPool: true
         version: "4.19"
+      promotion: {}
     release-v1.18:
       konflux:
         enabled: true
@@ -44,11 +48,32 @@ config:
       - skipCron: true
         useClusterPool: true
         version: "4.19"
+      promotion: {}
+    release-v1.19:
+      konflux:
+        enabled: true
+      openShiftVersions:
+      - skipCron: true
+        useClusterPool: true
+        version: "4.19"
+      promotion: {}
 repositories:
 - dockerfiles: {}
   ignoreConfigs: {}
   imagePrefix: knative-kn-plugin-func
   org: openshift-knative
+  owners:
+    approvers:
+    - creydr
+    - dsimansk
+    - Kaustubh-pande
+    - lkingland
+    - maschmid
+    - matejvasek
+    - gauron99
+    - rudyredhat1
+    reviewers:
+    - jrangelramos
   promotion:
     namespace: openshift
   repo: kn-plugin-func
@@ -90,15 +115,3 @@ repositories:
             cpu: 100m
         timeout: 1h0m0s
       workflow: generic-claim
-  owners:
-    reviewers:
-      - jrangelramos
-    approvers:
-      - creydr
-      - dsimansk
-      - Kaustubh-pande
-      - lkingland
-      - maschmid
-      - matejvasek
-      - gauron99
-      - rudyredhat1

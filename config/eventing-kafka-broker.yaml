@@ -10,6 +10,7 @@ config:
         version: "4.19"
       - onDemand: true
         version: "4.14"
+      promotion: {}
       skipDockerFilesMatches:
       - .*hermetic.*
     release-v1.15:
@@ -23,6 +24,7 @@ config:
         version: "4.19"
       - onDemand: true
         version: "4.14"
+      promotion: {}
       skipDockerFilesMatches:
       - .*hermetic.*
     release-v1.16:
@@ -40,6 +42,7 @@ config:
         version: "4.19"
       - onDemand: true
         version: "4.14"
+      promotion: {}
       skipDockerFilesMatches:
       - .*hermetic.*
     release-v1.17:
@@ -57,6 +60,7 @@ config:
         version: "4.19"
       - onDemand: true
         version: "4.14"
+      promotion: {}
       skipDockerFilesMatches:
       - .*hermetic.*
     release-v1.18:
@@ -74,6 +78,21 @@ config:
         version: "4.19"
       - onDemand: true
         version: "4.14"
+      promotion: {}
+      skipDockerFilesMatches:
+      - .*hermetic.*
+    release-v1.19:
+      konflux:
+        enabled: true
+        javaImages:
+        - .*eventing-kafka-broker-receiver
+        - .*eventing-kafka-broker-dispatcher
+      openShiftVersions:
+      - useClusterPool: true
+        version: "4.19"
+      - onDemand: true
+        version: "4.14"
+      promotion: {}
       skipDockerFilesMatches:
       - .*hermetic.*
 repositories:

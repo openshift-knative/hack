@@ -34,9 +34,8 @@ config:
         version: "4.19"
       - onDemand: true
         version: "4.14"
+      promotion: {}
     release-1.35:
-      promotion:
-        template: release-1.35.2
       konflux:
         enabled: true
         excludes:
@@ -53,17 +52,17 @@ config:
       openShiftVersions:
       - candidateRelease: true
         onDemand: true
+        skipCron: true
         version: "4.20"
-        skipCron: true
-      - useClusterPool: true
+      - skipCron: true
+        useClusterPool: true
         version: "4.19"
-        skipCron: true
       - onDemand: true
-        version: "4.13"
         skipCron: true
-    release-1.36:
+        version: "4.13"
       promotion:
-        template: release-1.36.1
+        template: release-1.35.2
+    release-1.36:
       konflux:
         enabled: true
         excludes:
@@ -84,14 +83,16 @@ config:
       openShiftVersions:
       - candidateRelease: true
         onDemand: true
+        skipCron: true
         version: "4.20"
-        skipCron: true
-      - useClusterPool: true
+      - skipCron: true
+        useClusterPool: true
         version: "4.19"
-        skipCron: true
       - onDemand: true
-        version: "4.14"
         skipCron: true
+        version: "4.14"
+      promotion:
+        template: release-1.36.1
     release-1.37:
       konflux:
         enabled: true
@@ -118,6 +119,7 @@ config:
         version: "4.19"
       - onDemand: true
         version: "4.14"
+      promotion: {}
       prowgen:
         disabled: true
 repositories:
@@ -649,6 +651,23 @@ repositories:
     serverless-operator-index: index
   imagePrefix: serverless
   org: openshift-knative
+  owners:
+    approvers:
+    - aliok
+    - creydr
+    - dsimansk
+    - lberk
+    - matzew
+    - openshift-cherrypick-robot
+    - Kaustubh-pande
+    - maschmid
+    - rudyredhat1
+    reviewers:
+    - aliok
+    - creydr
+    - dsimansk
+    - matzew
+    - Kaustubh-pande
   promotion:
     namespace: knative
   repo: serverless-operator
@@ -660,20 +679,3 @@ repositories:
         cpu: 100m
         memory: 200Mi
   slackChannel: '#serverless-ci'
-  owners:
-    reviewers:
-      - aliok
-      - creydr
-      - dsimansk
-      - matzew
-      - Kaustubh-pande
-    approvers:
-      - aliok
-      - creydr
-      - dsimansk
-      - lberk
-      - matzew
-      - openshift-cherrypick-robot
-      - Kaustubh-pande
-      - maschmid
-      - rudyredhat1
