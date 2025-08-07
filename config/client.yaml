@@ -10,6 +10,7 @@ config:
       - skipCron: true
         useClusterPool: true
         version: "4.18"
+      promotion: {}
     release-v1.16:
       konflux:
         enabled: true
@@ -24,6 +25,7 @@ config:
       - skipCron: true
         useClusterPool: true
         version: "4.19"
+      promotion: {}
     release-v1.17:
       konflux:
         enabled: true
@@ -38,6 +40,7 @@ config:
       - skipCron: true
         useClusterPool: true
         version: "4.19"
+      promotion: {}
     release-v1.18:
       konflux:
         enabled: true
@@ -52,6 +55,22 @@ config:
       - skipCron: true
         useClusterPool: true
         version: "4.19"
+      promotion: {}
+    release-v1.19:
+      konflux:
+        enabled: true
+        imageOverrides:
+        - name: CLI_ARTIFACTS
+          pullSpec: brew.registry.redhat.io/rh-osbs/openshift-serverless-1-kn-cli-artifacts-rhel8:1.16.0
+      openShiftVersions:
+      - candidateRelease: true
+        onDemand: true
+        skipCron: true
+        version: "4.20"
+      - skipCron: true
+        useClusterPool: true
+        version: "4.19"
+      promotion: {}
 repositories:
 - canonicalGoRepository: github.com/knative/client
   dockerfiles: {}
@@ -67,19 +86,19 @@ repositories:
     - .*release-v1.1[0-4]*.yaml$
   imagePrefix: knative-client
   org: openshift-knative
+  owners:
+    approvers:
+    - creydr
+    - dsimansk
+    - Kaustubh-pande
+    - maschmid
+    - mvinkler
+    - rudyredhat1
+    reviewers:
+    - dsimansk
+    - Kaustubh-pande
+    - rudyredhat1
   promotion:
     namespace: openshift
   repo: client
   slackChannel: '#serverless-ci'
-  owners:
-    reviewers:
-      - dsimansk
-      - Kaustubh-pande
-      - rudyredhat1
-    approvers:
-      - creydr
-      - dsimansk
-      - Kaustubh-pande
-      - maschmid
-      - mvinkler
-      - rudyredhat1
