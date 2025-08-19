@@ -38,7 +38,7 @@ const (
 	// Phony targets in Makefile that should be skipped.
 	makefilePhonyTarget = ".PHONY"
 	// Files which do not require to run builds on Prow
-	prowSkipIfOnlyChangedFiles = "^.tekton/.*|^.konflux.*|^.github/.*|^rpms.lock.yaml$|^hack/.*|^OWNERS.*|.*\\.md"
+	prowSkipIfOnlyChangedFiles = "^.tekton/.*|^.konflux.*|^.github/.*|^rpms.lock.yaml$|^hack/(?!lib/).*|^OWNERS.*|.*\\.md"
 )
 
 // Makefile targets can be defined in multiple ways:
