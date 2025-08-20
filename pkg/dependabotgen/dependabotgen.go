@@ -101,15 +101,16 @@ func (cfg *DependabotConfig) WithGo(branch string) {
 				DependencyName: "sigs.k8s.io/controller-runtime",
 				UpdateTypes:    []string{"version-update:semver-major", "version-update:semver-minor"},
 			},
+			{
+				DependencyName: "istio.io/*",
+				UpdateTypes:    []string{"version-update:semver-major", "version-update:semver-minor"},
+			},
 		},
 		Groups: map[string]Group{
 			"patch": {
 				UpdateTypes: []string{"patch"},
 				Patterns:    []string{"*"},
 				AppliesTo:   "version-updates",
-				ExcludePatterns: []string{
-					"istio.io/*",
-				},
 			},
 			"minor": {
 				UpdateTypes: []string{"minor"},
