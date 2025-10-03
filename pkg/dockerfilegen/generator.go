@@ -163,9 +163,17 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 	}
 
 	rhelVersion := "rhel-9"
-	minorVersion, err := strconv.Atoi(strings.Replace(metadata.Project.Tag, "knative-v1.", "", 1))
-	if err != nil {
-		if minorVersion < 17 {
+	if metadata.Project.Tag != "" {
+		// tag before knative-v1.17
+		minorVersion, err := strconv.Atoi(strings.Replace(metadata.Project.Tag, "knative-v1.", "", 1))
+		if err != nil {
+			if minorVersion < 17 {
+				rhelVersion = "rhel-8"
+			}
+		}
+	} else {
+		// version before 1.37+
+		if metadata.Project.Version == "1.36.1" || metadata.Project.Version == "1.35.1" {
 			rhelVersion = "rhel-8"
 		}
 	}
@@ -256,14 +264,22 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 		var dockerfileTemplate embed.FS
 		var rpmsLockTemplate *embed.FS
 		if params.RpmsLockFileEnabled {
-			rpmsLockTemplate = &RPMsLockTemplateUbi8
+			if rhelVersion == "rhel-8" {
+				rpmsLockTemplate = &RPMsLockTemplateUbi8
+			} else {
+				rpmsLockTemplate = &RPMsLockTemplateUbi9
+			}
 		}
 		switch params.TemplateName {
 		case DefaultDockerfileTemplateName:
 			dockerfileTemplate = DockerfileDefaultTemplate
 		case FuncUtilDockerfileTemplateName:
 			dockerfileTemplate = DockerfileFuncUtilTemplate
-			rpmsLockTemplate = &RPMsLockTemplateUbi8
+			if rhelVersion == "rhel-8" {
+				rpmsLockTemplate = &RPMsLockTemplateUbi8
+			} else {
+				rpmsLockTemplate = &RPMsLockTemplateUbi9
+			}
 		default:
 			return fmt.Errorf("%w: Unknown template name: %s",
 				ErrBadConf, params.TemplateName)
