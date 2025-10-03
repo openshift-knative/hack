@@ -162,11 +162,11 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 		metadata = project.DefaultMetadata()
 	}
 
-	rhelVersion := "rhel-8"
+	rhelVersion := "rhel-9"
 	minorVersion, err := strconv.Atoi(strings.Replace(metadata.Project.Tag, "knative-v1.", "", 1))
 	if err != nil {
-		if minorVersion >= 17 {
-			rhelVersion = "rhel-9"
+		if minorVersion < 17 {
+			rhelVersion = "rhel-8"
 		}
 	}
 
