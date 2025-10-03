@@ -19,3 +19,6 @@ var DockerfileMustGatherTemplate embed.FS
 
 //go:embed ubi8.rpms.lock.yaml
 var RPMsLockTemplateUbi8 embed.FS
+
+//go:embed ubi9.rpms.lock.yaml
+var RPMsLockTemplateUbi9 embed.FS
