@@ -17,7 +17,7 @@ FROM $GO_RUNTIME
 
 ARG VERSION={{.version}}
 
-RUN microdnf install socat tar
+RUN dnf install socat tar
 {{- range $c := .additional_instructions }}
 {{ $c }}
 {{- end }}
