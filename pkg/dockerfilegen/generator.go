@@ -40,6 +40,9 @@ const (
 	ocClientArtifactsBaseImage       = "registry.ci.openshift.org/ocp/%s:cli-artifacts"
 	// See https://github.com/containerbuildsystem/cachi2/blob/3c562a5410ddd5f1043e7613b240bb5811682f7f/cachi2/core/package_managers/rpm/main.py#L29
 	cachi2DefaultRPMsLockFilePath = "rpms.lock.yaml"
+
+	RHEL8 = "rhel-8"
+	RHEL9 = "rhel-9"
 )
 
 var (
@@ -162,19 +165,24 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 		metadata = project.DefaultMetadata()
 	}
 
-	rhelVersion := "rhel-9"
+	rhelVersion := RHEL9
 	if metadata.Project.Tag != "" {
 		// tag before knative-v1.17
 		minorVersion, err := strconv.Atoi(strings.Replace(metadata.Project.Tag, "knative-v1.", "", 1))
 		if err != nil {
 			if minorVersion < 17 {
-				rhelVersion = "rhel-8"
+				rhelVersion = RHEL8
 			}
 		}
 	} else {
 		// version before 1.37+
-		if metadata.Project.Version == "1.36.1" || metadata.Project.Version == "1.35.1" {
-			rhelVersion = "rhel-8"
+		if metadata.Project.Version != "" {
+			semVer := semver.New(metadata.Project.Version)
+			if semVer != nil {
+				if semVer.Minor < 37 {
+					rhelVersion = RHEL8
+				}
+			}
 		}
 	}
 
@@ -264,7 +272,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 		var dockerfileTemplate embed.FS
 		var rpmsLockTemplate *embed.FS
 		if params.RpmsLockFileEnabled {
-			if rhelVersion == "rhel-8" {
+			if rhelVersion == RHEL8 {
 				rpmsLockTemplate = &RPMsLockTemplateUbi8
 			} else {
 				rpmsLockTemplate = &RPMsLockTemplateUbi9
@@ -275,7 +283,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 			dockerfileTemplate = DockerfileDefaultTemplate
 		case FuncUtilDockerfileTemplateName:
 			dockerfileTemplate = DockerfileFuncUtilTemplate
-			if rhelVersion == "rhel-8" {
+			if rhelVersion == RHEL8 {
 				rpmsLockTemplate = &RPMsLockTemplateUbi8
 			} else {
 				rpmsLockTemplate = &RPMsLockTemplateUbi9
