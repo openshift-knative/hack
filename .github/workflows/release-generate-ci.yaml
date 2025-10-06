@@ -20,6 +20,10 @@ jobs:
     name: generate-ci
     runs-on: ubuntu-latest
     steps:
+      - name: Freeup disk space
+        run: |
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
       - if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         name: '[backstage-plugins] Clone repository'
         uses: actions/checkout@v4
