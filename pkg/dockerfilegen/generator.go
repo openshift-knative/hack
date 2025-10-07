@@ -40,6 +40,9 @@ const (
 	ocClientArtifactsBaseImage       = "registry.ci.openshift.org/ocp/%s:cli-artifacts"
 	// See https://github.com/containerbuildsystem/cachi2/blob/3c562a5410ddd5f1043e7613b240bb5811682f7f/cachi2/core/package_managers/rpm/main.py#L29
 	cachi2DefaultRPMsLockFilePath = "rpms.lock.yaml"
+
+	RHEL8 = "rhel-8"
+	RHEL9 = "rhel-9"
 )
 
 var (
@@ -152,18 +155,6 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 		goVersion = strings.Join(strings.Split(goVersion, ".")[0:2], ".")
 	}
 
-	builderImage := params.DockerfileImageBuilderFmt
-	if builderImage == "" {
-		builderImage = builderImageForGoVersion(goVersion)
-	} else {
-		// Builder image might be provided without formatting '%s' string as plain value
-		if strings.Count(params.DockerfileImageBuilderFmt, "%s") == 1 {
-			builderImage = fmt.Sprintf(params.DockerfileImageBuilderFmt, goVersion)
-		}
-	}
-
-	goPackageToImageMapping := map[string]string{}
-
 	metadata, err := project.ReadMetadataFile(params.ProjectFilePath)
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
@@ -173,6 +164,39 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 		log.Println("File not found:", params.ProjectFilePath, "(Using defaults)")
 		metadata = project.DefaultMetadata()
 	}
+
+	rhelVersion := RHEL9
+	if metadata.Project.Tag != "" {
+		// tag before knative-v1.17
+		minorVersion, err := strconv.Atoi(strings.Replace(metadata.Project.Tag, "knative-v1.", "", 1))
+		if err != nil {
+			if minorVersion < 17 {
+				rhelVersion = RHEL8
+			}
+		}
+	} else {
+		// version before 1.37+
+		if metadata.Project.Version != "" {
+			semVer := semver.New(metadata.Project.Version)
+			if semVer != nil {
+				if semVer.Minor < 37 {
+					rhelVersion = RHEL8
+				}
+			}
+		}
+	}
+
+	builderImage := params.DockerfileImageBuilderFmt
+	if builderImage == "" {
+		builderImage = builderImageForGoVersion(goVersion, rhelVersion)
+	} else {
+		// Builder image might be provided without formatting '%s' string as plain value
+		if strings.Count(params.DockerfileImageBuilderFmt, "%s") == 1 {
+			builderImage = fmt.Sprintf(params.DockerfileImageBuilderFmt, goVersion)
+		}
+	}
+
+	goPackageToImageMapping := map[string]string{}
 
 	d := map[string]interface{}{
 		"builder": builderImage,
@@ -248,20 +272,32 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 		var dockerfileTemplate embed.FS
 		var rpmsLockTemplate *embed.FS
 		if params.RpmsLockFileEnabled {
-			rpmsLockTemplate = &RPMsLockTemplateUbi8
+			if rhelVersion == RHEL8 {
+				rpmsLockTemplate = &RPMsLockTemplateUbi8
+			} else {
+				rpmsLockTemplate = &RPMsLockTemplateUbi9
+			}
 		}
 		switch params.TemplateName {
 		case DefaultDockerfileTemplateName:
 			dockerfileTemplate = DockerfileDefaultTemplate
 		case FuncUtilDockerfileTemplateName:
 			dockerfileTemplate = DockerfileFuncUtilTemplate
-			rpmsLockTemplate = &RPMsLockTemplateUbi8
+			if rhelVersion == RHEL8 {
+				rpmsLockTemplate = &RPMsLockTemplateUbi8
+			} else {
+				rpmsLockTemplate = &RPMsLockTemplateUbi9
+			}
 		default:
 			return fmt.Errorf("%w: Unknown template name: %s",
 				ErrBadConf, params.TemplateName)
 		}
 
-		t, err := template.ParseFS(dockerfileTemplate, "dockerfile-templates/*.tmpl")
+		templateFiles := "dockerfile-templates/*.tmpl"
+		if rhelVersion == "rhel-9" {
+			templateFiles = "dockerfile-templates/rhel-9/*.tmpl"
+		}
+		t, err := template.ParseFS(dockerfileTemplate, templateFiles)
 		if err != nil {
 			return fmt.Errorf("%w: Parsing failed: %w",
 				ErrBadTemplate, errors.WithStack(err))
@@ -573,19 +609,22 @@ func writeRPMLockFile(rpmsLockTemplate fs.FS, rootDir string) error {
 	return nil
 }
 
-func builderImageForGoVersion(goVersion string) string {
-	builderImageFmt := "registry.ci.openshift.org/openshift/release:rhel-8-release-golang-%s-openshift-%s"
+func builderImageForGoVersion(goVersion, rhelVersion string) string {
+	if rhelVersion == "" {
+		rhelVersion = "rhel-8"
+	}
+	builderImageFmt := "registry.ci.openshift.org/openshift/release:%s-release-golang-%s-openshift-%s"
 
 	switch goVersion {
 	case "1.21":
-		return fmt.Sprintf(builderImageFmt, goVersion, "4.16")
+		return fmt.Sprintf(builderImageFmt, rhelVersion, goVersion, "4.16")
 	case "1.22":
-		return fmt.Sprintf(builderImageFmt, goVersion, "4.17")
+		return fmt.Sprintf(builderImageFmt, rhelVersion, goVersion, "4.17")
 	case "1.23":
-		return fmt.Sprintf(builderImageFmt, goVersion, "4.19")
+		return fmt.Sprintf(builderImageFmt, rhelVersion, goVersion, "4.19")
 	case "1.24":
 		fallthrough
 	default:
-		return fmt.Sprintf(builderImageFmt, goVersion, "4.20")
+		return fmt.Sprintf(builderImageFmt, rhelVersion, goVersion, "4.20")
 	}
 }

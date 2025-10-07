@@ -1,0 +1,46 @@
+# DO NOT EDIT! Generated Dockerfile for {{.main}}.
+ARG GO_BUILDER={{.builder}}
+ARG GO_RUNTIME=registry.access.redhat.com/ubi9/ubi-minimal
+
+FROM $GO_BUILDER as builder
+
+WORKDIR /workspace
+COPY . .
+
+ENV CGO_ENABLED=1
+ENV GOEXPERIMENT=strictfipsruntime
+ENV GOFLAGS=''
+
+RUN go build -tags strictfipsruntime,exclude_graphdriver_btrfs -o /usr/bin/main ./{{.main}}
+
+FROM $GO_RUNTIME
+
+ARG VERSION={{.version}}
+
+RUN dnf install socat tar
+{{- range $c := .additional_instructions }}
+{{ $c }}
+{{- end }}
+
+COPY --from=builder /usr/bin/main {{.app_file}}
+COPY LICENSE /licenses/
+
+RUN ln -s {{.app_file}} /usr/local/bin/deploy && \
+	ln -s {{.app_file}} /usr/local/bin/scaffold && \
+	ln -s {{.app_file}} /usr/local/bin/s2i && \
+	ln -s {{.app_file}} /usr/local/bin/s2i-generate
+
+USER 65532
+
+LABEL \
+      com.redhat.component="openshift-serverless-1-{{.project_dashcase}}{{.component_dashcase}}-rhel9-container" \
+      name="openshift-serverless-1/{{.project_dashcase}}{{.component_dashcase}}-rhel8" \
+      version=$VERSION \
+      summary="Red Hat OpenShift Serverless 1 {{.project}}{{.component}}" \
+      maintainer="serverless-support@redhat.com" \
+      description="Red Hat OpenShift Serverless 1 {{.project}}{{.component}}" \
+      io.k8s.display-name="Red Hat OpenShift Serverless 1 {{.project}}{{.component}}" \
+      io.k8s.description="Red Hat OpenShift Serverless {{.project}}{{.component}}" \
+      io.openshift.tags="{{.component_dashcase}}"
+
+ENTRYPOINT ["/usr/bin/bash"]

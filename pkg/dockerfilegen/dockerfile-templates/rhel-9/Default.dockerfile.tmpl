@@ -1,0 +1,39 @@
+# DO NOT EDIT! Generated Dockerfile for {{.main}}.
+ARG GO_BUILDER={{.builder}}
+ARG GO_RUNTIME=registry.access.redhat.com/ubi9/ubi-minimal
+
+FROM $GO_BUILDER as builder
+
+WORKDIR /workspace
+COPY . .
+{{ range $c := .build_env_vars}}
+ENV {{ $c }}
+{{- end }}
+
+RUN go build -tags strictfipsruntime -o /usr/bin/main ./{{.main}}
+
+FROM $GO_RUNTIME
+
+ARG VERSION={{.version}}
+
+{{- range $c := .additional_instructions }}
+{{ $c }}
+{{- end }}
+
+COPY --from=builder /usr/bin/main {{.app_file}}
+COPY LICENSE /licenses/
+
+USER 65532
+
+LABEL \
+      com.redhat.component="openshift-serverless-1-{{.project_dashcase}}{{.component_dashcase}}-rhel9-container" \
+      name="openshift-serverless-1/{{.project_dashcase}}{{.component_dashcase}}-rhel8" \
+      version=$VERSION \
+      summary="Red Hat OpenShift Serverless 1 {{.project}}{{.component}}" \
+      maintainer="serverless-support@redhat.com" \
+      description="Red Hat OpenShift Serverless 1 {{.project}}{{.component}}" \
+      io.k8s.display-name="Red Hat OpenShift Serverless 1 {{.project}}{{.component}}" \
+      io.k8s.description="Red Hat OpenShift Serverless {{.project}}{{.component}}" \
+      io.openshift.tags="{{.component_dashcase}}"
+
+ENTRYPOINT ["{{.app_file}}"]

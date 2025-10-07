@@ -74,6 +74,13 @@ jobs:
             localhost/rpm-lockfile-prototype:latest \
             --outfile=${container_dir}/pkg/dockerfilegen/ubi8.rpms.lock.yaml \
             ${container_dir}/pkg/dockerfilegen/ubi8.rpms.in.yaml || exit $?
+          
+          podman run --privileged \
+            --rm \
+            -v ${PWD}:${container_dir} \
+            localhost/rpm-lockfile-prototype:latest \
+            --outfile=${container_dir}/pkg/dockerfilegen/ubi9.rpms.lock.yaml \
+            ${container_dir}/pkg/dockerfilegen/ubi9.rpms.in.yaml || exit $?
 
       - name: Create Discovery Pull Request
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main'
