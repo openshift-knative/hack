@@ -22,14 +22,15 @@ RUN mkdir -p $LOGS_DIR && \
 USER 65532
 
 LABEL \
-      com.redhat.component="openshift-serverless-1-{{.project_dashcase}}rhel9-container" \
-      name="openshift-serverless-1/svls-{{.project_dashcase}}rhel8" \
+      com.redhat.component="openshift-serverless-1-{{.project_dashcase}}-{{.rhelVersion}}-container" \
+      name="openshift-serverless-1/serverless-{{.project_dashcase}}-{{.rhelVersion}}" \
       version={{.version}} \
       summary="Red Hat OpenShift Serverless 1 {{.project}}" \
       maintainer="serverless-support@redhat.com" \
       description="Red Hat OpenShift Serverless 1 {{.project}}" \
       io.k8s.display-name="Red Hat OpenShift Serverless 1 {{.project}}" \
       io.k8s.description="Red Hat OpenShift Serverless {{.project}}" \
-      io.openshift.tags="{{.main}}"
+      io.openshift.tags="{{.main}}" \
+      cpe="cpe:/a:redhat:openshift_serverless:{{.short_version}}::{{.shortRhelVersion}}"  
 
 ENTRYPOINT /usr/bin/gather

@@ -17,6 +17,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/openshift-knative/hack/pkg/soversion"
+
 	"github.com/coreos/go-semver/semver"
 	"github.com/openshift-knative/hack/pkg/project"
 	"github.com/openshift-knative/hack/pkg/prowgen"
@@ -166,6 +168,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 	}
 
 	rhelVersion := RHEL9
+	var soVersion string
 	if metadata.Project.Tag != "" {
 		// tag before knative-v1.17
 		minorVersion, err := strconv.Atoi(strings.Replace(metadata.Project.Tag, "knative-v1.", "", 1))
@@ -174,6 +177,8 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 				rhelVersion = RHEL8
 			}
 		}
+		semverSoVersion := soversion.FromUpstreamVersion(strings.Replace(metadata.Project.Tag, "knative-v", "", 1))
+		soVersion = fmt.Sprintf("%v.%v", semverSoVersion.Major, semverSoVersion.Minor)
 	} else {
 		// version before 1.37+
 		if metadata.Project.Version != "" {
@@ -183,6 +188,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 					rhelVersion = RHEL8
 				}
 			}
+			soVersion = fmt.Sprintf("%v.%v", semVer.Major, semVer.Minor)
 		}
 	}
 
@@ -255,7 +261,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 			projectWithSep = capitalize(projectName) + " "
 			projectDashCaseWithSep = projectName + "-"
 		}
-
+		elVersion := "el" + strings.TrimPrefix(rhelVersion, "rhel-")
 		d := map[string]interface{}{
 			"main":                    p,
 			"app_file":                appFile,
@@ -267,6 +273,9 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 			"component_dashcase":      dashcase(p),
 			"additional_instructions": additionalInstructions,
 			"build_env_vars":          buildEnvs,
+			"rhelVersion":             strings.ReplaceAll(rhelVersion, "-", ""),
+			"short_version":           soVersion,
+			"shortRhelVersion":        elVersion,
 		}
 
 		var dockerfileTemplate embed.FS
@@ -405,6 +414,20 @@ func generateMustGatherDockerfile(params Params) error {
 		return fmt.Errorf("%w: Could not get oc binary name: %w",
 			ErrUnsupportedRepo, errors.WithStack(err))
 	}
+	rhelVersion := RHEL9
+	var soVersion string
+	elVersion := "el" + strings.TrimPrefix(rhelVersion, "rhel-")
+
+	if metadata.Project.Version != "" {
+		semVer := semver.New(metadata.Project.Version)
+		if semVer != nil {
+			if semVer.Minor < 37 {
+				rhelVersion = RHEL8
+			}
+		}
+		soVersion = fmt.Sprintf("%v.%v", semVer.Major, semVer.Minor)
+	}
+
 	d := map[string]interface{}{
 		"main":             projectName,
 		"oc_cli_artifacts": ocClientArtifactsImage,
@@ -412,6 +435,9 @@ func generateMustGatherDockerfile(params Params) error {
 		"version":          metadata.Project.Version,
 		"project":          capitalize(projectName),
 		"project_dashcase": projectDashCaseWithSep,
+		"rhelVersion":      strings.ReplaceAll(rhelVersion, "-", ""),
+		"short_version":    soVersion,
+		"shortRhelVersion": elVersion,
 	}
 	out := filepath.Join(params.Output, params.DockerfilesDir, filepath.Base(projectName))
 	if _, err = saveDockerfile(d, DockerfileMustGatherTemplate, out, ""); err != nil {
