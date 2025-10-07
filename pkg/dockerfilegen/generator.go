@@ -169,17 +169,30 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 
 	rhelVersion := RHEL9
 	var soVersion string
-	if metadata.Project.Tag != "" {
+	projectTag := metadata.Project.Tag
+	if projectTag == "main" || metadata.Project.Tag == "" {
+		projectTag = "knative-v1.17"
+		log.Println("Use Default version substitution for main branch")
+	}
+	if projectTag != "" && projectTag != "main" {
+		// Handle knative-vX.Y tags
 		// tag before knative-v1.17
-		minorVersion, err := strconv.Atoi(strings.Replace(metadata.Project.Tag, "knative-v1.", "", 1))
-		if err != nil {
+		if strings.HasPrefix(projectTag, "knative-v1.") {
+			minorVersion, err := strconv.Atoi(strings.Replace(projectTag, "knative-v1.", "", 1))
+			if err != nil {
+				log.Printf("Failed to parse minor version from tag %q: %v", projectTag, err)
+				minorVersion = 17 // fallback
+			}
 			if minorVersion < 17 {
 				rhelVersion = RHEL8
 			}
+			semverSoVersion := soversion.FromUpstreamVersion(strings.Replace(projectTag, "knative-v", "", 1))
+			soVersion = fmt.Sprintf("%v.%v", semverSoVersion.Major, semverSoVersion.Minor)
 		}
-		semverSoVersion := soversion.FromUpstreamVersion(strings.Replace(metadata.Project.Tag, "knative-v", "", 1))
-		soVersion = fmt.Sprintf("%v.%v", semverSoVersion.Major, semverSoVersion.Minor)
 	} else {
+		if metadata.Project.Version == "main" || metadata.Project.Version == "" {
+			metadata.Project.Version = "1.37.0" //fallback
+		}
 		// version before 1.37+
 		if metadata.Project.Version != "" {
 			semVer := semver.New(metadata.Project.Version)
