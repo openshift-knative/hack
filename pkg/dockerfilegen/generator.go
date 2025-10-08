@@ -300,21 +300,14 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 				rpmsLockTemplate = &RPMsLockTemplateUbi9
 			}
 		}
-		var templateFile string
+		// var templateFile string
 		switch params.TemplateName {
 		case DefaultDockerfileTemplateName:
-			if rhelVersion == RHEL9 {
-				templateFile = "dockerfile-templates/rhel-9/Default.dockerfile.tmpl"
-			} else {
-				templateFile = "dockerfile-templates/Default.dockerfile.tmpl"
-			}
 			dockerfileTemplate = DockerfileDefaultTemplate
 		case FuncUtilDockerfileTemplateName:
 			if rhelVersion == RHEL9 {
-				templateFile = "dockerfile-templates/rhel-9/FuncUtil.dockerfile.tmpl"
 				rpmsLockTemplate = &RPMsLockTemplateUbi9
 			} else {
-				templateFile = "dockerfile-templates/FuncUtil.dockerfile.tmpl"
 				rpmsLockTemplate = &RPMsLockTemplateUbi8
 			}
 			dockerfileTemplate = DockerfileFuncUtilTemplate
@@ -322,8 +315,11 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 			return fmt.Errorf("%w: Unknown template name: %s",
 				ErrBadConf, params.TemplateName)
 		}
-
-		t, err := template.ParseFS(dockerfileTemplate, templateFile)
+		templateFiles := "dockerfile-templates/*.tmpl"
+		if rhelVersion == "rhel-9" {
+			templateFiles = "dockerfile-templates/rhel-9/*.tmpl"
+		}
+		t, err := template.ParseFS(dockerfileTemplate, templateFiles)
 		if err != nil {
 			return fmt.Errorf("%w: Parsing failed: %w",
 				ErrBadTemplate, errors.WithStack(err))
@@ -457,11 +453,11 @@ func generateMustGatherDockerfile(params Params) error {
 		"shortRhelVersion": elVersion,
 	}
 	// Pick proper template FS file and RPM lock file
-	templateFile := "dockerfile-templates/rhel-9/MustGather.dockerfile.tmpl" // RHEL9 default
+	templateFile := "dockerfile-templates/rhel-9/*.tmpl" // RHEL9 default
 	if rhelVersion == RHEL9 {
 		rpmsLockTemplate = &RPMsLockTemplateUbi9
 	} else {
-		templateFile = "dockerfile-templates/MustGather.dockerfile.tmpl"
+		templateFile = "dockerfile-templates/*.tmpl"
 		rpmsLockTemplate = &RPMsLockTemplateUbi8
 	}
 
@@ -481,7 +477,6 @@ func generateMustGatherDockerfile(params Params) error {
 	if _, err = saveDockerfile(d, DockerfileMustGatherTemplate, out, ""); err != nil {
 		return err
 	}
-	// rpmsLockTemplate = &RPMsLockTemplateUbi8
 	if err = writeRPMLockFile(rpmsLockTemplate, params.RootDir); err != nil {
 		return err
 	}
