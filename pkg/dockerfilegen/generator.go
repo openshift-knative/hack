@@ -300,26 +300,30 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 				rpmsLockTemplate = &RPMsLockTemplateUbi9
 			}
 		}
+		var templateFile string
 		switch params.TemplateName {
 		case DefaultDockerfileTemplateName:
+			if rhelVersion == RHEL9 {
+				templateFile = "dockerfile-templates/rhel-9/Default.dockerfile.tmpl"
+			} else {
+				templateFile = "dockerfile-templates/Default.dockerfile.tmpl"
+			}
 			dockerfileTemplate = DockerfileDefaultTemplate
 		case FuncUtilDockerfileTemplateName:
-			dockerfileTemplate = DockerfileFuncUtilTemplate
-			if rhelVersion == RHEL8 {
-				rpmsLockTemplate = &RPMsLockTemplateUbi8
-			} else {
+			if rhelVersion == RHEL9 {
+				templateFile = "dockerfile-templates/rhel-9/FuncUtil.dockerfile.tmpl"
 				rpmsLockTemplate = &RPMsLockTemplateUbi9
+			} else {
+				templateFile = "dockerfile-templates/FuncUtil.dockerfile.tmpl"
+				rpmsLockTemplate = &RPMsLockTemplateUbi8
 			}
+			dockerfileTemplate = DockerfileFuncUtilTemplate
 		default:
 			return fmt.Errorf("%w: Unknown template name: %s",
 				ErrBadConf, params.TemplateName)
 		}
 
-		templateFiles := "dockerfile-templates/*.tmpl"
-		if rhelVersion == "rhel-9" {
-			templateFiles = "dockerfile-templates/rhel-9/*.tmpl"
-		}
-		t, err := template.ParseFS(dockerfileTemplate, templateFiles)
+		t, err := template.ParseFS(dockerfileTemplate, templateFile)
 		if err != nil {
 			return fmt.Errorf("%w: Parsing failed: %w",
 				ErrBadTemplate, errors.WithStack(err))
@@ -429,10 +433,9 @@ func generateMustGatherDockerfile(params Params) error {
 	}
 	rhelVersion := RHEL9
 	var soVersion string
-	elVersion := "el" + strings.TrimPrefix(rhelVersion, "rhel-")
-
-	if metadata.Project.Version != "" {
-		semVer := semver.New(metadata.Project.Version)
+	pVersion := metadata.Project.Version
+	if pVersion != "" {
+		semVer := semver.New(pVersion)
 		if semVer != nil {
 			if semVer.Minor < 37 {
 				rhelVersion = RHEL8
@@ -440,6 +443,7 @@ func generateMustGatherDockerfile(params Params) error {
 		}
 		soVersion = fmt.Sprintf("%v.%v", semVer.Major, semVer.Minor)
 	}
+	elVersion := "el" + strings.TrimPrefix(rhelVersion, "rhel-")
 
 	d := map[string]interface{}{
 		"main":             projectName,
@@ -452,11 +456,32 @@ func generateMustGatherDockerfile(params Params) error {
 		"short_version":    soVersion,
 		"shortRhelVersion": elVersion,
 	}
+	// Pick proper template FS file and RPM lock file
+	templateFile := "dockerfile-templates/rhel-9/MustGather.dockerfile.tmpl" // RHEL9 default
+	if rhelVersion == RHEL9 {
+		rpmsLockTemplate = &RPMsLockTemplateUbi9
+	} else {
+		templateFile = "dockerfile-templates/MustGather.dockerfile.tmpl"
+		rpmsLockTemplate = &RPMsLockTemplateUbi8
+	}
+
+	t, err := template.ParseFS(DockerfileMustGatherTemplate, templateFile)
+	if err != nil {
+		return fmt.Errorf("%w: Parsing failed: %w",
+			ErrBadTemplate, errors.WithStack(err))
+	}
+
+	bf := new(bytes.Buffer)
+	if err := t.Execute(bf, d); err != nil {
+		return fmt.Errorf("%w: executing failed: %w",
+			ErrBadTemplate, errors.WithStack(err))
+	}
+
 	out := filepath.Join(params.Output, params.DockerfilesDir, filepath.Base(projectName))
 	if _, err = saveDockerfile(d, DockerfileMustGatherTemplate, out, ""); err != nil {
 		return err
 	}
-	rpmsLockTemplate = &RPMsLockTemplateUbi8
+	// rpmsLockTemplate = &RPMsLockTemplateUbi8
 	if err = writeRPMLockFile(rpmsLockTemplate, params.RootDir); err != nil {
 		return err
 	}
