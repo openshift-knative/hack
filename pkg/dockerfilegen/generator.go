@@ -17,6 +17,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/openshift-knative/hack/pkg/soversion"
+
 	"github.com/coreos/go-semver/semver"
 	"github.com/openshift-knative/hack/pkg/project"
 	"github.com/openshift-knative/hack/pkg/prowgen"
@@ -166,15 +168,31 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 	}
 
 	rhelVersion := RHEL9
-	if metadata.Project.Tag != "" {
+	var soVersion string
+	projectTag := metadata.Project.Tag
+	if projectTag == "main" || metadata.Project.Tag == "" {
+		projectTag = "knative-v1.17"
+		log.Println("Use Default version substitution for main branch")
+	}
+	if projectTag != "" && projectTag != "main" {
+		// Handle knative-vX.Y tags
 		// tag before knative-v1.17
-		minorVersion, err := strconv.Atoi(strings.Replace(metadata.Project.Tag, "knative-v1.", "", 1))
-		if err != nil {
+		if strings.HasPrefix(projectTag, "knative-v1.") {
+			minorVersion, err := strconv.Atoi(strings.Replace(projectTag, "knative-v1.", "", 1))
+			if err != nil {
+				log.Printf("Failed to parse minor version from tag %q: %v", projectTag, err)
+				minorVersion = 17 // fallback
+			}
 			if minorVersion < 17 {
 				rhelVersion = RHEL8
 			}
+			semverSoVersion := soversion.FromUpstreamVersion(strings.Replace(projectTag, "knative-v", "", 1))
+			soVersion = fmt.Sprintf("%v.%v", semverSoVersion.Major, semverSoVersion.Minor)
 		}
 	} else {
+		if metadata.Project.Version == "main" || metadata.Project.Version == "" {
+			metadata.Project.Version = "1.37.0" //fallback
+		}
 		// version before 1.37+
 		if metadata.Project.Version != "" {
 			semVer := semver.New(metadata.Project.Version)
@@ -183,6 +201,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 					rhelVersion = RHEL8
 				}
 			}
+			soVersion = fmt.Sprintf("%v.%v", semVer.Major, semVer.Minor)
 		}
 	}
 
@@ -255,7 +274,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 			projectWithSep = capitalize(projectName) + " "
 			projectDashCaseWithSep = projectName + "-"
 		}
-
+		elVersion := "el" + strings.TrimPrefix(rhelVersion, "rhel-")
 		d := map[string]interface{}{
 			"main":                    p,
 			"app_file":                appFile,
@@ -267,6 +286,9 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 			"component_dashcase":      dashcase(p),
 			"additional_instructions": additionalInstructions,
 			"build_env_vars":          buildEnvs,
+			"rhelVersion":             strings.ReplaceAll(rhelVersion, "-", ""),
+			"short_version":           soVersion,
+			"shortRhelVersion":        elVersion,
 		}
 
 		var dockerfileTemplate embed.FS
@@ -278,21 +300,21 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 				rpmsLockTemplate = &RPMsLockTemplateUbi9
 			}
 		}
+		// var templateFile string
 		switch params.TemplateName {
 		case DefaultDockerfileTemplateName:
 			dockerfileTemplate = DockerfileDefaultTemplate
 		case FuncUtilDockerfileTemplateName:
-			dockerfileTemplate = DockerfileFuncUtilTemplate
-			if rhelVersion == RHEL8 {
-				rpmsLockTemplate = &RPMsLockTemplateUbi8
-			} else {
+			if rhelVersion == RHEL9 {
 				rpmsLockTemplate = &RPMsLockTemplateUbi9
+			} else {
+				rpmsLockTemplate = &RPMsLockTemplateUbi8
 			}
+			dockerfileTemplate = DockerfileFuncUtilTemplate
 		default:
 			return fmt.Errorf("%w: Unknown template name: %s",
 				ErrBadConf, params.TemplateName)
 		}
-
 		templateFiles := "dockerfile-templates/*.tmpl"
 		if rhelVersion == "rhel-9" {
 			templateFiles = "dockerfile-templates/rhel-9/*.tmpl"
@@ -405,6 +427,20 @@ func generateMustGatherDockerfile(params Params) error {
 		return fmt.Errorf("%w: Could not get oc binary name: %w",
 			ErrUnsupportedRepo, errors.WithStack(err))
 	}
+	rhelVersion := RHEL9
+	var soVersion string
+	pVersion := metadata.Project.Version
+	if pVersion != "" {
+		semVer := semver.New(pVersion)
+		if semVer != nil {
+			if semVer.Minor < 37 {
+				rhelVersion = RHEL8
+			}
+		}
+		soVersion = fmt.Sprintf("%v.%v", semVer.Major, semVer.Minor)
+	}
+	elVersion := "el" + strings.TrimPrefix(rhelVersion, "rhel-")
+
 	d := map[string]interface{}{
 		"main":             projectName,
 		"oc_cli_artifacts": ocClientArtifactsImage,
@@ -412,12 +448,35 @@ func generateMustGatherDockerfile(params Params) error {
 		"version":          metadata.Project.Version,
 		"project":          capitalize(projectName),
 		"project_dashcase": projectDashCaseWithSep,
+		"rhelVersion":      strings.ReplaceAll(rhelVersion, "-", ""),
+		"short_version":    soVersion,
+		"shortRhelVersion": elVersion,
 	}
+	// Pick proper template FS file and RPM lock file
+	templateFile := "dockerfile-templates/rhel-9/*.tmpl" // RHEL9 default
+	if rhelVersion == RHEL9 {
+		rpmsLockTemplate = &RPMsLockTemplateUbi9
+	} else {
+		templateFile = "dockerfile-templates/*.tmpl"
+		rpmsLockTemplate = &RPMsLockTemplateUbi8
+	}
+
+	t, err := template.ParseFS(DockerfileMustGatherTemplate, templateFile)
+	if err != nil {
+		return fmt.Errorf("%w: Parsing failed: %w",
+			ErrBadTemplate, errors.WithStack(err))
+	}
+
+	bf := new(bytes.Buffer)
+	if err := t.Execute(bf, d); err != nil {
+		return fmt.Errorf("%w: executing failed: %w",
+			ErrBadTemplate, errors.WithStack(err))
+	}
+
 	out := filepath.Join(params.Output, params.DockerfilesDir, filepath.Base(projectName))
 	if _, err = saveDockerfile(d, DockerfileMustGatherTemplate, out, ""); err != nil {
 		return err
 	}
-	rpmsLockTemplate = &RPMsLockTemplateUbi8
 	if err = writeRPMLockFile(rpmsLockTemplate, params.RootDir); err != nil {
 		return err
 	}
