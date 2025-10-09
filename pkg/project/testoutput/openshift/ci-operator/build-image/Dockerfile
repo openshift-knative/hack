@@ -1,17 +1,17 @@
 # DO NOT EDIT! Generated Dockerfile.
 
-FROM registry.ci.openshift.org/ocp/4.17:cli-artifacts as tools
+FROM registry.ci.openshift.org/ocp/4.19:cli-artifacts as tools
 
 # Dockerfile to bootstrap build and test in openshift-ci
 FROM registry.ci.openshift.org/openshift/release:rhel-9-release-golang-1.22-openshift-4.17 as builder
 
 ARG TARGETARCH
 
-COPY --from=tools /usr/share/openshift/linux_$TARGETARCH/oc.rhel8 /usr/bin/oc
+COPY --from=tools /usr/share/openshift/linux_$TARGETARCH/oc.rhel9 /usr/bin/oc
 
 RUN ln -s /usr/bin/oc /usr/bin/kubectl
 
-RUN yum install -y httpd-tools
+RUN dnf install -y httpd-tools
 
 RUN wget https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 && \
     chmod 700 ./get-helm-3
