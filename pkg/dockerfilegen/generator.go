@@ -420,8 +420,13 @@ func generateMustGatherDockerfile(params Params) error {
 		return fmt.Errorf("%w: Could not read metadata file: %w",
 			ErrBadConf, errors.WithStack(err))
 	}
-
 	ocClientArtifactsImage := fmt.Sprintf(ocClientArtifactsBaseImage, metadata.Requirements.OcpVersion.Min)
+	if metadata.Project.Version != "" {
+		// explicit override OCP min version due to RHEL 9 images since 1.37
+		if semver.New(metadata.Project.Version).Minor >= 37 && metadata.Requirements.OcpVersion.Min == "4.14" {
+			ocClientArtifactsImage = fmt.Sprintf(ocClientArtifactsBaseImage, "4.15")
+		}
+	}
 	projectName := mustGatherDockerfileTemplateName
 	projectDashCaseWithSep := projectName + "-"
 
