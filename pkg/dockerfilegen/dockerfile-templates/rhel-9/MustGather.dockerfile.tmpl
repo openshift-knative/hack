@@ -7,13 +7,13 @@ FROM $RUNTIME
 
 ARG TARGETARCH
 
-COPY --from=cli-artifacts /usr/share/openshift/linux_$TARGETARCH/{{ .oc_binary_name }} /usr/bin/oc
+COPY --from=cli-artifacts /usr/share/openshift/linux_$TARGETARCH/oc.rhel9 /usr/bin/oc
 
 # Copy all collection scripts to /usr/bin
 COPY must-gather/bin/* /usr/bin/
 COPY LICENSE /licenses/
 
-RUN dnf install -y rsync tar
+RUN microdnf install -y rsync tar
 
 ENV LOGS_DIR="/must-gather"
 RUN mkdir -p $LOGS_DIR && \
