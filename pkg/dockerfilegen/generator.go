@@ -168,6 +168,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 	}
 
 	rhelVersion := RHEL9
+	templateFilePattern := "dockerfile-templates/rhel-9/*.tmpl"
 	var soVersion string
 	projectTag := metadata.Project.Tag
 	if projectTag == "main" || metadata.Project.Tag == "" {
@@ -185,6 +186,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 			}
 			if minorVersion < 17 {
 				rhelVersion = RHEL8
+				templateFilePattern = "dockerfile-templates/*.tmpl"
 			}
 			semverSoVersion := soversion.FromUpstreamVersion(strings.Replace(projectTag, "knative-v", "", 1))
 			soVersion = fmt.Sprintf("%v.%v", semverSoVersion.Major, semverSoVersion.Minor)
@@ -199,6 +201,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 			if semVer != nil {
 				if semVer.Minor < 37 {
 					rhelVersion = RHEL8
+					templateFilePattern = "dockerfile-templates/*.tmpl"
 				}
 			}
 			soVersion = fmt.Sprintf("%v.%v", semVer.Major, semVer.Minor)
@@ -220,11 +223,11 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 	d := map[string]interface{}{
 		"builder": builderImage,
 	}
-	if _, err = saveDockerfile(d, DockerfileBuildImageTemplate, params.Output, params.DockerfilesBuildDir); err != nil {
+	if _, err = saveDockerfile(d, DockerfileBuildImageTemplate, templateFilePattern, params.Output, params.DockerfilesBuildDir); err != nil {
 		return err
 	}
 
-	if _, err = saveDockerfile(d, DockerfileSourceImageTemplate, params.Output, params.DockerfilesSourceDir); err != nil {
+	if _, err = saveDockerfile(d, DockerfileSourceImageTemplate, templateFilePattern, params.Output, params.DockerfilesSourceDir); err != nil {
 		return err
 	}
 
@@ -316,7 +319,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 				ErrBadConf, params.TemplateName)
 		}
 		templateFiles := "dockerfile-templates/*.tmpl"
-		if rhelVersion == "rhel-9" {
+		if rhelVersion == RHEL9 {
 			templateFiles = "dockerfile-templates/rhel-9/*.tmpl"
 		}
 		t, err := template.ParseFS(dockerfileTemplate, templateFiles)
@@ -338,7 +341,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 			out = filepath.Join(params.Output, params.DockerfilesTestDir, filepath.Base(p))
 		}
 
-		dockerfilePath, err := saveDockerfile(d, dockerfileTemplate, out, "")
+		dockerfilePath, err := saveDockerfile(d, dockerfileTemplate, templateFiles, out, "")
 		if err != nil {
 			return err
 		}
@@ -474,7 +477,7 @@ func generateMustGatherDockerfile(params Params) error {
 	}
 
 	out := filepath.Join(params.Output, params.DockerfilesDir, filepath.Base(projectName))
-	if _, err = saveDockerfile(d, DockerfileMustGatherTemplate, out, ""); err != nil {
+	if _, err = saveDockerfile(d, DockerfileMustGatherTemplate, templateFile, out, ""); err != nil {
 		return err
 	}
 	if err = writeRPMLockFile(rpmsLockTemplate, params.RootDir); err != nil {
@@ -593,8 +596,8 @@ func downloadImagesFrom(r string, branch string, urlFmt string) (map[string]stri
 	return images, nil
 }
 
-func saveDockerfile(d map[string]interface{}, imageTemplate embed.FS, output string, dir string) (string, error) {
-	bt, err := template.ParseFS(imageTemplate, "dockerfile-templates/*.tmpl")
+func saveDockerfile(d map[string]interface{}, imageTemplate embed.FS, templatePattern, output string, dir string) (string, error) {
+	bt, err := template.ParseFS(imageTemplate, templatePattern)
 	if err != nil {
 		return "", fmt.Errorf("%w: Failed creating template: %w",
 			ErrBadTemplate, errors.WithStack(err))

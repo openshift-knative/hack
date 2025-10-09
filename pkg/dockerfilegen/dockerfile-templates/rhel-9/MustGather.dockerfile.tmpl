@@ -13,7 +13,7 @@ COPY --from=cli-artifacts /usr/share/openshift/linux_$TARGETARCH/{{ .oc_binary_n
 COPY must-gather/bin/* /usr/bin/
 COPY LICENSE /licenses/
 
-RUN microdnf install -y rsync tar
+RUN dnf install -y rsync tar
 
 ENV LOGS_DIR="/must-gather"
 RUN mkdir -p $LOGS_DIR && \
