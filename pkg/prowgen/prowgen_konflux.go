@@ -385,18 +385,23 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 		}
 		buildArgs := []string{fmt.Sprintf("VERSION=%s", soMetadata.Project.Version)}
 
-		cliImage, err := getCLIArtifactsImage(soMetadata.Requirements.OcpVersion.Min)
-		if err != nil {
-			return fmt.Errorf("failed to get cli artifacts image for OCP %s: %w", soMetadata.Requirements.OcpVersion.Min, err)
-		}
-
-		buildArgs = append(buildArgs, fmt.Sprintf("CLI_ARTIFACTS=%s", cliImage))
-
+		isCliImageSet := false
 		for _, img := range b.Konflux.ImageOverrides {
 			if img.Name == "" || img.PullSpec == "" {
 				return fmt.Errorf("image override missing name or pull spec: %#v", img)
 			}
+			if img.Name == "CLI_ARTIFACTS" {
+				isCliImageSet = true
+			}
 			buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", img.Name, img.PullSpec))
+		}
+		// Allow config provided CLI image
+		if !isCliImageSet {
+			cliImage, err := getCLIArtifactsImage(soMetadata.Requirements.OcpVersion.Min)
+			if err != nil {
+				return fmt.Errorf("failed to get cli artifacts image for OCP %s: %w", soMetadata.Requirements.OcpVersion.Min, err)
+			}
+			buildArgs = append(buildArgs, fmt.Sprintf("CLI_ARTIFACTS=%s", cliImage))
 		}
 
 		prefetchDeps, err := getPrefetchDeps(r, branch)
