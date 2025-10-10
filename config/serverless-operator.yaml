@@ -7,7 +7,7 @@ config:
         - .*rosa.*
         imageOverrides:
         - name: CLI_ARTIFACTS
-          pullSpec: registry.redhat.io/openshift4/ose-cli-artifacts-rhel9:v4.15
+          pullSpec: registry.redhat.io/openshift4/ose-cli-artifacts-rhel9:v4.16
         - name: GO_BUILDER
           pullSpec: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.24
         - name: GO_RUNTIME
@@ -102,7 +102,7 @@ config:
         - .*rosa.*
         imageOverrides:
         - name: CLI_ARTIFACTS
-          pullSpec: registry.redhat.io/openshift4/ose-cli-artifacts-rhel9:v4.15
+          pullSpec: registry.redhat.io/openshift4/ose-cli-artifacts-rhel9:v4.16
         - name: GO_BUILDER
           pullSpec: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.23
         - name: GO_RUNTIME

@@ -424,7 +424,7 @@ func generateMustGatherDockerfile(params Params) error {
 	if metadata.Project.Version != "" {
 		// explicit override OCP min version due to RHEL 9 images since 1.37
 		if semver.New(metadata.Project.Version).Minor >= 37 && metadata.Requirements.OcpVersion.Min == "4.14" {
-			ocClientArtifactsImage = fmt.Sprintf(ocClientArtifactsBaseImage, "4.15")
+			ocClientArtifactsImage = fmt.Sprintf(ocClientArtifactsBaseImage, "4.16")
 		}
 	}
 	projectName := mustGatherDockerfileTemplateName
