@@ -1,0 +1,208 @@
+---
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: ReleasePlanAdmission
+metadata:
+  labels:
+    release.appstudio.openshift.io/auto-release: "true"
+    pp.engineering.redhat.com/business-unit: hybrid-platforms
+  name: serverless-operator-138-1380-prod
+  namespace: rhtap-releng-tenant
+spec:
+  applications: [serverless-operator-138]
+  origin: ocp-serverless-tenant
+  policy: registry-ocp-serverless-prod
+  data:
+    releaseNotes:
+      product_id: [579]
+      product_name: "OpenShift Serverless"
+      product_version: "1.38.0"
+      references:
+        - "https://docs.redhat.com/documentation/red_hat_openshift_serverless/"
+      type: "RHEA"
+      solution: |
+        The Red Hat OpenShift Serverless Operator provides a collection of APIs that
+        enables containers, microservices and functions to run "serverless".
+        Serverless applications can scale up and down (to zero) on demand and be triggered by a
+        number of event sources. OpenShift Serverless integrates with a number of
+        platform services, such as Monitoring and it is based on the open
+        source project Knative.
+      description: "The 1.38.0 release of Red Hat OpenShift Serverless Operator."
+      topic: |
+        The 1.38.0 GA release of Red Hat OpenShift Serverless Operator.
+        For more details see [product documentation](https://docs.redhat.com/documentation/red_hat_openshift_serverless).
+      synopsis: "Red Hat OpenShift Serverless Release 1.38.0"
+    mapping:
+      components:
+        - name: serverless-openshift-kn-operator-137
+          repository: registry.redhat.io/openshift-serverless-1/serverless-openshift-kn-rhel9-operator
+          pushSourceContainer: true
+        - name: serverless-kn-operator-137
+          repository: registry.redhat.io/openshift-serverless-1/serverless-kn-operator-rhel9
+          pushSourceContainer: true
+        - name: serverless-ingress-137
+          repository: registry.redhat.io/openshift-serverless-1/serverless-ingress-rhel9
+          pushSourceContainer: true
+        - name: kn-serving-queue-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-serving-queue-rhel9
+          pushSourceContainer: true
+        - name: kn-serving-activator-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-serving-activator-rhel9
+          pushSourceContainer: true
+        - name: kn-serving-autoscaler-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-serving-autoscaler-rhel9
+          pushSourceContainer: true
+        - name: kn-serving-autoscaler-hpa-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-serving-autoscaler-hpa-rhel9
+          pushSourceContainer: true
+        - name: kn-serving-controller-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-serving-controller-rhel9
+          pushSourceContainer: true
+        - name: kn-serving-webhook-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-serving-webhook-rhel9
+          pushSourceContainer: true
+        - name: kn-serving-storage-version-migration-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-serving-storage-version-migration-rhel9
+          pushSourceContainer: true
+        - name: net-kourier-kourier-117
+          repository: registry.redhat.io/openshift-serverless-1/net-kourier-kourier-rhel9
+          pushSourceContainer: true
+        - name: net-istio-controller-117
+          repository: registry.redhat.io/openshift-serverless-1/net-istio-controller-rhel9
+          pushSourceContainer: true
+        - name: net-istio-webhook-117
+          repository: registry.redhat.io/openshift-serverless-1/net-istio-webhook-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-controller-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-controller-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-istio-controller-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-istio-controller-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-webhook-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-webhook-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-migrate-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-migrate-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-mtchannel-broker-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-mtchannel-broker-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-filter-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-filter-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-ingress-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-ingress-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-channel-controller-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-channel-controller-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-channel-dispatcher-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-channel-dispatcher-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-mtping-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-mtping-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-jobsink-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-jobsink-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-apiserver-receive-adapter-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-apiserver-receive-adapter-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-integrations-transform-jsonata-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-integrations-transform-jsonata-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-integrations-timer-source-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-integrations-timer-source-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-integrations-aws-s3-source-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-integrations-aws-s3-source-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-integrations-aws-sqs-source-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-integrations-aws-sqs-source-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-integrations-aws-ddb-streams-source-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-integrations-aws-ddb-streams-source-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-integrations-log-sink-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-integrations-log-sink-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-integrations-aws-s3-sink-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-integrations-aws-s3-sink-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-integrations-aws-sqs-sink-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-integrations-aws-sqs-sink-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-integrations-aws-sns-sink-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-eventing-integrations-aws-sns-sink-rhel9
+          pushSourceContainer: true
+        - name: kn-backstage-plugins-eventmesh-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-backstage-plugins-eventmesh-rhel9
+          pushSourceContainer: true
+        - name: kn-plugin-event-sender-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-plugin-event-sender-rhel9
+          pushSourceContainer: true
+        - name: kn-client-kn-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-client-kn-rhel9
+          pushSourceContainer: true
+        - name: kn-plugin-func-func-util-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-plugin-func-func-util-rhel9
+          pushSourceContainer: true
+        - name: kn-ekb-receiver-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-ekb-receiver-rhel9
+          pushSourceContainer: true
+        - name: kn-ekb-dispatcher-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-ekb-dispatcher-rhel9
+          pushSourceContainer: true
+        - name: kn-ekb-kafka-controller-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-ekb-kafka-controller-rhel9
+          pushSourceContainer: true
+        - name: kn-ekb-webhook-kafka-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-ekb-webhook-kafka-rhel9
+          pushSourceContainer: true
+        - name: kn-ekb-post-install-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-ekb-post-install-rhel9
+          pushSourceContainer: true
+        - name: serverless-must-gather-137
+          repository: registry.redhat.io/openshift-serverless-1/serverless-must-gather-rhel9
+          pushSourceContainer: true
+        - name: kn-client-cli-artifacts-117
+          repository: registry.redhat.io/openshift-serverless-1/kn-client-cli-artifacts-rhel9
+          pushSourceContainer: true
+        - name: serverless-bundle-138
+          repository: registry.redhat.io/openshift-serverless-1/serverless-operator-bundle
+          pushSourceContainer: true
+      defaults:
+        tags:
+          - "{{ git_sha }}"
+          - "{{ git_short_sha }}"
+          - "1.38.0"
+          - "1.38.0-{{ timestamp }}"
+    pyxis:
+      secret: pyxis-prod-secret
+      server: production
+      # This causes the release pipeline to not upload layer size information
+      # to pyxis which will save on runtime at the cost of data completeness in
+      # pyxis. The side-effects are:
+      # * If you are a base image, like ubi9, then partners cannot certify that they build on top of you.
+      # * Size information is not displayed in the catalog. This is very low business impact.
+      skipLayers: true
+    sign:
+      configMapName: hacbs-signing-pipeline-config-redhatrelease2
+      cosignSecretName: konflux-cosign-signing-production
+    atlas:
+      server: production
+    intention: production
+  pipeline:
+    pipelineRef:
+      resolver: git
+      params:
+        - name: url
+          value: "https://github.com/konflux-ci/release-service-catalog.git"
+        - name: revision
+          value: production
+        - name: pathInRepo
+          value: "pipelines/managed/rh-advisories/rh-advisories.yaml"
+    serviceAccountName: release-registry-prod
+    timeouts:
+      pipeline: "10h0m0s"
+      tasks: "10h0m0s"
