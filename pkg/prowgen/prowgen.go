@@ -427,7 +427,8 @@ func AlwaysRunInjector() JobConfigInjector {
 						} else {
 							// default to always_run = false for image jobs
 							// use hack from https://redhat-internal.slack.com/archives/CBN38N3MW/p1753111329185729?thread_ts=1752996614.456229&cid=CBN38N3MW to make always_run=false
-							jobConfig.PresubmitsStatic[k][i].RunIfChanged = "^non-existing$"
+							// FIXME: hack is not working anymore
+							// jobConfig.PresubmitsStatic[k][i].RunIfChanged = "^non-existing$"
 							jobConfig.PresubmitsStatic[k][i].SkipIfOnlyChanged = ""
 						}
 					}
