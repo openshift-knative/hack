@@ -418,20 +418,20 @@ func AlwaysRunInjector() JobConfigInjector {
 						}
 					}
 
-					if strings.HasSuffix(jobConfig.PresubmitsStatic[k][i].Name, "-images") {
-						if !onDemandForOpenShift && strings.HasSuffix(jobConfig.PresubmitsStatic[k][i].Name, ocpVersion+"-images") {
-							// Image jobs which should "always" run, still use the SkipIfOnlyChanged field, but with a valid value
-							// to run only on meaningfully changes
-							jobConfig.PresubmitsStatic[k][i].RunIfChanged = ""
-							jobConfig.PresubmitsStatic[k][i].SkipIfOnlyChanged = prowSkipIfOnlyChangedFiles
-						} else {
-							// default to always_run = false for image jobs
-							// use hack from https://redhat-internal.slack.com/archives/CBN38N3MW/p1753111329185729?thread_ts=1752996614.456229&cid=CBN38N3MW to make always_run=false
-							// FIXME: hack is not working anymore
-							// jobConfig.PresubmitsStatic[k][i].RunIfChanged = "^non-existing$"
-							jobConfig.PresubmitsStatic[k][i].SkipIfOnlyChanged = ""
-						}
-					}
+					// if strings.HasSuffix(jobConfig.PresubmitsStatic[k][i].Name, "-images") {
+					// 	if !onDemandForOpenShift && strings.HasSuffix(jobConfig.PresubmitsStatic[k][i].Name, ocpVersion+"-images") {
+					// 		// Image jobs which should "always" run, still use the SkipIfOnlyChanged field, but with a valid value
+					// 		// to run only on meaningfully changes
+					// 		jobConfig.PresubmitsStatic[k][i].RunIfChanged = ""
+					// 		jobConfig.PresubmitsStatic[k][i].SkipIfOnlyChanged = prowSkipIfOnlyChangedFiles
+					// 	} else {
+					// 		// default to always_run = false for image jobs
+					// 		// use hack from https://redhat-internal.slack.com/archives/CBN38N3MW/p1753111329185729?thread_ts=1752996614.456229&cid=CBN38N3MW to make always_run=false
+					// 		// FIXME: hack is not working anymore
+					// 		// jobConfig.PresubmitsStatic[k][i].RunIfChanged = "^non-existing$"
+					// 		jobConfig.PresubmitsStatic[k][i].SkipIfOnlyChanged = ""
+					// 	}
+					// }
 
 					for _, t := range tests {
 						name := ToName(*r, &t)
