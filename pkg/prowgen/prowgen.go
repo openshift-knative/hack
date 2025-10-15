@@ -438,8 +438,8 @@ func AlwaysRunInjector() JobConfigInjector {
 						if (t.OnDemand || t.RunIfChanged != "" || onDemandForOpenShift) && strings.Contains(jobConfig.PresubmitsStatic[k][i].Name, name) {
 							// On demand jobs don't run even when specific dir changes.
 							// use hack from https://redhat-internal.slack.com/archives/CBN38N3MW/p1753111329185729?thread_ts=1752996614.456229&cid=CBN38N3MW to make always_run=false
-							jobConfig.PresubmitsStatic[k][i].RunIfChanged = "^non-existing$"
-							jobConfig.PresubmitsStatic[k][i].SkipIfOnlyChanged = ""
+							//jobConfig.PresubmitsStatic[k][i].RunIfChanged = "^non-existing$"
+							//jobConfig.PresubmitsStatic[k][i].SkipIfOnlyChanged = ""
 						}
 					}
 				}
