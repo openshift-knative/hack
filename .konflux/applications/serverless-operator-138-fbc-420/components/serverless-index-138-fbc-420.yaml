@@ -4,14 +4,14 @@ metadata:
   annotations:
     build.appstudio.openshift.io/pipeline: '{"name":"docker-build","bundle":"latest"}'
     build.appstudio.openshift.io/request: configure-pac-no-mr
-  name: serverless-index-137-fbc-414
+  name: serverless-index-138-fbc-420
 spec:
-  componentName: serverless-index-137-fbc-414
-  application: serverless-operator-137-fbc-414
+  componentName: serverless-index-138-fbc-420
+  application: serverless-operator-138-fbc-420
    
   source:
     git:
       url: https://github.com/openshift-knative/serverless-operator.git
-      context: ./olm-catalog/serverless-operator-index/v4.14
+      context: ./olm-catalog/serverless-operator-index/v4.20
       dockerfileUrl: Dockerfile
-      revision: release-1.37
+      revision: main

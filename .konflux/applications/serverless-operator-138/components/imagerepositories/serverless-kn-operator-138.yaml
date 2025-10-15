@@ -1,0 +1,13 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: ImageRepository
+metadata:
+  annotations:
+    image-controller.appstudio.redhat.com/update-component-image: "true"
+  labels:
+    appstudio.redhat.com/application: serverless-operator-138
+    appstudio.redhat.com/component: serverless-kn-operator-138
+  name: serverless-kn-operator-138
+spec:
+  image:
+    name: serverless-operator-138/serverless-kn-operator
+    visibility: public
