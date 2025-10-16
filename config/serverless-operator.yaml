@@ -125,7 +125,8 @@ config:
       - onDemand: true
         skipCron: true
         version: "4.14"
-      promotion: {}
+      promotion:
+        template: release-1.37.0
     release-1.38:
       konflux:
         enabled: true
