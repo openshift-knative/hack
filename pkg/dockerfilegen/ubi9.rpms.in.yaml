@@ -8,6 +8,7 @@ packages:
   - socat
   - tar
   - rsync
+  - zip
 
 reinstallPackages:
   - tzdata
