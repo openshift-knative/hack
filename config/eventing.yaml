@@ -11,15 +11,6 @@ config:
       - onDemand: true
         version: "4.14"
       promotion: {}
-    release-v1.15:
-      konflux:
-        enabled: true
-      openShiftVersions:
-      - useClusterPool: true
-        version: "4.19"
-      - onDemand: true
-        version: "4.13"
-      promotion: {}
     release-v1.16:
       konflux:
         enabled: true
