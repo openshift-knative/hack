@@ -291,7 +291,7 @@ func writeDependabotConfig(ctx context.Context, dependabotConfig *dependabotgen.
 		}
 
 		pushBranch := fmt.Sprintf("%s%s", dependabotgen.SyncBranchPrefix, dependabotgen.DefaultTargetBranch)
-		commitMsg := fmt.Sprintf("Update dependabot configurations")
+		commitMsg := fmt.Sprintf("[%s] Update dependabot configurations", dependabotgen.DefaultTargetBranch)
 
 		if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
 			return err
