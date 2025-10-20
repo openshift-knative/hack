@@ -1,48 +1,50 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Serverless Build Status</title>
-    <style>
-        #build-status-table {
-            background-color: #e0e0e0;
-            width: 100%;
-        }
-        #build-status-table tr:nth-child(even) {
-            background-color: #c0c0c0;
-        }
-    </style>
-    <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.dataTables.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Serverless Build Status</title>
+<style>
+    body { font-family: "Segoe UI", Roboto, sans-serif; background-color: #f9fafb; margin: 20px; }
+    #build-status-table { width: 100%; border-collapse: collapse; }
+    #build-status-table th, #build-status-table td { padding: 6px; text-align: left; }
+    #build-status-table thead { position: sticky; top: 0; background: #f1f1f1; z-index: 2; }
+    .success-row { background-color: #cbe5d1 !important; }
+    .failure-row { background-color: #e3babe !important; }
+    .rebuild-needed { background-color: #fff3cd !important; }
+    button { cursor: pointer; background: #4596ed; border: none; color: white; border-radius: 10px; padding: 10px 15px; font-size: 14px; margin-right: 15px; transition: 0.2s; min-width: 100px; }
+    button:hover { background: #046cda; background: #0056b3; }
+    #controls { margin-bottom: 15px; }
+    input[type="password"], input[type="text"] { padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
+</style>
+<link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.dataTables.css" />
 </head>
 <body>
 <div>
     <h1>Release Build Status</h1>
-    <table>
-        <tr>
-            <td>
-                <label for="pat">Personal Access token</label>
-            </td>
-            <td>
-                <input type="password" name="pat" id="pat"/>
-                (create a fine-grained token without permissions for public repositories <a
-                    href="https://github.com/settings/tokens" target="_blank">here</a>)
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <label for="branches">Branches</label>
-            </td>
-            <td>
-                <input type="text" name="branches" id="branches"/>
-                (Comma separated list of branches to filter on, all by default, for example <code>release-1.35,release-v1.15</code>)
-            </td>
-        </tr>
-    </table>
-    <br/>
-    <button type="button" id="trigger">Run</button>
+    <div id="controls">
+        <table>
+            <tr>
+                <td><label for="pat">Personal Access Token</label></td>
+                <td>
+                    <input type="password" id="pat"/>
+                    (Create a fine-grained token without permissions for public repos
+                    <a href="https://github.com/settings/tokens" target="_blank">here</a>)
+                </td>
+            </tr>
+            <tr>
+                <td><label for="branches">Branches</label></td>
+                <td>
+                    <input type="text" id="branches" placeholder="release-1.37, release-v1.17"/>
+                    (Comma separated list e.g. <code>release-1.37,release-v1.17</code>)
+                </td>
+            </tr>
+        </table>
+        <br/>
+        <button id="trigger">Run</button>
+        <button id="rebuild-all">🔁 Rebuild All (Needed)</button>
+    </div>
+
     <table id="build-status-table">
         <thead>
         <tr>
@@ -51,156 +53,176 @@
             <th>Run Name</th>
             <th>Status</th>
             <th>Started</th>
-            <th>Trigger retest</th>
+            <th>Trigger Retest</th>
             <th>Run</th>
             <th>Latest Commit</th>
             <th>Last Success Commit</th>
+            <th>Rebuild Needed</th>
         </tr>
         </thead>
     </table>
 </div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"
-        integrity="sha512-CSBhVREyzHAjAFfBlIBakjoRUKp5h7VSweP0InR/pAJyptH7peuhCsqAI/snV+TwZmXZqoUklpXp6R6wMnYf5Q=="
-        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js" crossorigin="anonymous"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="https://cdn.datatables.net/2.1.8/js/dataTables.js"></script>
+
 <script>
-    const baseConfigURL = 'https://raw.githubusercontent.com/openshift-knative/hack/refs/heads/main/config';
-    document.getElementById('trigger').addEventListener('click', async e => {
-        const urlParams = new URLSearchParams(window.location.search);
-        let branches = urlParams.get('branches');
-        if (document.getElementById('branches').value.trim() !== '') {
-            branches = document.getElementById('branches').value;
-        } else if (branches != null) {
-            document.getElementById('branches').value = branches;
-        }
+const baseConfigURL = 'https://raw.githubusercontent.com/openshift-knative/hack/refs/heads/main/config';
 
-        if (branches) {
-            branches = branches.split(',').map(b => b.trim());
-        }
+document.getElementById('trigger').addEventListener('click', loadBuildData);
+document.getElementById('rebuild-all').addEventListener('click', rebuildAll);
 
-        const yamls = [
-            `${baseConfigURL}/serverless-operator.yaml`,
-            `${baseConfigURL}/serving.yaml`,
-            `${baseConfigURL}/eventing.yaml`,
-            `${baseConfigURL}/eventing-kafka-broker.yaml`,
-            `${baseConfigURL}/eventing-istio.yaml`,
-            `${baseConfigURL}/eventing-integrations.yaml`,
-            `${baseConfigURL}/client.yaml`,
-            `${baseConfigURL}/kn-plugin-event.yaml`,
-            `${baseConfigURL}/kn-plugin-func.yaml`,
-            `${baseConfigURL}/serving-net-istio.yaml`,
-            `${baseConfigURL}/serving-net-kourier.yaml`,
-            `${baseConfigURL}/backstage-plugins.yaml`,
-        ];
+async function loadBuildData() {
+    const urlParams = new URLSearchParams(window.location.search);
+    let branches = urlParams.get('branches');
+    if (document.getElementById('branches').value.trim() !== '') branches = document.getElementById('branches').value;
+    else if (branches != null) document.getElementById('branches').value = branches;
+    if (branches) branches = branches.split(',').map(b => b.trim());
 
-        const allConfigs = await Promise.all(
-            yamls.flatMap(async (u) => {
-                const yamlResp = await fetch(u + `?_=${Date.now()}`);
-                const b = await yamlResp.text();
-                const doc = jsyaml.load(b);
+    const yamls = [
+        `${baseConfigURL}/serverless-operator.yaml`,
+        `${baseConfigURL}/serving.yaml`,
+        `${baseConfigURL}/eventing.yaml`,
+        `${baseConfigURL}/eventing-kafka-broker.yaml`,
+        `${baseConfigURL}/eventing-istio.yaml`,
+        `${baseConfigURL}/eventing-integrations.yaml`,
+        `${baseConfigURL}/client.yaml`,
+        `${baseConfigURL}/kn-plugin-event.yaml`,
+        `${baseConfigURL}/kn-plugin-func.yaml`,
+        `${baseConfigURL}/serving-net-istio.yaml`,
+        `${baseConfigURL}/serving-net-kourier.yaml`,
+        `${baseConfigURL}/backstage-plugins.yaml`,
+    ];
 
-                return doc.repositories.flatMap(r => {
-                    return Object.keys(doc.config.branches)
-                        .filter(b => {
-                            if (branches) return branches.includes(b);
-                            return b !== "release-next";
-                        })
-                        .map(async (b) => {
-                            const headers = document.getElementById("pat").value.trim() ? {
-                                "Authorization": `Bearer ${document.getElementById("pat").value}`
-                            } : {};
+    const allConfigs = await Promise.all(
+        yamls.flatMap(async (u) => {
+            const yamlResp = await fetch(u + `?_=${Date.now()}`);
+            const text = await yamlResp.text();
+            const doc = jsyaml.load(text);
+            return doc.repositories.flatMap(r => {
+                return Object.keys(doc.config.branches)
+                    .filter(b => branches ? branches.includes(b) : b !== "release-next")
+                    .map(async (b) => {
+                        const headers = document.getElementById("pat").value.trim()
+                            ? { "Authorization": `Bearer ${document.getElementById("pat").value}` }
+                            : {};
+                        const res = await fetch(
+                            `https://api.github.com/repos/${r.org}/${r.repo}/commits/${b}/check-runs?per_page=100&_=${Date.now()}`,
+                            { headers }
+                        );
+                        const json = await res.json();
+                        const latestCommit = json.check_runs?.[0]?.head_sha?.slice(0, 7) || '';
+                        const lastSuccess = json.check_runs?.find(c => c.conclusion === 'success')?.head_sha?.slice(0, 7) || '';
+                        return { branch: b, org: r.org, repo: r.repo, runs: json, latestCommit, lastSuccessCommit: lastSuccess };
+                    });
+            });
+        })
+    );
 
-                            const res = await fetch(`https://api.github.com/repos/${r.org}/${r.repo}/commits/${b}/check-runs?per_page=100&_=${Date.now()}`, {
-                                headers
-                            });
-                            const json = await res.json();
+    const flatConfigs = (await Promise.all(allConfigs.flat())).flat();
 
-                            const latestCommit = json.check_runs?.[0]?.head_sha?.slice(0, 7) || '';
-                            const lastSuccess = json.check_runs?.find(c => c.conclusion === 'success')?.head_sha?.slice(0, 7) || '';
+    const tableData = flatConfigs.flatMap(item => {
+        return item.runs.check_runs
+            .filter(run => run.name.includes('Konflux'))
+            .map(run => {
+                const separator = run.name.indexOf('/');
+                let testName = separator >= 0 ? run.name.slice(separator + 1).trim() : run.name;
+                const rebuildNeeded = !item.lastSuccessCommit || !item.lastSuccessCommit.includes(item.latestCommit);
 
-                            return {
-                                branch: b,
-                                org: r.org,
-                                repo: r.repo,
-                                runs: json,
-                                latestCommit,
-                                lastSuccessCommit: lastSuccess
-                            };
-                        });
-                });
-            })
-        );
-
-        const flatConfigs = (await Promise.all(allConfigs.flat())).flat();
-
-        const tableData = flatConfigs.flatMap(item => {
-            return item.runs.check_runs
-                .filter(run => run.name.includes('Konflux'))
-                .map(run => {
-                    const separator = run.name.indexOf('/');
-                    let testName = run.name;
-                    if (separator >= 0 && separator < run.name.length - 1) {
-                        testName = run.name.slice(separator + 1).trim();
-                    }
-
-                    return [
-                        item.branch,
-                        item.repo,
-                        run.name,
-                        run.output?.title || run.conclusion,
-                        new Date(run.started_at).toLocaleString(),
-                        `<button onClick="retriggerTest('${item.org}', '${item.repo}', '${item.branch}', '${run.head_sha}', '${testName}')">retest</button>`,
-                        `<a href="${run.html_url}" target="_blank">link</a>`,
-                        item.latestCommit,
-                        item.lastSuccessCommit
-                    ];
-                });
-        });
-
-        new DataTable('#build-status-table', {
-            destroy: true,
-            paging: false,
-            data: tableData,
-            columns: [
-                { title: "Branch" },
-                { title: "Repository" },
-                { title: "Run Name" },
-                { title: "Status" },
-                { title: "Started" },
-                { title: "Trigger retest" },
-                { title: "Run" },
-                { title: "Latest Commit" },
-                { title: "Last Success Commit" }
-            ],
-            search: { search: '!-ec !-test-' }
-        });
+                return {
+                    branch: item.branch,
+                    repo: item.repo,
+                    name: run.name,
+                    status: run.output?.title || run.conclusion,
+                    started: new Date(run.started_at).toLocaleString(),
+                    org: item.org,
+                    commitSha: run.head_sha,
+                    testName,
+                    runUrl: run.html_url,
+                    latest: item.latestCommit,
+                    success: item.lastSuccessCommit,
+                    rebuildNeeded
+                };
+            });
     });
 
-    async function retriggerTest(org, repo, branch, commitSha, testName) {
-        const url = `https://api.github.com/repos/${org}/${repo}/commits/${commitSha}/comments`;
-        const token = document.getElementById("pat").value.trim();
-        if (!token) { alert("Token required to retigger a run"); return; }
+    new DataTable('#build-status-table', {
+        destroy: true,
+        paging: false,
+        data: tableData.map(item => [
+            item.branch,
+            item.repo,
+            item.name,
+            item.status,
+            item.started,
+            `<button onClick="retriggerTest('${item.org}', '${item.repo}', '${item.branch}', '${item.commitSha}', '${item.testName}')">retest</button>`,
+            `<a href="${item.runUrl}" target="_blank">link</a>`,
+            item.latest,
+            item.success,
+            `<span title="Latest commit ${item.latest} not present in last success commit">${item.rebuildNeeded ? "⚠️ Yes" : "🟢 No"}</span>`
+        ]),
+        createdRow: function(row, data) {
+            const status = data[3]?.toLowerCase() || '';
+            if (status.includes('success')) $(row).addClass('success-row');
+            else if (status.includes('failure')) $(row).addClass('failure-row');
 
-        const comment = `/retest ${testName} branch:${branch}`;
-        try {
-            const response = await fetch(url, {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ body: comment })
-            });
-            if (response.ok) alert("Run retriggered!");
-            else {
-                const text = await response.text();
-                alert(`Failed to retrigger: ${text}`);
-            }
-        } catch (err) {
-            console.error("Failed to retrigger:", err);
-            alert(`Failed to retrigger: ${err}`);
-        }
+            if (data[9].includes("⚠️")) $(row).removeClass('success-row failure-row').addClass('rebuild-needed');
+        },
+        columns: [
+            { title: "Branch" },
+            { title: "Repository" },
+            { title: "Run Name" },
+            { title: "Status" },
+            { title: "Started" },
+            { title: "Trigger Retest" },
+            { title: "Run" },
+            { title: "Latest Commit" },
+            { title: "Last Success Commit" },
+            { title: "Rebuild Needed" }
+        ],
+        search: { search: '!-ec !-test-' }
+    });
+}
+
+// retriggerTest with silent option
+async function retriggerTest(org, repo, branch, commitSha, testName, silent=false) {
+    const url = `https://api.github.com/repos/${org}/${repo}/commits/${commitSha}/comments`;
+    const token = document.getElementById("pat").value.trim();
+    if (!token) return silent ? console.warn("Token required") : alert("Token required");
+
+    const comment = `/retest ${testName} branch:${branch}`;
+    const response = await fetch(url, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ body: comment })
+    });
+
+    if (!silent) alert(response.ok ? "Run retriggered!" : `Failed: ${await response.text()}`);
+}
+
+// Fixed rebuildAll
+function rebuildAll() {
+    const rows = document.querySelectorAll("#build-status-table tr.rebuild-needed");
+    if (rows.length === 0) {
+        alert("✅ All builds are up-to-date!");
+        return;
     }
+
+    if (!confirm(`Trigger rebuild for ${rows.length} flagged runs?`)) return;
+
+    // Trigger all rebuilds silently
+    rows.forEach(row => {
+        const buttons = row.querySelectorAll("button");
+        if (buttons.length > 0) {
+            const onClickAttr = buttons[0].getAttribute('onClick');
+            // Evaluate JS with silent=true
+            eval(onClickAttr.replace(')', ', true)'));
+        }
+    });
+
+    alert(`✅ ${rows.length} rebuild(s) triggered!`);
+}
 </script>
+</body>
 </html>
