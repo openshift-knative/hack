@@ -53,32 +53,33 @@
             <th>Started</th>
             <th>Trigger retest</th>
             <th>Run</th>
+            <th>Latest Commit</th>
+            <th>Last Success Commit</th>
         </tr>
         </thead>
     </table>
 </div>
-</body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"
         integrity="sha512-CSBhVREyzHAjAFfBlIBakjoRUKp5h7VSweP0InR/pAJyptH7peuhCsqAI/snV+TwZmXZqoUklpXp6R6wMnYf5Q=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="https://cdn.datatables.net/2.1.8/js/dataTables.js"></script>
 <script>
-    const baseConfigURL = 'https://raw.githubusercontent.com/openshift-knative/hack/refs/heads/main/config'
-    document.getElementById('trigger').addEventListener('click', e => {
+    const baseConfigURL = 'https://raw.githubusercontent.com/openshift-knative/hack/refs/heads/main/config';
+    document.getElementById('trigger').addEventListener('click', async e => {
         const urlParams = new URLSearchParams(window.location.search);
         let branches = urlParams.get('branches');
         if (document.getElementById('branches').value.trim() !== '') {
             branches = document.getElementById('branches').value;
         } else if (branches != null) {
-            document.getElementById('branches').value = branches
+            document.getElementById('branches').value = branches;
         }
 
         if (branches) {
-            branches = branches.split(',').map(b => b.trim())
+            branches = branches.split(',').map(b => b.trim());
         }
 
-        yamls = [
+        const yamls = [
             `${baseConfigURL}/serverless-operator.yaml`,
             `${baseConfigURL}/serving.yaml`,
             `${baseConfigURL}/eventing.yaml`,
@@ -91,138 +92,114 @@
             `${baseConfigURL}/serving-net-istio.yaml`,
             `${baseConfigURL}/serving-net-kourier.yaml`,
             `${baseConfigURL}/backstage-plugins.yaml`,
-        ]
+        ];
 
-        Promise.all(
-            yamls
-                .flatMap(async (u) => {
-                    const yaml = await fetch(u)
-                    const b = await yaml.text()
-                    const doc = jsyaml.load(b);
-                    return doc.repositories
-                        .flatMap(r => {
-                            return Object.keys(doc.config.branches)
-                                .filter(b => {
-                                    if (branches) {
-                                        return branches.includes(b)
-                                    }
-                                    return b !== "release-next"
-                                })
-                                .map(async (b) => {
-                                    let headers = {}
-                                    if (document.getElementById("pat").value !== '') {
-                                        headers = {
-                                            "Authorization": `Bearer ${document.getElementById("pat").value}`
-                                        }
-                                    }
-                                    const res = await fetch(`https://api.github.com/repos/${r.org}/${r.repo}/commits/${b}/check-runs?per_page=100`, {
-                                        headers: headers
-                                    })
-                                    const json = await res.json()
+        const allConfigs = await Promise.all(
+            yamls.flatMap(async (u) => {
+                const yamlResp = await fetch(u + `?_=${Date.now()}`);
+                const b = await yamlResp.text();
+                const doc = jsyaml.load(b);
 
-                                    return {
-                                        branch: b,
-                                        org: r.org,
-                                        repo: r.repo,
-                                        runs: json,
-                                    }
-                                })
+                return doc.repositories.flatMap(r => {
+                    return Object.keys(doc.config.branches)
+                        .filter(b => {
+                            if (branches) return branches.includes(b);
+                            return b !== "release-next";
                         })
-                })
-        ).then(c => {
-            c = c.flat()
-            console.log("configs:", c)
+                        .map(async (b) => {
+                            const headers = document.getElementById("pat").value.trim() ? {
+                                "Authorization": `Bearer ${document.getElementById("pat").value}`
+                            } : {};
 
-            return Promise.all(c).then(c => {
-                console.log("config: ", c)
+                            const res = await fetch(`https://api.github.com/repos/${r.org}/${r.repo}/commits/${b}/check-runs?per_page=100&_=${Date.now()}`, {
+                                headers
+                            });
+                            const json = await res.json();
 
-                const configsByBranch = c
-                    .reduce((acc, v) => {
-                        if (!acc.get(v.branch)) {
-                            acc.set(v.branch, [])
-                        }
-                        acc.get(v.branch).push(v)
-                        return acc
-                    }, new Map())
+                            const latestCommit = json.check_runs?.[0]?.head_sha?.slice(0, 7) || '';
+                            const lastSuccess = json.check_runs?.find(c => c.conclusion === 'success')?.head_sha?.slice(0, 7) || '';
 
-                console.log("configsByBranch:", configsByBranch)
-
-                return Array.from(configsByBranch).map(([branch, item]) => {
-                        return item
-                            .filter(item => item.runs.status == null)
-                            .flatMap(item => {
-                                return item.runs.check_runs
-                                    .filter(run => run.name.includes('Konflux'))
-                                    .map((run) => {
-
-                                        const separator = run.name.indexOf('/')
-                                        let testName = run.name
-                                        if (separator >= 0 && separator < run.name.length - 1) {
-                                            testName = run.name.slice(separator+1).trim()
-                                        }
-
-                                        return [
-                                            branch,
-                                            item.repo,
-                                            run.name,
-                                            run.output.title,
-                                            new Date(run.started_at).toLocaleString(),
-                                            `<button onClick="retriggerTest('${item.org}', '${item.repo}', '${item.branch}', '${run.head_sha}', '${testName}')">retest</button>`,
-                                            `<a href="${run.html_url}" target="_blank">link</a>`
-                                        ]
-                                    })
-                            })
-                        }
-                    ).flat()
+                            return {
+                                branch: b,
+                                org: r.org,
+                                repo: r.repo,
+                                runs: json,
+                                latestCommit,
+                                lastSuccessCommit: lastSuccess
+                            };
+                        });
+                });
             })
-        }).then(data => {
-            console.log("data", data)
+        );
 
-            new DataTable('#build-status-table', {
-                destroy: true,
-                paging: false,
-                data: data,
-                search: {
-                    search: '!-ec !-test-'
-                },
-            })
-        })
-    })
+        const flatConfigs = (await Promise.all(allConfigs.flat())).flat();
+
+        const tableData = flatConfigs.flatMap(item => {
+            return item.runs.check_runs
+                .filter(run => run.name.includes('Konflux'))
+                .map(run => {
+                    const separator = run.name.indexOf('/');
+                    let testName = run.name;
+                    if (separator >= 0 && separator < run.name.length - 1) {
+                        testName = run.name.slice(separator + 1).trim();
+                    }
+
+                    return [
+                        item.branch,
+                        item.repo,
+                        run.name,
+                        run.output?.title || run.conclusion,
+                        new Date(run.started_at).toLocaleString(),
+                        `<button onClick="retriggerTest('${item.org}', '${item.repo}', '${item.branch}', '${run.head_sha}', '${testName}')">retest</button>`,
+                        `<a href="${run.html_url}" target="_blank">link</a>`,
+                        item.latestCommit,
+                        item.lastSuccessCommit
+                    ];
+                });
+        });
+
+        new DataTable('#build-status-table', {
+            destroy: true,
+            paging: false,
+            data: tableData,
+            columns: [
+                { title: "Branch" },
+                { title: "Repository" },
+                { title: "Run Name" },
+                { title: "Status" },
+                { title: "Started" },
+                { title: "Trigger retest" },
+                { title: "Run" },
+                { title: "Latest Commit" },
+                { title: "Last Success Commit" }
+            ],
+            search: { search: '!-ec !-test-' }
+        });
+    });
 
     async function retriggerTest(org, repo, branch, commitSha, testName) {
         const url = `https://api.github.com/repos/${org}/${repo}/commits/${commitSha}/comments`;
+        const token = document.getElementById("pat").value.trim();
+        if (!token) { alert("Token required to retigger a run"); return; }
 
-        if (document.getElementById("pat").value.trim().length === 0) {
-            alert("Token required to retigger a run")
-            return
-        }
-
-        let headers = {
-            "Authorization": `Bearer ${document.getElementById("pat").value}`
-        }
-        const comment = `/retest ${testName} branch:${branch}`
-
+        const comment = `/retest ${testName} branch:${branch}`;
         try {
             const response = await fetch(url, {
                 method: "POST",
-                headers: headers,
-                body: JSON.stringify({
-                    body: comment
-                })
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ body: comment })
             });
-
-            if (response.ok) {
-                const responseData = await response.json();
-                console.log("Successfully retriggered:", responseData);
-                alert("Run retriggered!");
-            } else {
-                const responseText = await response.text()
-                console.error("Failed to retrigger run:", response.status, responseText);
-                alert(`Failed to retrigger run: ${responseText}`);
+            if (response.ok) alert("Run retriggered!");
+            else {
+                const text = await response.text();
+                alert(`Failed to retrigger: ${text}`);
             }
         } catch (err) {
-            console.error("Failed to retrigger run:", err);
-            alert(`Failed to retrigger run: ${err}`);
+            console.error("Failed to retrigger:", err);
+            alert(`Failed to retrigger: ${err}`);
         }
     }
 </script>
