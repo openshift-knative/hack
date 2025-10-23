@@ -1,12 +1,5 @@
 config:
   branches:
-    release-1.15:
-      konflux:
-        enabled: true
-      openShiftVersions:
-      - useClusterPool: true
-        version: "4.19"
-      promotion: {}
     release-1.16:
       konflux:
         enabled: true
