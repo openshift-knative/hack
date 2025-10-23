@@ -121,6 +121,7 @@ config:
         skipCron: true
         version: "4.20"
       - useClusterPool: true
+        skipCron: true
         version: "4.19"
       - onDemand: true
         skipCron: true
