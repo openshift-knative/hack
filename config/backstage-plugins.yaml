@@ -1,6 +1,7 @@
 config:
   branches:
     release-v1.15:
+      golangVersion: "1.24"
       konflux:
         enabled: true
       openShiftVersions:

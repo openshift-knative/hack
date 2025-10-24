@@ -17,6 +17,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/openshift-knative/hack/config"
 	"github.com/openshift-knative/hack/pkg/soversion"
 
 	"github.com/coreos/go-semver/semver"
@@ -150,12 +151,6 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 	if err != nil {
 		return err
 	}
-	goVersion := goMod.Go.Version
-
-	// The builder images are distinguished by golang major.minor, so we ignore the rest of the goVersion
-	if strings.Count(goVersion, ".") > 1 {
-		goVersion = strings.Join(strings.Split(goVersion, ".")[0:2], ".")
-	}
 
 	metadata, err := project.ReadMetadataFile(params.ProjectFilePath)
 	if err != nil {
@@ -165,6 +160,11 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 		}
 		log.Println("File not found:", params.ProjectFilePath, "(Using defaults)")
 		metadata = project.DefaultMetadata()
+	}
+
+	var goVersion string
+	if goVersion, err = resolveGolangVersion(params, goMod, metadata); err != nil {
+		return err
 	}
 
 	rhelVersion := RHEL9
@@ -398,6 +398,35 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 	}
 	log.Println("Images mapping file written:", immapPath)
 	return nil
+}
+
+func resolveGolangVersion(params Params, goMod *modfile.File, metadata *project.Metadata) (string, error) {
+	goVersion := goMod.Go.Version
+
+	// The builder images are distinguished by golang major.minor, so we ignore the rest of the goVersion
+	if strings.Count(goVersion, ".") > 1 {
+		goVersion = strings.Join(strings.Split(goVersion, ".")[0:2], ".")
+	}
+
+	log.Println("Golang version (from go.mod): ", goVersion)
+
+	cfgYaml, err := config.Configs.ReadFile(fmt.Sprint(params.GetRepoName(goMod), ".yaml"))
+	if err != nil {
+		return "", err
+	}
+	prowcfg, perr := prowgen.UnmarshalConfig(cfgYaml)
+	if perr != nil {
+		return "", perr
+	}
+
+	release := metadata.Project.Tag
+	branch := prowcfg.Config.Branches[release]
+	if branch.GolangVersion != "" {
+		goVersion = branch.GolangVersion
+		log.Println("Golang version (overridden for ", release, "): ", goVersion)
+	}
+
+	return goVersion, nil
 }
 
 func hasVendorFolder(dir string) (bool, error) {
