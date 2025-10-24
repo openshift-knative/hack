@@ -408,7 +408,7 @@ func resolveGolangVersion(params Params, goMod *modfile.File, metadata *project.
 		goVersion = strings.Join(strings.Split(goVersion, ".")[0:2], ".")
 	}
 
-	log.Println("Golang version (from go.mod): ", goVersion)
+	log.Println("Golang version (from go.mod):", goVersion)
 
 	cfgYaml, err := config.Configs.ReadFile(fmt.Sprint(params.GetRepoName(goMod), ".yaml"))
 	if err != nil {
@@ -420,10 +420,11 @@ func resolveGolangVersion(params Params, goMod *modfile.File, metadata *project.
 	}
 
 	release := metadata.Project.Tag
+	release = strings.Replace(release, "knative-", "release-", 1)
 	branch := prowcfg.Config.Branches[release]
 	if branch.GolangVersion != "" {
 		goVersion = branch.GolangVersion
-		log.Println("Golang version (overridden for ", release, "): ", goVersion)
+		log.Println("Golang version (overridden for", release, "):", goVersion)
 	}
 
 	return goVersion, nil
