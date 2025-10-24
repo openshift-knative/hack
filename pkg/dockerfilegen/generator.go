@@ -410,9 +410,11 @@ func resolveGolangVersion(params Params, goMod *modfile.File, metadata *project.
 
 	log.Println("Golang version (from go.mod):", goVersion)
 
-	cfgYaml, err := config.Configs.ReadFile(fmt.Sprint(params.GetRepoName(goMod), ".yaml"))
+	reponame := params.GetRepoName(goMod)
+	cfgYaml, err := config.Configs.ReadFile(fmt.Sprint(reponame, ".yaml"))
 	if err != nil {
-		return "", err
+		log.Println("Can't find config file:", err)
+		return goVersion, nil
 	}
 	prowcfg, perr := prowgen.UnmarshalConfig(cfgYaml)
 	if perr != nil {
