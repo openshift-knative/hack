@@ -35,7 +35,7 @@ LABEL \
       io.k8s.description="Red Hat OpenShift Serverless Knative Discover" \
       io.openshift.tags="discover" \
       vendor="Red Hat, Inc." \
-      release=main \
+      release=$VERSION \
       cpe="cpe:/a:redhat:openshift_serverless:1.37::el9"
 
 ENTRYPOINT ["/usr/bin/discover"]
