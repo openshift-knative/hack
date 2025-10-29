@@ -727,7 +727,7 @@ func adjustComponentName(projectDashcase, componentDashcase, rhelVersion string)
 	case "client-cli-artifacts", "client-kn", "eventing-istio-controller", "eventing-apiserver-receive-adapter", "eventing-in-memory-channel-controller", "eventing-controller", "eventing-jobsink", "eventing-migrate", "eventing-mtchannel-broker", "eventing-mtping", "eventing-webhook",
 		"eventing-integrations-aws-sns-sink", "eventing-integrations-aws-sqs-sink", "eventing-integrations-aws-sqs-source", "eventing-integrations-log-sink", "eventing-integrations-timer-source", "eventing-integrations-transform-jsonata", "eventing-integrations-aws-ddb-streams-source",
 		"backstage-plugins-eventmesh", "serving-activator", "serving-autoscaler-hpa", "serving-autoscaler", "serving-controller", "serving-queue", "serving-webhook":
-		combinedName = fmt.Sprintf("kn-%s-%s", combinedName, rhelVersion)
+		combinedName = fmt.Sprintf("kn-%s", combinedName)
 	case "kn-plugin-event-kn-event-sender":
 		combinedName = "kn-plugin-event-sender"
 	case "eventing-in-memory-channel-dispatcher":
