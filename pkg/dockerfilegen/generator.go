@@ -277,6 +277,13 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 			projectWithSep = capitalize(projectName) + " "
 			projectDashCaseWithSep = projectName + "-"
 		}
+		// Compute base values
+		componentDashcase := dashcase(p)
+		projectDashcase := projectDashCaseWithSep
+
+		// Apply overrides
+		labelName := adjustComponentName(projectDashcase, componentDashcase, strings.ReplaceAll(rhelVersion, "-", ""))
+
 		elVersion := "el" + strings.TrimPrefix(rhelVersion, "rhel-")
 		d := map[string]interface{}{
 			"main":                    p,
@@ -292,6 +299,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 			"rhelVersion":             strings.ReplaceAll(rhelVersion, "-", ""),
 			"short_version":           soVersion,
 			"shortRhelVersion":        elVersion,
+			"name":                    labelName,
 		}
 
 		var dockerfileTemplate embed.FS
@@ -448,7 +456,12 @@ func generateMustGatherDockerfile(params Params) error {
 		soVersion = fmt.Sprintf("%v.%v", semVer.Major, semVer.Minor)
 	}
 	elVersion := "el" + strings.TrimPrefix(rhelVersion, "rhel-")
+	// Compute base values
+	componentDashcase := ""
+	projectDashcase := projectDashCaseWithSep
 
+	// Apply overrides
+	labelName := adjustComponentName(projectDashcase, componentDashcase, strings.ReplaceAll(rhelVersion, "-", ""))
 	d := map[string]interface{}{
 		"main":             projectName,
 		"oc_cli_artifacts": ocClientArtifactsImage,
@@ -459,6 +472,7 @@ func generateMustGatherDockerfile(params Params) error {
 		"rhelVersion":      strings.ReplaceAll(rhelVersion, "-", ""),
 		"short_version":    soVersion,
 		"shortRhelVersion": elVersion,
+		"name":             labelName,
 	}
 	// Pick proper template FS file and RPM lock file
 	templateFile := "dockerfile-templates/rhel-9/*.tmpl" // RHEL9 default
@@ -694,4 +708,41 @@ func builderImageForGoVersion(goVersion, rhelVersion string) string {
 	default:
 		return fmt.Sprintf(builderImageFmt, rhelVersion, goVersion, "4.20")
 	}
+}
+
+// adjustComponentName applies manual overrides for certain components.
+// It returns corrected project_dashcase and component_dashcase values.
+func adjustComponentName(projectDashcase, componentDashcase, rhelVersion string) string {
+	combinedName := projectDashcase + componentDashcase
+	switch combinedName {
+	case "ingress":
+		combinedName = "serverless-ingress"
+	case "knative-operator":
+		combinedName = "serverless-kn-operator"
+	case "svls-must-gather":
+		combinedName = "serverless-must-gather"
+	case "openshift-knative-operator":
+		return "serverless-openshift-kn-" + rhelVersion + "-operator"
+	//this case if for image name only need `kn-*` prefix
+	case "client-cli-artifacts", "client-kn", "eventing-istio-controller", "eventing-apiserver-receive-adapter", "eventing-in-memory-channel-controller", "eventing-controller", "eventing-jobsink", "eventing-migrate", "eventing-mtchannel-broker", "eventing-mtping", "eventing-webhook",
+		"eventing-integrations-aws-sns-sink", "eventing-integrations-aws-sqs-sink", "eventing-integrations-aws-sqs-source", "eventing-integrations-log-sink", "eventing-integrations-timer-source", "eventing-integrations-transform-jsonata", "eventing-integrations-aws-ddb-streams-source",
+		"backstage-plugins-eventmesh", "serving-activator", "serving-autoscaler-hpa", "serving-autoscaler", "serving-controller", "serving-queue", "serving-webhook":
+		combinedName = fmt.Sprintf("kn-%s-%s", combinedName, rhelVersion)
+	case "kn-plugin-event-kn-event-sender":
+		combinedName = "kn-plugin-event-sender"
+	case "eventing-in-memory-channel-dispatcher":
+		combinedName = "kn-eventing-channel-dispatcher"
+	case "eventing-broker-filter":
+		combinedName = "kn-eventing-filter"
+	case "eventing-broker-ingress":
+		combinedName = "kn-eventing-ingress"
+	case "eventing-kafka-broker-dispatcher", "eventing-kafka-broker-kafka-controller", "eventing-kafka-broker-post-install", "eventing-kafka-broker-webhook-kafka", "eventing-kafka-broker-receiver":
+		combinedName = strings.TrimPrefix(combinedName, "eventing-kafka-broker")
+		combinedName = fmt.Sprintf("kn-ekb%s", combinedName)
+	case "serving-migrate":
+		combinedName = "kn-serving-storage-version-migration"
+	default:
+		return combinedName + "-" + rhelVersion
+	}
+	return fmt.Sprintf("%s-%s", combinedName, rhelVersion)
 }
