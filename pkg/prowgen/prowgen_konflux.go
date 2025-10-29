@@ -14,7 +14,8 @@ import (
 	"sync"
 
 	"github.com/openshift-knative/hack/pkg/dependabotgen"
-	"github.com/openshift-knative/hack/pkg/soversion"
+	soversion "github.com/openshift-knative/hack/pkg/soversion"
+
 	"golang.org/x/sync/errgroup"
 
 	"github.com/coreos/go-semver/semver"
@@ -391,6 +392,8 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 				return fmt.Errorf("image override missing name or pull spec: %#v", img)
 			}
 			if img.Name == "CLI_ARTIFACTS" {
+				tag := soversion.ToUpstreamVersion(soMetadata.Project.Version)
+				buildArgs = append(buildArgs, fmt.Sprintf("TAG=v%s", tag))
 				isCliImageSet = true
 			}
 			buildArgs = append(buildArgs, fmt.Sprintf("%s=%s", img.Name, img.PullSpec))
