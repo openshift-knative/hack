@@ -5,3 +5,8 @@ metadata:
 spec:
   snapshot: {{{ .Snapshot }}}
   releasePlan: {{{ .ReleasePlan }}}
+  data:
+    releaseNotes:
+      references:
+        - "https://docs.redhat.com/documentation/red_hat_openshift_serverless/"
+      type: "RHEA"
