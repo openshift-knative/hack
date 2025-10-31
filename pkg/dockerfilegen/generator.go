@@ -456,12 +456,8 @@ func generateMustGatherDockerfile(params Params) error {
 		soVersion = fmt.Sprintf("%v.%v", semVer.Major, semVer.Minor)
 	}
 	elVersion := "el" + strings.TrimPrefix(rhelVersion, "rhel-")
-	// Compute base values
-	componentDashcase := ""
-	projectDashcase := projectDashCaseWithSep
 
 	// Apply overrides
-	labelName := adjustComponentName(projectDashcase, componentDashcase, strings.ReplaceAll(rhelVersion, "-", ""))
 	d := map[string]interface{}{
 		"main":             projectName,
 		"oc_cli_artifacts": ocClientArtifactsImage,
@@ -472,7 +468,7 @@ func generateMustGatherDockerfile(params Params) error {
 		"rhelVersion":      strings.ReplaceAll(rhelVersion, "-", ""),
 		"short_version":    soVersion,
 		"shortRhelVersion": elVersion,
-		"name":             labelName,
+		"name":             fmt.Sprintf("serverless-must-gather-%s", strings.ReplaceAll(rhelVersion, "-", "")),
 	}
 	// Pick proper template FS file and RPM lock file
 	templateFile := "dockerfile-templates/rhel-9/*.tmpl" // RHEL9 default
@@ -719,8 +715,6 @@ func adjustComponentName(projectDashcase, componentDashcase, rhelVersion string)
 		combinedName = "serverless-ingress"
 	case "knative-operator":
 		combinedName = "serverless-kn-operator"
-	case "svls-must-gather":
-		combinedName = "serverless-must-gather"
 	case "openshift-knative-operator":
 		return "serverless-openshift-kn-" + rhelVersion + "-operator"
 	//this case if for image name only need `kn-*` prefix
