@@ -18,7 +18,7 @@ spec:
     releaseNotes:
       product_id: [579]
       product_name: "OpenShift Serverless"
-      product_version: "{{{ .SOVersion }}}"
+      product_version: "fbc"
       references:
         - "https://docs.redhat.com/documentation/red_hat_openshift_serverless/"
       type: "RHEA"
