@@ -410,26 +410,72 @@ func resolveGolangVersion(params Params, goMod *modfile.File, metadata *project.
 
 	log.Println("Golang version (from go.mod):", goVersion)
 
+	branch := strings.Replace(metadata.Project.Tag, "knative-", "release-", 1)
+	nvBranch := strings.Replace(branch, "release-v", "release-", 1)
+	soVer, err := soversion.SoFromUpstreamVersion(nvBranch)
 	reponame := params.GetRepoName(goMod)
+
+	resolver := golangResolver{
+		defaultVersion: goVersion,
+		params: []golangResolverParams{
+			{reponame, branch},
+			{reponame, nvBranch},
+		},
+	}
+
+	if err == nil {
+		soRelease := soversion.BranchName(soVer)
+		resolver.params = append(resolver.params, golangResolverParams{
+			"serverless-operator", soRelease,
+		})
+	}
+	
+	return resolver.perform()
+}
+
+type golangResolverParams struct {
+	reponame, branch string
+}
+
+type golangResolver struct {
+	defaultVersion string
+	params         []golangResolverParams
+}
+
+func (r golangResolver) perform() (string, error) {
+	goVersion := r.defaultVersion
+	for _, check := range r.params {
+		configGoVersion, err := resolveGolangVersionForRepo(check.reponame, check.branch)
+		if err != nil && !errors.Is(err, ErrCantFindConfig) {
+			return "", err
+		}
+		if configGoVersion != "" {
+			goVersion = configGoVersion
+			log.Println("Golang version (overridden for", check.reponame, "@", check.branch, "):", goVersion)
+			break
+		}
+	}
+	return goVersion, nil
+}
+
+var ErrCantFindConfig = errors.New("can't find config file")
+
+func resolveGolangVersionForRepo(reponame string, branchName string) (string, error) {
 	cfgYaml, err := config.Configs.ReadFile(fmt.Sprint(reponame, ".yaml"))
 	if err != nil {
-		log.Println("Can't find config file:", err)
-		return goVersion, nil
+		return "", fmt.Errorf("%w: %w", ErrCantFindConfig, err)
 	}
 	prowcfg, perr := prowgen.UnmarshalConfig(cfgYaml)
 	if perr != nil {
-		return "", perr
+		return "", errors.WithStack(perr)
 	}
 
-	release := metadata.Project.Tag
-	release = strings.Replace(release, "knative-", "release-", 1)
-	branch := prowcfg.Config.Branches[release]
+	branch := prowcfg.Config.Branches[branchName]
 	if branch.GolangVersion != "" {
-		goVersion = branch.GolangVersion
-		log.Println("Golang version (overridden for", release, "):", goVersion)
+		goVersion := branch.GolangVersion
+		return goVersion, nil
 	}
-
-	return goVersion, nil
+	return "", nil
 }
 
 func hasVendorFolder(dir string) (bool, error) {
