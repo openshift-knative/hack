@@ -23,7 +23,7 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.20"
+        version: "4.21"
       - useClusterPool: true
         version: "4.19"
       - onDemand: true
@@ -36,7 +36,7 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.20"
+        version: "4.21"
       - useClusterPool: true
         version: "4.19"
       - onDemand: true
@@ -49,7 +49,7 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.20"
+        version: "4.21"
       - useClusterPool: true
         version: "4.19"
       - onDemand: true
