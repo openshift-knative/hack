@@ -46,6 +46,14 @@ config:
         useClusterPool: true
         version: "4.19"
       promotion: {}
+    release-1.20:
+      konflux:
+        enabled: true
+      openShiftVersions:
+      - skipCron: true
+        useClusterPool: true
+        version: "4.19"
+      promotion: {}
     release-next:
       openShiftVersions:
       - skipCron: true
