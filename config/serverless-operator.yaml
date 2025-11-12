@@ -120,8 +120,8 @@ config:
         onDemand: true
         skipCron: true
         version: "4.20"
-      - useClusterPool: true
-        skipCron: true
+      - skipCron: true
+        useClusterPool: true
         version: "4.19"
       - onDemand: true
         skipCron: true
@@ -579,6 +579,10 @@ repositories:
                 memory: 200Mi
           workflow: firewatch-ipi-aws-cr
         timeout: 8h0m0s
+      zz_generated_metadata:
+        branch: ""
+        org: ""
+        repo: ""
   dockerfiles:
     matches:
     - knative-operator/.*

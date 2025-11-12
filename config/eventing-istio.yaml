@@ -64,6 +64,15 @@ config:
       - onDemand: true
         version: "4.14"
       promotion: {}
+    release-v1.20:
+      konflux:
+        enabled: true
+      openShiftVersions:
+      - useClusterPool: true
+        version: "4.19"
+      - onDemand: true
+        version: "4.14"
+      promotion: {}
 repositories:
 - dockerfiles: {}
   e2e:
