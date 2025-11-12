@@ -18,6 +18,7 @@
 /openshift
 /openshift-knative
 /konflux-gen/out
+_output/
 # TODO: Remove
 rpms.lock.yaml
 

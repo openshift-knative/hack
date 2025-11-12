@@ -5,9 +5,18 @@ import (
 	"strings"
 
 	"github.com/coreos/go-semver/semver"
+	"github.com/pkg/errors"
 )
 
 func FromUpstreamVersion(upstream string) *semver.Version {
+	ver, err := SoFromUpstreamVersion(upstream)
+	if err != nil {
+		panic(fmt.Sprintf("%+v", err))
+	}
+	return ver
+}
+
+func SoFromUpstreamVersion(upstream string) (*semver.Version, error) {
 	upstream = strings.Replace(upstream, "release-v", "", 1)
 	upstream = strings.Replace(upstream, "release-", "", 1)
 	upstream = strings.Replace(upstream, "v", "", 1)
@@ -16,7 +25,10 @@ func FromUpstreamVersion(upstream string) *semver.Version {
 	if len(dotParts) == 2 {
 		upstream = upstream + ".0"
 	}
-	soVersion := semver.New(upstream)
+	soVersion, err := semver.NewVersion(upstream)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
 	for i := 0; i < 21; i++ { // Example 1.11 -> 1.32
 		soVersion.BumpMinor()
 	}
@@ -29,7 +41,7 @@ func FromUpstreamVersion(upstream string) *semver.Version {
 		soVersion.Minor -= 1
 	}
 
-	return soVersion
+	return soVersion, nil
 }
 
 func ToUpstreamVersion(soversion string) *semver.Version {
