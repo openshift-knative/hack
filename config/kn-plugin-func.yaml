@@ -4,7 +4,7 @@ config:
       openShiftVersions:
       - skipCron: true
         useClusterPool: true
-        version: "4.19"
+        version: "4.20"
       promotion: {}
     release-v1.15:
       konflux:
@@ -12,7 +12,7 @@ config:
       openShiftVersions:
       - skipCron: true
         useClusterPool: true
-        version: "4.19"
+        version: "4.20"
       promotion: {}
     release-v1.16:
       konflux:
@@ -21,10 +21,10 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.20"
+        version: "4.21"
       - skipCron: true
         useClusterPool: true
-        version: "4.19"
+        version: "4.20"
       promotion: {}
     release-v1.17:
       konflux:
@@ -36,10 +36,10 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.20"
+        version: "4.21"
       - skipCron: true
         useClusterPool: true
-        version: "4.19"
+        version: "4.20"
       promotion: {}
     release-v1.18:
       konflux:
@@ -47,7 +47,7 @@ config:
       openShiftVersions:
       - skipCron: true
         useClusterPool: true
-        version: "4.19"
+        version: "4.20"
       promotion: {}
     release-v1.19:
       konflux:
@@ -55,7 +55,7 @@ config:
       openShiftVersions:
       - skipCron: true
         useClusterPool: true
-        version: "4.19"
+        version: "4.20"
       promotion: {}
     release-v1.20:
       konflux:
@@ -63,7 +63,7 @@ config:
       openShiftVersions:
       - skipCron: true
         useClusterPool: true
-        version: "4.19"
+        version: "4.20"
       promotion: {}
 repositories:
 - dockerfiles: {}

@@ -15,9 +15,9 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.20"
+        version: "4.21"
       - useClusterPool: true
-        version: "4.19"
+        version: "4.20"
       - onDemand: true
         version: "4.14"
       promotion: {}
@@ -39,9 +39,9 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.20"
+        version: "4.21"
       - useClusterPool: true
-        version: "4.19"
+        version: "4.20"
       - onDemand: true
         version: "4.14"
       promotion: {}
@@ -63,9 +63,9 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.20"
+        version: "4.21"
       - useClusterPool: true
-        version: "4.19"
+        version: "4.20"
       - onDemand: true
         version: "4.14"
       promotion: {}
@@ -87,9 +87,9 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.20"
+        version: "4.21"
       - useClusterPool: true
-        version: "4.19"
+        version: "4.20"
       - onDemand: true
         version: "4.14"
       promotion: {}
@@ -111,9 +111,9 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.20"
+        version: "4.21"
       - useClusterPool: true
-        version: "4.19"
+        version: "4.20"
       - onDemand: true
         version: "4.14"
       promotion: {}
@@ -135,9 +135,9 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.20"
+        version: "4.21"
       - useClusterPool: true
-        version: "4.19"
+        version: "4.20"
       - onDemand: true
         version: "4.14"
       promotion: {}
