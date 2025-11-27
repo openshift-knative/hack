@@ -33,7 +33,7 @@ config:
           excludes:
           - .*ocp-4.21-lp-interop.*
         useClusterPool: true
-        version: "4.19"
+        version: "4.20"
       - onDemand: true
         version: "4.14"
       promotion: {}
@@ -55,10 +55,10 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.20"
+        version: "4.21"
       - skipCron: true
         useClusterPool: true
-        version: "4.19"
+        version: "4.20"
       - onDemand: true
         skipCron: true
         version: "4.13"
@@ -86,10 +86,10 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.20"
+        version: "4.21"
       - skipCron: true
         useClusterPool: true
-        version: "4.19"
+        version: "4.20"
       - onDemand: true
         skipCron: true
         version: "4.14"
@@ -119,10 +119,10 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.20"
+        version: "4.21"
       - skipCron: true
         useClusterPool: true
-        version: "4.19"
+        version: "4.20"
       - onDemand: true
         skipCron: true
         version: "4.14"
@@ -151,9 +151,9 @@ config:
       openShiftVersions:
       - candidateRelease: true
         onDemand: true
-        version: "4.20"
+        version: "4.21"
       - useClusterPool: true
-        version: "4.19"
+        version: "4.20"
       - onDemand: true
         version: "4.14"
       promotion: {}
