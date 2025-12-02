@@ -161,7 +161,7 @@ config:
         disabled: true
 repositories:
 - customConfigs:
-  - name: 419-aws-ovn
+  - name: 420-aws-ovn
     releaseBuildConfiguration:
       tests:
       - as: e2e-aws-ovn-continuous
@@ -202,7 +202,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 419-azure
+  - name: 420-azure
     releaseBuildConfiguration:
       tests:
       - as: e2e-azure-continuous
@@ -243,7 +243,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 419-gcp
+  - name: 420-gcp
     releaseBuildConfiguration:
       tests:
       - as: e2e-gcp-continuous
@@ -284,22 +284,22 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 419-hypershift
+  - name: 420-hypershift
     releaseBuildConfiguration:
       base_images:
         hypershift-operator:
-          name: "4.19"
+          name: "4.20"
           namespace: ocp
           tag: hypershift-operator
         upi-installer:
-          name: "4.19"
+          name: "4.20"
           namespace: ocp
           tag: upi-installer
       releases:
         latest:
           integration:
             include_built_images: true
-            name: "4.19"
+            name: "4.20"
             namespace: ocp
       tests:
       - as: e2e-hypershift-continuous
@@ -345,53 +345,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 419-osd
-    releaseBuildConfiguration:
-      base_images:
-        cli-ocm:
-          name: cli-ocm
-          namespace: ci
-          tag: latest
-      tests:
-      - as: e2e-osd-continuous
-        cron: 31 3 * * 0
-        steps:
-          cluster_profile: osd-ephemeral
-          env:
-            CLUSTER_DURATION: "10800"
-            CLUSTER_VERSION: "4.19"
-            COMPUTE_NODES: "4"
-          post:
-          - chain: gather
-          - ref: osd-delete-delete
-          pre:
-          - ref: ipi-install-rbac
-          - ref: osd-create-create
-          test:
-          - as: operator-e2e
-            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-e2e-with-kafka
-            from: serverless-source-image
-            resources:
-              limits:
-                memory: 6Gi
-              requests:
-                cpu: 100m
-                memory: 200Mi
-          - as: knative-serving-eventing-e2e
-            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin make test-upstream-e2e-no-upgrade
-            from: serverless-source-image
-            resources:
-              limits:
-                memory: 6Gi
-              requests:
-                cpu: 100m
-                memory: 200Mi
-        timeout: 8h0m0s
-      zz_generated_metadata:
-        branch: ""
-        org: ""
-        repo: ""
-  - name: 419-single-node
+  - name: 420-single-node
     releaseBuildConfiguration:
       tests:
       - as: e2e-sno-continuous
@@ -414,11 +368,11 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 419-vsphere
+  - name: 420-vsphere
     releaseBuildConfiguration:
       base_images:
         upi-installer:
-          name: "4.19"
+          name: "4.20"
           namespace: ocp
           tag: upi-installer
       tests:
@@ -437,83 +391,6 @@ repositories:
                 cpu: 100m
                 memory: 200Mi
           workflow: openshift-e2e-vsphere-upi
-      zz_generated_metadata:
-        branch: ""
-        org: ""
-        repo: ""
-  - name: ocp4.19-lp-rosa-classic
-    releaseBuildConfiguration:
-      base_images:
-        cli:
-          name: "4.19"
-          namespace: ocp
-          tag: cli
-        cli-ocm:
-          name: cli-ocm
-          namespace: ci
-          tag: latest
-        rosa-aws-cli:
-          name: rosa-aws-cli
-          namespace: ci
-          tag: latest
-      releases:
-        latest:
-          integration:
-            include_built_images: true
-            name: "4.19"
-            namespace: ocp
-      tests:
-      - as: operator-e2e-rosa-aws
-        cron: 0 23 31 2 *
-        steps:
-          cluster_profile: aws-cspi-qe
-          env:
-            CHANNEL_GROUP: candidate
-            FIREWATCH_CONFIG: |
-              {
-                "failure_rules":
-                  [
-                    {"step": "knative-eventing-kafka-broker-e2e", "failure_type": "test_failure", "classification": "knative-eventing-kafka-broker-e2e Test Failure", "jira_project": "SRVCOM", "jira_additional_labels": ["!default"]},
-                    {"step": "knative-serving-eventing-e2e", "failure_type": "test_failure", "classification": "knative-serving-eventing-e2e Test Failure", "jira_project": "SRVCOM", "jira_additional_labels": ["!default"]},
-                    {"step": "operator-e2e", "failure_type": "test_failure", "classification": "operator-e2e Test Failure", "jira_project": "SRVCOM", "jira_additional_labels": ["!default"]},
-                    {"step": "knative-*", "failure_type": "pod_failure", "classification": "knative Test Execution", "jira_additional_labels": ["!default"]},
-                    {"step": "operator-e2e", "failure_type": "pod_failure", "classification": "operator-e2e Test Execution", "jira_additional_labels": ["!default"]}
-                  ]
-              }
-            FIREWATCH_CONFIG_FILE_PATH: https://raw.githubusercontent.com/CSPI-QE/cspi-utils/main/firewatch-base-configs/rosa/lp-interop.json
-            FIREWATCH_DEFAULT_JIRA_ADDITIONAL_LABELS: '["4.19-lp","rosa-classic-lp","serverless-lp"]'
-            FIREWATCH_DEFAULT_JIRA_PROJECT: LPINTEROP
-            FIREWATCH_FAIL_WITH_TEST_FAILURES: "true"
-            OCM_LOGIN_ENV: staging
-            OPENSHIFT_VERSION: "4.19"
-          test:
-          - ref: cucushift-installer-check-cluster-health
-          - as: knative-eventing-kafka-broker-e2e
-            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true
-              make test-upstream-e2e-kafka-no-upgrade
-            from: serverless-source-image
-            resources:
-              requests:
-                cpu: 100m
-                memory: 200Mi
-          - as: operator-e2e
-            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true
-              DELETE_CRD_ON_TEARDOWN=false make teardown test-e2e-with-kafka
-            from: serverless-source-image
-            resources:
-              requests:
-                cpu: 100m
-                memory: 200Mi
-          - as: knative-serving-eventing-e2e
-            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true
-              make test-upstream-e2e-no-upgrade
-            from: serverless-source-image
-            resources:
-              requests:
-                cpu: 100m
-                memory: 200Mi
-          workflow: firewatch-rosa-aws-sts
-        timeout: 8h0m0s
       zz_generated_metadata:
         branch: ""
         org: ""
