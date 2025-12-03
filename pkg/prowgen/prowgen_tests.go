@@ -71,6 +71,11 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				jobTimeout = test.JobTimeout
 			}
 
+			// Per https://issues.redhat.com/browse/DPTP-4603 , we don't set any job-level timeout <8h
+			if jobTimeout != nil && jobTimeout.Duration < 8*time.Hour {
+				jobTimeout = nil
+			}
+
 			var (
 				clusterClaim   *cioperatorapi.ClusterClaim
 				clusterProfile cioperatorapi.ClusterProfile
