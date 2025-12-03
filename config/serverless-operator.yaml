@@ -288,9 +288,9 @@ repositories:
     releaseBuildConfiguration:
       base_images:
         hypershift-operator:
-          name: "4.20"
-          namespace: ocp
-          tag: hypershift-operator
+          name: hypershift-operator
+          namespace: hypershift
+          tag: latest
         upi-installer:
           name: "4.20"
           namespace: ocp
