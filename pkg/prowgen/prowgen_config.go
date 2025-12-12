@@ -91,6 +91,7 @@ type Branch struct {
 	SkipE2EMatches         []string    `json:"skipE2EMatches,omitempty" yaml:"skipE2EMatches,omitempty"`
 	SkipDockerFilesMatches []string    `json:"skipDockerFilesMatches,omitempty" yaml:"skipDockerFilesMatches,omitempty"`
 	Konflux                *Konflux    `json:"konflux,omitempty" yaml:"konflux,omitempty"`
+	GolangVersion          string      `json:"golangVersion,omitempty" yaml:"golangVersion,omitempty"`
 
 	// DependabotEnabled enabled if `nil`.
 	DependabotEnabled *bool `json:"dependabotEnabled,omitempty" yaml:"dependabotEnabled,omitempty"`

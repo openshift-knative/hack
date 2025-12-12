@@ -7,6 +7,7 @@ import (
 	"github.com/octago/sflags"
 	"github.com/octago/sflags/gen/gpflag"
 	"github.com/spf13/pflag"
+	"golang.org/x/mod/modfile"
 )
 
 type Params struct {
@@ -20,6 +21,7 @@ type Params struct {
 	DockerfilesBuildDir          string   `json:"dockerfiles-build-dir" desc:"Dockerfiles output directory for build image relative to output flag"`
 	DockerfilesSourceDir         string   `json:"dockerfiles-source-dir" desc:"Dockerfiles output directory for source image relative to output flag"`
 	ProjectFilePath              string   `json:"project-file" desc:"Project metadata file path"`
+	RepoName                     string   `json:"repo-name" desc:"Repository name (implied from go.mod by default)"`
 	DockerfileImageBuilderFmt    string   `json:"dockerfile-image-builder-fmt" desc:"Dockerfile image builder format"`
 	AppFileFmt                   string   `json:"app-file-fmt" desc:"Target application binary path format"`
 	RegistryImageFmt             string   `json:"registry-image-fmt" desc:"Container registry image format"`
@@ -38,6 +40,13 @@ func (p *Params) ConfigureFlags() (*pflag.FlagSet, error) {
 		return nil, err
 	}
 	return fs, nil
+}
+
+func (p *Params) GetRepoName(goMod *modfile.File) string {
+	if p.RepoName != "" {
+		return p.RepoName
+	}
+	return path.Base(goMod.Module.Mod.Path)
 }
 
 func DefaultParams(wd string) Params {
