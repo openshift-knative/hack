@@ -127,7 +127,7 @@ config:
         skipCron: true
         version: "4.14"
       promotion:
-        template: release-1.37.0
+        template: release-1.37.1
     release-1.38:
       konflux:
         enabled: true
