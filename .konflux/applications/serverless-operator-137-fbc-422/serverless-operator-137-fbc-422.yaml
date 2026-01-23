@@ -1,0 +1,7 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: Application
+metadata:
+  name: serverless-operator-137-fbc-422
+spec:
+  description: serverless-operator release-1.37 FBC 4.22
+  displayName: serverless-operator release-1.37 FBC 4.22
