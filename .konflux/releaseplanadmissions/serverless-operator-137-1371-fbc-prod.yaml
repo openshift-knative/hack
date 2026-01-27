@@ -1,0 +1,67 @@
+---
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: ReleasePlanAdmission
+metadata:
+  labels:
+    release.appstudio.openshift.io/auto-release: "true"
+    pp.engineering.redhat.com/business-unit: hybrid-platforms
+  name: serverless-operator-137-1371-fbc-prod
+  namespace: rhtap-releng-tenant
+spec:
+  applications:
+    - serverless-operator-137-fbc-414
+    - serverless-operator-137-fbc-415
+    - serverless-operator-137-fbc-416
+    - serverless-operator-137-fbc-417
+    - serverless-operator-137-fbc-418
+    - serverless-operator-137-fbc-419
+    - serverless-operator-137-fbc-420
+    - serverless-operator-137-fbc-421
+    - serverless-operator-137-fbc-422
+  origin: ocp-serverless-tenant
+  policy: fbc-ocp-serverless-prod
+  data:
+    releaseNotes:
+      product_id: [579]
+      product_name: "OpenShift Serverless"
+      product_version: "fbc"
+      references:
+        - "https://docs.redhat.com/documentation/red_hat_openshift_serverless/"
+      type: "RHEA"
+      solution: |
+        The Red Hat OpenShift Serverless Operator provides a collection of APIs that
+        enables containers, microservices and functions to run "serverless".
+        Serverless applications can scale up and down (to zero) on demand and be triggered by a
+        number of event sources. OpenShift Serverless integrates with a number of
+        platform services, such as Monitoring and it is based on the open
+        source project Knative.
+      description: "The 1.37.1 release of Red Hat OpenShift Serverless Operator."
+      topic: |
+        The 1.37.1 GA release of Red Hat OpenShift Serverless Operator.
+        For more details see [product documentation](https://docs.redhat.com/documentation/red_hat_openshift_serverless).
+      synopsis: "Red Hat OpenShift Serverless Release 1.37.1"
+    fbc:
+      fromIndex: "registry-proxy.engineering.redhat.com/rh-osbs/iib-pub:{{ OCP_VERSION }}"
+      targetIndex: "quay.io/redhat-prod/redhat----redhat-operator-index:{{ OCP_VERSION }}"
+      publishingCredentials: "fbc-production-publishing-credentials-redhat-prod"
+      requestTimeoutSeconds: 1500
+      buildTimeoutSeconds: 1500
+      allowedPackages: [serverless-operator]
+    sign:
+      configMapName: hacbs-signing-pipeline-config-redhatrelease2
+      cosignSecretName: konflux-cosign-signing-production
+    intention: production
+  pipeline:
+    pipelineRef:
+      resolver: git
+      params:
+        - name: url
+          value: "https://github.com/konflux-ci/release-service-catalog.git"
+        - name: revision
+          value: production
+        - name: pathInRepo
+          value: "pipelines/managed/fbc-release/fbc-release.yaml"
+    serviceAccountName: release-index-image-prod
+    timeouts:
+      pipeline: "4h0m0s"
+      tasks: "4h0m0s"
