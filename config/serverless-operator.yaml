@@ -454,6 +454,36 @@ repositories:
         branch: ""
         org: ""
         repo: ""
+  - name: 4.20-techpreview
+    releaseBuildConfiguration:
+      releases:
+        latest:
+          candidate:
+            product: ocp
+            stream: nightly
+            version: "4.20"
+      tests:
+      - as: olmv1-operator-e2e
+        cron: 25 3 * * 6
+        steps:
+          cluster_profile: aws-serverless
+          env:
+            FEATURE_SET: TechPreviewNoUpgrade
+          test:
+          - as: operator-e2e
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin OLM_VERSION=v1 make test-e2e-with-kafka
+            from: serverless-source-image
+            resources:
+              limits:
+                memory: 6Gi
+              requests:
+                cpu: 100m
+                memory: 200Mi
+          workflow: openshift-e2e-aws
+      zz_generated_metadata:
+        branch: ""
+        org: ""
+        repo: ""
   dockerfiles:
     matches:
     - knative-operator/.*
