@@ -420,8 +420,8 @@ repositories:
               scenario serverless
           test:
           - as: operator-e2e
-            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true MAP_TESTS=true
-              make test-e2e-with-kafka
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true
+              MAP_TESTS=true make test-e2e-with-kafka
             from: serverless-source-image
             resources:
               limits:
@@ -430,8 +430,8 @@ repositories:
                 cpu: 100m
                 memory: 200Mi
           - as: knative-serving-eventing-e2e
-            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true MAP_TESTS=true
-              make test-upstream-e2e-no-upgrade
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true
+              MAP_TESTS=true make test-upstream-e2e-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -440,8 +440,8 @@ repositories:
                 cpu: 100m
                 memory: 200Mi
           - as: knative-eventing-kafka-broker-e2e
-            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true MAP_TESTS=true
-              make test-upstream-e2e-kafka-no-upgrade
+            commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true
+              MAP_TESTS=true make test-upstream-e2e-kafka-no-upgrade
             from: serverless-source-image
             resources:
               limits:

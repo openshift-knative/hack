@@ -86,6 +86,21 @@ config:
         useClusterPool: true
         version: "4.20"
       promotion: {}
+    release-v1.21:
+      konflux:
+        enabled: true
+        imageOverrides:
+        - name: CLI_ARTIFACTS
+          pullSpec: brew.registry.redhat.io/rh-osbs/openshift-serverless-1-kn-cli-artifacts-rhel8:1.16.0
+      openShiftVersions:
+      - candidateRelease: true
+        onDemand: true
+        skipCron: true
+        version: "4.21"
+      - skipCron: true
+        useClusterPool: true
+        version: "4.20"
+      promotion: {}
 repositories:
 - canonicalGoRepository: github.com/knative/client
   dockerfiles: {}
