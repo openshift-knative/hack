@@ -7,6 +7,8 @@ metadata:
     pp.engineering.redhat.com/business-unit: hybrid-platforms
   name: {{{ truncate ( sanitize .Name ) }}}
   namespace: rhtap-releng-tenant
+  annotations:
+    rhel_target: el9
 spec:
   applications: [{{{ truncate ( sanitize .ApplicationName ) }}}]
   origin: ocp-serverless-tenant
@@ -35,6 +37,7 @@ spec:
       secret: {{{ .PyxisSecret }}}
       server: {{{ .PyxisServer }}}
     intention: {{{ .Intention }}}
+    enforceContainerFirstSecurityLabels: true
   pipeline:
     pipelineRef:
       resolver: git
