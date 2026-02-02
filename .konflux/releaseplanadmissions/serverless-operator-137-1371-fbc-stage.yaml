@@ -3,10 +3,12 @@ apiVersion: appstudio.redhat.com/v1alpha1
 kind: ReleasePlanAdmission
 metadata:
   labels:
-    release.appstudio.openshift.io/auto-release: "true"
+    release.appstudio.openshift.io/block-releases: "false"
     pp.engineering.redhat.com/business-unit: hybrid-platforms
   name: serverless-operator-137-1371-fbc-stage
   namespace: rhtap-releng-tenant
+  annotations:
+    rhel_target: el9
 spec:
   applications:
     - serverless-operator-137-fbc-414
@@ -52,6 +54,7 @@ spec:
       configMapName: hacbs-signing-pipeline-config-staging-redhatrelease2
       cosignSecretName: konflux-cosign-signing-stage
     intention: staging
+    enforceContainerFirstSecurityLabels: true
   pipeline:
     pipelineRef:
       resolver: git
