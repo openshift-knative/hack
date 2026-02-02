@@ -700,9 +700,11 @@ func builderImageForGoVersion(goVersion, rhelVersion string) string {
 	case "1.23":
 		return fmt.Sprintf(builderImageFmt, rhelVersion, goVersion, "4.19")
 	case "1.24":
+		return fmt.Sprintf(builderImageFmt, rhelVersion, goVersion, "4.20")
+	case "1.25":
 		fallthrough
 	default:
-		return fmt.Sprintf(builderImageFmt, rhelVersion, goVersion, "4.20")
+		return fmt.Sprintf(builderImageFmt, rhelVersion, goVersion, "4.21")
 	}
 }
 
