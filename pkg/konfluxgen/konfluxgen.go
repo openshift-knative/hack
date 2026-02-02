@@ -383,7 +383,8 @@ func Generate(cfg Config) error {
 				PipelineRunAnnotations: cfg.PipelineRunAnnotationsFunc(c.ReleaseBuildConfiguration, ib),
 			}
 
-			if cfg.IsHermetic(c.ReleaseBuildConfiguration, ib) {
+			// TODO REVIEW: Remove special case once all hermetic builds are moved to docker-java-build pipeline With actual hermetic builds
+			if cfg.IsHermetic(c.ReleaseBuildConfiguration, ib) && pipeline != "docker-java-build" {
 				r.Hermetic = "true"
 			} else {
 				r.Hermetic = "false"
