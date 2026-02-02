@@ -7,6 +7,8 @@ metadata:
     pp.engineering.redhat.com/business-unit: hybrid-platforms
   name: serverless-operator-137-1371-prod
   namespace: rhtap-releng-tenant
+  annotations:
+    rhel_target: el9
 spec:
   applications: [serverless-operator-137]
   origin: ocp-serverless-tenant
@@ -213,6 +215,7 @@ spec:
       secret: pyxis-prod-secret
       server: production
     intention: production
+    enforceContainerFirstSecurityLabels: true
   pipeline:
     pipelineRef:
       resolver: git
