@@ -1,12 +1,12 @@
 apiVersion: appstudio.redhat.com/v1alpha1
 kind: Release
 metadata:
-  name: serverless-operator-137-fbc-421-1371-stage
+  name: serverless-operator-137-fbc-421-1371-stage-2
 spec:
-  snapshot: serverless-operator-137-fbc-421-override-snapshot-a7da1daf
+  snapshot: serverless-operator-137-fbc-421-override-snapshot-a113e6d2
   releasePlan: serverless-operator-137-fbc-421-1371-stage
   data:
     releaseNotes:
       references:
         - "https://docs.redhat.com/documentation/red_hat_openshift_serverless/"
-      type: "RHEA"
+      type: "RHBA"
