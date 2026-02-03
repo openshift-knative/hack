@@ -31,6 +31,24 @@ func TestFromUpstreamVersion(t *testing.T) {
 		}, {
 			upstream: "1.14.0",
 			want:     "1.34.0",
+		}, {
+			upstream: "1.17.0",
+			want:     "1.37.0",
+		}, {
+			upstream: "1.18.0",
+			want:     "1.37.0",
+		}, {
+			upstream: "1.20.0",
+			want:     "1.37.0",
+		}, {
+			upstream: "1.20.1",
+			want:     "1.37.0",
+		}, {
+			upstream: "1.21.0",
+			want:     "1.38.0",
+		}, {
+			upstream: "1.22.0",
+			want:     "1.39.0",
 		},
 	}
 	for _, tt := range tests {
@@ -59,6 +77,15 @@ func TestToUpstreamVersion(t *testing.T) {
 		}, {
 			soVersion: "1.34.0",
 			want:      "1.14.0",
+		}, {
+			soVersion: "1.37.0",
+			want:      "1.17.0",
+		}, {
+			soVersion: "1.38.0",
+			want:      "1.21.0",
+		}, {
+			soVersion: "1.39.0",
+			want:      "1.22.0",
 		},
 	}
 
