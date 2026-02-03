@@ -29,6 +29,20 @@ func FromUpstreamVersion(upstream string) *semver.Version {
 		soVersion.Minor -= 1
 	}
 
+	if upstreamVersion.Compare(*semver.New("1.21.0")) >= 0 {
+		// 1.18-1.20 were skipped, so 1.21+ only subtracts the 3 skipped versions
+		// 1.21 -> 1.38
+		// 1.22 -> 1.39
+		soVersion.Minor -= 3
+	} else if upstreamVersion.Compare(*semver.New("1.18.0")) >= 0 {
+		// 1.18-1.20 map to 1.37 (same as 1.17)
+		// 1.17 -> 1.37
+		// 1.18 -> 1.37 (subtract 1)
+		// 1.19 -> 1.37 (subtract 2)
+		// 1.20 -> 1.37 (subtract 3)
+		soVersion.Minor -= upstreamVersion.Minor - semver.New("1.17.0").Minor
+	}
+
 	return soVersion
 }
 
@@ -53,6 +67,13 @@ func ToUpstreamVersion(soversion string) *semver.Version {
 		// 1.33 -> 1.12
 		// 1.34 -> 1.14
 		upstreamVersion.Minor++
+	}
+
+	if soVersion.Compare(*semver.New("1.38.0")) >= 0 {
+		// Add back the 3 skipped versions (1.18-1.20)
+		// 1.38 -> 1.21
+		// 1.39 -> 1.22
+		upstreamVersion.Minor += 3
 	}
 
 	return upstreamVersion
