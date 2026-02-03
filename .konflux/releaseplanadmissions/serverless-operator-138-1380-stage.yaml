@@ -7,6 +7,8 @@ metadata:
     pp.engineering.redhat.com/business-unit: hybrid-platforms
   name: serverless-operator-138-1380-stage
   namespace: rhtap-releng-tenant
+  annotations:
+    rhel_target: el9
 spec:
   applications: [serverless-operator-138]
   origin: ocp-serverless-tenant
@@ -213,6 +215,7 @@ spec:
       secret: pyxis-staging-secret
       server: stage
     intention: staging
+    enforceContainerFirstSecurityLabels: true
   pipeline:
     pipelineRef:
       resolver: git
