@@ -17,6 +17,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/openshift-knative/hack/config"
 	"github.com/openshift-knative/hack/pkg/soversion"
 
 	"github.com/coreos/go-semver/semver"
@@ -150,12 +151,6 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 	if err != nil {
 		return err
 	}
-	goVersion := goMod.Go.Version
-
-	// The builder images are distinguished by golang major.minor, so we ignore the rest of the goVersion
-	if strings.Count(goVersion, ".") > 1 {
-		goVersion = strings.Join(strings.Split(goVersion, ".")[0:2], ".")
-	}
 
 	metadata, err := project.ReadMetadataFile(params.ProjectFilePath)
 	if err != nil {
@@ -165,6 +160,11 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 		}
 		log.Println("File not found:", params.ProjectFilePath, "(Using defaults)")
 		metadata = project.DefaultMetadata()
+	}
+
+	var goVersion string
+	if goVersion, err = resolveGolangVersion(params, goMod, metadata); err != nil {
+		return err
 	}
 
 	rhelVersion := RHEL9
@@ -406,6 +406,84 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 	}
 	log.Println("Images mapping file written:", immapPath)
 	return nil
+}
+
+func resolveGolangVersion(params Params, goMod *modfile.File, metadata *project.Metadata) (string, error) {
+	goVersion := goMod.Go.Version
+
+	// The builder images are distinguished by golang major.minor, so we ignore the rest of the goVersion
+	if strings.Count(goVersion, ".") > 1 {
+		goVersion = strings.Join(strings.Split(goVersion, ".")[0:2], ".")
+	}
+
+	log.Println("Golang version (from go.mod):", goVersion)
+
+	branch := strings.Replace(metadata.Project.Tag, "knative-", "release-", 1)
+	nvBranch := strings.Replace(branch, "release-v", "release-", 1)
+	soVer, err := soversion.SoFromUpstreamVersion(nvBranch)
+	reponame := params.GetRepoName(goMod)
+
+	resolver := golangResolver{
+		defaultVersion: goVersion,
+		params: []golangResolverParams{
+			{reponame, branch},
+			{reponame, nvBranch},
+		},
+	}
+
+	if err == nil {
+		soRelease := soversion.BranchName(soVer)
+		resolver.params = append(resolver.params, golangResolverParams{
+			"serverless-operator", soRelease,
+		})
+	}
+	
+	return resolver.perform()
+}
+
+type golangResolverParams struct {
+	reponame, branch string
+}
+
+type golangResolver struct {
+	defaultVersion string
+	params         []golangResolverParams
+}
+
+func (r golangResolver) perform() (string, error) {
+	goVersion := r.defaultVersion
+	for _, check := range r.params {
+		configGoVersion, err := resolveGolangVersionForRepo(check.reponame, check.branch)
+		if err != nil && !errors.Is(err, ErrCantFindConfig) {
+			return "", err
+		}
+		if configGoVersion != "" {
+			goVersion = configGoVersion
+			log.Println("Golang version (overridden for", check.reponame, "@", check.branch, "):", goVersion)
+			break
+		}
+	}
+	return goVersion, nil
+}
+
+var ErrCantFindConfig = errors.New("can't find config file")
+
+func resolveGolangVersionForRepo(reponame string, branchName string) (string, error) {
+	cfgYaml, err := config.Configs.ReadFile(fmt.Sprint(reponame, ".yaml"))
+	if err != nil {
+		return "", fmt.Errorf("%w: %w", ErrCantFindConfig, err)
+	}
+	prowcfg, perr := prowgen.UnmarshalConfig(cfgYaml)
+	if perr != nil {
+		return "", errors.WithStack(perr)
+	}
+
+	branch := prowcfg.Config.Branches[branchName]
+	if branch.GolangVersion != "" {
+		goVersion := branch.GolangVersion
+		return goVersion, nil
+	}
+	return "", nil
 }
 
 func hasVendorFolder(dir string) (bool, error) {
