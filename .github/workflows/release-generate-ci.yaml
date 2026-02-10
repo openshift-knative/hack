@@ -150,14 +150,14 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         uses: actions/checkout@v4
         with:
-          ref: 'master'
+          ref: 'main'
           repository: 'openshift/release'
           path: ./src/github.com/openshift-knative/hack/openshift/release
       - name: Checkout openshift/release
         if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         uses: actions/checkout@v4
         with:
-          ref: 'master'
+          ref: 'main'
           repository: 'openshift/release'
           path: ./src/github.com/openshift-knative/hack/openshift/release
           token: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -167,7 +167,7 @@ jobs:
           git config --global user.name "serverless-qe"
       - name: Generate CI
         working-directory: ./src/github.com/openshift-knative/hack
-        run: make generate-ci-no-clean ARGS=--branch=master
+        run: make generate-ci-no-clean ARGS=--branch=main
       - name: Create Pull Request - openshift/release
         if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         env:
@@ -188,7 +188,7 @@ jobs:
           else
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/release.git" "$branch:$branch" -f
           fi
-          gh pr create --base master --head "serverless-qe:$branch" --fill-verbose || true
+          gh pr create --base main --head "serverless-qe:$branch" --fill-verbose || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift/release
       - name: Create Pull Request - openshift-knative/hack
         if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}

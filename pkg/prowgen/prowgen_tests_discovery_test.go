@@ -729,7 +729,7 @@ func mustGatherSteps(sourceImage string, optionalOnSuccess bool) []cioperatorapi
 			LiteralTestStep: &cioperatorapi.LiteralTestStep{
 				As:          "openshift-gather-extra",
 				From:        sourceImage,
-				Commands:    `curl -skSL https://raw.githubusercontent.com/openshift/release/master/ci-operator/step-registry/gather/extra/gather-extra-commands.sh | /bin/bash -s`,
+				Commands:    `curl -skSL https://raw.githubusercontent.com/openshift/release/main/ci-operator/step-registry/gather/extra/gather-extra-commands.sh | /bin/bash -s`,
 				GracePeriod: &prowapi.Duration{Duration: 60 * time.Second},
 				Resources: cioperatorapi.ResourceRequirements{
 					Requests: cioperatorapi.ResourceList{

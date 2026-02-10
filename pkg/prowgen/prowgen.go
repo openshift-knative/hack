@@ -538,7 +538,7 @@ func InitializeOpenShiftReleaseRepository(ctx context.Context, openShiftRelease 
 	if err := GitMirror(ctx, openShiftRelease); err != nil {
 		return err
 	}
-	if err := GitCheckout(ctx, openShiftRelease, "master"); err != nil {
+	if err := GitCheckout(ctx, openShiftRelease, "main"); err != nil {
 		return err
 	}
 
