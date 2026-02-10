@@ -44,7 +44,7 @@ config:
       promotion: {}
     release-v1.18:
       konflux:
-        enabled: true
+        enabled: false
       openShiftVersions:
       - candidateRelease: true
         onDemand: true
@@ -57,7 +57,7 @@ config:
       promotion: {}
     release-v1.19:
       konflux:
-        enabled: true
+        enabled: false
       openShiftVersions:
       - useClusterPool: true
         version: "4.20"
@@ -66,7 +66,7 @@ config:
       promotion: {}
     release-v1.20:
       konflux:
-        enabled: true
+        enabled: false
       openShiftVersions:
       - useClusterPool: true
         version: "4.20"

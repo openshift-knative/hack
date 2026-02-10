@@ -54,7 +54,7 @@ config:
       - .*e2e-tls$
     release-v1.18:
       konflux:
-        enabled: true
+        enabled: false
       openShiftVersions:
       - candidateRelease: true
         onDemand: true

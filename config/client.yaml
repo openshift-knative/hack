@@ -43,7 +43,7 @@ config:
       promotion: {}
     release-v1.18:
       konflux:
-        enabled: true
+        enabled: false
         imageOverrides:
         - name: CLI_ARTIFACTS
           pullSpec: brew.registry.redhat.io/rh-osbs/openshift-serverless-1-kn-cli-artifacts-rhel8:1.16.0
@@ -58,7 +58,7 @@ config:
       promotion: {}
     release-v1.19:
       konflux:
-        enabled: true
+        enabled: false
         imageOverrides:
         - name: CLI_ARTIFACTS
           pullSpec: brew.registry.redhat.io/rh-osbs/openshift-serverless-1-kn-cli-artifacts-rhel8:1.16.0
@@ -73,7 +73,7 @@ config:
       promotion: {}
     release-v1.20:
       konflux:
-        enabled: true
+        enabled: false
         imageOverrides:
         - name: CLI_ARTIFACTS
           pullSpec: brew.registry.redhat.io/rh-osbs/openshift-serverless-1-kn-cli-artifacts-rhel8:1.16.0
