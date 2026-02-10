@@ -72,6 +72,7 @@ config:
       skipDockerFilesMatches:
       - .*hermetic.*
     release-v1.18:
+      dependabotEnabled: false
       konflux:
         enabled: false
         javaImages:
@@ -96,6 +97,7 @@ config:
       skipDockerFilesMatches:
       - .*hermetic.*
     release-v1.19:
+      dependabotEnabled: false
       konflux:
         enabled: false
         javaImages:
@@ -120,6 +122,7 @@ config:
       skipDockerFilesMatches:
       - .*hermetic.*
     release-v1.20:
+      dependabotEnabled: false
       konflux:
         enabled: false
         javaImages:

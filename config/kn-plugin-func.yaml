@@ -42,6 +42,7 @@ config:
         version: "4.20"
       promotion: {}
     release-v1.18:
+      dependabotEnabled: false
       konflux:
         enabled: false
       openShiftVersions:
@@ -50,6 +51,7 @@ config:
         version: "4.20"
       promotion: {}
     release-v1.19:
+      dependabotEnabled: false
       konflux:
         enabled: false
       openShiftVersions:
@@ -58,6 +60,7 @@ config:
         version: "4.20"
       promotion: {}
     release-v1.20:
+      dependabotEnabled: false
       konflux:
         enabled: false
       openShiftVersions:
