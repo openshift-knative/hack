@@ -72,8 +72,9 @@ config:
       skipDockerFilesMatches:
       - .*hermetic.*
     release-v1.18:
+      dependabotEnabled: false
       konflux:
-        enabled: true
+        enabled: false
         javaImages:
         - .*eventing-integrations-aws-ddb-streams-source
         - .*eventing-integrations-aws-s3-sink
@@ -96,8 +97,9 @@ config:
       skipDockerFilesMatches:
       - .*hermetic.*
     release-v1.19:
+      dependabotEnabled: false
       konflux:
-        enabled: true
+        enabled: false
         javaImages:
         - .*eventing-integrations-aws-ddb-streams-source
         - .*eventing-integrations-aws-s3-sink
@@ -120,8 +122,9 @@ config:
       skipDockerFilesMatches:
       - .*hermetic.*
     release-v1.20:
+      dependabotEnabled: false
       konflux:
-        enabled: true
+        enabled: false
         javaImages:
         - .*eventing-integrations-aws-ddb-streams-source
         - .*eventing-integrations-aws-s3-sink

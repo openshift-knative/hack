@@ -64,8 +64,9 @@ config:
       skipDockerFilesMatches:
       - .*hermetic.*
     release-v1.18:
+      dependabotEnabled: false
       konflux:
-        enabled: true
+        enabled: false
         javaImages:
         - .*eventing-kafka-broker-receiver
         - .*eventing-kafka-broker-dispatcher
@@ -82,8 +83,9 @@ config:
       skipDockerFilesMatches:
       - .*hermetic.*
     release-v1.19:
+      dependabotEnabled: false
       konflux:
-        enabled: true
+        enabled: false
         javaImages:
         - .*eventing-kafka-broker-receiver
         - .*eventing-kafka-broker-dispatcher
@@ -96,8 +98,9 @@ config:
       skipDockerFilesMatches:
       - .*hermetic.*
     release-v1.20:
+      dependabotEnabled: false
       konflux:
-        enabled: true
+        enabled: false
         javaImages:
         - .*eventing-kafka-broker-receiver
         - .*eventing-kafka-broker-dispatcher

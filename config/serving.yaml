@@ -53,8 +53,9 @@ config:
       - perf-tests$
       - .*e2e-tls$
     release-v1.18:
+      dependabotEnabled: false
       konflux:
-        enabled: true
+        enabled: false
       openShiftVersions:
       - candidateRelease: true
         onDemand: true
