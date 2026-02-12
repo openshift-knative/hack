@@ -89,8 +89,6 @@ func discover(ctx context.Context, path string, unsupported []Unsupported, ignor
 		return fmt.Errorf("failed to remove unsupported branches: %w", err)
 	}
 
-	inConfig = removeIgnoredBranches(inConfig, ignored)
-
 	for _, r := range inConfig.Repositories {
 		if len(inConfig.Config.Branches) == 0 {
 			continue // nothing to do here
@@ -177,6 +175,8 @@ func discover(ctx context.Context, path string, unsupported []Unsupported, ignor
 			}
 		}
 	}
+
+	inConfig = removeIgnoredBranches(inConfig, ignored)
 
 	return writeYaml(path, inConfig)
 }
