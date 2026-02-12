@@ -43,7 +43,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Setup ko
-        uses: imjasonh/setup-ko@v0.6
+        uses: imjasonh/setup-ko@v0.9
         with:
           version: ${{ inputs.koversion }}
 
