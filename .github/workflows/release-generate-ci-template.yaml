@@ -32,7 +32,7 @@ jobs:
           sudo rm -rf /opt/ghc || true
           sudo rm -rf "$AGENT_TOOLSDIRECTORY" || true
       - name: Checkout openshift-knative/hack
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: ./src/github.com/openshift-knative/hack
 
@@ -54,7 +54,7 @@ jobs:
 
       - name: Checkout openshift/release
         if: ${{ github.event_name == 'pull_request' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: 'main'
           repository: 'openshift/release'
@@ -62,7 +62,7 @@ jobs:
 
       - name: Checkout openshift/release
         if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: 'main'
           repository: 'openshift/release'
