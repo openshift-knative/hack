@@ -24,6 +24,11 @@ import (
 	"github.com/openshift-knative/hack/pkg/soversion"
 )
 
+const (
+	unsupportedConfig = "pkg/discover/unsupported.yaml"
+	ignoredConfig     = "pkg/discover/ignored.yaml"
+)
+
 func Main() {
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
@@ -34,10 +39,13 @@ func Main() {
 	outputAction := flag.String("output", filepath.Join(".github", "workflows", "release-generate-ci.yaml"), "Output action")
 	flag.Parse()
 
-	const unsupportedConfig = "pkg/discover/unsupported.yaml"
-
 	unsupportedBranches := make([]Unsupported, 0)
 	if err := readYaml(unsupportedConfig, &unsupportedBranches); err != nil {
+		log.Fatalln(err)
+	}
+
+	ignoredBranches := make([]Ignored, 0)
+	if err := readYaml(ignoredConfig, &ignoredBranches); err != nil {
 		log.Fatalln(err)
 	}
 
@@ -46,7 +54,7 @@ func Main() {
 			return nil
 		}
 
-		if err := discover(ctx, path, unsupportedBranches); err != nil {
+		if err := discover(ctx, path, unsupportedBranches, ignoredBranches); err != nil {
 			return fmt.Errorf("failed to discover config for %s: %w", path, err)
 		}
 
@@ -70,7 +78,7 @@ func Main() {
 	}
 }
 
-func discover(ctx context.Context, path string, unsupported []Unsupported) error {
+func discover(ctx context.Context, path string, unsupported []Unsupported, ignored []Ignored) error {
 	inConfig := &prowgen.Config{}
 	if err := readYaml(path, inConfig); err != nil {
 		return err
@@ -80,6 +88,8 @@ func discover(ctx context.Context, path string, unsupported []Unsupported) error
 	if err != nil {
 		return fmt.Errorf("failed to remove unsupported branches: %w", err)
 	}
+
+	inConfig = removeIgnoredBranches(inConfig, ignored)
 
 	for _, r := range inConfig.Repositories {
 		if len(inConfig.Config.Branches) == 0 {
@@ -169,6 +179,33 @@ func discover(ctx context.Context, path string, unsupported []Unsupported) error
 	}
 
 	return writeYaml(path, inConfig)
+}
+
+func removeIgnoredBranches(in *prowgen.Config, ignored []Ignored) *prowgen.Config {
+	for branch := range in.Config.Branches {
+		for _, ignore := range ignored {
+			if branch == ignore.Branch {
+				if len(ignore.Repos) == 0 {
+					// empty repo list, this ignore applies to all repos
+					delete(in.Config.Branches, branch)
+					continue
+				}
+
+				for _, repo := range in.Repositories {
+					if slices.Contains(ignore.Repos, repo.Repo) {
+						delete(in.Config.Branches, ignore.Branch)
+						break
+					}
+				}
+			}
+		}
+	}
+	return in
+}
+
+type Ignored struct {
+	Branch string   `json:"branch"`
+	Repos  []string `json:"repos"`
 }
 
 type Unsupported struct {
