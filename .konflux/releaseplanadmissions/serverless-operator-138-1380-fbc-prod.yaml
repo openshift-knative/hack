@@ -1,0 +1,53 @@
+---
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: ReleasePlanAdmission
+metadata:
+  labels:
+    release.appstudio.openshift.io/block-releases: "false"
+    pp.engineering.redhat.com/business-unit: hybrid-platforms
+  name: serverless-operator-138-1380-fbc-prod
+  namespace: rhtap-releng-tenant
+  annotations:
+    rhel_target: el9
+spec:
+  applications:
+    - serverless-operator-138-fbc-416
+    - serverless-operator-138-fbc-417
+    - serverless-operator-138-fbc-418
+    - serverless-operator-138-fbc-419
+    - serverless-operator-138-fbc-420
+    - serverless-operator-138-fbc-421
+    - serverless-operator-138-fbc-422
+  origin: ocp-serverless-tenant
+  policy: fbc-ocp-serverless-prod
+  data:
+    releaseNotes:
+      product_id: [579]
+      product_name: "OpenShift Serverless"
+      product_version: "fbc"
+    fbc:
+      fromIndex: "registry-proxy.engineering.redhat.com/rh-osbs/iib-pub:{{ OCP_VERSION }}"
+      targetIndex: "quay.io/redhat-prod/redhat----redhat-operator-index:{{ OCP_VERSION }}"
+      publishingCredentials: "fbc-production-publishing-credentials-redhat-prod"
+      requestTimeoutSeconds: 1500
+      buildTimeoutSeconds: 1500
+      allowedPackages: [serverless-operator]
+    sign:
+      configMapName: hacbs-signing-pipeline-config-redhatrelease2
+      cosignSecretName: konflux-cosign-signing-production
+    intention: production
+    enforceContainerFirstSecurityLabels: true
+  pipeline:
+    pipelineRef:
+      resolver: git
+      params:
+        - name: url
+          value: "https://github.com/konflux-ci/release-service-catalog.git"
+        - name: revision
+          value: production
+        - name: pathInRepo
+          value: "pipelines/managed/fbc-release/fbc-release.yaml"
+    serviceAccountName: release-index-image-prod
+    timeouts:
+      pipeline: "4h0m0s"
+      tasks: "4h0m0s"
