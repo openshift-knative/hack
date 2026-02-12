@@ -16,9 +16,6 @@ patches:
   - path: ../patch_snyk_args.patch.yaml
     target:
       kind: Pipeline
-  - path: patch_java_build.patch.yaml
-    target:
-      kind: Pipeline
   - path: ../patch_build_platforms_default.patch.yaml
     target:
       kind: Pipeline
@@ -31,22 +28,5 @@ patches:
         value: docker-java-build
     target:
       kind: Pipeline
-replacements:
-  - source:
-      kind: Pipeline
-      fieldPath: spec.tasks.[name=build-images].taskRef.params.[name=bundle].value
-    targets:
-      - select:
-          kind: Pipeline
-        fieldPaths:
-          - spec.tasks.[name=build-images-deps].taskRef.params.[name=bundle].value
-  - source:
-      kind: Pipeline
-      fieldPath: spec.tasks.[name=build-image-index].taskRef.params.[name=bundle].value
-    targets:
-      - select:
-          kind: Pipeline
-        fieldPaths:
-          - spec.tasks.[name=build-image-index-deps].taskRef.params.[name=bundle].value
 openapi:
   path: ../pipeline_schema.json
