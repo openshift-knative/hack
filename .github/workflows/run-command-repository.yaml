@@ -30,7 +30,7 @@ jobs:
           ref: "${{ inputs.branch }}"
 
       - name: Setup Golang
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           cache: false
           go-version-file: "./src/github.com/${{ inputs.repository }}/go.mod"
