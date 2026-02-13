@@ -114,137 +114,6 @@ spec:
     name: CHAINS-GIT_COMMIT
     value: $(tasks.clone-repository.results.commit)
   tasks:
-  - matrix:
-      params:
-      - name: PLATFORM
-        value:
-        - $(params.build-platforms)
-    name: build-images-deps
-    params:
-    - name: IMAGE
-      value: $(params.output-image)-deps
-    - name: DOCKERFILE
-      value: $(params.dockerfile).deps
-    - name: CONTEXT
-      value: $(params.path-context)
-    - name: HERMETIC
-      value: "false"
-    - name: PREFETCH_INPUT
-      value: $(params.prefetch-input)
-    - name: IMAGE_EXPIRES_AFTER
-      value: $(params.image-expires-after)
-    - name: COMMIT_SHA
-      value: $(tasks.clone-repository.results.commit)
-    - name: BUILD_ARGS
-      value:
-      - $(params.build-args[*])
-    - name: BUILD_ARGS_FILE
-      value: $(params.build-args-file)
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
-    - name: CACHI2_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    - name: IMAGE_APPEND_PLATFORM
-      value: "true"
-    runAfter:
-    - prefetch-dependencies
-    taskRef:
-      params:
-      - name: name
-        value: buildah-remote-oci-ta
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.8@sha256:36914fa75f224eae34b47bb9523e8d5d00d7ab7ea0c12a4ded5125d3d29c8bc8
-      - name: kind
-        value: task
-      resolver: bundles
-    when:
-    - input: $(tasks.init.results.build)
-      operator: in
-      values:
-      - "true"
-  - name: build-image-index-deps
-    params:
-    - name: IMAGE
-      value: $(params.output-image)-deps
-    - name: COMMIT_SHA
-      value: $(tasks.clone-repository.results.commit)
-    - name: IMAGE_EXPIRES_AFTER
-      value: $(params.image-expires-after)
-    - name: ALWAYS_BUILD_INDEX
-      value: $(params.build-image-index)
-    - name: IMAGES
-      value:
-      - $(tasks.build-images-deps.results.IMAGE_REF[*])
-    runAfter:
-    - build-images-deps
-    taskRef:
-      params:
-      - name: name
-        value: build-image-index
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-build-image-index:0.2@sha256:8fd2bd1329a833cf1c3c049c0044961d6f5d5bfc954ebf188c19a56852c42600
-      - name: kind
-        value: task
-      resolver: bundles
-    when:
-    - input: $(tasks.init.results.build)
-      operator: in
-      values:
-      - "true"
-  - matrix:
-      params:
-      - name: PLATFORM
-        value:
-        - $(params.build-platforms)
-    name: build-images
-    params:
-    - name: BUILD_ARGS
-      value:
-      - DEPS_IMAGE=$(tasks.build-image-index-deps.results.IMAGE_URL)@$(tasks.build-image-index-deps.results.IMAGE_DIGEST)
-      - $(params.build-args[*])
-    - name: IMAGE
-      value: $(params.output-image)
-    - name: DOCKERFILE
-      value: $(params.dockerfile)
-    - name: CONTEXT
-      value: $(params.path-context)
-    - name: HERMETIC
-      value: $(params.hermetic)
-    - name: PREFETCH_INPUT
-      value: $(params.prefetch-input)
-    - name: IMAGE_EXPIRES_AFTER
-      value: $(params.image-expires-after)
-    - name: COMMIT_SHA
-      value: $(tasks.clone-repository.results.commit)
-    - name: BUILD_ARGS_FILE
-      value: $(params.build-args-file)
-    - name: PRIVILEGED_NESTED
-      value: $(params.privileged-nested)
-    - name: SOURCE_URL
-      value: $(tasks.clone-repository.results.url)
-    - name: BUILDAH_FORMAT
-      value: $(params.buildah-format)
-    - name: HTTP_PROXY
-      value: $(tasks.init.results.http-proxy)
-    - name: NO_PROXY
-      value: $(tasks.init.results.no-proxy)
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
-    - name: CACHI2_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
-    - name: IMAGE_APPEND_PLATFORM
-      value: "true"
-    runAfter:
-    - build-image-index-deps
-    taskRef:
-      params:
-      - name: name
-        value: buildah-remote-oci-ta
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.8@sha256:36914fa75f224eae34b47bb9523e8d5d00d7ab7ea0c12a4ded5125d3d29c8bc8
-      - name: kind
-        value: task
-      resolver: bundles
   - name: sast-snyk-check
     params:
     - name: ARGS
@@ -357,6 +226,59 @@ spec:
     workspaces:
     - name: basic-auth
       workspace: git-auth
+  - matrix:
+      params:
+      - name: PLATFORM
+        value:
+        - $(params.build-platforms)
+    name: build-images
+    params:
+    - name: IMAGE
+      value: $(params.output-image)
+    - name: DOCKERFILE
+      value: $(params.dockerfile)
+    - name: CONTEXT
+      value: $(params.path-context)
+    - name: HERMETIC
+      value: $(params.hermetic)
+    - name: PREFETCH_INPUT
+      value: $(params.prefetch-input)
+    - name: IMAGE_EXPIRES_AFTER
+      value: $(params.image-expires-after)
+    - name: COMMIT_SHA
+      value: $(tasks.clone-repository.results.commit)
+    - name: BUILD_ARGS
+      value:
+      - $(params.build-args[*])
+    - name: BUILD_ARGS_FILE
+      value: $(params.build-args-file)
+    - name: PRIVILEGED_NESTED
+      value: $(params.privileged-nested)
+    - name: SOURCE_URL
+      value: $(tasks.clone-repository.results.url)
+    - name: BUILDAH_FORMAT
+      value: $(params.buildah-format)
+    - name: HTTP_PROXY
+      value: $(tasks.init.results.http-proxy)
+    - name: NO_PROXY
+      value: $(tasks.init.results.no-proxy)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    - name: CACHI2_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
+    - name: IMAGE_APPEND_PLATFORM
+      value: "true"
+    runAfter:
+    - prefetch-dependencies
+    taskRef:
+      params:
+      - name: name
+        value: buildah-remote-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.8@sha256:417f776b6be35d6e51d9133ef8f0540f20ff80d761c76de37fb0e51786918950
+      - name: kind
+        value: task
+      resolver: bundles
   - name: build-image-index
     params:
     - name: IMAGE
