@@ -116,25 +116,11 @@ func (cfg *DependabotConfig) WithGo(branch string) {
 				UpdateTypes: []string{"minor"},
 				Patterns:    []string{"*"},
 				AppliesTo:   "version-updates",
-				ExcludePatterns: []string{
-					"knative.dev/*",
-					"k8s.io/*",
-					"github.com/openshift/*",
-					"sigs.k8s.io/controller-runtime*",
-					"istio.io/*",
-				},
 			},
 			"major": {
 				UpdateTypes: []string{"major"},
 				Patterns:    []string{"*"},
 				AppliesTo:   "version-updates",
-				ExcludePatterns: []string{
-					"knative.dev/*",
-					"istio.io/*",
-					"k8s.io/*",
-					"github.com/openshift/*",
-					"sigs.k8s.io/controller-runtime*",
-				},
 			},
 			"security": {
 				UpdateTypes: []string{"patch", "minor", "major"},
@@ -187,21 +173,11 @@ func (cfg *DependabotConfig) WithMaven(dirs []string, branch string) {
 				UpdateTypes: []string{"minor"},
 				Patterns:    []string{"*"},
 				AppliesTo:   "version-updates",
-				ExcludePatterns: []string{
-					"io.vertx*",
-					"com.redhat.quarkus.platform*",
-					"io.quarkus*",
-				},
 			},
 			"major": {
 				UpdateTypes: []string{"major"},
 				Patterns:    []string{"*"},
 				AppliesTo:   "version-updates",
-				ExcludePatterns: []string{
-					"io.vertx*",
-					"com.redhat.quarkus.platform*",
-					"io.quarkus*",
-				},
 			},
 			"security": {
 				UpdateTypes: []string{"patch", "minor", "major"},
