@@ -104,7 +104,7 @@ func updateAction(ctx context.Context, inConfig *prowgen.Config) ([]interface{},
 			map[string]interface{}{
 				"name": fmt.Sprintf("[%s] Clone repository", r.Repo),
 				"if":   "${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}",
-				"uses": "actions/checkout@v4",
+				"uses": "actions/checkout@v6",
 				"with": map[string]interface{}{
 					"repository": r.RepositoryDirectory(),
 					"ref":        "main",
