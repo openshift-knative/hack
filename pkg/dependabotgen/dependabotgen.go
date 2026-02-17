@@ -68,7 +68,6 @@ type CommitMessageUpdate struct {
 
 type Group struct {
 	UpdateTypes     []string `yaml:"update-types,omitempty"`
-	Patterns        []string `yaml:"patterns,omitempty"`
 	AppliesTo       string   `yaml:"applies-to,omitempty"`
 	ExcludePatterns []string `yaml:"exclude-patterns,omitempty"`
 }
@@ -109,22 +108,18 @@ func (cfg *DependabotConfig) WithGo(branch string) {
 		Groups: map[string]Group{
 			"patch": {
 				UpdateTypes: []string{"patch"},
-				Patterns:    []string{"*"},
 				AppliesTo:   "version-updates",
 			},
 			"minor": {
 				UpdateTypes: []string{"minor"},
-				Patterns:    []string{"*"},
 				AppliesTo:   "version-updates",
 			},
 			"major": {
 				UpdateTypes: []string{"major"},
-				Patterns:    []string{"*"},
 				AppliesTo:   "version-updates",
 			},
 			"security": {
 				UpdateTypes: []string{"patch", "minor", "major"},
-				Patterns:    []string{"*"},
 				AppliesTo:   "security-updates",
 			},
 		},
@@ -166,22 +161,18 @@ func (cfg *DependabotConfig) WithMaven(dirs []string, branch string) {
 		Groups: map[string]Group{
 			"patch": {
 				UpdateTypes: []string{"patch"},
-				Patterns:    []string{"*"},
 				AppliesTo:   "version-updates",
 			},
 			"minor": {
 				UpdateTypes: []string{"minor"},
-				Patterns:    []string{"*"},
 				AppliesTo:   "version-updates",
 			},
 			"major": {
 				UpdateTypes: []string{"major"},
-				Patterns:    []string{"*"},
 				AppliesTo:   "version-updates",
 			},
 			"security": {
 				UpdateTypes: []string{"patch", "minor", "major"},
-				Patterns:    []string{"*"},
 				AppliesTo:   "security-updates",
 			},
 		},
@@ -209,22 +200,18 @@ func (cfg *DependabotConfig) WithNPM(dirs []string, branch string) {
 		Groups: map[string]Group{
 			"patch": {
 				UpdateTypes: []string{"patch"},
-				Patterns:    []string{"*"},
 				AppliesTo:   "version-updates",
 			},
 			"minor": {
 				UpdateTypes: []string{"minor"},
-				Patterns:    []string{"*"},
 				AppliesTo:   "version-updates",
 			},
 			"major": {
 				UpdateTypes: []string{"major"},
-				Patterns:    []string{"*"},
 				AppliesTo:   "version-updates",
 			},
 			"security": {
 				UpdateTypes: []string{"patch", "minor", "major"},
-				Patterns:    []string{"*"},
 				AppliesTo:   "security-updates",
 			},
 		},
