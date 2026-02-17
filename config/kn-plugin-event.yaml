@@ -30,30 +30,6 @@ config:
         useClusterPool: true
         version: "4.20"
       promotion: {}
-    release-1.18:
-      konflux:
-        enabled: true
-      openShiftVersions:
-      - skipCron: true
-        useClusterPool: true
-        version: "4.20"
-      promotion: {}
-    release-1.19:
-      konflux:
-        enabled: true
-      openShiftVersions:
-      - skipCron: true
-        useClusterPool: true
-        version: "4.20"
-      promotion: {}
-    release-1.20:
-      konflux:
-        enabled: true
-      openShiftVersions:
-      - skipCron: true
-        useClusterPool: true
-        version: "4.20"
-      promotion: {}
     release-1.21:
       konflux:
         enabled: true
