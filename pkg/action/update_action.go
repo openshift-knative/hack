@@ -134,11 +134,8 @@ if [ -z "$remote_exists" ]; then
   git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
 fi
 git fetch fork "$branch"
-if git diff --quiet "fork/$branch" "$branch"; then
-  echo "Branches are identical. No need to force push."
-else
-  git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-fi
+git rebase --quiet "$target_branch" "$branch"
+git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
 gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update dependabot configurations" --body "Update dependabot configurations" || true
 `,
 					r.Repo,
