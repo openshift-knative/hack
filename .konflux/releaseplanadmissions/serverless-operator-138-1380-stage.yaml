@@ -116,9 +116,17 @@ spec:
           repositories:
             - url: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-jobsink-rhel9
           pushSourceContainer: true
+        - name: kn-eventing-requestreply-121
+          repositories:
+            - url: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-requestreply-rhel9
+          pushSourceContainer: true
         - name: kn-eventing-apiserver-receive-adapter-121
           repositories:
             - url: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-apiserver-receive-adapter-rhel9
+          pushSourceContainer: true
+        - name: kn-eventing-auth-proxy-121
+          repositories:
+            - url: registry.stage.redhat.io/openshift-serverless-1/kn-eventing-auth-proxy-rhel9
           pushSourceContainer: true
         - name: kn-eventing-integrations-transform-jsonata-121
           repositories:
