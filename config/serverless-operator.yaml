@@ -22,16 +22,12 @@ config:
           pullSpec: registry.access.redhat.com/ubi9/nodejs-20
       openShiftVersions:
       - candidateRelease: true
-        customConfigs:
-          enabled: true
-          includes:
-          - .*ocp-4.21-lp-interop.*
         onDemand: true
         version: "4.21"
       - customConfigs:
           enabled: true
           excludes:
-          - .*ocp-4.21-lp-interop.*
+          - .*ocp-4.22-lp-interop.*
         useClusterPool: true
         version: "4.20"
       - onDemand: true
@@ -118,7 +114,14 @@ config:
       openShiftVersions:
       - candidateRelease: true
         onDemand: true
-        skipCron: true
+        skipCron: false
+        version: "4.22"
+        customConfigs:
+          enabled: true
+          includes:
+          - .*ocp-4.22-lp-interop.*
+      - candidateRelease: true
+        onDemand: true
         version: "4.21"
       - skipCron: true
         useClusterPool: true
@@ -390,10 +393,10 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: ocp-4.21-lp-interop-cr
+  - name: ocp-4.22-lp-interop-cr
     releaseBuildConfiguration:
       tests:
-      - as: operator-e2e-interop-aws-ocp421
+      - as: operator-e2e-interop-aws-ocp422
         cron: 0 3,15 * * *
         steps:
           cluster_profile: aws-cspi-qe
@@ -410,10 +413,10 @@ repositories:
                     {"step": "operator-e2e", "failure_type": "pod_failure", "classification": "operator-e2e Test Execution", "jira_additional_labels": ["!default","interop-tests"], "jira_assignee": "!default"}
                   ]
               }
-            FIREWATCH_DEFAULT_JIRA_ADDITIONAL_LABELS: '["4.21-lp","self-managed-lp","serverless-lp"]'
+            FIREWATCH_DEFAULT_JIRA_ADDITIONAL_LABELS: '["4.22-lp","self-managed-lp","serverless-lp"]'
             FIREWATCH_DEFAULT_JIRA_ASSIGNEE: maschmid@redhat.com
             FIREWATCH_DEFAULT_JIRA_PROJECT: SRVCOM
-            OCP_VERSION: "4.21"
+            OCP_VERSION: "4.22"
             REPORT_TO_DR: "true"
             REPORTPORTAL_CMP: Serverless-lp-interop
             USER_TAGS: |
