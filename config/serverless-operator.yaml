@@ -113,13 +113,12 @@ config:
           pullSpec: registry.access.redhat.com/ubi9/nodejs-20
       openShiftVersions:
       - candidateRelease: true
-        onDemand: true
-        skipCron: false
-        version: "4.22"
         customConfigs:
           enabled: true
           includes:
           - .*ocp-4.22-lp-interop.*
+        onDemand: true
+        version: "4.22"
       - candidateRelease: true
         onDemand: true
         version: "4.21"
