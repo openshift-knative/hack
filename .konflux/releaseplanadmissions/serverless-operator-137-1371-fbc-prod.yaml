@@ -11,8 +11,6 @@ metadata:
     rhel_target: el9
 spec:
   applications:
-    - serverless-operator-137-fbc-412
-    - serverless-operator-137-fbc-413
     - serverless-operator-137-fbc-414
     - serverless-operator-137-fbc-415
     - serverless-operator-137-fbc-416
