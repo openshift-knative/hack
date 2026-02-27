@@ -229,6 +229,7 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
           git rebase --quiet "$target_branch" "$branch"
           git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
@@ -250,13 +251,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/backstage-plugins
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -274,12 +273,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/backstage-plugins
       - env:
@@ -298,13 +295,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/backstage-plugins
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -322,12 +317,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/backstage-plugins
       - env:
@@ -346,13 +339,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/backstage-plugins
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -370,12 +361,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/backstage-plugins
       - env:
@@ -394,13 +383,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/backstage-plugins
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -418,12 +405,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/backstage-plugins
       - env:
@@ -442,12 +427,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/backstage-plugins
       - env:
@@ -466,6 +449,7 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
           git rebase --quiet "$target_branch" "$branch"
           git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
@@ -487,13 +471,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/client
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -511,12 +493,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/client
       - env:
@@ -535,13 +515,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/client
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -559,12 +537,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/client
       - env:
@@ -583,13 +559,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/client
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -607,12 +581,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/client
       - env:
@@ -631,13 +603,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/client
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -655,12 +625,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/client
       - env:
@@ -679,12 +647,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/client
       - env:
@@ -703,12 +669,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-hyperfoil-benchmark
       - env:
@@ -727,6 +691,7 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
           git rebase --quiet "$target_branch" "$branch"
           git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
@@ -748,13 +713,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-integrations
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -772,12 +735,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-integrations
       - env:
@@ -796,13 +757,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-integrations
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -820,12 +779,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-integrations
       - env:
@@ -844,13 +801,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-integrations
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -868,12 +823,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-integrations
       - env:
@@ -892,12 +845,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-integrations
       - env:
@@ -916,6 +867,7 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
           git rebase --quiet "$target_branch" "$branch"
           git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
@@ -937,13 +889,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-istio
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -961,12 +911,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-istio
       - env:
@@ -985,13 +933,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-istio
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -1009,12 +955,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-istio
       - env:
@@ -1033,13 +977,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-istio
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -1057,12 +999,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-istio
       - env:
@@ -1081,13 +1021,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-istio
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -1105,12 +1043,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-istio
       - env:
@@ -1129,12 +1065,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-istio
       - env:
@@ -1153,6 +1087,7 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
           git rebase --quiet "$target_branch" "$branch"
           git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
@@ -1174,13 +1109,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-kafka-broker
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -1198,12 +1131,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-kafka-broker
       - env:
@@ -1222,13 +1153,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-kafka-broker
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -1246,12 +1175,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-kafka-broker
       - env:
@@ -1270,13 +1197,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-kafka-broker
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -1294,12 +1219,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-kafka-broker
       - env:
@@ -1318,13 +1241,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-kafka-broker
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -1342,12 +1263,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-kafka-broker
       - env:
@@ -1366,12 +1285,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-kafka-broker
       - env:
@@ -1390,6 +1307,7 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
           git rebase --quiet "$target_branch" "$branch"
           git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
@@ -1411,13 +1329,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -1435,12 +1351,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
       - env:
@@ -1459,13 +1373,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -1483,12 +1395,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
       - env:
@@ -1507,13 +1417,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -1531,12 +1439,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
       - env:
@@ -1555,13 +1461,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -1579,12 +1483,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
       - env:
@@ -1603,12 +1505,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
       - env:
@@ -1627,6 +1527,7 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
           git rebase --quiet "$target_branch" "$branch"
           git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
@@ -1648,13 +1549,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-event
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -1672,12 +1571,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-event
       - env:
@@ -1696,13 +1593,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-event
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -1720,12 +1615,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-event
       - env:
@@ -1744,13 +1637,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-event
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -1768,12 +1659,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-event
       - env:
@@ -1792,13 +1681,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-event
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -1816,12 +1703,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-event
       - env:
@@ -1840,12 +1725,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-event
       - env:
@@ -1864,6 +1747,7 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
           git rebase --quiet "$target_branch" "$branch"
           git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
@@ -1885,13 +1769,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-func
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -1909,12 +1791,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-func
       - env:
@@ -1933,13 +1813,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-func
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -1957,12 +1835,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-func
       - env:
@@ -1981,13 +1857,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-func
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -2005,12 +1879,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-func
       - env:
@@ -2029,13 +1901,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-func
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -2053,12 +1923,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-func
       - env:
@@ -2077,12 +1945,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-func
       - env:
@@ -2101,6 +1967,7 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
           git rebase --quiet "$target_branch" "$branch"
           git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
@@ -2122,13 +1989,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serverless-operator
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -2146,12 +2011,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serverless-operator
       - env:
@@ -2170,13 +2033,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serverless-operator
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -2194,12 +2055,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serverless-operator
       - env:
@@ -2218,13 +2077,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serverless-operator
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -2242,12 +2099,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serverless-operator
       - env:
@@ -2266,13 +2121,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serverless-operator
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -2290,12 +2143,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serverless-operator
       - env:
@@ -2314,6 +2165,7 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
           git rebase --quiet "$target_branch" "$branch"
           git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
@@ -2335,13 +2187,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-istio
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -2359,12 +2209,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-istio
       - env:
@@ -2383,13 +2231,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-istio
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -2407,12 +2253,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-istio
       - env:
@@ -2431,13 +2275,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-istio
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -2455,12 +2297,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-istio
       - env:
@@ -2479,13 +2319,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-istio
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -2503,12 +2341,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-istio
       - env:
@@ -2527,12 +2363,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-istio
       - env:
@@ -2551,6 +2385,7 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
           git rebase --quiet "$target_branch" "$branch"
           git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
@@ -2572,13 +2407,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-kourier
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -2596,12 +2429,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-kourier
       - env:
@@ -2620,13 +2451,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-kourier
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -2644,12 +2473,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-kourier
       - env:
@@ -2668,13 +2495,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-kourier
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -2692,12 +2517,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-kourier
       - env:
@@ -2716,13 +2539,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-kourier
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -2740,12 +2561,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-kourier
       - env:
@@ -2764,12 +2583,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-kourier
       - env:
@@ -2788,6 +2605,7 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
           git rebase --quiet "$target_branch" "$branch"
           git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
@@ -2809,13 +2627,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serving
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -2833,12 +2649,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serving
       - env:
@@ -2857,13 +2671,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serving
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -2881,12 +2693,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serving
       - env:
@@ -2905,13 +2715,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serving
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -2929,12 +2737,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serving
       - env:
@@ -2953,13 +2759,11 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
-          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux components and pipelines" || true
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serving
       - env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
@@ -2977,12 +2781,10 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serving
       - env:
@@ -3001,11 +2803,9 @@ jobs:
             # remote doesn't exist.
             git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
           fi
+          git fetch origin "$target_branch"
           git fetch fork "$branch"
-          if git diff --quiet "fork/$branch" "$branch"; then
-            echo "Branches are identical. No need to force push."
-          else
-            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-          fi
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
           gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serving
