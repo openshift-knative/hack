@@ -17,6 +17,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/openshift-knative/hack/config"
 	"github.com/openshift-knative/hack/pkg/soversion"
 
 	"github.com/coreos/go-semver/semver"
@@ -150,11 +151,11 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 	if err != nil {
 		return err
 	}
-	goVersion := goMod.Go.Version
+	goModGoVersion := goMod.Go.Version
 
 	// The builder images are distinguished by golang major.minor, so we ignore the rest of the goVersion
-	if strings.Count(goVersion, ".") > 1 {
-		goVersion = strings.Join(strings.Split(goVersion, ".")[0:2], ".")
+	if strings.Count(goModGoVersion, ".") > 1 {
+		goModGoVersion = strings.Join(strings.Split(goModGoVersion, ".")[0:2], ".")
 	}
 
 	metadata, err := project.ReadMetadataFile(params.ProjectFilePath)
@@ -165,6 +166,12 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 		}
 		log.Println("File not found:", params.ProjectFilePath, "(Using defaults)")
 		metadata = project.DefaultMetadata()
+	}
+
+	// get target go version
+	goVersion, err := goVersion(goModGoVersion, metadata)
+	if err != nil {
+		return fmt.Errorf("failed to get Go version: %w", err)
 	}
 
 	rhelVersion := RHEL9
@@ -406,6 +413,95 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 	}
 	log.Println("Images mapping file written:", immapPath)
 	return nil
+}
+
+// goVersion returns the target go version for the project.
+// First it checks if a dedicated go version is defined for the repositories branch in the config.
+// If no repo-branch specific config is set, it uses the one from the coresponding SO branch config.
+// If SO does not have a default go version in it's config neither it uses the go version from the
+// repositories go.mod file.
+func goVersion(goModGoVersion string, metadata *project.Metadata) (string, error) {
+	// get repo config
+	if imagePrefix := metadata.Project.ImagePrefix; imagePrefix != "" {
+
+		// this is a component repo
+		branch := ""
+		if metadata.Project.Tag == "knative-nightly" {
+			branch = "release-next"
+		} else {
+			branch = fmt.Sprintf("release-%s", strings.TrimPrefix(metadata.Project.Tag, "knative-"))
+		}
+
+		configFiles, err := fs.ReadDir(config.Configs, ".")
+		if err != nil {
+			return "", fmt.Errorf("failed to read config directory: %w", err)
+		}
+
+		for _, configFile := range configFiles {
+			if configFile.IsDir() {
+				continue
+			}
+
+			content, err := fs.ReadFile(config.Configs, configFile.Name())
+			if err != nil {
+				return "", fmt.Errorf("failed to load config from %s: %w", configFile.Name(), err)
+			}
+
+			cfg, err := prowgen.UnmarshalConfig(content)
+			if err != nil {
+				return "", fmt.Errorf("failed to parse config from %s: %w", configFile.Name(), err)
+			}
+
+			for _, repo := range cfg.Repositories {
+				if repo.ImagePrefix == imagePrefix {
+					// this is the repo we are generating the dockerfile for
+
+					if branchConfig, ok := cfg.Config.Branches[branch]; ok {
+						if branchConfig.GolangVersion != nil && *branchConfig.GolangVersion != "" {
+							return *branchConfig.GolangVersion, nil
+						}
+						// we didn't find a repo-branch specific default --> fall back to SO default
+					}
+				}
+			}
+		}
+	}
+
+	// check SO config
+	soBranch := ""
+	if metadata.Project.Tag != "" {
+		// this is a component repo (-> we falled through, as we didn't find a repo-branch specific default
+		if metadata.Project.Tag == "knative-nightly" {
+			soBranch = "main"
+		} else {
+			soVersion := soversion.FromUpstreamVersion(strings.TrimPrefix(metadata.Project.Tag, "knative-"))
+			soBranch = soversion.BranchName(soVersion)
+		}
+	} else if metadata.Project.Version != "" {
+		majorMinor := strings.TrimSuffix(metadata.Project.Version, ".0")
+		soBranch = fmt.Sprintf("release-v%s", majorMinor)
+	}
+
+	if soBranch != "" {
+		soYaml, err := config.Configs.ReadFile("serverless-operator.yaml")
+		if err != nil {
+			return "", fmt.Errorf("failed to load config for serverless-operator: %w", err)
+		}
+
+		soConfig, err := prowgen.UnmarshalConfig(soYaml)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse config for serverless-operator: %w", err)
+		}
+
+		if cfg, ok := soConfig.Config.Branches[soBranch]; ok {
+			if cfg.GolangVersion != nil && *cfg.GolangVersion != "" {
+				return *cfg.GolangVersion, nil
+			}
+			// we didn't find a repo-branch specific default --> fall back to go.mod version
+		}
+	}
+
+	return goModGoVersion, nil
 }
 
 func hasVendorFolder(dir string) (bool, error) {
