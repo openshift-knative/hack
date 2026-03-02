@@ -471,7 +471,7 @@ func goVersion(goModGoVersion string, metadata *project.Metadata) (string, error
 	soBranch := ""
 	if metadata.Project.Tag != "" {
 		// this is a component repo (-> we falled through, as we didn't find a repo-branch specific default
-		if metadata.Project.Tag == "knative-nightly" {
+		if metadata.Project.Tag == "knative-nightly" || metadata.Project.Tag == "main" {
 			soBranch = "main"
 		} else {
 			soVersion := soversion.FromUpstreamVersion(strings.TrimPrefix(metadata.Project.Tag, "knative-"))
