@@ -169,9 +169,12 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 	}
 
 	// get target go version
-	goVersion, err := goVersion(goModGoVersion, metadata)
+	goVersion, err := goVersionFromConfig(metadata)
 	if err != nil {
-		return fmt.Errorf("failed to get Go version: %w", err)
+		return fmt.Errorf("failed to get Go version from config: %w", err)
+	}
+	if goVersion == nil {
+		goVersion = &goModGoVersion
 	}
 
 	rhelVersion := RHEL9
@@ -217,7 +220,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 
 	builderImage := params.DockerfileImageBuilderFmt
 	if builderImage == "" {
-		builderImage = builderImageForGoVersion(goVersion, rhelVersion)
+		builderImage = builderImageForGoVersion(*goVersion, rhelVersion)
 	} else {
 		// Builder image might be provided without formatting '%s' string as plain value
 		if strings.Count(params.DockerfileImageBuilderFmt, "%s") == 1 {
@@ -415,12 +418,12 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 	return nil
 }
 
-// goVersion returns the target go version for the project.
+// goVersionFromConfig returns the target go version for the project.
 // First it checks if a dedicated go version is defined for the repositories branch in the config.
 // If no repo-branch specific config is set, it uses the one from the coresponding SO branch config.
-// If SO does not have a default go version in it's config neither it uses the go version from the
-// repositories go.mod file.
-func goVersion(goModGoVersion string, metadata *project.Metadata) (string, error) {
+// If SO does not have a default go version in it's config neither it returns nil to let the caller
+// decide.
+func goVersionFromConfig(metadata *project.Metadata) (*string, error) {
 	// get repo config
 	if imagePrefix := metadata.Project.ImagePrefix; imagePrefix != "" {
 
@@ -434,7 +437,7 @@ func goVersion(goModGoVersion string, metadata *project.Metadata) (string, error
 
 		configFiles, err := fs.ReadDir(config.Configs, ".")
 		if err != nil {
-			return "", fmt.Errorf("failed to read config directory: %w", err)
+			return nil, fmt.Errorf("failed to read config directory: %w", err)
 		}
 
 		for _, configFile := range configFiles {
@@ -444,12 +447,12 @@ func goVersion(goModGoVersion string, metadata *project.Metadata) (string, error
 
 			content, err := fs.ReadFile(config.Configs, configFile.Name())
 			if err != nil {
-				return "", fmt.Errorf("failed to load config from %s: %w", configFile.Name(), err)
+				return nil, fmt.Errorf("failed to load config from %s: %w", configFile.Name(), err)
 			}
 
 			cfg, err := prowgen.UnmarshalConfig(content)
 			if err != nil {
-				return "", fmt.Errorf("failed to parse config from %s: %w", configFile.Name(), err)
+				return nil, fmt.Errorf("failed to parse config from %s: %w", configFile.Name(), err)
 			}
 
 			for _, repo := range cfg.Repositories {
@@ -458,7 +461,7 @@ func goVersion(goModGoVersion string, metadata *project.Metadata) (string, error
 
 					if branchConfig, ok := cfg.Config.Branches[branch]; ok {
 						if branchConfig.GolangVersion != nil && *branchConfig.GolangVersion != "" {
-							return *branchConfig.GolangVersion, nil
+							return branchConfig.GolangVersion, nil
 						}
 						// we didn't find a repo-branch specific default --> fall back to SO default
 					}
@@ -485,23 +488,23 @@ func goVersion(goModGoVersion string, metadata *project.Metadata) (string, error
 	if soBranch != "" {
 		soYaml, err := config.Configs.ReadFile("serverless-operator.yaml")
 		if err != nil {
-			return "", fmt.Errorf("failed to load config for serverless-operator: %w", err)
+			return nil, fmt.Errorf("failed to load config for serverless-operator: %w", err)
 		}
 
 		soConfig, err := prowgen.UnmarshalConfig(soYaml)
 		if err != nil {
-			return "", fmt.Errorf("failed to parse config for serverless-operator: %w", err)
+			return nil, fmt.Errorf("failed to parse config for serverless-operator: %w", err)
 		}
 
 		if cfg, ok := soConfig.Config.Branches[soBranch]; ok {
 			if cfg.GolangVersion != nil && *cfg.GolangVersion != "" {
-				return *cfg.GolangVersion, nil
+				return cfg.GolangVersion, nil
 			}
 			// we didn't find a repo-branch specific default --> fall back to go.mod version
 		}
 	}
 
-	return goModGoVersion, nil
+	return nil, nil
 }
 
 func hasVendorFolder(dir string) (bool, error) {
