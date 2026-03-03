@@ -33,6 +33,7 @@ config:
       - onDemand: true
         version: "4.14"
       promotion: {}
+      golangVersion: "1.25"
     release-1.35:
       konflux:
         enabled: true
@@ -161,6 +162,7 @@ config:
       promotion: {}
       prowgen:
         disabled: true
+      golangVersion: "1.25"
 repositories:
 - customConfigs:
   - name: 420-aws-ovn
