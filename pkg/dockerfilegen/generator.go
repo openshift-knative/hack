@@ -224,7 +224,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 	} else {
 		// Builder image might be provided without formatting '%s' string as plain value
 		if strings.Count(params.DockerfileImageBuilderFmt, "%s") == 1 {
-			builderImage = fmt.Sprintf(params.DockerfileImageBuilderFmt, goVersion)
+			builderImage = fmt.Sprintf(params.DockerfileImageBuilderFmt, *goVersion)
 		}
 	}
 
