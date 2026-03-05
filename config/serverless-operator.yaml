@@ -376,7 +376,7 @@ repositories:
           tag: upi-installer
       tests:
       - as: e2e-vsphere-continuous
-        cron: 35 17 * * 0
+        cron: 26 4 * * 3
         steps:
           cluster_profile: vsphere-elastic
           test:
