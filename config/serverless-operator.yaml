@@ -473,8 +473,8 @@ repositories:
         steps:
           cluster_profile: aws-serverless
           env:
-            FEATURE_SET: TechPreviewNoUpgrade
             BASE_DOMAIN: serverless.devcluster.openshift.com
+            FEATURE_SET: TechPreviewNoUpgrade
             SPOT_INSTANCES: "true"
             ZONES_COUNT: "1"
           test:
