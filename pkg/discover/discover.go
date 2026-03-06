@@ -16,7 +16,7 @@ import (
 
 	"github.com/jinzhu/copier"
 
-	gyaml "github.com/ghodss/yaml"
+	"sigs.k8s.io/yaml"
 
 	"github.com/openshift-knative/hack/pkg/action"
 	"github.com/openshift-knative/hack/pkg/konfluxgen"
@@ -285,7 +285,7 @@ func readYaml(path string, out any) error {
 	if err != nil {
 		return fmt.Errorf("failed to read %q: %w", path, err)
 	}
-	j, err := gyaml.YAMLToJSON(y)
+	j, err := yaml.YAMLToJSON(y)
 	if err != nil {
 		return fmt.Errorf("failed to convert %q to JSON: %w", path, err)
 	}
@@ -305,7 +305,7 @@ func writeYaml(path string, out any) error {
 	if err != nil {
 		return err
 	}
-	y, err := gyaml.JSONToYAML(j)
+	y, err := yaml.JSONToYAML(j)
 	if err != nil {
 		return err
 	}
