@@ -11,10 +11,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	gyaml "github.com/ghodss/yaml"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/utils/pointer"
+	"sigs.k8s.io/yaml"
 
 	"github.com/openshift-knative/hack/pkg/prowgen"
 )
@@ -184,7 +184,7 @@ func getJobConfig(match string, c Config) (*prowgen.ReleaseBuildConfiguration, e
 	if err != nil {
 		return nil, err
 	}
-	j, err := gyaml.YAMLToJSON(y)
+	j, err := yaml.YAMLToJSON(y)
 	if err != nil {
 		return nil, err
 	}

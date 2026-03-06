@@ -30,9 +30,9 @@ import (
 	"github.com/openshift-knative/hack/pkg/soversion"
 	"github.com/openshift-knative/hack/pkg/util"
 
-	gyaml "github.com/ghodss/yaml"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
 	operatorsv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -743,7 +743,7 @@ func parseConfig(path string) (*cioperatorapi.ReleaseBuildConfiguration, error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %q: %w", path, err)
 	}
-	j, err := gyaml.YAMLToJSON(y)
+	j, err := yaml.YAMLToJSON(y)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert YAML to JSON: %w", err)
 	}
@@ -1308,7 +1308,7 @@ func loadClusterServiceVerion(path string) (*operatorsv1alpha1.ClusterServiceVer
 	if err != nil {
 		return nil, err
 	}
-	j, err := gyaml.YAMLToJSON(y)
+	j, err := yaml.YAMLToJSON(y)
 	if err != nil {
 		return nil, err
 	}

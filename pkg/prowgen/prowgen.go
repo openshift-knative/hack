@@ -27,7 +27,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/coreos/go-semver/semver"
-	gyaml "github.com/ghodss/yaml"
 	"golang.org/x/sync/errgroup"
 	prowapi "sigs.k8s.io/prow/pkg/apis/prowjobs/v1"
 	prowconfig "sigs.k8s.io/prow/pkg/config"
@@ -201,8 +200,8 @@ func LoadConfig(path string) (*Config, error) {
 	return UnmarshalConfig(y)
 }
 
-func UnmarshalConfig(yaml []byte) (*Config, error) {
-	j, err := gyaml.YAMLToJSON(yaml)
+func UnmarshalConfig(rawYaml []byte) (*Config, error) {
+	j, err := yaml.YAMLToJSON(rawYaml)
 	if err != nil {
 		return nil, err
 	}
@@ -561,7 +560,7 @@ func GetJobConfig(match string) (*prowconfig.JobConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	j, err := gyaml.YAMLToJSON(y)
+	j, err := yaml.YAMLToJSON(y)
 	if err != nil {
 		return nil, err
 	}
