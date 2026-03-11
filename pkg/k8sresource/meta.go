@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	gyaml "github.com/ghodss/yaml"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 func Metadata(yamlFilePath string) (*metav1.PartialObjectMetadata, error) {
@@ -24,7 +24,7 @@ func unmarshalYaml[T interface{}](yamlFilePath string, target *T) error {
 		return fmt.Errorf("failed to read file: %w", err)
 	}
 
-	j, err := gyaml.YAMLToJSON(y)
+	j, err := yaml.YAMLToJSON(y)
 	if err != nil {
 		return fmt.Errorf("failed to convert yaml file to json: %w", err)
 	}
