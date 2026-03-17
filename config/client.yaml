@@ -69,6 +69,7 @@ repositories:
     matches:
     - .*release-next*
     - .*release-v1.1[0-4]*.yaml$
+    - .config.prowgen
   imagePrefix: knative-client
   org: openshift-knative
   owners:

@@ -93,7 +93,9 @@ repositories:
     - knative-serving-scale-from-zero
   - match: perf-tests$
     onDemand: true
-  ignoreConfigs: {}
+  ignoreConfigs:
+    matches:
+    - .config.prowgen
   imageNameOverrides:
     migrate: storage-version-migration
   imagePrefix: knative-serving

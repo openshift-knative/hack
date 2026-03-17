@@ -65,7 +65,9 @@ repositories:
   - match: .*e2e$
   - match: .*reconciler.*
   - match: .*conformance.*
-  ignoreConfigs: {}
+  ignoreConfigs:
+    matches:
+    - .config.prowgen
   imagePrefix: knative-eventing
   org: openshift-knative
   owners:

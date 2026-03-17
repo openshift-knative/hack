@@ -51,7 +51,9 @@ config:
       promotion: {}
 repositories:
 - dockerfiles: {}
-  ignoreConfigs: {}
+  ignoreConfigs:
+    matches:
+    - .config.prowgen
   imagePrefix: knative-kn-plugin-func
   org: openshift-knative
   owners:
