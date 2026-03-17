@@ -181,6 +181,24 @@ func (cfg *DependabotConfig) WithMaven(dirs []string, branch string) {
 	*cfg.Updates = append(*cfg.Updates, u)
 }
 
+func (cfg *DependabotConfig) WithGithubActions(dirs []string, branch string) {
+	if len(dirs) == 0 {
+		dirs = []string{"/"}
+	}
+	u := DependabotUpdate{
+		PackageEcosystem: "github-actions",
+		Directories:      dirs,
+		Schedule: ScheduleUpdate{
+			Interval: "weekly",
+		},
+		TargetBranch: branch,
+		CommitMessage: CommitMessageUpdate{
+			Prefix: fmt.Sprintf("[%s][%s]", branch, "github-actions"),
+		},
+	}
+	*cfg.Updates = append(*cfg.Updates, u)
+}
+
 func (cfg *DependabotConfig) WithNPM(dirs []string, branch string) {
 	if len(dirs) == 0 {
 		dirs = []string{"/"}
