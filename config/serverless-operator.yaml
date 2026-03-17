@@ -537,6 +537,7 @@ repositories:
   ignoreConfigs:
     matches:
     - .*main.yaml$
+    - .config.prowgen
   imageNameOverrides:
     serverless-operator: bundle
     serverless-operator-index: index
