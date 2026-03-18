@@ -47,7 +47,7 @@ type DependabotUpdate struct {
 
 	CommitMessage CommitMessageUpdate `yaml:"commit-message,omitempty"`
 
-	OpenPullRequestLimit int `yaml:"open-pull-requests-limit"`
+	OpenPullRequestLimit int `yaml:"open-pull-requests-limit,omitempty"`
 }
 
 type DependabotUpdates []DependabotUpdate
