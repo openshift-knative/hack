@@ -176,16 +176,16 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 	if goVersion == nil {
 		goVersion = &goModGoVersion
 	}
-
 	rhelVersion := RHEL9
 	templateFilePattern := "dockerfile-templates/rhel-9/*.tmpl"
 	var soVersion string
-	projectTag := metadata.Project.Tag
-	if projectTag == "main" || metadata.Project.Tag == "" {
-		projectTag = "knative-v1.17"
-		log.Println("Use Default version substitution for main branch")
-	}
-	if projectTag != "" && projectTag != "main" {
+	// handle components that uses .Project.Tag
+	if metadata.Project.Tag != "" {
+		projectTag := metadata.Project.Tag
+		if projectTag == "main" { //TODO: possible cleanup
+			projectTag = "knative-v1.17"
+			log.Println("Use Default version substitution knative-v1.17 for main branch")
+		}
 		// Handle knative-vX.Y tags
 		// tag before knative-v1.17
 		if strings.HasPrefix(projectTag, "knative-v1.") {
@@ -201,18 +201,15 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 			semverSoVersion := soversion.FromUpstreamVersion(strings.Replace(projectTag, "knative-v", "", 1))
 			soVersion = fmt.Sprintf("%v.%v", semverSoVersion.Major, semverSoVersion.Minor)
 		}
-	} else {
-		if metadata.Project.Version == "main" || metadata.Project.Version == "" {
-			metadata.Project.Version = "1.37.0" //fallback
-		}
-		// version before 1.37+
-		if metadata.Project.Version != "" {
-			semVer := semver.New(metadata.Project.Version)
-			if semVer != nil {
-				if semVer.Minor < 37 {
-					rhelVersion = RHEL8
-					templateFilePattern = "dockerfile-templates/*.tmpl"
-				}
+	}
+	// handle S-O that uses .Project.Version
+	if metadata.Project.Version != "" {
+		if semVer := semver.New(metadata.Project.Version); semVer != nil {
+			log.Println("Generating Dockerfiles for S-O version: ", semVer.String())
+			// versions before 1.37 use RHEL 8 base image
+			if semVer.Minor < 37 {
+				rhelVersion = RHEL8
+				templateFilePattern = "dockerfile-templates/*.tmpl"
 			}
 			soVersion = fmt.Sprintf("%v.%v", semVer.Major, semVer.Minor)
 		}
