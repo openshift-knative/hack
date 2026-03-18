@@ -191,10 +191,12 @@ func (cfg *DependabotConfig) WithGithubActions(dirs []string, branch string) {
 		Schedule: ScheduleUpdate{
 			Interval: "weekly",
 		},
-		TargetBranch: branch,
-		CommitMessage: CommitMessageUpdate{
+	}
+	if branch != "" {
+		u.TargetBranch = branch
+		u.CommitMessage = CommitMessageUpdate{
 			Prefix: fmt.Sprintf("[%s][%s]", branch, "github-actions"),
-		},
+		}
 	}
 	*cfg.Updates = append(*cfg.Updates, u)
 }

@@ -81,7 +81,6 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 
 							if b.DependabotEnabled == nil || *b.DependabotEnabled {
 								dependabotConfig.WithGo(branchName)
-								dependabotConfig.WithGithubActions([]string{}, branchName)
 								if r.IsEKB() {
 									dependabotConfig.WithMaven([]string{"/data-plane"}, branchName)
 								}
@@ -360,7 +359,9 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 		log.Println("Creating Konflux configuration for serverless operator", branch, release)
 
 		dependabotConfig.WithGo(branch)
-		dependabotConfig.WithGithubActions([]string{}, branch)
+		if branch == "main" {
+			dependabotConfig.WithGithubActions([]string{}, "")
+		}
 
 		if err := GitMirror(ctx, r); err != nil {
 			return err
