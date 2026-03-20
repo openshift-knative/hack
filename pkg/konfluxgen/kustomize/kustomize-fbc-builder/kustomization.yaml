@@ -7,6 +7,9 @@ patches:
   - path: ../patch_additional_tags.patch.yaml
     target:
       kind: Pipeline
+  - path: patch_opm_params.patch.yaml
+    target:
+      kind: Pipeline
   - path: ../patch_source_image.patch.yaml
     target:
       kind: Pipeline

@@ -100,9 +100,11 @@ type Config struct {
 	Excludes       []string
 	ExcludesImages []string
 
-	FBCImages   []string
-	JavaImages  []string
-	BundleImage string
+	FBCImages     []string
+	OpmArgs       []string
+	OpmOutputPath string
+	JavaImages    []string
+	BundleImage   string
 
 	ResourcesOutputPathSkipRemove bool
 	ResourcesOutputPath           string
@@ -381,6 +383,11 @@ func Generate(cfg Config) error {
 				DockerfilePath: dockerfilePath,
 
 				PipelineRunAnnotations: cfg.PipelineRunAnnotationsFunc(c.ReleaseBuildConfiguration, ib),
+			}
+
+			if pipeline == FBCBuild {
+				r.OpmArgs = cfg.OpmArgs
+				r.OpmOutputPath = cfg.OpmOutputPath
 			}
 
 			// TODO REVIEW: Remove special case once all hermetic builds are moved to docker-java-build pipeline With actual hermetic builds
@@ -685,6 +692,9 @@ type DockerfileApplicationConfig struct {
 	Hermetic string
 
 	DockerfilePath string
+
+	OpmArgs       []string
+	OpmOutputPath string
 
 	PipelineRunAnnotations map[string]string
 }
