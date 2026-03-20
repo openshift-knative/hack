@@ -1,0 +1,22 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: fbc-builder
+spec:
+  params:
+    - name: opm-args
+      description: Array of opm command arguments
+      type: array
+      default: []
+    - name: opm-output-path
+      description: OPM output path
+      type: string
+      default: ""
+  tasks:
+    - name: run-opm-command
+      params:
+        - name: OPM_ARGS
+          value:
+            - $(params.opm-args[*])
+        - name: OPM_OUTPUT_PATH
+          value: $(params.opm-output-path)
