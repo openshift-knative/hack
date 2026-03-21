@@ -1,6 +1,7 @@
 package testselect
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
@@ -11,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/openshift-knative/hack/pkg/prowgen"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"sigs.k8s.io/prow/pkg/clonerefs"
 )
 
@@ -60,7 +61,9 @@ func Main() {
 	}
 
 	testSuites := new(TestSuites)
-	if err := yaml.UnmarshalStrict(inTs, testSuites); err != nil {
+	dec := yaml.NewDecoder(bytes.NewReader(inTs))
+	dec.KnownFields(true)
+	if err := dec.Decode(testSuites); err != nil {
 		log.Fatalln("Unmarshal test suite mappings", err)
 	}
 

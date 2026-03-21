@@ -26,10 +26,10 @@ import (
 	"github.com/openshift-knative/hack/pkg/rhel"
 	"github.com/openshift-knative/hack/pkg/util"
 	"github.com/pkg/errors"
-	"golang.org/x/exp/slices"
 	"golang.org/x/mod/modfile"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"slices"
 )
 
 const (
