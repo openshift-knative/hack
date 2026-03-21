@@ -67,6 +67,7 @@ type CommitMessageUpdate struct {
 }
 
 type Group struct {
+	Patterns        []string `yaml:"patterns,omitempty"`
 	UpdateTypes     []string `yaml:"update-types,omitempty"`
 	AppliesTo       string   `yaml:"applies-to,omitempty"`
 	ExcludePatterns []string `yaml:"exclude-patterns,omitempty"`
@@ -190,6 +191,11 @@ func (cfg *DependabotConfig) WithGithubActions(dirs []string, branch string) {
 		Directories:      dirs,
 		Schedule: ScheduleUpdate{
 			Interval: "weekly",
+		},
+		Groups: map[string]Group{
+			"all-actions": {
+				Patterns: []string{"*"},
+			},
 		},
 	}
 	if branch != "" {
