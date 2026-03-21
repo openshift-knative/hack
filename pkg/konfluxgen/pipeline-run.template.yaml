@@ -74,6 +74,17 @@ spec:
     - name: prefetch-input-dev-package-managers
       value: '{{{ .PrefetchDeps.DevPackageManagers }}}'
     {{{- end }}}
+    {{{- if gt (len .OpmArgs) 0 }}}
+    - name: opm-args
+      value:
+      {{{- range $arg := .OpmArgs }}}
+        - {{{ $arg }}}
+      {{{- end }}}
+    {{{- end }}}
+    {{{- if .OpmOutputPath }}}
+    - name: opm-output-path
+      value: {{{ .OpmOutputPath }}}
+    {{{- end }}}
   {{{- if or (eq .Pipeline "docker-build") (eq .Pipeline "docker-java-build") (eq .Pipeline "bundle-build")}}}
   taskRunSpecs:
     - pipelineTaskName: sast-shell-check
