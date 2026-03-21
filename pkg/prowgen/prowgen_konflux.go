@@ -574,8 +574,8 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 					" files.all.exists(x, x.matches('^.tekton/'))"+
 					" )", ocpVersion)
 			},
-			OpmArgs:       []string{"alpha", "render-template", "basic", fmt.Sprintf("\"/olm-catalog/serverless-operator-index/v%s/catalog-template.yaml\"", ocpVersion), "--migrate-level=bundle-object-to-csv-metadata"},
-			OpmOutputPath: fmt.Sprintf("/olm-catalog/serverless-operator-index/v%s/catalog/serverless-operator/catalog.yaml", ocpVersion),
+			OpmArgs:       []string{"alpha", "render-template", "basic", fmt.Sprintf("\"olm-catalog/serverless-operator-index/v%s/catalog-template.yaml\"", ocpVersion), "--migrate-level=bundle-object-to-csv-metadata"},
+			OpmOutputPath: fmt.Sprintf("olm-catalog/serverless-operator-index/v%s/catalog/serverless-operator/catalog.yaml", ocpVersion),
 			AdditionalComponentConfigs: []konfluxgen.TemplateConfig{
 				{
 					ReleaseBuildConfiguration: cioperatorapi.ReleaseBuildConfiguration{
