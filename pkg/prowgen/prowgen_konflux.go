@@ -552,12 +552,20 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 
 	for _, ocpVersion := range soMetadata.Requirements.OcpVersion.List {
 
-		opmImage, err := getOPMImage(ocpVersion)
+		ocpMinorVersion, err := extractMinor(ocpVersion)
+		if err != nil {
+			return fmt.Errorf("failed to get OCP minor version %q: %w", ocpVersion, err)
+		}
+		opmImage, err := getOPMImage(ocpMinorVersion)
 		if err != nil {
 			return fmt.Errorf("failed to get OPM image ref for OCP %q: %w", ocpVersion, err)
 		}
 		buildArgs := append(buildArgs, fmt.Sprintf("OPM_IMAGE=%s", opmImage))
-
+		opmArgs := []string{"alpha", "render-template", "basic",
+			fmt.Sprintf("\"olm-catalog/serverless-operator-index/v%s/catalog-template.yaml\"", ocpVersion)}
+		if ocpMinorVersion >= 17 { // OCP 4.17+ OLM fix format flag
+			opmArgs = append(opmArgs, "--migrate-level=bundle-object-to-csv-metadata")
+		}
 		fbcAppName := konfluxgen.FBCAppName(release, ocpVersion)
 
 		c := konfluxgen.Config{
@@ -574,7 +582,7 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 					" files.all.exists(x, x.matches('^.tekton/'))"+
 					" )", ocpVersion)
 			},
-			OpmArgs:       []string{"alpha", "render-template", "basic", fmt.Sprintf("\"olm-catalog/serverless-operator-index/v%s/catalog-template.yaml\"", ocpVersion), "--migrate-level=bundle-object-to-csv-metadata"},
+			OpmArgs:       opmArgs,
 			OpmOutputPath: fmt.Sprintf("olm-catalog/serverless-operator-index/v%s/catalog/serverless-operator/catalog.yaml", ocpVersion),
 			AdditionalComponentConfigs: []konfluxgen.TemplateConfig{
 				{
@@ -631,17 +639,20 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 	return nil
 }
 
-func getOPMImage(v string) (string, error) {
+func extractMinor(v string) (int, error) {
 	parts := strings.SplitN(v, ".", 2)
 	if len(parts) != 2 {
-		return "", fmt.Errorf("invalid OCP version: %s", v)
+		return 0, fmt.Errorf("invalid OCP version: %s", v)
 	}
 
 	minor, err := strconv.Atoi(parts[1])
 	if err != nil {
-		return "", fmt.Errorf("could not convert OCP minor to int (%q): %w", v, err)
+		return 0, fmt.Errorf("could not convert OCP minor to int (%q): %w", v, err)
 	}
+	return minor, nil
+}
 
+func getOPMImage(minor int) (string, error) {
 	if minor <= 14 {
 		return fmt.Sprintf("registry.redhat.io/openshift4/ose-operator-registry:v4.%d", minor), nil
 	} else {
