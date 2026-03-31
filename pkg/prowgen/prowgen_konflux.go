@@ -582,8 +582,10 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 					" files.all.exists(x, x.matches('^.tekton/'))"+
 					" )", ocpVersion)
 			},
-			OpmArgs:       opmArgs,
-			OpmOutputPath: fmt.Sprintf("olm-catalog/serverless-operator-index/v%s/catalog/serverless-operator/catalog.yaml", ocpVersion),
+			OpmArgs:              opmArgs,
+			OpmOutputPath:        fmt.Sprintf("olm-catalog/serverless-operator-index/v%s/catalog/serverless-operator/catalog.yaml", ocpVersion),
+			FileToUpdatePullspec: fmt.Sprintf("olm-catalog/serverless-operator-index/v%s/catalog/serverless-operator/catalog.yaml", ocpVersion),
+			// IdmsPath is not set explicitly, using default value ".tekton/image-mirror-set.yaml"
 			AdditionalComponentConfigs: []konfluxgen.TemplateConfig{
 				{
 					ReleaseBuildConfiguration: cioperatorapi.ReleaseBuildConfiguration{

@@ -12,6 +12,14 @@ spec:
       description: OPM output path
       type: string
       default: ""
+    - name: file-to-update-pullspec
+      description: Optional. Relative path to a file (e.g., catalog-template.yml) in which pullspecs should be updated before running opm.
+      type: string
+      default: ""
+    - name: idms-path
+      description: Optional, path for ImageDigestMirrorSet file. It defaults to '.tekton/images-mirror-set.yaml'.
+      type: string
+      default: ".tekton/images-mirror-set.yaml"
   tasks:
     - name: run-opm-command
       params:
@@ -20,3 +28,7 @@ spec:
             - $(params.opm-args[*])
         - name: OPM_OUTPUT_PATH
           value: $(params.opm-output-path)
+        - name: FILE_TO_UPDATE_PULLSPEC
+          value: $(params.file-to-update-pullspec)
+        - name: IDMS_PATH
+          value: $(params.idms-path)
