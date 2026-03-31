@@ -85,6 +85,14 @@ spec:
     - name: opm-output-path
       value: {{{ .OpmOutputPath }}}
     {{{- end }}}
+    {{{- if.FileToUpdatePullspec }}}
+    - name: file-to-update-pullspec
+      value: {{{ .FileToUpdatePullspec }}}
+    {{{- end }}}
+    {{{- if .IdmsPath }}}
+    - name: idms-path
+      value: {{{ .IdmsPath }}}
+    {{{- end }}}
   {{{- if or (eq .Pipeline "docker-build") (eq .Pipeline "docker-java-build") (eq .Pipeline "bundle-build")}}}
   taskRunSpecs:
     - pipelineTaskName: sast-shell-check

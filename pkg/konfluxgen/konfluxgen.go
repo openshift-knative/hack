@@ -100,11 +100,14 @@ type Config struct {
 	Excludes       []string
 	ExcludesImages []string
 
-	FBCImages     []string
-	OpmArgs       []string
-	OpmOutputPath string
-	JavaImages    []string
-	BundleImage   string
+	FBCImages   []string
+	JavaImages  []string
+	BundleImage string
+
+	OpmArgs              []string
+	OpmOutputPath        string
+	FileToUpdatePullspec string
+	IdmsPath             string
 
 	ResourcesOutputPathSkipRemove bool
 	ResourcesOutputPath           string
@@ -388,6 +391,10 @@ func Generate(cfg Config) error {
 			if pipeline == FBCBuild {
 				r.OpmArgs = cfg.OpmArgs
 				r.OpmOutputPath = cfg.OpmOutputPath
+				r.FileToUpdatePullspec = cfg.FileToUpdatePullspec
+				if cfg.IdmsPath != "" {
+					r.IdmsPath = cfg.IdmsPath
+				}
 			}
 
 			// TODO REVIEW: Remove special case once all hermetic builds are moved to docker-java-build pipeline With actual hermetic builds
@@ -693,8 +700,10 @@ type DockerfileApplicationConfig struct {
 
 	DockerfilePath string
 
-	OpmArgs       []string
-	OpmOutputPath string
+	OpmArgs              []string
+	OpmOutputPath        string
+	FileToUpdatePullspec string
+	IdmsPath             string
 
 	PipelineRunAnnotations map[string]string
 }
