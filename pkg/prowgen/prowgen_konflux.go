@@ -424,7 +424,7 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 		// nudges are limited to S-O 1.38 only, we have different FBC workflow in older branches
 		if strings.HasPrefix(soMetadata.Project.Version, "1.38") {
 			for _, ocpVersion := range soMetadata.Requirements.OcpVersion.List {
-				bundleNudges = append(bundleNudges, fmt.Sprintf("serverless-index-%s-fbc-%s", release, ocpVersion))
+				bundleNudges = append(bundleNudges, fmt.Sprintf("serverless-index-%d%d-fbc-%s", semverRelease.Major, semverRelease.Minor, ocpVersion))
 			}
 		}
 
