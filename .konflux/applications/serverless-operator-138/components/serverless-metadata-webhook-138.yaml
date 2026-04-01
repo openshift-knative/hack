@@ -7,8 +7,7 @@ metadata:
   name: serverless-metadata-webhook-138
 spec:
   componentName: serverless-metadata-webhook-138
-  application: serverless-operator-138
-   
+  application: serverless-operator-138 
   source:
     git:
       url: https://github.com/openshift-knative/serverless-operator.git

@@ -7,8 +7,7 @@ metadata:
   name: serverless-index-136-fbc-420
 spec:
   componentName: serverless-index-136-fbc-420
-  application: serverless-operator-136-fbc-420
-   
+  application: serverless-operator-136-fbc-420 
   source:
     git:
       url: https://github.com/openshift-knative/serverless-operator.git
