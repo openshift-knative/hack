@@ -420,6 +420,14 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			return fmt.Errorf("Failed to get semver from release branch %q: %w", release, err)
 		}
 
+		var bundleNudges []string
+		// nudges are limited to S-O 1.38 only, we have different FBC workflow in older branches
+		if strings.HasPrefix(soMetadata.Project.Version, "1.38") {
+			for _, ocpVersion := range soMetadata.Requirements.OcpVersion.List {
+				bundleNudges = append(bundleNudges, fmt.Sprintf("serverless-index-%s-fbc-%s", release, ocpVersion))
+			}
+		}
+
 		cfg := konfluxgen.Config{
 			OpenShiftReleasePath: openshiftRelease.RepositoryDirectory(),
 			ApplicationName:      konfluxgen.AppName(release),
@@ -435,6 +443,13 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 						" )"
 				}
 				return "&& files.all.exists(x, !x.matches('^olm-catalog/') && !x.matches('^.konflux-release/'))"
+			},
+			NudgesFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) []string {
+				// Adding build-nudges-ref to update all FBC images with new digest
+				if len(bundleNudges) > 0 && ib.To == "serverless-bundle" {
+					return bundleNudges
+				}
+				return nil
 			},
 			Includes: []string{
 				fmt.Sprintf("ci-operator/config/%s/.*%s.*.yaml", r.RepositoryDirectory(), branch),

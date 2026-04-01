@@ -8,12 +8,12 @@ metadata:
 spec:
   componentName: {{ sanitize .ComponentName }}
   application: {{ truncate ( sanitize .ApplicationName ) }}
-  {{ $nudgesN := len .Nudges }} {{ if ne $nudgesN 0 }}
+  {{- $nudgesN := len .Nudges }} {{ if ne $nudgesN 0 }}
   build-nudges-ref:
-    {{ range $nudge := .Nudges }}
-    - "{{ $nudge }}"
-    {{ end }}
-  {{ end }}
+    {{- range $nudge := .Nudges }}
+    - "{{- sanitize $nudge }}"
+    {{- end }}
+  {{- end }}
   source:
     git:
       url: https://github.com/{{ .ReleaseBuildConfiguration.Metadata.Org }}/{{ .ReleaseBuildConfiguration.Metadata.Repo }}.git
