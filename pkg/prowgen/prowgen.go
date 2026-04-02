@@ -306,7 +306,19 @@ func SaveReleaseBuildConfiguration(outConfig *string, cfg ReleaseBuildConfigurat
 		return err
 	}
 
-	out, err := yaml.Marshal(cfg.ReleaseBuildConfiguration)
+	// TODO: Temporal fix until ci-tools dependency is updated with ImageConfiguration type.
+	// Marshal to JSON, wrap "images" array into {"items": [...]}, then convert to YAML.
+	j, err := json.Marshal(cfg.ReleaseBuildConfiguration)
+	if err != nil {
+		return err
+	}
+
+	j, err = wrapImagesField(j)
+	if err != nil {
+		return err
+	}
+
+	out, err := gyaml.JSONToYAML(j)
 	if err != nil {
 		return err
 	}
@@ -316,6 +328,35 @@ func SaveReleaseBuildConfiguration(outConfig *string, cfg ReleaseBuildConfigurat
 	}
 
 	return copyOwnersFileIfNotPresent(dir)
+}
+
+// TODO: wrapImagesField is a temporal fix until ci-tools dependency is updated with ImageConfiguration type.
+// wrapImagesField converts {"images": [...]} to {"images": {"items": [...]}}
+// to match the ImageConfiguration format used by openshift/release CI configs.
+func wrapImagesField(data []byte) ([]byte, error) {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return data, nil
+	}
+
+	imagesRaw, ok := raw["images"]
+	if !ok {
+		return data, nil
+	}
+
+	// Only wrap if it's an array (starts with '[')
+	trimmed := json.RawMessage(strings.TrimSpace(string(imagesRaw)))
+	if len(trimmed) == 0 || trimmed[0] != '[' {
+		return data, nil
+	}
+
+	wrapped, err := json.Marshal(map[string]json.RawMessage{"items": imagesRaw})
+	if err != nil {
+		return nil, err
+	}
+
+	raw["images"] = wrapped
+	return json.Marshal(raw)
 }
 
 func copyOwnersFileIfNotPresent(dir string) error {
