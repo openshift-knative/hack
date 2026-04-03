@@ -8,7 +8,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/jinzhu/copier v0.4.0
 	github.com/octago/sflags v0.3.1
-	github.com/openshift/ci-tools v0.0.0-20260306113138-6a0a2b5b0ac4
+	github.com/openshift/ci-tools v0.0.0-20260403002252-019932d8f001
 	github.com/operator-framework/api v0.34.0
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/pflag v1.0.9
@@ -135,7 +135,8 @@ require (
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
-	github.com/openshift/api v0.0.0-20240918231400-8f6ded478e8a // indirect
+	github.com/openshift/api v0.0.0-20240919193929-2669d1ebc910 // indirect
+	github.com/openshift/cluster-autoscaler-operator v0.0.1-0.20241204142113-43631b045675 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
