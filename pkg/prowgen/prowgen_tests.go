@@ -130,7 +130,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 									},
 								},
 								Timeout:      testTimeout,
-								Dependencies: dependenciesFromImages(cfg.Images, test.SkipImages),
+								Dependencies: dependenciesFromImages(cfg.Images.Items, test.SkipImages),
 								Cli:          "latest",
 							},
 						},
@@ -263,7 +263,7 @@ func DependenciesForTestSteps() ReleaseBuildConfigurationOption {
 				for _, testStep := range testConfig.MultiStageTestConfiguration.Test {
 					// Add dependencies only if it's LiteralTestStep.
 					if testStep.Reference == nil {
-						testStep.Dependencies = dependenciesFromImages(cfg.Images, nil)
+						testStep.Dependencies = dependenciesFromImages(cfg.Images.Items, nil)
 					}
 				}
 			}

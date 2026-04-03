@@ -602,12 +602,14 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 							Repo:   r.Repo,
 							Branch: branch,
 						},
-						Images: []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration{
-							{
-								To: cioperatorapi.PipelineImageStreamTagReference(fmt.Sprintf("serverless-index-%s-fbc-%s", release, ocpVersion)),
-								ProjectDirectoryImageBuildInputs: cioperatorapi.ProjectDirectoryImageBuildInputs{
-									DockerfilePath: "Dockerfile",
-									ContextDir:     fmt.Sprintf("./olm-catalog/serverless-operator-index/v%s", ocpVersion),
+						Images: cioperatorapi.ImageConfiguration{
+							Items: []cioperatorapi.ProjectDirectoryImageBuildStepConfiguration{
+								{
+									To: cioperatorapi.PipelineImageStreamTagReference(fmt.Sprintf("serverless-index-%s-fbc-%s", release, ocpVersion)),
+									ProjectDirectoryImageBuildInputs: cioperatorapi.ProjectDirectoryImageBuildInputs{
+										DockerfilePath: "Dockerfile",
+										ContextDir:     fmt.Sprintf("./olm-catalog/serverless-operator-index/v%s", ocpVersion),
+									},
 								},
 							},
 						},

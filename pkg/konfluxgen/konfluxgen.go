@@ -335,7 +335,7 @@ func Generate(cfg Config) error {
 		if (c.PromotionConfiguration == nil || len(c.PromotionConfiguration.Targets) == 0) && !c.IsContained(cfg.AdditionalComponentConfigs) {
 			continue
 		}
-		for _, ib := range c.Images {
+		for _, ib := range c.Images.Items {
 
 			ignore := false
 			for _, r := range excludeImages {

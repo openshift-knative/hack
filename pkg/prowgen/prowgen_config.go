@@ -252,9 +252,11 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 					Releases:       releases,
 				},
 				CanonicalGoRepository: r.CanonicalGoRepository,
-				Images:                images,
-				Tests:                 tests,
-				Resources:             resources,
+				Images: cioperatorapi.ImageConfiguration{
+					Items: images,
+				},
+				Tests:     tests,
+				Resources: resources,
 			}
 
 			options := make([]ReleaseBuildConfigurationOption, 0, len(opts))
@@ -301,7 +303,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				return nil, fmt.Errorf("[%s] failed to apply option: %w", r.RepositoryDirectory(), err)
 			}
 
-			log.Println("numTests", len(cfg.Tests), "numImages", len(cfg.Images))
+			log.Println("numTests", len(cfg.Tests), "numImages", len(cfg.Images.Items))
 
 			// openshift-knative/eventing-kafka-broker/openshift-knative-eventing-kafka-broker-release-next__411.yaml
 			buildConfigPath := filepath.Join(
@@ -366,7 +368,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 					return nil, fmt.Errorf("[%s] failed to apply option: %w", r.RepositoryDirectory(), err)
 				}
 
-				log.Println("numTests", len(customBuildCfg.Tests), "numImages", len(customBuildCfg.Images))
+				log.Println("numTests", len(customBuildCfg.Tests), "numImages", len(customBuildCfg.Images.Items))
 
 				buildConfigPath = filepath.Join(
 					r.RepositoryDirectory(),

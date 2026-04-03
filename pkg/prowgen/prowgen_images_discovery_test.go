@@ -61,12 +61,12 @@ func TestDiscoverImages(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(cfg.Images) != len(expectedImages) {
-		t.Errorf("expected %d images, got %d images", len(expectedImages), len(cfg.Images))
+	if len(cfg.Images.Items) != len(expectedImages) {
+		t.Errorf("expected %d images, got %d images", len(expectedImages), len(cfg.Images.Items))
 	}
 
 	for i, expectedImage := range expectedImages {
-		got := cfg.Images[i]
+		got := cfg.Images.Items[i]
 		if got.To != expectedImage.To {
 			t.Errorf("Want 'to' %s, got %s", expectedImage.To, got.To)
 		}

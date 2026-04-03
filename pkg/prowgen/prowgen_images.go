@@ -62,7 +62,7 @@ func WithImage(ibcFunc ProjectDirectoryImageBuildStepConfigurationFunc) ReleaseB
 		if err != nil {
 			return err
 		}
-		cfg.Images = append(cfg.Images, ibc)
+		cfg.Images.Items = append(cfg.Images.Items, ibc)
 		return nil
 	}
 }
