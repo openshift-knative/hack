@@ -748,50 +748,12 @@ func parseConfig(path string) (*cioperatorapi.ReleaseBuildConfiguration, error) 
 		return nil, fmt.Errorf("failed to convert YAML to JSON: %w", err)
 	}
 
-	// TODO: Temporal fix until ci-tools dependency is updated with ImageConfiguration type.
-	// Handle "images" field being an object with "items" key instead of a plain array.
-	// CI configs use ImageConfiguration format: {"images": {"items": [...]}}
-	// but cioperatorapi.ReleaseBuildConfiguration expects: {"images": [...]}
-	j, err = normalizeImagesField(j)
-	if err != nil {
-		return nil, fmt.Errorf("failed to normalize images field in %q: %w", path, err)
-	}
-
 	jobConfig := &cioperatorapi.ReleaseBuildConfiguration{}
 	if err := json.Unmarshal(j, jobConfig); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal file %q into %T: %w", path, jobConfig, err)
 	}
 
 	return jobConfig, err
-}
-
-// TODO: normalizeImagesField is a temporal fix until ci-tools dependency is updated with ImageConfiguration type.
-func normalizeImagesField(data []byte) ([]byte, error) {
-	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return data, nil
-	}
-
-	imagesRaw, ok := raw["images"]
-	if !ok {
-		return data, nil
-	}
-
-	// Check if "images" is an object (starts with '{') rather than an array
-	trimmed := bytes.TrimSpace(imagesRaw)
-	if len(trimmed) == 0 || trimmed[0] != '{' {
-		return data, nil
-	}
-
-	var wrapper struct {
-		Items json.RawMessage `json:"items"`
-	}
-	if err := json.Unmarshal(imagesRaw, &wrapper); err != nil {
-		return data, nil
-	}
-
-	raw["images"] = wrapper.Items
-	return json.Marshal(raw)
 }
 
 func Sanitize(input interface{}) string {
