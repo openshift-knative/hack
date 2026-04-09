@@ -2,6 +2,7 @@ package prowcopy
 
 import (
 	"context"
+	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -188,6 +189,13 @@ func getJobConfig(match string, c Config) (*prowgen.ReleaseBuildConfiguration, e
 		return nil, err
 	}
 
+	// TODO: Temporal fix until ci-tools dependency is updated with ImageConfiguration type.
+	// Handle "images" field being an object with "items" key instead of a plain array.
+	j, err = normalizeImagesField(j)
+	if err != nil {
+		return nil, err
+	}
+
 	jobConfig := &prowgen.ReleaseBuildConfiguration{}
 	if err := json.Unmarshal(j, jobConfig); err != nil {
 		return nil, err
@@ -212,6 +220,35 @@ func getJobConfig(match string, c Config) (*prowgen.ReleaseBuildConfiguration, e
 	}
 
 	return jobConfig, nil
+}
+
+// TODO: normalizeImagesField is a temporal fix until ci-tools dependency is updated with ImageConfiguration type.
+func normalizeImagesField(data []byte) ([]byte, error) {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return data, nil
+	}
+
+	imagesRaw, ok := raw["images"]
+	if !ok {
+		return data, nil
+	}
+
+	// Check if "images" is an object (starts with '{') rather than an array
+	trimmed := bytes.TrimSpace(imagesRaw)
+	if len(trimmed) == 0 || trimmed[0] != '{' {
+		return data, nil
+	}
+
+	var wrapper struct {
+		Items json.RawMessage `json:"items"`
+	}
+	if err := json.Unmarshal(imagesRaw, &wrapper); err != nil {
+		return data, nil
+	}
+
+	raw["images"] = wrapper.Items
+	return json.Marshal(raw)
 }
 
 // JobConfigCopiedInjectors are configured from the base branch. They're applied to
