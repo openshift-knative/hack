@@ -533,6 +533,8 @@ github.com/openshift/api v0.0.0-20240919193929-2669d1ebc910 h1:8pA9Ugq0hhUbVaVWi
 github.com/openshift/api v0.0.0-20240919193929-2669d1ebc910/go.mod h1:OOh6Qopf21pSzqNVCB5gomomBXb8o5sGKZxG2KNpaXM=
 github.com/openshift/ci-tools v0.0.0-20260403002252-019932d8f001 h1:ariFG6tBnV/gKPRfX+7TpsNTFWfjh5kx4tuqqvFu1mU=
 github.com/openshift/ci-tools v0.0.0-20260403002252-019932d8f001/go.mod h1:HKaH1JIfgh44LGy/7azBG0Ie7DcP1hLSGw6U8iCqPEQ=
+github.com/openshift/ci-tools v0.0.0-20260409124021-e55e4bb7b013 h1:+8GIec1VlVRYveJwtKJVte97cL1wOEFABoAWh2DzBnQ=
+github.com/openshift/ci-tools v0.0.0-20260409124021-e55e4bb7b013/go.mod h1:HKaH1JIfgh44LGy/7azBG0Ie7DcP1hLSGw6U8iCqPEQ=
 github.com/openshift/client-go v0.0.0-20240918182115-6a8ead8397fd h1:Gd0+bYdcfGIsDOJ8BwTJJjQeXoziyIsTwqp/s38rKyM=
 github.com/openshift/client-go v0.0.0-20240918182115-6a8ead8397fd/go.mod h1:EB7GeA/vpf9AHklMgnnT0+uG6l/3f8cChtCFbJFrk4g=
 github.com/openshift/cluster-autoscaler-operator v0.0.1-0.20241204142113-43631b045675 h1:hPFyXtaR42wqKKGMVP4G7M2vmp5iBxBqKetMguh4Td0=

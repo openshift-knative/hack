@@ -8,7 +8,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/jinzhu/copier v0.4.0
 	github.com/octago/sflags v0.3.1
-	github.com/openshift/ci-tools v0.0.0-20260403002252-019932d8f001
+	github.com/openshift/ci-tools v0.0.0-20260409124021-e55e4bb7b013
 	github.com/operator-framework/api v0.34.0
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/pflag v1.0.9
