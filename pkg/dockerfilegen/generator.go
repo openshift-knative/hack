@@ -3,6 +3,7 @@ package dockerfilegen
 import (
 	"bytes"
 	"embed"
+	"errors"
 	"fmt"
 	"go/parser"
 	"go/token"
@@ -13,23 +14,21 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"text/template"
 
-	"github.com/openshift-knative/hack/config"
-	"github.com/openshift-knative/hack/pkg/soversion"
-
 	"github.com/coreos/go-semver/semver"
+	"github.com/openshift-knative/hack/config"
 	"github.com/openshift-knative/hack/pkg/project"
 	"github.com/openshift-knative/hack/pkg/prowgen"
 	"github.com/openshift-knative/hack/pkg/rhel"
+	"github.com/openshift-knative/hack/pkg/soversion"
 	"github.com/openshift-knative/hack/pkg/util"
-	"github.com/pkg/errors"
 	"golang.org/x/mod/modfile"
 	"gopkg.in/yaml.v3"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"slices"
 )
 
 const (
@@ -70,14 +69,14 @@ func GenerateDockerfiles(params Params) error {
 
 	if err := os.Chdir(params.RootDir); err != nil {
 		return fmt.Errorf("%w: Chdir: %w",
-			ErrIO, errors.WithStack(err))
+			ErrIO, err)
 	}
 
 	{
 		var err error
 		if params.RootDir, err = os.Getwd(); err != nil {
 			return fmt.Errorf("%w: Getwd: %w",
-				ErrIO, errors.WithStack(err))
+				ErrIO, err)
 		}
 	}
 
@@ -129,7 +128,7 @@ func GenerateDockerfiles(params Params) error {
 		mainPackagesPaths.Insert(filepath.Dir(path))
 		return nil
 	}); err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 
 	for _, p := range mainPackagesPaths.UnsortedList() {
@@ -162,7 +161,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("%w: Failed to read project metadata file: %w",
-				ErrBadConf, errors.WithStack(err))
+				ErrBadConf, err)
 		}
 		log.Println("File not found:", params.ProjectFilePath, "(Using defaults)")
 		metadata = project.DefaultMetadata()
@@ -340,13 +339,13 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 		t, err := template.ParseFS(dockerfileTemplate, templateFiles)
 		if err != nil {
 			return fmt.Errorf("%w: Parsing failed: %w",
-				ErrBadTemplate, errors.WithStack(err))
+				ErrBadTemplate, err)
 		}
 
 		bf := new(bytes.Buffer)
 		if err := t.Execute(bf, d); err != nil {
 			return fmt.Errorf("%w: executing failed: %w",
-				ErrBadTemplate, errors.WithStack(err))
+				ErrBadTemplate, err)
 		}
 
 		out := filepath.Join(params.Output, params.DockerfilesDir, filepath.Base(p))
@@ -372,7 +371,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 		)()
 		if err != nil {
 			return fmt.Errorf("%w: Failed to derive image name: %w",
-				ErrUnsupportedRepo, errors.WithStack(err))
+				ErrUnsupportedRepo, err)
 		}
 		image := fmt.Sprintf(params.RegistryImageFmt, v.To, metadata.Project.Tag)
 		if imageEnv := os.Getenv(strings.ToUpper(strings.ReplaceAll(string(v.To), "-", "_"))); imageEnv != "" {
@@ -394,13 +393,13 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 
 	if err := getAdditionalImagesFromMatchingRepositories(params.ImagesFromRepositories, metadata, params.ImagesFromRepositoriesURLFmt, goPackageToImageMapping); err != nil {
 		return fmt.Errorf("%w: Getting additional images from matching repositories failed: %w",
-			ErrUnsupportedRepo, errors.WithStack(err))
+			ErrUnsupportedRepo, err)
 	}
 
 	mapping, err := yaml.Marshal(goPackageToImageMapping)
 	if err != nil {
 		return fmt.Errorf("%w: yaml marshaling failed: %w",
-			ErrUnexpected, errors.WithStack(err))
+			ErrUnexpected, err)
 	}
 	// Write the mapping file between Go packages to resolved images.
 	// For example:
@@ -409,7 +408,7 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 	immapPath := filepath.Join(params.Output, "images.yaml")
 	if err := os.WriteFile(immapPath, mapping, fs.ModePerm); err != nil {
 		return fmt.Errorf("%w: Write images mapping file failed `%s`: %w",
-			ErrIO, immapPath, errors.WithStack(err))
+			ErrIO, immapPath, err)
 	}
 	log.Println("Images mapping file written:", immapPath)
 	return nil
@@ -522,7 +521,7 @@ func generateMustGatherDockerfile(params Params) error {
 	metadata, err := project.ReadMetadataFile(params.ProjectFilePath)
 	if err != nil {
 		return fmt.Errorf("%w: Could not read metadata file: %w",
-			ErrBadConf, errors.WithStack(err))
+			ErrBadConf, err)
 	}
 	ocClientArtifactsImage := fmt.Sprintf(ocClientArtifactsBaseImage, metadata.Requirements.OcpVersion.Min)
 	if metadata.Project.Version != "" {
@@ -537,7 +536,7 @@ func generateMustGatherDockerfile(params Params) error {
 	ocBinaryName, err := getOCBinaryName(metadata)
 	if err != nil {
 		return fmt.Errorf("%w: Could not get oc binary name: %w",
-			ErrUnsupportedRepo, errors.WithStack(err))
+			ErrUnsupportedRepo, err)
 	}
 	rhelVersion := RHEL9
 	var soVersion string
@@ -578,13 +577,13 @@ func generateMustGatherDockerfile(params Params) error {
 	t, err := template.ParseFS(DockerfileMustGatherTemplate, templateFile)
 	if err != nil {
 		return fmt.Errorf("%w: Parsing failed: %w",
-			ErrBadTemplate, errors.WithStack(err))
+			ErrBadTemplate, err)
 	}
 
 	bf := new(bytes.Buffer)
 	if err := t.Execute(bf, d); err != nil {
 		return fmt.Errorf("%w: executing failed: %w",
-			ErrBadTemplate, errors.WithStack(err))
+			ErrBadTemplate, err)
 	}
 
 	out := filepath.Join(params.Output, params.DockerfilesDir, filepath.Base(projectName))
@@ -711,27 +710,27 @@ func saveDockerfile(d map[string]interface{}, imageTemplate embed.FS, templatePa
 	bt, err := template.ParseFS(imageTemplate, templatePattern)
 	if err != nil {
 		return "", fmt.Errorf("%w: Failed creating template: %w",
-			ErrBadTemplate, errors.WithStack(err))
+			ErrBadTemplate, err)
 	}
 	bf := &bytes.Buffer{}
 	if err := bt.Execute(bf, d); err != nil {
 		return "", fmt.Errorf("%w: Failed to execute template: %w",
-			ErrBadTemplate, errors.WithStack(err))
+			ErrBadTemplate, err)
 	}
 
 	out := filepath.Join(output, dir)
 	if err := os.RemoveAll(out); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return "", fmt.Errorf("%w: os.RemoveAll(\"%s\"): %w",
-			ErrIO, out, errors.WithStack(err))
+			ErrIO, out, err)
 	}
 	if err := os.MkdirAll(out, fs.ModePerm); err != nil && !errors.Is(err, fs.ErrExist) {
 		return "", fmt.Errorf("%w: os.MkdirAll(\"%s\"): %w",
-			ErrIO, out, errors.WithStack(err))
+			ErrIO, out, err)
 	}
 	dockerfilePath := filepath.Join(out, "Dockerfile")
 	if err := os.WriteFile(dockerfilePath, bf.Bytes(), fs.ModePerm); err != nil {
 		return "", fmt.Errorf("%w: os.WriteFile(\"%s\"): %w",
-			ErrIO, dockerfilePath, errors.WithStack(err))
+			ErrIO, dockerfilePath, err)
 	}
 
 	log.Println("Dockerfile written:", dockerfilePath)
@@ -743,7 +742,7 @@ func getGoMod(rootDir string) (*modfile.File, error) {
 	goModContent, err := os.ReadFile(goModFile)
 	if err != nil {
 		return nil, fmt.Errorf("%w: Failed to read go mod file %s: %w",
-			ErrIO, goModFile, errors.WithStack(err))
+			ErrIO, goModFile, err)
 	}
 
 	gm, err := modfile.Parse(goModFile, goModContent, func(path, version string) (string, error) {
@@ -751,7 +750,7 @@ func getGoMod(rootDir string) (*modfile.File, error) {
 	})
 	if err != nil {
 		return nil, fmt.Errorf("%w: Failed to parse go mod file %s: %w",
-			ErrUnsupportedRepo, goModFile, errors.WithStack(err))
+			ErrUnsupportedRepo, goModFile, err)
 	}
 	return gm, nil
 }
@@ -761,14 +760,14 @@ func writeRPMLockFile(rpmsLockTemplate fs.FS, rootDir string) error {
 	t, err := template.ParseFS(rpmsLockTemplate, "*.rpms.lock.yaml")
 	if err != nil {
 		return fmt.Errorf("%w: Failed to parse RPM template: %w",
-			ErrBadTemplate, errors.WithStack(err))
+			ErrBadTemplate, err)
 	}
 
 	// Create a buffer to hold the template execution output
 	bf := new(bytes.Buffer)
 	if err := t.Execute(bf, nil); err != nil {
 		return fmt.Errorf("%w: Failed to execute RPM template: %w",
-			ErrBadTemplate, errors.WithStack(err))
+			ErrBadTemplate, err)
 	}
 
 	// Define the output file path
@@ -777,7 +776,7 @@ func writeRPMLockFile(rpmsLockTemplate fs.FS, rootDir string) error {
 	// Write the generated content to the params.Output file
 	if err := os.WriteFile(outputPath, bf.Bytes(), 0644); err != nil {
 		return fmt.Errorf("%w: Failed to write RPM lock file: %w",
-			ErrIO, errors.WithStack(err))
+			ErrIO, err)
 	}
 	return nil
 }
