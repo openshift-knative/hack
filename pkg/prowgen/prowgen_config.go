@@ -288,12 +288,13 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 			if !ov.OnDemand {
 				options = append(options,
 					SkipIfOnlyChanged(),
+					ImagesSkipIfOnlyChanged(),
 				)
 			} else {
-
 				options = append(options,
 					// onDemand jobs, should only run tests when needed / triggered manually
 					DisableAlwaysRunForTests(),
+					ImagesRunIfChangedHack(),
 				)
 			}
 
@@ -349,6 +350,8 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 					opts,
 					DiscoverImages(r, branch.SkipDockerFilesMatches),
 					DependenciesForTestSteps(),
+					// Custom build definitions are always on-demand only, that's also applied to image builds
+					ImagesRunIfChangedHack(),
 				)
 
 				if !ov.OnDemand {
@@ -591,6 +594,22 @@ func applyOptions(cfg *cioperatorapi.ReleaseBuildConfiguration, opts ...ReleaseB
 		}
 	}
 	return nil
+}
+
+// ImagesSkipIfOnlyChanged adds common file regex to skip image builds on unrelated changes
+func ImagesSkipIfOnlyChanged() ReleaseBuildConfigurationOption {
+	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
+		cfg.Images.SkipIfOnlyChanged = prowSkipIfOnlyChangedFiles
+		return nil
+	}
+}
+
+// ImagesRunIfChangedHack adds non-existing string to generate image builds as on-demand only
+func ImagesRunIfChangedHack() ReleaseBuildConfigurationOption {
+	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
+		cfg.Images.RunIfChanged = prowNotExisting
+		return nil
+	}
 }
 
 func (r Repository) IsServerlessOperator() bool {

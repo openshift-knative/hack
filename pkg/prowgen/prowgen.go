@@ -344,7 +344,6 @@ func RunOpenShiftReleaseGenerator(ctx context.Context, openShiftRelease Reposito
 func runJobConfigInjectors(inConfigs []*Config, openShiftRelease Repository) error {
 	for _, inConfig := range inConfigs {
 		injectors := JobConfigInjectors{
-			AlwaysRunInjector(),
 			slackInjector(),
 		}
 		if err := injectors.Inject(inConfig, openShiftRelease); err != nil {
@@ -387,6 +386,7 @@ func shouldIgnoreJob(r *Repository, jobName string) bool {
 	return false
 }
 
+// Deprecated: image builds conditionals are supported natively in struct
 func AlwaysRunInjector() JobConfigInjector {
 	return JobConfigInjector{
 		Type: PreSubmit,

@@ -39,6 +39,7 @@ const (
 	makefilePhonyTarget = ".PHONY"
 	// Files which do not require to run builds on Prow
 	prowSkipIfOnlyChangedFiles = "^.tekton/.*|^.konflux.*|^.github/.*|^rpms.lock.yaml$|^hack/(lib$|[^l].*|l[^i].*|li[^b].*|lib[^/].*)|^OWNERS.*|.*\\.md"
+	prowNotExisting            = "^non-existing$"
 )
 
 // Makefile targets can be defined in multiple ways:
