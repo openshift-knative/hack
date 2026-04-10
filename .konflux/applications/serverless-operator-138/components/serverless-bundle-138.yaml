@@ -9,13 +9,7 @@ spec:
   componentName: serverless-bundle-138
   application: serverless-operator-138 
   build-nudges-ref:
-    - "serverless-index-138-fbc-416"
-    - "serverless-index-138-fbc-417"
-    - "serverless-index-138-fbc-418"
-    - "serverless-index-138-fbc-419"
     - "serverless-index-138-fbc-420"
-    - "serverless-index-138-fbc-421"
-    - "serverless-index-138-fbc-422"
   source:
     git:
       url: https://github.com/openshift-knative/serverless-operator.git
