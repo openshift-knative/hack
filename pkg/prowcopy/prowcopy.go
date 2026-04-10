@@ -96,12 +96,6 @@ func Main() error {
 		log.Fatalln("Failed to mirror repositories", err)
 	}
 
-	if c.FromBranch != c.Branch {
-		if err := runProwCopyInjectors(&c, prowgenConfig, openShiftRelease); err != nil {
-			log.Fatalln("Failed to run Prow job injectors", err)
-		}
-	}
-
 	return nil
 }
 
@@ -212,52 +206,4 @@ func getJobConfig(match string, c Config) (*prowgen.ReleaseBuildConfiguration, e
 	}
 
 	return jobConfig, nil
-}
-
-// JobConfigCopiedInjectors are configured from the base branch. They're applied to
-// generated Prow jobs for the target branch.
-type JobConfigCopiedInjectors []prowgen.JobConfigInjector
-
-func (jcis JobConfigCopiedInjectors) Inject(prowcopyCfg *Config, prowgenCfg *prowgen.Config, openShiftRelease prowgen.Repository) error {
-	for _, jci := range jcis {
-		sourceBranchName, targetBranch := prowcopyCfg.FromBranch, prowcopyCfg.Branch
-		var sourceBranch *prowgen.Branch
-		// Injectors need to be applied to the new branch in the same way as they were applied
-		// to the source branch when its config was generated.
-		sb, ok := prowgenCfg.Config.Branches[sourceBranchName]
-		if !ok {
-			return fmt.Errorf("unable to find source branch in config")
-		}
-		sourceBranch = &sb
-
-		for _, r := range prowgenCfg.Repositories {
-			generatedOutputDir := "ci-operator/jobs"
-			glob := filepath.Join(openShiftRelease.RepositoryDirectory(), generatedOutputDir, r.RepositoryDirectory(), "*"+targetBranch+"*"+string(jci.Type)+"*")
-			matches, err := filepath.Glob(glob)
-			if err != nil {
-				return err
-			}
-			for _, match := range matches {
-				jobConfig, err := prowgen.GetJobConfig(match)
-				if err != nil {
-					return err
-				}
-				if err := jci.Update(&r, sourceBranch, sourceBranchName, jobConfig); err != nil {
-					return err
-				}
-				if err := prowgen.SaveJobConfig(match, jobConfig); err != nil {
-					return err
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
-func runProwCopyInjectors(config *Config, inConfig *prowgen.Config, openShiftRelease prowgen.Repository) error {
-	injectors := JobConfigCopiedInjectors{
-		prowgen.AlwaysRunInjector(),
-	}
-	return injectors.Inject(config, inConfig, openShiftRelease)
 }
