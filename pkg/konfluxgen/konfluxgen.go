@@ -30,9 +30,9 @@ import (
 	"github.com/openshift-knative/hack/pkg/soversion"
 	"github.com/openshift-knative/hack/pkg/util"
 
-	gyaml "github.com/ghodss/yaml"
 	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
 	operatorsv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -335,7 +335,7 @@ func Generate(cfg Config) error {
 		if (c.PromotionConfiguration == nil || len(c.PromotionConfiguration.Targets) == 0) && !c.IsContained(cfg.AdditionalComponentConfigs) {
 			continue
 		}
-		for _, ib := range c.Images {
+		for _, ib := range c.Images.Items {
 
 			ignore := false
 			for _, r := range excludeImages {
@@ -743,18 +743,9 @@ func parseConfig(path string) (*cioperatorapi.ReleaseBuildConfiguration, error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %q: %w", path, err)
 	}
-	j, err := gyaml.YAMLToJSON(y)
+	j, err := yaml.YAMLToJSON(y)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert YAML to JSON: %w", err)
-	}
-
-	// TODO: Temporal fix until ci-tools dependency is updated with ImageConfiguration type.
-	// Handle "images" field being an object with "items" key instead of a plain array.
-	// CI configs use ImageConfiguration format: {"images": {"items": [...]}}
-	// but cioperatorapi.ReleaseBuildConfiguration expects: {"images": [...]}
-	j, err = normalizeImagesField(j)
-	if err != nil {
-		return nil, fmt.Errorf("failed to normalize images field in %q: %w", path, err)
 	}
 
 	jobConfig := &cioperatorapi.ReleaseBuildConfiguration{}
@@ -763,35 +754,6 @@ func parseConfig(path string) (*cioperatorapi.ReleaseBuildConfiguration, error) 
 	}
 
 	return jobConfig, err
-}
-
-// TODO: normalizeImagesField is a temporal fix until ci-tools dependency is updated with ImageConfiguration type.
-func normalizeImagesField(data []byte) ([]byte, error) {
-	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return data, nil
-	}
-
-	imagesRaw, ok := raw["images"]
-	if !ok {
-		return data, nil
-	}
-
-	// Check if "images" is an object (starts with '{') rather than an array
-	trimmed := bytes.TrimSpace(imagesRaw)
-	if len(trimmed) == 0 || trimmed[0] != '{' {
-		return data, nil
-	}
-
-	var wrapper struct {
-		Items json.RawMessage `json:"items"`
-	}
-	if err := json.Unmarshal(imagesRaw, &wrapper); err != nil {
-		return data, nil
-	}
-
-	raw["images"] = wrapper.Items
-	return json.Marshal(raw)
 }
 
 func Sanitize(input interface{}) string {
@@ -1308,7 +1270,7 @@ func loadClusterServiceVerion(path string) (*operatorsv1alpha1.ClusterServiceVer
 	if err != nil {
 		return nil, err
 	}
-	j, err := gyaml.YAMLToJSON(y)
+	j, err := yaml.YAMLToJSON(y)
 	if err != nil {
 		return nil, err
 	}

@@ -252,9 +252,11 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 					Releases:       releases,
 				},
 				CanonicalGoRepository: r.CanonicalGoRepository,
-				Images:                images,
-				Tests:                 tests,
-				Resources:             resources,
+				Images: cioperatorapi.ImageConfiguration{
+					Items: images,
+				},
+				Tests:     tests,
+				Resources: resources,
 			}
 
 			options := make([]ReleaseBuildConfigurationOption, 0, len(opts))
@@ -286,12 +288,13 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 			if !ov.OnDemand {
 				options = append(options,
 					SkipIfOnlyChanged(),
+					ImagesSkipIfOnlyChanged(),
 				)
 			} else {
-
 				options = append(options,
 					// onDemand jobs, should only run tests when needed / triggered manually
 					DisableAlwaysRunForTests(),
+					ImagesRunIfChangedHack(),
 				)
 			}
 
@@ -301,7 +304,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				return nil, fmt.Errorf("[%s] failed to apply option: %w", r.RepositoryDirectory(), err)
 			}
 
-			log.Println("numTests", len(cfg.Tests), "numImages", len(cfg.Images))
+			log.Println("numTests", len(cfg.Tests), "numImages", len(cfg.Images.Items))
 
 			// openshift-knative/eventing-kafka-broker/openshift-knative-eventing-kafka-broker-release-next__411.yaml
 			buildConfigPath := filepath.Join(
@@ -347,6 +350,8 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 					opts,
 					DiscoverImages(r, branch.SkipDockerFilesMatches),
 					DependenciesForTestSteps(),
+					// Custom build definitions are always on-demand only, that's also applied to image builds
+					ImagesRunIfChangedHack(),
 				)
 
 				if !ov.OnDemand {
@@ -366,7 +371,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 					return nil, fmt.Errorf("[%s] failed to apply option: %w", r.RepositoryDirectory(), err)
 				}
 
-				log.Println("numTests", len(customBuildCfg.Tests), "numImages", len(customBuildCfg.Images))
+				log.Println("numTests", len(customBuildCfg.Tests), "numImages", len(customBuildCfg.Images.Items))
 
 				buildConfigPath = filepath.Join(
 					r.RepositoryDirectory(),
@@ -589,6 +594,22 @@ func applyOptions(cfg *cioperatorapi.ReleaseBuildConfiguration, opts ...ReleaseB
 		}
 	}
 	return nil
+}
+
+// ImagesSkipIfOnlyChanged adds common file regex to skip image builds on unrelated changes
+func ImagesSkipIfOnlyChanged() ReleaseBuildConfigurationOption {
+	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
+		cfg.Images.SkipIfOnlyChanged = prowSkipIfOnlyChangedFiles
+		return nil
+	}
+}
+
+// ImagesRunIfChangedHack adds non-existing string to generate image builds as on-demand only
+func ImagesRunIfChangedHack() ReleaseBuildConfigurationOption {
+	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
+		cfg.Images.RunIfChanged = prowNotExisting
+		return nil
+	}
 }
 
 func (r Repository) IsServerlessOperator() bool {

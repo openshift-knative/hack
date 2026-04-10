@@ -27,7 +27,6 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/coreos/go-semver/semver"
-	gyaml "github.com/ghodss/yaml"
 	"golang.org/x/sync/errgroup"
 	prowapi "sigs.k8s.io/prow/pkg/apis/prowjobs/v1"
 	prowconfig "sigs.k8s.io/prow/pkg/config"
@@ -201,8 +200,8 @@ func LoadConfig(path string) (*Config, error) {
 	return UnmarshalConfig(y)
 }
 
-func UnmarshalConfig(yaml []byte) (*Config, error) {
-	j, err := gyaml.YAMLToJSON(yaml)
+func UnmarshalConfig(rawYaml []byte) (*Config, error) {
+	j, err := yaml.YAMLToJSON(rawYaml)
 	if err != nil {
 		return nil, err
 	}
@@ -306,19 +305,7 @@ func SaveReleaseBuildConfiguration(outConfig *string, cfg ReleaseBuildConfigurat
 		return err
 	}
 
-	// TODO: Temporal fix until ci-tools dependency is updated with ImageConfiguration type.
-	// Marshal to JSON, wrap "images" array into {"items": [...]}, then convert to YAML.
-	j, err := json.Marshal(cfg.ReleaseBuildConfiguration)
-	if err != nil {
-		return err
-	}
-
-	j, err = wrapImagesField(j)
-	if err != nil {
-		return err
-	}
-
-	out, err := gyaml.JSONToYAML(j)
+	out, err := yaml.Marshal(cfg.ReleaseBuildConfiguration)
 	if err != nil {
 		return err
 	}
@@ -328,35 +315,6 @@ func SaveReleaseBuildConfiguration(outConfig *string, cfg ReleaseBuildConfigurat
 	}
 
 	return copyOwnersFileIfNotPresent(dir)
-}
-
-// TODO: wrapImagesField is a temporal fix until ci-tools dependency is updated with ImageConfiguration type.
-// wrapImagesField converts {"images": [...]} to {"images": {"items": [...]}}
-// to match the ImageConfiguration format used by openshift/release CI configs.
-func wrapImagesField(data []byte) ([]byte, error) {
-	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return data, nil
-	}
-
-	imagesRaw, ok := raw["images"]
-	if !ok {
-		return data, nil
-	}
-
-	// Only wrap if it's an array (starts with '[')
-	trimmed := json.RawMessage(strings.TrimSpace(string(imagesRaw)))
-	if len(trimmed) == 0 || trimmed[0] != '[' {
-		return data, nil
-	}
-
-	wrapped, err := json.Marshal(map[string]json.RawMessage{"items": imagesRaw})
-	if err != nil {
-		return nil, err
-	}
-
-	raw["images"] = wrapped
-	return json.Marshal(raw)
 }
 
 func copyOwnersFileIfNotPresent(dir string) error {
@@ -386,7 +344,6 @@ func RunOpenShiftReleaseGenerator(ctx context.Context, openShiftRelease Reposito
 func runJobConfigInjectors(inConfigs []*Config, openShiftRelease Repository) error {
 	for _, inConfig := range inConfigs {
 		injectors := JobConfigInjectors{
-			AlwaysRunInjector(),
 			slackInjector(),
 		}
 		if err := injectors.Inject(inConfig, openShiftRelease); err != nil {
@@ -429,6 +386,7 @@ func shouldIgnoreJob(r *Repository, jobName string) bool {
 	return false
 }
 
+// Deprecated: image builds conditionals are supported natively in struct
 func AlwaysRunInjector() JobConfigInjector {
 	return JobConfigInjector{
 		Type: PreSubmit,
@@ -561,7 +519,7 @@ func GetJobConfig(match string) (*prowconfig.JobConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	j, err := gyaml.YAMLToJSON(y)
+	j, err := yaml.YAMLToJSON(y)
 	if err != nil {
 		return nil, err
 	}
