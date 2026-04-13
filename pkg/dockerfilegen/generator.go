@@ -174,6 +174,11 @@ func generateDockerfile(params Params, mainPackagesPaths sets.Set[string]) error
 	}
 	if goVersion == nil {
 		goVersion = &goModGoVersion
+	} else if strings.Count(params.DockerfileImageBuilderFmt, "%s") > 0 {
+		// Config-provided golang version overrides the --dockerfile-image-builder-fmt flag
+		// to ensure matching Go version to OCP version is used.
+		// Fully qualified image refs without any placeholders are honored.
+		params.DockerfileImageBuilderFmt = ""
 	}
 	rhelVersion := RHEL9
 	templateFilePattern := "dockerfile-templates/rhel-9/*.tmpl"
