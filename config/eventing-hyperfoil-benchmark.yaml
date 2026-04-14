@@ -11,9 +11,6 @@ repositories:
   e2e:
   - match: test.*
     onDemand: true
-  ignoreConfigs:
-    matches:
-    - .config.prowgen
   imagePrefix: knative-eventing-hyperfoil-benchmark
   org: openshift-knative
   owners:

@@ -100,9 +100,6 @@ repositories:
   e2e:
   - match: .*e2e$
   - match: .*reconciler.*
-  ignoreConfigs:
-    matches:
-    - .config.prowgen
   imagePrefix: knative-eventing-integrations
   org: openshift-knative
   owners:

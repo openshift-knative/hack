@@ -50,9 +50,6 @@ config:
       promotion: {}
 repositories:
 - dockerfiles: {}
-  ignoreConfigs:
-    matches:
-    - .config.prowgen
   imagePrefix: net-kourier
   org: openshift-knative
   owners:
