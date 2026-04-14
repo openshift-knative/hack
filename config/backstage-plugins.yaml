@@ -52,6 +52,7 @@ repositories:
 - dockerfiles: {}
   e2e:
   - match: .*e2e-tests$
+  ignoreConfigs: {}
   imagePrefix: knative-backstage-plugins
   org: openshift-knative
   owners:

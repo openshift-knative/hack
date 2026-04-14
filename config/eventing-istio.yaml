@@ -55,6 +55,7 @@ repositories:
 - dockerfiles: {}
   e2e:
   - match: .*e2e-tests$
+  ignoreConfigs: {}
   imagePrefix: knative-eventing-istio
   org: openshift-knative
   owners:
