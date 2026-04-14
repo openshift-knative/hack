@@ -52,7 +52,6 @@ repositories:
     matches:
     - release-1\.13
     - release-1\.14
-    - .config.prowgen
   imageNameOverrides:
     kn-event-sender: sender
   imagePrefix: kn-plugin-event

@@ -24,12 +24,12 @@ import (
 
 	"github.com/openshift-knative/hack/pkg/util"
 	"github.com/openshift/ci-tools/pkg/api/shardprowconfig"
+	ciconfig "github.com/openshift/ci-tools/pkg/config"
 	"sigs.k8s.io/yaml"
 
 	"github.com/coreos/go-semver/semver"
 	"golang.org/x/sync/errgroup"
 	prowapi "sigs.k8s.io/prow/pkg/apis/prowjobs/v1"
-	prowconfig "sigs.k8s.io/prow/pkg/config"
 )
 
 // Config is the prowgen configuration file struct.
@@ -149,6 +149,11 @@ func Main() {
 					return err
 				}
 
+				prowgenCfg := NewProwgenConfig(repository, inConfig.Config, cfgs)
+				if err := SaveProwgenConfig(outConfig, repository, prowgenCfg); err != nil {
+					return err
+				}
+
 				return nil
 			})
 		}
@@ -164,12 +169,6 @@ func Main() {
 	if *build {
 		if err := RunOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
 			log.Fatalln("Failed to run openshift/release generator:", err)
-		}
-		if err := runJobConfigInjectors(inConfigs, openShiftRelease); err != nil {
-			log.Fatalln("Failed to inject Slack reporter", err)
-		}
-		if err := RunOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
-			log.Fatalln("Failed to run openshift/release generator after injecting Slack reporter", err)
 		}
 	}
 	if *push {
@@ -298,6 +297,85 @@ func SaveProwConfig(openShiftRelease Repository, repository Repository, config s
 	return os.WriteFile(outPath, out, os.ModePerm)
 }
 
+const slackReportTemplate = `{{if eq .Status.State "success"}} :rainbow: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :rainbow: {{else}} :volcano: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :volcano: {{end}}`
+
+func NewProwgenConfig(r Repository, cc CommonConfig, cfgs []ReleaseBuildConfiguration) *ciconfig.Prowgen {
+	if r.SlackChannel == "" {
+		return nil
+	}
+
+	jobNameSet := make(map[string]struct{})
+	for _, cfg := range cfgs {
+		for _, test := range cfg.Tests {
+			if test.Cron != nil {
+				jobNameSet[test.As] = struct{}{}
+			}
+		}
+	}
+
+	if len(jobNameSet) == 0 {
+		return nil
+	}
+
+	jobNames := make([]string, 0, len(jobNameSet))
+	for name := range jobNameSet {
+		jobNames = append(jobNames, name)
+	}
+	sort.Strings(jobNames)
+
+	variantSet := make(map[string]struct{})
+	for _, branch := range cc.Branches {
+		if branch.Prowgen != nil && branch.Prowgen.Disabled {
+			continue
+		}
+		for _, ov := range branch.OpenShiftVersions {
+			if ov.SkipCron || ov.CandidateRelease {
+				variant := strings.ReplaceAll(ov.Version, ".", "")
+				variantSet[variant] = struct{}{}
+			}
+		}
+	}
+
+	var excludedVariants []string
+	if len(variantSet) > 0 {
+		excludedVariants = make([]string, 0, len(variantSet))
+		for v := range variantSet {
+			excludedVariants = append(excludedVariants, v)
+		}
+		sort.Strings(excludedVariants)
+	}
+
+	return &ciconfig.Prowgen{
+		SlackReporterConfigs: []ciconfig.SlackReporterConfig{
+			{
+				Channel:           r.SlackChannel,
+				JobStatesToReport: []prowapi.ProwJobState{prowapi.SuccessState, prowapi.FailureState, prowapi.ErrorState},
+				ReportTemplate:    slackReportTemplate,
+				JobNames:          jobNames,
+				ExcludedVariants:  excludedVariants,
+			},
+		},
+	}
+}
+
+func SaveProwgenConfig(outConfig *string, r Repository, prowgenCfg *ciconfig.Prowgen) error {
+	if prowgenCfg == nil {
+		return nil
+	}
+
+	dir := filepath.Join(*outConfig, r.RepositoryDirectory())
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return err
+	}
+
+	out, err := yaml.Marshal(prowgenCfg)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(filepath.Join(dir, ciconfig.ProwgenFile), out, os.ModePerm)
+}
+
 func SaveReleaseBuildConfiguration(outConfig *string, cfg ReleaseBuildConfiguration) error {
 	dir := filepath.Join(*outConfig, filepath.Dir(cfg.Path))
 
@@ -339,130 +417,6 @@ func RunOpenShiftReleaseGenerator(ctx context.Context, openShiftRelease Reposito
 		return err
 	}
 	return nil
-}
-
-func runJobConfigInjectors(inConfigs []*Config, openShiftRelease Repository) error {
-	for _, inConfig := range inConfigs {
-		injectors := JobConfigInjectors{
-			slackInjector(),
-		}
-		if err := injectors.Inject(inConfig, openShiftRelease); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func slackInjector() JobConfigInjector {
-	return JobConfigInjector{
-		Type: Periodic,
-		Update: func(r *Repository, _ *Branch, _ string, jobConfig *prowconfig.JobConfig) error {
-			for i := range jobConfig.Periodics {
-				if !shouldIgnoreJob(r, jobConfig.Periodics[i].Name) {
-					jobConfig.Periodics[i].ReporterConfig = &prowapi.ReporterConfig{
-						Slack: &prowapi.SlackReporterConfig{
-							Channel: r.SlackChannel,
-							JobStatesToReport: []prowapi.ProwJobState{
-								prowapi.SuccessState,
-								prowapi.FailureState,
-								prowapi.ErrorState,
-							},
-							ReportTemplate: `{{if eq .Status.State "success"}} :rainbow: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :rainbow: {{else}} :volcano: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :volcano: {{end}}`,
-						},
-					}
-				}
-			}
-			return nil
-		},
-	}
-}
-
-func shouldIgnoreJob(r *Repository, jobName string) bool {
-	for _, r := range util.MustToRegexp(r.IgnoreConfigs.Matches) {
-		if r.MatchString(jobName) {
-			return true
-		}
-	}
-	return false
-}
-
-type JobConfigType string
-
-const (
-	Periodic   JobConfigType = "periodics"
-	PreSubmit  JobConfigType = "presubmits"
-	PostSubmit JobConfigType = "postsubmits"
-)
-
-type JobConfigInjectors []JobConfigInjector
-
-func (jcis JobConfigInjectors) Inject(inConfig *Config, openShiftRelease Repository) error {
-	for _, jci := range jcis {
-		for branchName, branch := range inConfig.Config.Branches {
-			for _, r := range inConfig.Repositories {
-				generatedOutputDir := "ci-operator/jobs"
-				dir := filepath.Join(openShiftRelease.RepositoryDirectory(), generatedOutputDir, r.RepositoryDirectory())
-				glob := filepath.Join(dir, "*"+branchName+"*"+string(jci.Type)+"*")
-				if err := copyOwnersFileIfNotPresent(dir); err != nil {
-					return err
-				}
-				matches, err := filepath.Glob(glob)
-				if err != nil {
-					return err
-				}
-				for _, match := range matches {
-					jobConfig, err := GetJobConfig(match)
-					if err != nil {
-						return err
-					}
-					if err := jci.Update(&r, &branch, branchName, jobConfig); err != nil {
-						return err
-					}
-					if err := SaveJobConfig(match, jobConfig); err != nil {
-						return err
-					}
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
-type JobConfigInjector struct {
-	Type   JobConfigType
-	Update func(r *Repository, b *Branch, branchName string, jobConfig *prowconfig.JobConfig) error
-}
-
-func SaveJobConfig(match string, jobConfig *prowconfig.JobConfig) error {
-	y, err := yaml.Marshal(jobConfig)
-	if err != nil {
-		return err
-	}
-	if err := os.WriteFile(match, y, os.ModePerm); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func GetJobConfig(match string) (*prowconfig.JobConfig, error) {
-	// Going directly from YAML raw input produces unexpected configs (due to missing YAML tags),
-	// so we convert YAML to JSON and unmarshal the struct from the JSON object.
-	y, err := os.ReadFile(match)
-	if err != nil {
-		return nil, err
-	}
-	j, err := yaml.YAMLToJSON(y)
-	if err != nil {
-		return nil, err
-	}
-
-	jobConfig := &prowconfig.JobConfig{}
-	if err := json.Unmarshal(j, jobConfig); err != nil {
-		return nil, err
-	}
-	return jobConfig, nil
 }
 
 // InitializeOpenShiftReleaseRepository clones openshift/release and clean up existing jobs
