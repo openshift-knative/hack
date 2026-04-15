@@ -30,7 +30,6 @@ jobs:
           sudo rm -rf /usr/share/dotnet || true
           sudo rm -rf /usr/local/lib/android || true
           sudo rm -rf /opt/ghc || true
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY" || true
       - name: Checkout openshift-knative/hack
         uses: actions/checkout@v4
         with:
@@ -41,16 +40,6 @@ jobs:
 
       - name: Install yq
         run: go install github.com/mikefarah/yq/v3@latest
-
-      - name: Install skopeo
-        run: go install -tags="exclude_graphdriver_btrfs containers_image_openpgp" github.com/containers/skopeo/cmd/skopeo@v1.16.1
-
-      - name: Install YAML2JSON
-        run: go install github.com/bronze1man/yaml2json@latest
-
-      - name: Convert configurations to JSON
-        working-directory: ./src/github.com/openshift-knative/hack
-        run: find config/*.yaml | xargs -I{} sh -c "yaml2json < {} > {}.json"
 
       - name: Checkout openshift/release
         if: ${{ github.event_name == 'pull_request' }}
