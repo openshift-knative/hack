@@ -20,7 +20,7 @@ jobs:
       GOPATH: ${{ github.workspace }}
     steps:
       - name: Checkout openshift-knative/hack
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           path: ./src/github.com/openshift-knative/hack
 
@@ -49,7 +49,7 @@ jobs:
 
       # The runner runs on Ubuntu and we need to have python3-dnf installed, so we'll use a container to run the rpm-lockfile-prototype
       - name: Checkout rpm-lockfile-prototype
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           repository: 'konflux-ci/rpm-lockfile-prototype'
           path: ./src/github.com/openshift-knative/rpm-lockfile-prototype
