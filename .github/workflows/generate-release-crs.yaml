@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout serverless operator
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: "${{ inputs.revision }}"
           repository: 'openshift-knative/serverless-operator'
@@ -48,7 +48,7 @@ jobs:
           git config --global user.name "serverless-qe"
 
       - name: Checkout openshift-knative/hack
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: openshift-knative/hack
           path: ./src/github.com/openshift-knative/hack
