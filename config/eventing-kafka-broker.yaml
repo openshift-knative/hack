@@ -83,6 +83,7 @@ repositories:
   - match: .*e2e$
   - match: .*reconciler.*
   - match: .*conformance.*
+  ignoreConfigs: {}
   imagePrefix: knative-eventing-kafka-broker
   org: openshift-knative
   owners:

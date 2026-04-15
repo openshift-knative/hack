@@ -50,6 +50,7 @@ config:
       promotion: {}
 repositories:
 - dockerfiles: {}
+  ignoreConfigs: {}
   imagePrefix: net-istio
   org: openshift-knative
   owners:

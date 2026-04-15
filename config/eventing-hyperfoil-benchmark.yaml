@@ -11,6 +11,7 @@ repositories:
   e2e:
   - match: test.*
     onDemand: true
+  ignoreConfigs: {}
   imagePrefix: knative-eventing-hyperfoil-benchmark
   org: openshift-knative
   owners:
