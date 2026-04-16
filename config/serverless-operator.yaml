@@ -24,15 +24,15 @@ config:
       openShiftVersions:
       - candidateRelease: true
         onDemand: true
-        version: "4.21"
+        version: "4.22"
       - customConfigs:
           enabled: true
           excludes:
           - .*ocp-4.22-lp-interop.*
         useClusterPool: true
-        version: "4.20"
+        version: "4.21"
       - onDemand: true
-        version: "4.14"
+        version: "4.16"
       promotion: {}
     release-1.35:
       golangVersion: "1.25"
@@ -123,15 +123,12 @@ config:
           - .*ocp-4.22-lp-interop.*
         onDemand: true
         version: "4.22"
-      - candidateRelease: true
-        onDemand: true
-        version: "4.21"
       - skipCron: true
         useClusterPool: true
-        version: "4.20"
+        version: "4.21"
       - onDemand: true
         skipCron: true
-        version: "4.14"
+        version: "4.16"
       promotion:
         template: release-1.37.1
     release-1.38:
@@ -158,17 +155,17 @@ config:
       openShiftVersions:
       - candidateRelease: true
         onDemand: true
-        version: "4.21"
+        version: "4.22"
       - useClusterPool: true
-        version: "4.20"
+        version: "4.21"
       - onDemand: true
-        version: "4.14"
+        version: "4.16"
       promotion: {}
       prowgen:
         disabled: true
 repositories:
 - customConfigs:
-  - name: 420-aws-ovn
+  - name: 421-aws-ovn
     releaseBuildConfiguration:
       tests:
       - as: e2e-aws-ovn-continuous
@@ -208,7 +205,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 420-azure
+  - name: 421-azure
     releaseBuildConfiguration:
       tests:
       - as: e2e-azure-continuous
@@ -248,7 +245,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 420-gcp
+  - name: 421-gcp
     releaseBuildConfiguration:
       tests:
       - as: e2e-gcp-continuous
@@ -288,7 +285,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 420-hypershift
+  - name: 421-hypershift
     releaseBuildConfiguration:
       base_images:
         hypershift-operator:
@@ -296,14 +293,14 @@ repositories:
           namespace: hypershift
           tag: latest
         upi-installer:
-          name: "4.20"
+          name: "4.21"
           namespace: ocp
           tag: upi-installer
       releases:
         latest:
           integration:
             include_built_images: true
-            name: "4.20"
+            name: "4.21"
             namespace: ocp
       tests:
       - as: e2e-hypershift-continuous
@@ -348,7 +345,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 420-single-node
+  - name: 421-single-node
     releaseBuildConfiguration:
       tests:
       - as: e2e-sno-continuous
@@ -370,11 +367,11 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 420-vsphere
+  - name: 421-vsphere
     releaseBuildConfiguration:
       base_images:
         upi-installer:
-          name: "4.20"
+          name: "4.21"
           namespace: ocp
           tag: upi-installer
       tests:
@@ -523,14 +520,14 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 4.20-techpreview
+  - name: 4.21-techpreview
     releaseBuildConfiguration:
       releases:
         latest:
           candidate:
             product: ocp
             stream: nightly
-            version: "4.20"
+            version: "4.21"
       tests:
       - as: olmv1-operator-e2e
         cron: 25 3 * * 6

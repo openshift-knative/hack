@@ -33,10 +33,10 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.21"
+        version: "4.22"
       - skipCron: true
         useClusterPool: true
-        version: "4.20"
+        version: "4.21"
       promotion: {}
     release-v1.21:
       konflux:
@@ -44,7 +44,7 @@ config:
       openShiftVersions:
       - skipCron: true
         useClusterPool: true
-        version: "4.20"
+        version: "4.21"
       promotion: {}
 repositories:
 - dockerfiles: {}
