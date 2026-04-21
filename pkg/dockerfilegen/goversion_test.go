@@ -7,7 +7,6 @@ import (
 	"testing/fstest"
 
 	"github.com/openshift-knative/hack/pkg/project"
-	"github.com/openshift-knative/hack/pkg/prowgen"
 )
 
 func Test_componentBranchForTag(t *testing.T) {
@@ -112,51 +111,6 @@ func Test_soBranchForMetadata(t *testing.T) {
 	}
 }
 
-func Test_hasImagePrefix(t *testing.T) {
-	repos := []prowgen.Repository{
-		{ImagePrefix: "knative-eventing"},
-		{ImagePrefix: "knative-serving"},
-	}
-	tests := []struct {
-		name   string
-		repos  []prowgen.Repository
-		prefix string
-		want   bool
-	}{
-		{
-			name:   "found",
-			repos:  repos,
-			prefix: "knative-serving",
-			want:   true,
-		},
-		{
-			name:   "not found",
-			repos:  repos,
-			prefix: "knative-client",
-			want:   false,
-		},
-		{
-			name:   "empty repos",
-			repos:  nil,
-			prefix: "knative-serving",
-			want:   false,
-		},
-		{
-			name:   "empty prefix matches empty ImagePrefix",
-			repos:  []prowgen.Repository{{ImagePrefix: ""}},
-			prefix: "",
-			want:   true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := hasImagePrefix(tt.repos, tt.prefix); got != tt.want {
-				t.Errorf("hasImagePrefix() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func makeConfigYAML(imagePrefix, branch, golangVersion string) []byte {
 	tmpl := `config:
   branches:
@@ -186,7 +140,6 @@ func Test_golangVersionFromRepoConfig(t *testing.T) {
 		branch      string
 		wantVersion string
 		wantNil     bool
-		wantErr     bool
 	}{
 		{
 			name: "returns golang version for matching repo and branch",
@@ -259,6 +212,28 @@ func Test_golangVersionFromRepoConfig(t *testing.T) {
 			wantVersion: "1.23",
 		},
 		{
+			name: "returns golang version for main branch",
+			fs: fstest.MapFS{
+				"eventing.yaml": &fstest.MapFile{
+					Data: makeConfigYAML("knative-eventing", "main", "1.25"),
+				},
+			},
+			imagePrefix: "knative-eventing",
+			branch:      "main",
+			wantVersion: "1.25",
+		},
+		{
+			name: "returns golang version for release-1.38 branch",
+			fs: fstest.MapFS{
+				"serving.yaml": &fstest.MapFile{
+					Data: makeConfigYAML("knative-serving", "release-1.38", "1.24"),
+				},
+			},
+			imagePrefix: "knative-serving",
+			branch:      "release-1.38",
+			wantVersion: "1.24",
+		},
+		{
 			name:        "returns nil for empty filesystem",
 			fs:          fstest.MapFS{},
 			imagePrefix: "knative-eventing",
@@ -269,12 +244,6 @@ func Test_golangVersionFromRepoConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := golangVersionFromRepoConfig(tt.fs, tt.imagePrefix, tt.branch)
-			if tt.wantErr {
-				if err == nil {
-					t.Fatal("expected error, got nil")
-				}
-				return
-			}
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -352,6 +321,12 @@ repositories:
 			wantVersion: "1.25",
 		},
 		{
+			name:        "returns golang version for release-1.38",
+			fs:          soConfigWithVersion("release-1.38", "1.24"),
+			branch:      "release-1.38",
+			wantVersion: "1.24",
+		},
+		{
 			name:    "returns nil when branch not found",
 			fs:      soConfigNoBranch,
 			branch:  "release-1.99",
@@ -367,6 +342,14 @@ repositories:
 			name:    "returns error when SO config file missing",
 			fs:      fstest.MapFS{},
 			branch:  "release-1.37",
+			wantErr: true,
+		},
+		{
+			name: "returns error when SO config is malformed YAML",
+			fs: fstest.MapFS{
+				"serverless-operator.yaml": &fstest.MapFile{Data: []byte(`not: valid: yaml: [`)},
+			},
+			branch:  "main",
 			wantErr: true,
 		},
 	}
@@ -529,6 +512,41 @@ repositories:
 				Project: project.Project{},
 			},
 			wantNil: true,
+		},
+		{
+			name: "component repo: propagates repo config error",
+			fs: fstest.MapFS{
+				"eventing.yaml": &fstest.MapFile{Data: []byte(`not: valid: yaml: [`)},
+			},
+			metadata: &project.Metadata{
+				Project: project.Project{
+					Tag:         "knative-v1.17",
+					ImagePrefix: "knative-eventing",
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "component repo: returns repo version for main branch",
+			fs:   repoAndSOConfig("knative-eventing", "release-next", "1.25", "main", "1.23"),
+			metadata: &project.Metadata{
+				Project: project.Project{
+					Tag:         "knative-nightly",
+					ImagePrefix: "knative-eventing",
+				},
+			},
+			wantVersion: "1.25",
+		},
+		{
+			name: "component repo: returns repo version for release-1.38",
+			fs:   repoAndSOConfig("knative-serving", "release-v1.21", "1.24", "release-1.38", "1.23"),
+			metadata: &project.Metadata{
+				Project: project.Project{
+					Tag:         "knative-v1.21",
+					ImagePrefix: "knative-serving",
+				},
+			},
+			wantVersion: "1.24",
 		},
 	}
 	for _, tt := range tests {

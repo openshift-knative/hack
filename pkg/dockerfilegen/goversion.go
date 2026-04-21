@@ -3,6 +3,8 @@ package dockerfilegen
 import (
 	"fmt"
 	"io/fs"
+	"log"
+	"slices"
 	"strings"
 
 	"github.com/coreos/go-semver/semver"
@@ -29,6 +31,7 @@ func soBranchForMetadata(metadata *project.Metadata) string {
 	if metadata.Project.Version != "" {
 		v, err := semver.NewVersion(metadata.Project.Version)
 		if err != nil {
+			log.Printf("WARNING: failed to parse S-O version %q to determine Go toolchain: %v", metadata.Project.Version, err)
 			return ""
 		}
 		return soversion.BranchName(v)
@@ -36,13 +39,8 @@ func soBranchForMetadata(metadata *project.Metadata) string {
 	return ""
 }
 
-func hasImagePrefix(repos []prowgen.Repository, prefix string) bool {
-	for _, r := range repos {
-		if r.ImagePrefix == prefix {
-			return true
-		}
-	}
-	return false
+func isGoVersionSet(v *string) bool {
+	return v != nil && *v != ""
 }
 
 func golangVersionFromRepoConfig(configs fs.FS, imagePrefix, branch string) (*string, error) {
@@ -62,14 +60,16 @@ func golangVersionFromRepoConfig(configs fs.FS, imagePrefix, branch string) (*st
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse config from %s: %w", configFile.Name(), err)
 		}
-		if !hasImagePrefix(cfg.Repositories, imagePrefix) {
+		if !slices.ContainsFunc(cfg.Repositories, func(r prowgen.Repository) bool {
+			return r.ImagePrefix == imagePrefix
+		}) {
 			continue
 		}
 		branchConfig, ok := cfg.Config.Branches[branch]
 		if !ok {
 			continue
 		}
-		if branchConfig.GolangVersion != nil && *branchConfig.GolangVersion != "" {
+		if isGoVersionSet(branchConfig.GolangVersion) {
 			return branchConfig.GolangVersion, nil
 		}
 	}
@@ -89,7 +89,7 @@ func golangVersionFromSOConfig(configs fs.FS, branch string) (*string, error) {
 	if !ok {
 		return nil, nil
 	}
-	if cfg.GolangVersion != nil && *cfg.GolangVersion != "" {
+	if isGoVersionSet(cfg.GolangVersion) {
 		return cfg.GolangVersion, nil
 	}
 	return nil, nil
