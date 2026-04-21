@@ -482,8 +482,9 @@ func goVersionFromConfig(metadata *project.Metadata) (*string, error) {
 			soBranch = soversion.BranchName(soVersion)
 		}
 	} else if metadata.Project.Version != "" {
-		majorMinor := strings.TrimSuffix(metadata.Project.Version, ".0")
-		soBranch = fmt.Sprintf("release-v%s", majorMinor)
+		if v, err := semver.NewVersion(metadata.Project.Version); err == nil {
+			soBranch = soversion.BranchName(v)
+		}
 	}
 
 	if soBranch != "" {
