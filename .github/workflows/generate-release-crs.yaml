@@ -29,6 +29,16 @@ jobs:
           repository: 'openshift-knative/serverless-operator'
           path: ./src/github.com/openshift-knative/serverless-operator
 
+      - name: Setup Golang
+        uses: openshift-knative/hack/actions/setup-go@main
+
+      - name: Install yq
+        run: go install github.com/mikefarah/yq/v3@latest
+
+      - name: Generate override snapshots
+        working-directory: ./src/github.com/openshift-knative/serverless-operator
+        run: make generate-override-snapshot
+
       - name: Setup kubeconfig
         env:
           KONFLUX_TOKEN: ${{ secrets.KONFLUX_SA_TOKEN }}
@@ -113,3 +123,10 @@ jobs:
           gh pr create --base main --head "serverless-qe:$branch" --title "$title" --body "$title" --label "do-not-merge/hold" || true
         # Use the repository cloned by the konflux-release-gen tool
         working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/hack
+
+      - name: Archive override snapshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: override-snapshots
+          path: ./src/github.com/openshift-knative/serverless-operator/.konflux-release/
+          retention-days: 90
