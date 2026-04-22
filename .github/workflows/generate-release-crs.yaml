@@ -127,6 +127,6 @@ jobs:
       - name: Archive override snapshots
         uses: actions/upload-artifact@v4
         with:
-          name: override-snapshots
+          name: override-snapshots-${{ inputs.revision }}-${{ inputs.environment }}
           path: ./src/github.com/openshift-knative/serverless-operator/.konflux-release/
-          retention-days: 90
+          retention-days: 30
