@@ -29,8 +29,15 @@ config:
           enabled: true
           excludes:
           - .*ocp-4.22-lp-interop.*
+        skipE2EMatches:
+        - "^kitchensink-upgrade$"
         useClusterPool: true
         version: "4.21"
+      - includeE2EMatches:
+        - "^kitchensink-upgrade$"
+        onDemand: true
+        skipPromotion: true
+        version: "4.20"
       - onDemand: true
         version: "4.16"
       promotion: {}
