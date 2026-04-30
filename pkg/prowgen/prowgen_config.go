@@ -123,6 +123,12 @@ type OpenShift struct {
 	OnDemand         bool                     `json:"onDemand,omitempty" yaml:"onDemand,omitempty"`
 	CustomConfigs    *CustomConfigsEnablement `json:"customConfigs,omitempty" yaml:"customConfigs,omitempty"`
 	CandidateRelease bool                     `json:"candidateRelease,omitempty" yaml:"candidateRelease,omitempty"`
+	// SkipPromotion excludes this OpenShift version from promotion indexing.
+	SkipPromotion bool `json:"skipPromotion,omitempty" yaml:"skipPromotion,omitempty"`
+	// SkipE2EMatches excludes e2e tests (by exact match on E2ETest.Match) from this OpenShift version.
+	SkipE2EMatches []string `json:"skipE2EMatches,omitempty" yaml:"skipE2EMatches,omitempty"`
+	// IncludeE2EMatches, if non-empty, limits this OpenShift version to only the listed e2e tests (by exact match on E2ETest.Match).
+	IncludeE2EMatches []string `json:"includeE2EMatches,omitempty" yaml:"includeE2EMatches,omitempty"`
 }
 
 type CustomConfigsEnablement struct {
@@ -187,7 +193,8 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 
 		openshiftVersions := branch.OpenShiftVersions
 
-		for i, ov := range openshiftVersions {
+		promotionIndex := 0
+		for _, ov := range openshiftVersions {
 			log.Println(r.RepositoryDirectory(), "Generating config", branchName, "OpenShiftVersion", ov)
 
 			variant := strings.ReplaceAll(ov.Version, ".", "")
@@ -261,10 +268,13 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 
 			options := make([]ReleaseBuildConfigurationOption, 0, len(opts))
 			copy(options, opts)
-			if i == 0 {
-				options = append(options, withNamePromotion(r, branch, branchName))
-			} else if i == 1 {
-				options = append(options, withTagPromotion(r, branch, branchName))
+			if !ov.SkipPromotion {
+				if promotionIndex == 0 {
+					options = append(options, withNamePromotion(r, branch, branchName))
+				} else if promotionIndex == 1 {
+					options = append(options, withTagPromotion(r, branch, branchName))
+				}
+				promotionIndex++
 			}
 
 			fromImage := srcImage
