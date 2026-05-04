@@ -50,7 +50,8 @@ var makefileTargetPattern = regexp.MustCompile("^(\\S+):\\s*(.*)$")
 
 func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, skipE2ETestMatch []string, random *rand.Rand) ReleaseBuildConfigurationOption {
 	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
-		tests, err := discoverE2ETests(r, skipE2ETestMatch)
+		combinedSkip := append(append([]string(nil), skipE2ETestMatch...), openShift.SkipE2EMatches...)
+		tests, err := discoverE2ETests(r, combinedSkip, openShift.IncludeE2EMatches)
 		if err != nil {
 			return err
 		}
@@ -316,7 +317,7 @@ func (t *Test) HexSha() string {
 	return hex.EncodeToString(h.Sum(nil))[:shaLength]
 }
 
-func discoverE2ETests(r Repository, skipE2ETestMatch []string) ([]Test, error) {
+func discoverE2ETests(r Repository, skipE2ETestMatch []string, includeE2ETestMatch []string) ([]Test, error) {
 	makefilePath := filepath.Join(r.RepositoryDirectory(), "Makefile")
 	if _, err := os.Stat(makefilePath); err != nil && os.IsNotExist(err) {
 		return nil, nil
@@ -341,6 +342,9 @@ func discoverE2ETests(r Repository, skipE2ETestMatch []string) ([]Test, error) {
 			}
 			for _, e2e := range r.E2ETests {
 				if slices.Contains(skipE2ETestMatch, e2e.Match) {
+					continue
+				}
+				if len(includeE2ETestMatch) > 0 && !slices.Contains(includeE2ETestMatch, e2e.Match) {
 					continue
 				}
 				if err := createTest(r, target, e2e, &targets, commands); err != nil {
