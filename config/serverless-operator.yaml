@@ -35,7 +35,6 @@ config:
         version: "4.21"
       - includeE2EMatches:
         - "^kitchensink-upgrade$"
-        onDemand: true
         skipPromotion: true
         version: "4.20"
       - onDemand: true
