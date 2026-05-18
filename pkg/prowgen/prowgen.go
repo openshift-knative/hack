@@ -24,12 +24,10 @@ import (
 
 	"github.com/openshift-knative/hack/pkg/util"
 	"github.com/openshift/ci-tools/pkg/api/shardprowconfig"
-	ciconfig "github.com/openshift/ci-tools/pkg/config"
 	"sigs.k8s.io/yaml"
 
 	"github.com/coreos/go-semver/semver"
 	"golang.org/x/sync/errgroup"
-	prowapi "sigs.k8s.io/prow/pkg/apis/prowjobs/v1"
 )
 
 // Config is the prowgen configuration file struct.
@@ -146,11 +144,6 @@ func Main() {
 
 				branchProtectionAndTideConfig := NewProwConfig(repository)
 				if err := SaveProwConfig(openShiftRelease, repository, branchProtectionAndTideConfig); err != nil {
-					return err
-				}
-
-				prowgenCfg := NewProwgenConfig(repository, inConfig.Config, cfgs)
-				if err := SaveProwgenConfig(outConfig, repository, prowgenCfg); err != nil {
 					return err
 				}
 
@@ -299,83 +292,6 @@ func SaveProwConfig(openShiftRelease Repository, repository Repository, config s
 
 const slackReportTemplate = `{{if eq .Status.State "success"}} :rainbow: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :rainbow: {{else}} :volcano: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :volcano: {{end}}`
 
-func NewProwgenConfig(r Repository, cc CommonConfig, cfgs []ReleaseBuildConfiguration) *ciconfig.Prowgen {
-	if r.SlackChannel == "" {
-		return nil
-	}
-
-	jobNameSet := make(map[string]struct{})
-	for _, cfg := range cfgs {
-		for _, test := range cfg.Tests {
-			if test.Cron != nil {
-				jobNameSet[test.As] = struct{}{}
-			}
-		}
-	}
-
-	if len(jobNameSet) == 0 {
-		return nil
-	}
-
-	jobNames := make([]string, 0, len(jobNameSet))
-	for name := range jobNameSet {
-		jobNames = append(jobNames, name)
-	}
-	sort.Strings(jobNames)
-
-	variantSet := make(map[string]struct{})
-	for _, branch := range cc.Branches {
-		if branch.Prowgen != nil && branch.Prowgen.Disabled {
-			continue
-		}
-		for _, ov := range branch.OpenShiftVersions {
-			if ov.SkipCron || ov.CandidateRelease {
-				variant := strings.ReplaceAll(ov.Version, ".", "")
-				variantSet[variant] = struct{}{}
-			}
-		}
-	}
-
-	var excludedVariants []string
-	if len(variantSet) > 0 {
-		excludedVariants = make([]string, 0, len(variantSet))
-		for v := range variantSet {
-			excludedVariants = append(excludedVariants, v)
-		}
-		sort.Strings(excludedVariants)
-	}
-
-	return &ciconfig.Prowgen{
-		SlackReporterConfigs: []ciconfig.SlackReporterConfig{
-			{
-				Channel:           r.SlackChannel,
-				JobStatesToReport: []prowapi.ProwJobState{prowapi.SuccessState, prowapi.FailureState, prowapi.ErrorState},
-				ReportTemplate:    slackReportTemplate,
-				JobNames:          jobNames,
-				ExcludedVariants:  excludedVariants,
-			},
-		},
-	}
-}
-
-func SaveProwgenConfig(outConfig *string, r Repository, prowgenCfg *ciconfig.Prowgen) error {
-	if prowgenCfg == nil {
-		return nil
-	}
-
-	dir := filepath.Join(*outConfig, r.RepositoryDirectory())
-	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		return err
-	}
-
-	out, err := yaml.Marshal(prowgenCfg)
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(filepath.Join(dir, ciconfig.ProwgenFile), out, os.ModePerm)
-}
-
 func SaveReleaseBuildConfiguration(outConfig *string, cfg ReleaseBuildConfiguration) error {
 	dir := filepath.Join(*outConfig, filepath.Dir(cfg.Path))
 
@@ -388,11 +304,69 @@ func SaveReleaseBuildConfiguration(outConfig *string, cfg ReleaseBuildConfigurat
 		return err
 	}
 
+	if cfg.SlackChannel != "" {
+		out, err = addReporterConfigToTests(out, cfg.SlackChannel)
+		if err != nil {
+			return err
+		}
+	}
+
 	if err := os.WriteFile(filepath.Join(*outConfig, cfg.Path), out, os.ModePerm); err != nil {
 		return err
 	}
 
 	return copyOwnersFileIfNotPresent(dir)
+}
+
+// addReporterConfigToTests injects a reporter_config stanza into every test that
+// has a cron field, so Slack notifications are configured directly in the
+// ci-operator config yaml instead of via a separate .config.prowgen file.
+func addReporterConfigToTests(out []byte, slackChannel string) ([]byte, error) {
+	var rawConfig interface{}
+	if err := yaml.Unmarshal(out, &rawConfig); err != nil {
+		return nil, err
+	}
+
+	configMap, ok := rawConfig.(map[string]interface{})
+	if !ok {
+		return out, nil
+	}
+
+	testsRaw, ok := configMap["tests"]
+	if !ok {
+		return out, nil
+	}
+
+	tests, ok := testsRaw.([]interface{})
+	if !ok {
+		return out, nil
+	}
+
+	reporterConfig := map[string]interface{}{
+		"channel":              slackChannel,
+		"job_states_to_report": []interface{}{"success", "failure", "error"},
+		"report_template":      slackReportTemplate,
+	}
+
+	modified := false
+	for i, testRaw := range tests {
+		test, ok := testRaw.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		if _, hasCron := test["cron"]; hasCron {
+			test["reporter_config"] = reporterConfig
+			tests[i] = test
+			modified = true
+		}
+	}
+
+	if !modified {
+		return out, nil
+	}
+
+	configMap["tests"] = tests
+	return yaml.Marshal(rawConfig)
 }
 
 func copyOwnersFileIfNotPresent(dir string) error {
@@ -434,6 +408,12 @@ func InitializeOpenShiftReleaseRepository(ctx context.Context, openShiftRelease 
 		for _, r := range inConfig.Repositories {
 			// TODO: skip automatic deletion for S-O for now
 			if strings.Contains(r.RepositoryDirectory(), "serverless-operator") {
+				// Delete .config.prowgen if it exists; the branch-based glob below won't catch it.
+				prowgenConfigPath := filepath.Join(*outputConfig, r.RepositoryDirectory(), ".config.prowgen")
+				if err := os.Remove(prowgenConfigPath); err != nil && !os.IsNotExist(err) {
+					return err
+				}
+
 				for branch, branchConfig := range inConfig.Config.Branches {
 					if branchConfig.Prowgen != nil && branchConfig.Prowgen.Disabled {
 						continue
