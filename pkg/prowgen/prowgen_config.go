@@ -153,8 +153,9 @@ type ProjectDirectoryImageBuildStepConfigurationFunc func() (cioperatorapi.Proje
 type ReleaseBuildConfiguration struct {
 	cioperatorapi.ReleaseBuildConfiguration
 
-	Path   string
-	Branch string
+	Path         string
+	Branch       string
+	SlackChannel string
 }
 
 func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts ...ReleaseBuildConfigurationOption) ([]ReleaseBuildConfiguration, error) {
@@ -326,6 +327,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 				ReleaseBuildConfiguration: cfg,
 				Path:                      buildConfigPath,
 				Branch:                    branchName,
+				SlackChannel:              r.SlackChannel,
 			})
 
 			if ov.CustomConfigs == nil || !ov.CustomConfigs.Enabled {
@@ -392,6 +394,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 					ReleaseBuildConfiguration: *customBuildCfg,
 					Path:                      buildConfigPath,
 					Branch:                    branchName,
+					SlackChannel:              r.SlackChannel,
 				})
 			}
 		}
