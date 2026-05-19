@@ -46,6 +46,14 @@ config:
         useClusterPool: true
         version: "4.21"
       promotion: {}
+    release-v1.22:
+      konflux:
+        enabled: true
+      openShiftVersions:
+      - skipCron: true
+        useClusterPool: true
+        version: "4.20"
+      promotion: {}
 repositories:
 - dockerfiles: {}
   ignoreConfigs: {}

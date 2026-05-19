@@ -415,6 +415,50 @@ jobs:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
         if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[backstage-plugins - release-v1.22] Create Konflux PR'
+        run: |
+          set -x
+          repo="backstage-plugins"
+          branch="sync-konflux-release-v1.22"
+          target_branch="release-v1.22"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/backstage-plugins
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[backstage-plugins - release-v1.22] Create OWNERS file update PR'
+        run: |
+          set -x
+          repo="backstage-plugins"
+          branch="sync-owners-release-v1.22"
+          target_branch="release-v1.22"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/backstage-plugins
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         name: '[backstage-plugins - main] Create OWNERS file update PR'
         run: |
           set -x
@@ -635,6 +679,50 @@ jobs:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
         if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[client - release-v1.22] Create Konflux PR'
+        run: |
+          set -x
+          repo="client"
+          branch="sync-konflux-release-v1.22"
+          target_branch="release-v1.22"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/client
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[client - release-v1.22] Create OWNERS file update PR'
+        run: |
+          set -x
+          repo="client"
+          branch="sync-owners-release-v1.22"
+          target_branch="release-v1.22"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/client
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         name: '[client - main] Create OWNERS file update PR'
         run: |
           set -x
@@ -817,6 +905,50 @@ jobs:
           repo="eventing-integrations"
           branch="sync-owners-release-v1.21"
           target_branch="release-v1.21"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-integrations
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[eventing-integrations - release-v1.22] Create Konflux PR'
+        run: |
+          set -x
+          repo="eventing-integrations"
+          branch="sync-konflux-release-v1.22"
+          target_branch="release-v1.22"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-integrations
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[eventing-integrations - release-v1.22] Create OWNERS file update PR'
+        run: |
+          set -x
+          repo="eventing-integrations"
+          branch="sync-owners-release-v1.22"
+          target_branch="release-v1.22"
           git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
           remote_exists=$(git ls-remote --heads fork "$branch")
           if [ -z "$remote_exists" ]; then
@@ -1053,6 +1185,50 @@ jobs:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
         if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[eventing-istio - release-v1.22] Create Konflux PR'
+        run: |
+          set -x
+          repo="eventing-istio"
+          branch="sync-konflux-release-v1.22"
+          target_branch="release-v1.22"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-istio
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[eventing-istio - release-v1.22] Create OWNERS file update PR'
+        run: |
+          set -x
+          repo="eventing-istio"
+          branch="sync-owners-release-v1.22"
+          target_branch="release-v1.22"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-istio
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         name: '[eventing-istio - main] Create OWNERS file update PR'
         run: |
           set -x
@@ -1257,6 +1433,50 @@ jobs:
           repo="eventing-kafka-broker"
           branch="sync-owners-release-v1.21"
           target_branch="release-v1.21"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-kafka-broker
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[eventing-kafka-broker - release-v1.22] Create Konflux PR'
+        run: |
+          set -x
+          repo="eventing-kafka-broker"
+          branch="sync-konflux-release-v1.22"
+          target_branch="release-v1.22"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing-kafka-broker
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[eventing-kafka-broker - release-v1.22] Create OWNERS file update PR'
+        run: |
+          set -x
+          repo="eventing-kafka-broker"
+          branch="sync-owners-release-v1.22"
+          target_branch="release-v1.22"
           git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
           remote_exists=$(git ls-remote --heads fork "$branch")
           if [ -z "$remote_exists" ]; then
@@ -1493,6 +1713,50 @@ jobs:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
         if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[eventing - release-v1.22] Create Konflux PR'
+        run: |
+          set -x
+          repo="eventing"
+          branch="sync-konflux-release-v1.22"
+          target_branch="release-v1.22"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[eventing - release-v1.22] Create OWNERS file update PR'
+        run: |
+          set -x
+          repo="eventing"
+          branch="sync-owners-release-v1.22"
+          target_branch="release-v1.22"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         name: '[eventing - main] Create OWNERS file update PR'
         run: |
           set -x
@@ -1713,6 +1977,50 @@ jobs:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
         if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[kn-plugin-event - release-1.22] Create Konflux PR'
+        run: |
+          set -x
+          repo="kn-plugin-event"
+          branch="sync-konflux-release-1.22"
+          target_branch="release-1.22"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-event
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[kn-plugin-event - release-1.22] Create OWNERS file update PR'
+        run: |
+          set -x
+          repo="kn-plugin-event"
+          branch="sync-owners-release-1.22"
+          target_branch="release-1.22"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-event
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         name: '[kn-plugin-event - main] Create OWNERS file update PR'
         run: |
           set -x
@@ -1917,6 +2225,50 @@ jobs:
           repo="kn-plugin-func"
           branch="sync-owners-release-v1.21"
           target_branch="release-v1.21"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-func
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[kn-plugin-func - release-v1.22] Create Konflux PR'
+        run: |
+          set -x
+          repo="kn-plugin-func"
+          branch="sync-konflux-release-v1.22"
+          target_branch="release-v1.22"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/kn-plugin-func
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[kn-plugin-func - release-v1.22] Create OWNERS file update PR'
+        run: |
+          set -x
+          repo="kn-plugin-func"
+          branch="sync-owners-release-v1.22"
+          target_branch="release-v1.22"
           git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
           remote_exists=$(git ls-remote --heads fork "$branch")
           if [ -z "$remote_exists" ]; then
@@ -2775,6 +3127,50 @@ jobs:
           repo="serving"
           branch="sync-owners-release-v1.21"
           target_branch="release-v1.21"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serving
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[serving - release-v1.22] Create Konflux PR'
+        run: |
+          set -x
+          repo="serving"
+          branch="sync-konflux-release-v1.22"
+          target_branch="release-v1.22"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/serving
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[serving - release-v1.22] Create OWNERS file update PR'
+        run: |
+          set -x
+          repo="serving"
+          branch="sync-owners-release-v1.22"
+          target_branch="release-v1.22"
           git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
           remote_exists=$(git ls-remote --heads fork "$branch")
           if [ -z "$remote_exists" ]; then
