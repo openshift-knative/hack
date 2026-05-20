@@ -50,6 +50,8 @@ jobs:
 
       - name: Generate release
         working-directory: "./src/github.com/${{ inputs.repository }}"
+        env:
+          GOTOOLCHAIN: auto
         run: make ${{ inputs.command }}
 
       - name: Create Pull Request
