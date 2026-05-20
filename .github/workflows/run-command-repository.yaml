@@ -33,7 +33,6 @@ jobs:
         uses: actions/setup-go@v6
         with:
           cache: false
-          go-version-file: "./src/github.com/${{ inputs.repository }}/go.mod"
 
       - name: Install prerequisites
         env:
