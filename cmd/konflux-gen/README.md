@@ -1,7 +1,7 @@
 # Konflux Gen
 
 A CLI to get started
-using [Konflux](https://redhat-appstudio.github.io/docs.appstudio.io/Documentation/main/).
+using [Konflux](https://konflux.pages.redhat.com/docs/users/getting-started/getting-access.html).
 
 ## Usage
 
