@@ -2703,6 +2703,50 @@ jobs:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
         if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[net-istio - release-v1.22] Create Konflux PR'
+        run: |
+          set -x
+          repo="net-istio"
+          branch="sync-konflux-release-v1.22"
+          target_branch="release-v1.22"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-istio
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[net-istio - release-v1.22] Create OWNERS file update PR'
+        run: |
+          set -x
+          repo="net-istio"
+          branch="sync-owners-release-v1.22"
+          target_branch="release-v1.22"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-istio
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
         name: '[net-istio - main] Create OWNERS file update PR'
         run: |
           set -x
@@ -2907,6 +2951,50 @@ jobs:
           repo="net-kourier"
           branch="sync-owners-release-v1.21"
           target_branch="release-v1.21"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update OWNERS file" --body "Update OWNERS file" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-kourier
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[net-kourier - release-v1.22] Create Konflux PR'
+        run: |
+          set -x
+          repo="net-kourier"
+          branch="sync-konflux-release-v1.22"
+          target_branch="release-v1.22"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            # remote doesn't exist.
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] Update Konflux configurations" --body "Update Konflux configurations" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/net-kourier
+      - env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}
+        name: '[net-kourier - release-v1.22] Create OWNERS file update PR'
+        run: |
+          set -x
+          repo="net-kourier"
+          branch="sync-owners-release-v1.22"
+          target_branch="release-v1.22"
           git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
           remote_exists=$(git ls-remote --heads fork "$branch")
           if [ -z "$remote_exists" ]; then
