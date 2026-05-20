@@ -2,6 +2,33 @@
 
 CI tooling and hacks to improve CI
 
+## Tools
+
+| Tool | Description                                                                                                                                                                       |
+|------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [prowgen](cmd/prowgen) | Generates OpenShift CI (Prow) configurations from repository config YAML files. Clones repos, parses Makefiles, and creates presubmit/periodic test jobs for `openshift/release`. Used by the [release-generate-ci](#ci-workflows) workflow. |
+| [prowcopy](cmd/prowcopy) | Copies and adapts Prow CI configuration from one branch to another in `openshift/release`. Useful when cutting new release branches. |
+| [discover](cmd/discover) | Discovers new release branches across repositories and updates config files automatically. Also manages Konflux resources for unsupported versions. Used by the [release-discover-branches](#ci-workflows) workflow. |
+| [generate](cmd/generate) | Generates Dockerfiles and build artifacts from project metadata. Supports regular, must-gather, test, and source image Dockerfiles. |
+| [generate-ci-action](cmd/generate-ci-action) | Generates GitHub Actions CI workflow files by populating a template with steps for each configured repository. |
+| [konflux-apply](cmd/konflux-apply) | Applies Konflux manifests (applications, components, ...) to a Konflux instance. See its [README](cmd/konflux-apply/README.md) for service account setup. Used by the [apply-konflux-manifests](#ci-workflows) workflow. |
+| [konflux-gen](cmd/konflux-gen) | Generates Konflux application and component manifests from `openshift/release` CI configs. See its [README](cmd/konflux-gen/README.md) for usage. |
+| [konflux-release-gen](cmd/konflux-release-gen) | Generates Konflux release CRs (ReleasePlans, ReleasePlanAdmissions) for Serverless Operator releases. Used by the [generate-release-crs](#ci-workflows) workflow. |
+| [sobranch](cmd/sobranch) | Maps upstream Knative version numbers to Serverless Operator release branch names (e.g. `1.11` → `release-1.32`). |
+| [sorhel](cmd/sorhel) | Maps Serverless Operator versions to compatible RHEL versions. |
+| [testselect](cmd/testselect) | Determines which test suites to run based on changed files in a PR, using regex patterns from a testsuites YAML config. |
+
+## CI Workflows
+
+GitHub Actions workflows in [`.github/workflows/`](.github/workflows/):
+
+| Workflow | Trigger | Description                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+|----------|---------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [apply-konflux-manifests](.github/workflows/apply-konflux-manifests.yaml) | Daily (06:00 UTC), push to `.konflux/**`, manual | Applies Konflux manifests from all repos (configured in [./config](./config) to the Konflux cluster using the `konflux-apply` tool.                                                                                                                                                                                                                                                                                                            |
+| [generate-release-crs](.github/workflows/generate-release-crs.yaml) | Manual | Generates Konflux release CRs using `konflux-release-gen`, applies override snapshots, and creates PRs in hack repos containing the component and FBC release CRs. Merging those PRs will trigger a Konflux release pipeline. <br /> ⚠️ It is important to merge the component PR first and let the release pipeline succeed before merging the FBC release PR, as the FBC references the components and thus needs them to be released first. |
+| [release-discover-branches](.github/workflows/release-discover-branches.yaml) | Daily (05:00 UTC), push to main, PRs, manual | Runs `discover` to find new release branches and creates a PR to update the [configs](./config) with the new branches.                                                                                                                                                                                                                                                                                                                         |
+| [release-generate-ci](.github/workflows/release-generate-ci.yaml) | Weekly (Monday 06:00 UTC), push to main, PRs, manual | Generates CI configurations for all tracked repositories using `prowgen`, updates dependabot and OWNERS files, updates the Konflux pipelines and creates sync PRs.                                                                                                                                                                                                                                                                             |
+
 ## Generate openshift/release config
 
 - Add configuration for your repository in `config/<file.yaml>`
@@ -33,17 +60,41 @@ This generation works this way:
 - There are also CI job config generated, which use the tests above.
 - If the matching regex is specified in `onDemand` field, then the presubmit is marked as
   optional (`always_run: false`).
-- Individual OpenShift versions can specify `generateCustomConfigs: true`.
+- Individual OpenShift versions can enable custom configurations via `customConfigs`:
+  ```yaml
+  customConfigs:
+    enabled: true
+    includes:
+    - ".*ocp-4.22-lp-interop.*"
+    excludes:
+    - ".*some-pattern.*"
+  ```
   The repository configuration should then list custom configurations under `customConfigs`.
   The `releaseBuildConfiguration` key should include at least `tests` key
   with the list of tests to be run. For custom configurations, tests are not generated from Makefile
   targets but rather taken directly from the configuration. The resulting build configuration is
-  then
-  enriched with images, base images, and dependencies for test steps.
+  then enriched with images, base images, and dependencies for test steps.
 
-Limitations:
+- Periodic jobs can be disabled per test or per OpenShift version using `skipCron: true`:
+  ```yaml
+  # Per test:
+  e2eTests:
+  - match: "^test-e2e$"
+    skipCron: true
 
-- It is not currently possible to disable periodics per job
+  # Per OpenShift version:
+  openShiftVersions:
+  - version: "4.22"
+    skipCron: true
+  ```
+
+### Additional Makefile targets
+
+- `make discover-branches` — Run `discover` to detect new release branches and update configs automatically.
+- `make generate-ci-action` — Regenerate the `.github/workflows/release-generate-ci.yaml` workflow from the template.
+- `make generate-konflux-release` — Generate Konflux release CRs using `konflux-release-gen`.
+- `make konflux-update-pipelines` — Pull latest Konflux Tekton pipeline bundles and rebuild local pipeline YAMLs via kustomize.
+- `make test-select` — Run `testselect` to determine which tests to run. Requires `TESTSUITES` and `CLONEREFS` variables.
 
 ## Apply Konflux configurations
 
@@ -77,9 +128,9 @@ SO branch follows the product versioning, while midstream branches follows the u
 To make the "clone associated SO branch" easier, you can run the `sobranch` tool as follows:
 
 ```shell
-GO111MODULE=off go get -u github.com/openshift-knative/hack/cmd/sobranch
+go install github.com/openshift-knative/hack/cmd/sobranch@latest
 
-so_branch=$( $(go env GOPATH)/bin/sobranch --upstream-version "release-1.11") # or "release-v1.11" or "release-1.11" or "v1.11" or "1.11"
+so_branch=$(sobranch --upstream-version "release-1.11") # or "release-v1.11" or "release-1.11" or "v1.11" or "1.11"
 
 git clone --branch $so_branch git@github.com:openshift-knative/serverless-operator.git
 ```
