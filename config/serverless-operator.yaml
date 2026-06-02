@@ -130,8 +130,14 @@ config:
         onDemand: true
         version: "4.22"
       - skipCron: true
+        skipE2EMatches:
+        - ^kitchensink-upgrade$
         useClusterPool: true
         version: "4.21"
+      - includeE2EMatches:
+        - ^kitchensink-upgrade$
+        skipPromotion: true
+        version: "4.20"
       - onDemand: true
         skipCron: true
         version: "4.16"
