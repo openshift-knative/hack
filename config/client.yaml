@@ -1,16 +1,5 @@
 config:
   branches:
-    release-v1.15:
-      konflux:
-        enabled: true
-        imageOverrides:
-        - name: CLI_ARTIFACTS
-          pullSpec: brew.registry.redhat.io/rh-osbs/openshift-serverless-1-kn-cli-artifacts-rhel8:1.15.0
-      openShiftVersions:
-      - skipCron: true
-        useClusterPool: true
-        version: "4.18"
-      promotion: {}
     release-v1.16:
       konflux:
         enabled: true
