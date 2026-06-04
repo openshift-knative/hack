@@ -389,6 +389,7 @@ repositories:
           cluster_profile: aws-cspi-qe
           env:
             BASE_DOMAIN: cspilp.interop.ccitredhat.com
+            COMPUTE_NODE_REPLICAS: "6"
             FIREWATCH_CONFIG: |
               {
                 "failure_rules":
@@ -411,7 +412,7 @@ repositories:
           test:
           - as: operator-e2e
             commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true
-              MAP_TESTS=true make test-e2e-with-kafka
+              SKIP_SPOT_INSTANCES=true MAP_TESTS=true make test-e2e-with-kafka
             from: serverless-source-image
             resources:
               limits:
@@ -421,7 +422,7 @@ repositories:
                 memory: 200Mi
           - as: knative-serving-eventing-e2e
             commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true
-              MAP_TESTS=true make test-upstream-e2e-no-upgrade
+              SKIP_SPOT_INSTANCES=true MAP_TESTS=true make test-upstream-e2e-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -431,7 +432,7 @@ repositories:
                 memory: 200Mi
           - as: knative-eventing-kafka-broker-e2e
             commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true
-              MAP_TESTS=true make test-upstream-e2e-kafka-no-upgrade
+              SKIP_SPOT_INSTANCES=true MAP_TESTS=true make test-upstream-e2e-kafka-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -446,6 +447,7 @@ repositories:
           cluster_profile: aws-cspi-qe
           env:
             BASE_DOMAIN: cspilp.interop.ccitredhat.com
+            COMPUTE_NODE_REPLICAS: "6"
             FIPS_ENABLED: "true"
             FIREWATCH_CONFIG: |
               {
@@ -469,7 +471,7 @@ repositories:
           test:
           - as: operator-e2e
             commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true
-              MAP_TESTS=true make test-e2e-with-kafka
+              SKIP_SPOT_INSTANCES=true MAP_TESTS=true make test-e2e-with-kafka
             from: serverless-source-image
             resources:
               limits:
@@ -479,7 +481,7 @@ repositories:
                 memory: 200Mi
           - as: knative-serving-eventing-e2e
             commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true
-              MAP_TESTS=true make test-upstream-e2e-no-upgrade
+              SKIP_SPOT_INSTANCES=true MAP_TESTS=true make test-upstream-e2e-no-upgrade
             from: serverless-source-image
             resources:
               limits:
@@ -489,7 +491,7 @@ repositories:
                 memory: 200Mi
           - as: knative-eventing-kafka-broker-e2e
             commands: GOPATH=/tmp/go PATH=$PATH:/tmp/go/bin SKIP_MESH_AUTH_POLICY_GENERATION=true
-              MAP_TESTS=true make test-upstream-e2e-kafka-no-upgrade
+              SKIP_SPOT_INSTANCES=true MAP_TESTS=true make test-upstream-e2e-kafka-no-upgrade
             from: serverless-source-image
             resources:
               limits:
