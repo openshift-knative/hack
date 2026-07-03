@@ -5,7 +5,7 @@ metadata:
   name: gh-action
 subjects:
 - kind: ServiceAccount
-  name: gh-action
+  name: konflux-bot-0
   apiGroup: ""
 roleRef:
   kind: Role
