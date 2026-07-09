@@ -114,7 +114,7 @@ config:
         skipCron: true
         version: "4.16"
       promotion:
-        template: release-1.37.1
+        template: release-1.37.2
     release-1.38:
       golangVersion: "1.25"
       konflux:
