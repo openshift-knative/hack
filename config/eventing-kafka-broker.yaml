@@ -6,9 +6,11 @@ config:
         - .*eventing-kafka-broker-receiver
         - .*eventing-kafka-broker-dispatcher
       openShiftVersions:
-      - useClusterPool: true
+      - skipCron: true
+        useClusterPool: true
         version: "4.20"
       - onDemand: true
+        skipCron: true
         version: "4.14"
       promotion: {}
       skipDockerFilesMatches:
@@ -24,9 +26,11 @@ config:
         onDemand: true
         skipCron: true
         version: "4.21"
-      - useClusterPool: true
+      - skipCron: true
+        useClusterPool: true
         version: "4.20"
       - onDemand: true
+        skipCron: true
         version: "4.14"
       promotion: {}
       skipDockerFilesMatches:
@@ -74,9 +78,11 @@ config:
         - .*eventing-kafka-broker-receiver
         - .*eventing-kafka-broker-dispatcher
       openShiftVersions:
-      - useClusterPool: true
+      - skipCron: true
+        useClusterPool: true
         version: "4.20"
       - onDemand: true
+        skipCron: true
         version: "4.14"
       promotion: {}
       skipDockerFilesMatches:
