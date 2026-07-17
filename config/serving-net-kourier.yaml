@@ -8,9 +8,11 @@ config:
         onDemand: true
         skipCron: true
         version: "4.21"
-      - useClusterPool: true
+      - skipCron: true
+        useClusterPool: true
         version: "4.20"
       - onDemand: true
+        skipCron: true
         version: "4.14"
       promotion: {}
     release-v1.17:
@@ -47,9 +49,11 @@ config:
         onDemand: true
         skipCron: true
         version: "4.22"
-      - useClusterPool: true
+      - skipCron: true
+        useClusterPool: true
         version: "4.21"
       - onDemand: true
+        skipCron: true
         version: "4.16"
       promotion: {}
 repositories:

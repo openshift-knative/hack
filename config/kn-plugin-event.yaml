@@ -8,7 +8,8 @@ config:
         onDemand: true
         skipCron: true
         version: "4.21"
-      - useClusterPool: true
+      - skipCron: true
+        useClusterPool: true
         version: "4.20"
       promotion: {}
     release-1.17:
