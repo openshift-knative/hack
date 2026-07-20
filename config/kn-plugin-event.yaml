@@ -19,10 +19,10 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.22"
+        version: "5.0"
       - skipCron: true
         useClusterPool: true
-        version: "4.21"
+        version: "4.22"
       promotion: {}
     release-1.21:
       konflux:
@@ -30,7 +30,7 @@ config:
       openShiftVersions:
       - skipCron: true
         useClusterPool: true
-        version: "4.21"
+        version: "4.22"
       promotion: {}
     release-1.22:
       konflux:
@@ -38,13 +38,13 @@ config:
       openShiftVersions:
       - skipCron: true
         useClusterPool: true
-        version: "4.21"
+        version: "4.22"
       promotion: {}
     release-next:
       openShiftVersions:
       - skipCron: true
         useClusterPool: true
-        version: "4.21"
+        version: "4.22"
       promotion: {}
 repositories:
 - dockerfiles: {}

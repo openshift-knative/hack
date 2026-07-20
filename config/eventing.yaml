@@ -35,9 +35,9 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.22"
+        version: "5.0"
       - useClusterPool: true
-        version: "4.21"
+        version: "4.22"
       - onDemand: true
         version: "4.14"
       promotion: {}
@@ -48,9 +48,9 @@ config:
       - candidateRelease: true
         onDemand: true
         skipCron: true
-        version: "4.22"
+        version: "5.0"
       - useClusterPool: true
-        version: "4.21"
+        version: "4.22"
       - onDemand: true
         version: "4.16"
       promotion: {}

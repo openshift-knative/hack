@@ -24,15 +24,15 @@ config:
       openShiftVersions:
       - candidateRelease: true
         onDemand: true
-        version: "4.22"
+        version: "5.0"
       - customConfigs:
           enabled: true
           excludes:
-          - .*ocp-4.22-lpGA-lp-ocp-compat.*
+          - .*ocp-5.0-lpGA-lp-ocp-compat.*
         skipE2EMatches:
         - ^kitchensink-upgrade$
         useClusterPool: true
-        version: "4.21"
+        version: "4.22"
       - includeE2EMatches:
         - ^kitchensink-upgrade$
         skipPromotion: true
@@ -98,14 +98,14 @@ config:
         customConfigs:
           enabled: true
           includes:
-          - .*ocp-4.22-lpGA-lp-ocp-compat.*
+          - .*ocp-5.0-lpGA-lp-ocp-compat.*
         onDemand: true
-        version: "4.22"
+        version: "5.0"
       - skipCron: true
         skipE2EMatches:
         - ^kitchensink-upgrade$
         useClusterPool: true
-        version: "4.21"
+        version: "4.22"
       - includeE2EMatches:
         - ^kitchensink-upgrade$
         skipPromotion: true
@@ -139,9 +139,9 @@ config:
       openShiftVersions:
       - candidateRelease: true
         onDemand: true
-        version: "4.22"
+        version: "5.0"
       - useClusterPool: true
-        version: "4.21"
+        version: "4.22"
       - onDemand: true
         version: "4.16"
       promotion: {}
@@ -149,7 +149,7 @@ config:
         disabled: true
 repositories:
 - customConfigs:
-  - name: 421-aws-ovn
+  - name: 422-aws-ovn
     releaseBuildConfiguration:
       tests:
       - as: e2e-aws-ovn-continuous
@@ -189,7 +189,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 421-azure
+  - name: 422-azure
     releaseBuildConfiguration:
       tests:
       - as: e2e-azure-continuous
@@ -229,7 +229,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 421-gcp
+  - name: 422-gcp
     releaseBuildConfiguration:
       tests:
       - as: e2e-gcp-continuous
@@ -269,7 +269,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 421-hypershift
+  - name: 422-hypershift
     releaseBuildConfiguration:
       base_images:
         hypershift-operator:
@@ -277,14 +277,14 @@ repositories:
           namespace: hypershift
           tag: latest
         upi-installer:
-          name: "4.21"
+          name: "4.22"
           namespace: ocp
           tag: upi-installer
       releases:
         latest:
           integration:
             include_built_images: true
-            name: "4.21"
+            name: "4.22"
             namespace: ocp
       tests:
       - as: e2e-hypershift-continuous
@@ -329,7 +329,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 421-single-node
+  - name: 422-single-node
     releaseBuildConfiguration:
       tests:
       - as: e2e-sno-continuous
@@ -351,11 +351,11 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 421-vsphere
+  - name: 422-vsphere
     releaseBuildConfiguration:
       base_images:
         upi-installer:
-          name: "4.21"
+          name: "4.22"
           namespace: ocp
           tag: upi-installer
       tests:
@@ -380,7 +380,7 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: ocp-4.22-lpGA-lp-ocp-compat
+  - name: ocp-5.0-lpGA-lp-ocp-compat
     releaseBuildConfiguration:
       tests:
       - as: cr--operator-e2e--aws
@@ -403,10 +403,10 @@ repositories:
                   ]
               }
             FIREWATCH_CONFIG_FILE_PATH: https://raw.githubusercontent.com/CSPI-QE/cspi-utils/main/firewatch-base-configs/cr/lp-interop.json
-            FIREWATCH_DEFAULT_JIRA_ADDITIONAL_LABELS: '["4.22-lp","self-managed-lp","serverless-lp"]'
+            FIREWATCH_DEFAULT_JIRA_ADDITIONAL_LABELS: '["5.0-lp","self-managed-lp","serverless-lp"]'
             FIREWATCH_DEFAULT_JIRA_ASSIGNEE: maschmid@redhat.com
             FIREWATCH_DEFAULT_JIRA_PROJECT: SRVCOM
-            OCP_VERSION: "4.22"
+            OCP_VERSION: "5.0"
             USER_TAGS: |
               scenario serverless
           test:
@@ -519,10 +519,10 @@ repositories:
                   ]
               }
             FIREWATCH_CONFIG_FILE_PATH: https://raw.githubusercontent.com/CSPI-QE/cspi-utils/main/firewatch-base-configs/aws-ipi/lp-interop.json
-            FIREWATCH_DEFAULT_JIRA_ADDITIONAL_LABELS: '["4.22-lp","self-managed-lp","serverless-lp","fips"]'
+            FIREWATCH_DEFAULT_JIRA_ADDITIONAL_LABELS: '["5.0-lp","self-managed-lp","serverless-lp","fips"]'
             FIREWATCH_DEFAULT_JIRA_ASSIGNEE: maschmid@redhat.com
             FIREWATCH_DEFAULT_JIRA_PROJECT: SRVCOM
-            OCP_VERSION: "4.22"
+            OCP_VERSION: "5.0"
             USER_TAGS: |
               scenario serverless
           test:
@@ -618,14 +618,14 @@ repositories:
         branch: ""
         org: ""
         repo: ""
-  - name: 4.21-techpreview
+  - name: 4.22-techpreview
     releaseBuildConfiguration:
       releases:
         latest:
           candidate:
             product: ocp
             stream: nightly
-            version: "4.21"
+            version: "4.22"
       tests:
       - as: olmv1-operator-e2e
         cron: 25 3 * * 6
