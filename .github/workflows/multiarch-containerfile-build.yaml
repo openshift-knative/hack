@@ -51,7 +51,7 @@ jobs:
 
       - name: Buildah Action
         id: build-image
-        uses: redhat-actions/buildah-build@v2
+        uses: redhat-actions/buildah-build@v3.0.2
         with:
           image: ${{ inputs.image }}
           tags: ${{ steps.calc-tag.outputs.container_version }}
