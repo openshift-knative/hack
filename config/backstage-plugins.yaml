@@ -56,6 +56,21 @@ config:
         skipCron: true
         version: "4.16"
       promotion: {}
+    release-v1.23:
+      konflux:
+        enabled: true
+      openShiftVersions:
+      - candidateRelease: true
+        onDemand: true
+        skipCron: true
+        version: "4.22"
+      - skipCron: true
+        useClusterPool: true
+        version: "4.21"
+      - onDemand: true
+        skipCron: true
+        version: "4.16"
+      promotion: {}
 repositories:
 - dockerfiles: {}
   e2e:
