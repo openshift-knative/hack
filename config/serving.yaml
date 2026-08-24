@@ -81,6 +81,22 @@ config:
       skipE2EMatches:
       - perf-tests$
       - .*e2e-tls$
+    release-v1.23:
+      konflux:
+        enabled: true
+      openShiftVersions:
+      - skipCron: true
+        useClusterPool: true
+        version: "4.20"
+      - onDemand: true
+        skipCron: true
+        version: "4.14"
+      promotion: {}
+      skipDockerFilesMatches:
+      - openshift/ci-operator/knative-perf-images.*
+      skipE2EMatches:
+      - perf-tests$
+      - .*e2e-tls$
 repositories:
 - dockerfiles:
     excludes:
