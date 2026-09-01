@@ -11,7 +11,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/openshift-knative/hack/pkg/dependabotgen"
 	soversion "github.com/openshift-knative/hack/pkg/soversion"
@@ -41,8 +40,12 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 		return err
 	}
 
+	soVersions, err := precomputeSOVersions(ctx, configs)
+	if err != nil {
+		return fmt.Errorf("failed to pre-compute SO versions: %w", err)
+	}
+
 	eg := &errgroup.Group{}
-	soMutex := &sync.Mutex{}
 
 	for _, config := range configs {
 		config := config
@@ -52,12 +55,9 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 
 				// Special case serverless-operator
 				if r.IsServerlessOperator() {
-					soMutex.Lock()
 					if err := GenerateKonfluxServerlessOperator(ctx, openshiftRelease, r, config); err != nil {
-						soMutex.Unlock()
 						return fmt.Errorf("failed to generate konflux for %q: %w", r.RepositoryDirectory(), err)
 					}
-					soMutex.Unlock()
 					continue
 				}
 
@@ -112,38 +112,12 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 
 						log.Printf("targetBranch: %s, soBranchName: %s, soVersion: %s\n", targetBranch, soBranchName, soVersion)
 
-						soMutex.Lock()
-						// Checkout s-o to get the right release version from project.yaml (e.g. 1.34.1)
-						soRepo := Repository{Org: "openshift-knative", Repo: "serverless-operator"}
-						if err := GitMirror(ctx, soRepo); err != nil {
-							return err
+						versionLabel, ok := soVersions[soBranchName]
+						if !ok {
+							return fmt.Errorf("no pre-computed SO version for branch %q", soBranchName)
 						}
-
-						versionLabel := soBranchName
-						var buildArgs []string
-						if err := GitCheckout(ctx, soRepo, soBranchName); err != nil {
-							if !strings.Contains(err.Error(), "failed to run git [checkout") {
-								soMutex.Unlock()
-								return err
-							}
-							// For non-existent branches we use the `.0` patch version if soVersion is set.
-							if soVersion != nil {
-								versionLabel = soVersion.String()
-							}
-							// For non-existent branches we keep going and use downstreamVersion for versionLabel.
-						} else {
-							soProjectYamlPath := filepath.Join(soRepo.RepositoryDirectory(),
-								"olm-catalog", "serverless-operator", "project.yaml")
-							soMetadata, err := project.ReadMetadataFile(soProjectYamlPath)
-							if err != nil {
-								soMutex.Unlock()
-								return err
-							}
-
-							versionLabel = soMetadata.Project.Version
-						}
-						soMutex.Unlock()
 						log.Println("Version label:", versionLabel)
+						var buildArgs []string
 						buildArgs = append(buildArgs, fmt.Sprintf("VERSION=%s", versionLabel))
 
 						soConfig, loadErr := LoadConfig("config/serverless-operator.yaml")
@@ -276,6 +250,66 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 	}
 
 	return nil
+}
+
+// precomputeSOVersions mirrors the serverless-operator repo and extracts
+// the version label for each SO branch. Returns a map from soBranchName
+// (e.g. "release-1.35") to versionLabel (e.g. "1.35.1").
+// The "main" key maps to the version from SO's main branch project.yaml.
+func precomputeSOVersions(ctx context.Context, configs []*Config) (map[string]string, error) {
+	soRepo := Repository{Org: "openshift-knative", Repo: "serverless-operator"}
+	if err := GitMirror(ctx, soRepo); err != nil {
+		return nil, fmt.Errorf("failed to mirror serverless-operator: %w", err)
+	}
+
+	// Collect all unique soBranchNames needed across all configs.
+	needed := make(map[string]*semver.Version) // soBranchName -> soVersion (nil for "main")
+	for _, config := range configs {
+		for _, r := range config.Repositories {
+			if r.IsServerlessOperator() {
+				continue
+			}
+			for branchName, b := range config.Config.Branches {
+				if b.Konflux == nil || !b.Konflux.Enabled {
+					continue
+				}
+				if branchName == "release-next" {
+					needed["main"] = nil
+				} else {
+					soVersion := soversion.FromUpstreamVersion(branchName)
+					soBranchName := soversion.BranchName(soVersion)
+					needed[soBranchName] = soVersion
+				}
+			}
+		}
+	}
+
+	// Resolve each SO branch to its version label.
+	versions := make(map[string]string, len(needed))
+	for soBranchName, soVersion := range needed {
+		versionLabel := soBranchName
+		if err := GitCheckout(ctx, soRepo, soBranchName); err != nil {
+			if !strings.Contains(err.Error(), "failed to run git [checkout") {
+				return nil, fmt.Errorf("failed to checkout %s: %w", soBranchName, err)
+			}
+			// Branch doesn't exist — use the .0 patch version if available.
+			if soVersion != nil {
+				versionLabel = soVersion.String()
+			}
+		} else {
+			soProjectYamlPath := filepath.Join(soRepo.RepositoryDirectory(),
+				"olm-catalog", "serverless-operator", "project.yaml")
+			soMetadata, err := project.ReadMetadataFile(soProjectYamlPath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read project.yaml for %s: %w", soBranchName, err)
+			}
+			versionLabel = soMetadata.Project.Version
+		}
+		versions[soBranchName] = versionLabel
+		log.Printf("Pre-computed SO version: %s -> %s\n", soBranchName, versionLabel)
+	}
+
+	return versions, nil
 }
 
 func writeDependabotConfig(ctx context.Context, dependabotConfig *dependabotgen.DependabotConfig, r Repository) error {
