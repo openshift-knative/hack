@@ -10,7 +10,7 @@ config:
         - name: CLI_ARTIFACTS
           pullSpec: registry.redhat.io/openshift4/ose-cli-artifacts-rhel9:v4.16
         - name: GO_BUILDER
-          pullSpec: registry.access.redhat.com/ubi9/go-toolset:1.26
+          pullSpec: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26
         - name: GO_RUNTIME
           pullSpec: registry.access.redhat.com/ubi9/ubi-minimal
         - name: JAVA_BUILDER
@@ -82,7 +82,7 @@ config:
         - name: CLI_ARTIFACTS
           pullSpec: registry.redhat.io/openshift4/ose-cli-artifacts-rhel9:v4.16
         - name: GO_BUILDER
-          pullSpec: registry.access.redhat.com/ubi9/go-toolset:1.26
+          pullSpec: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26
         - name: GO_RUNTIME
           pullSpec: registry.access.redhat.com/ubi9/ubi-minimal
         - name: JAVA_BUILDER
@@ -125,7 +125,7 @@ config:
         - name: CLI_ARTIFACTS
           pullSpec: registry.redhat.io/openshift4/ose-cli-artifacts-rhel9:v4.16
         - name: GO_BUILDER
-          pullSpec: registry.access.redhat.com/ubi9/go-toolset:1.26
+          pullSpec: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26
         - name: GO_RUNTIME
           pullSpec: registry.access.redhat.com/ubi9/ubi-minimal
         - name: JAVA_BUILDER
