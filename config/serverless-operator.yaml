@@ -1,7 +1,7 @@
 config:
   branches:
     main:
-      golangVersion: "1.25"
+      golangVersion: "1.26"
       konflux:
         enabled: true
         excludes:
@@ -10,7 +10,7 @@ config:
         - name: CLI_ARTIFACTS
           pullSpec: registry.redhat.io/openshift4/ose-cli-artifacts-rhel9:v4.16
         - name: GO_BUILDER
-          pullSpec: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.25
+          pullSpec: registry.access.redhat.com/ubi9/go-toolset:1.26
         - name: GO_RUNTIME
           pullSpec: registry.access.redhat.com/ubi9/ubi-minimal
         - name: JAVA_BUILDER
@@ -73,7 +73,7 @@ config:
       promotion:
         template: release-1.36.1
     release-1.37:
-      golangVersion: "1.25"
+      golangVersion: "1.26"
       konflux:
         enabled: true
         excludes:
@@ -82,7 +82,7 @@ config:
         - name: CLI_ARTIFACTS
           pullSpec: registry.redhat.io/openshift4/ose-cli-artifacts-rhel9:v4.16
         - name: GO_BUILDER
-          pullSpec: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.25
+          pullSpec: registry.access.redhat.com/ubi9/go-toolset:1.26
         - name: GO_RUNTIME
           pullSpec: registry.access.redhat.com/ubi9/ubi-minimal
         - name: JAVA_BUILDER
@@ -116,7 +116,7 @@ config:
       promotion:
         template: release-1.37.2
     release-1.38:
-      golangVersion: "1.25"
+      golangVersion: "1.26"
       konflux:
         enabled: true
         excludes:
@@ -125,7 +125,7 @@ config:
         - name: CLI_ARTIFACTS
           pullSpec: registry.redhat.io/openshift4/ose-cli-artifacts-rhel9:v4.16
         - name: GO_BUILDER
-          pullSpec: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.25
+          pullSpec: registry.access.redhat.com/ubi9/go-toolset:1.26
         - name: GO_RUNTIME
           pullSpec: registry.access.redhat.com/ubi9/ubi-minimal
         - name: JAVA_BUILDER
