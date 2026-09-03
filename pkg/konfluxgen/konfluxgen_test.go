@@ -304,7 +304,7 @@ spec:
       operator: in
       values:
       - "false"
-  - name: clair-scan
+  - name: roxctl-scan
     params:
     - name: image-digest
       value: $(tasks.build-container.results.IMAGE_DIGEST)
@@ -315,12 +315,13 @@ spec:
     taskRef:
       params:
       - name: name
-        value: clair-scan
+        value: roxctl-scan
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-clair-scan:0.1@sha256:3ac359dfc034948d59b9e8d507a8cf505a19b205c543e4c861a332c6f82a0307
+        value: quay.io/konflux-ci/tekton-catalog/task-roxctl-scan:0.1@sha256:97e2b2cdca9110fdc8a93ba585a1a1a743f989f2fd85f4073f6e5ea9ad2ce828
       - name: kind
         value: task
       resolver: bundles
+    timeout: 20m
     when:
     - input: $(params.skip-checks)
       operator: in
@@ -699,7 +700,7 @@ spec:
       operator: in
       values:
       - "false"
-  - name: clair-scan
+  - name: roxctl-scan
     params:
     - name: image-digest
       value: $(tasks.build-container.results.IMAGE_DIGEST)
@@ -710,12 +711,13 @@ spec:
     taskRef:
       params:
       - name: name
-        value: clair-scan
+        value: roxctl-scan
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-clair-scan:0.1@sha256:3ac359dfc034948d59b9e8d507a8cf505a19b205c543e4c861a332c6f82a0307
+        value: quay.io/konflux-ci/tekton-catalog/task-roxctl-scan:0.1@sha256:97e2b2cdca9110fdc8a93ba585a1a1a743f989f2fd85f4073f6e5ea9ad2ce828
       - name: kind
         value: task
       resolver: bundles
+    timeout: 20m
     when:
     - input: $(params.skip-checks)
       operator: in
@@ -1094,7 +1096,7 @@ spec:
       operator: in
       values:
       - "false"
-  - name: clair-scan
+  - name: roxctl-scan
     params:
     - name: image-digest
       value: $(tasks.build-container.results.IMAGE_DIGEST)
@@ -1105,12 +1107,13 @@ spec:
     taskRef:
       params:
       - name: name
-        value: clair-scan
+        value: roxctl-scan
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-clair-scan:0.1@sha256:3ac359dfc034948d59b9e8d507a8cf505a19b205c543e4c861a332c6f82a0307
+        value: quay.io/konflux-ci/tekton-catalog/task-roxctl-scan:0.1@sha256:97e2b2cdca9110fdc8a93ba585a1a1a743f989f2fd85f4073f6e5ea9ad2ce828
       - name: kind
         value: task
       resolver: bundles
+    timeout: 20m
     when:
     - input: $(params.skip-checks)
       operator: in
