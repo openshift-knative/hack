@@ -805,10 +805,10 @@ func builderImageForGoVersion(goVersion, rhelVersion string) string {
 	case "1.25":
 		return fmt.Sprintf(builderImageFmt, rhelVersion, goVersion, "4.21")
 	case "1.26":
-		return fmt.Sprintf(builderImageFmt, rhelVersion, goVersion, "4.22")
+		return fmt.Sprintf(builderImageFmt, rhelVersion, goVersion, "4.23")
 	default:
 		// For future Go versions, use latest known OpenShift version
-		return fmt.Sprintf(builderImageFmt, rhelVersion, goVersion, "4.22")
+		return fmt.Sprintf(builderImageFmt, rhelVersion, goVersion, "5.0")
 	}
 }
 

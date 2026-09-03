@@ -560,18 +560,18 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 
 	for _, ocpVersion := range soMetadata.Requirements.OcpVersion.List {
 
-		ocpMinorVersion, err := extractMinor(ocpVersion)
+		ocpMajorVersion, ocpMinorVersion, err := extractMajorMinor(ocpVersion)
 		if err != nil {
-			return fmt.Errorf("failed to get OCP minor version %q: %w", ocpVersion, err)
+			return fmt.Errorf("failed to get OCP version %q: %w", ocpVersion, err)
 		}
-		opmImage, err := getOPMImage(ocpMinorVersion)
+		opmImage, err := getOPMImage(ocpMajorVersion, ocpMinorVersion)
 		if err != nil {
 			return fmt.Errorf("failed to get OPM image ref for OCP %q: %w", ocpVersion, err)
 		}
 		buildArgs := append(buildArgs, fmt.Sprintf("OPM_IMAGE=%s", opmImage))
 		opmArgs := []string{"alpha", "render-template", "basic",
 			fmt.Sprintf("\"olm-catalog/serverless-operator-index/v%s/catalog-template.yaml\"", ocpVersion)}
-		if ocpMinorVersion >= 17 { // OCP 4.17+ OLM fix format flag
+		if ocpMajorVersion == 4 && ocpMinorVersion >= 17 { // OCP 4.17+ OLM fix format flag
 			opmArgs = append(opmArgs, "--migrate-level=bundle-object-to-csv-metadata")
 		}
 		fbcAppName := konfluxgen.FBCAppName(release, ocpVersion)
@@ -651,24 +651,36 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 	return nil
 }
 
-func extractMinor(v string) (int, error) {
+func extractMajorMinor(v string) (int, int, error) {
 	parts := strings.SplitN(v, ".", 2)
 	if len(parts) != 2 {
-		return 0, fmt.Errorf("invalid OCP version: %s", v)
+		return 0, 0, fmt.Errorf("invalid OCP version: %s", v)
+	}
+
+	major, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return 0, 0, fmt.Errorf("could not convert OCP major to int (%q): %w", v, err)
 	}
 
 	minor, err := strconv.Atoi(parts[1])
 	if err != nil {
-		return 0, fmt.Errorf("could not convert OCP minor to int (%q): %w", v, err)
+		return 0, 0, fmt.Errorf("could not convert OCP minor to int (%q): %w", v, err)
 	}
-	return minor, nil
+	return major, minor, nil
 }
 
-func getOPMImage(minor int) (string, error) {
-	if minor <= 14 {
-		return fmt.Sprintf("registry.redhat.io/openshift4/ose-operator-registry:v4.%d", minor), nil
-	} else {
-		// use RHEL9 variant for OCP version >= 4.15
-		return fmt.Sprintf("registry.redhat.io/openshift4/ose-operator-registry-rhel9:v4.%d", minor), nil
+func getOPMImage(major, minor int) (string, error) {
+	if major == 5 {
+		// OpenShift 5.x
+		return fmt.Sprintf("registry.redhat.io/openshift5/ose-operator-registry-rhel9:v%d.%d", major, minor), nil
+	} else if major == 4 {
+		// OpenShift 4.x
+		if minor <= 14 {
+			return fmt.Sprintf("registry.redhat.io/openshift4/ose-operator-registry:v4.%d", minor), nil
+		} else {
+			// use RHEL9 variant for OCP version >= 4.15
+			return fmt.Sprintf("registry.redhat.io/openshift4/ose-operator-registry-rhel9:v4.%d", minor), nil
+		}
 	}
+	return "", fmt.Errorf("unsupported OpenShift major version: %d", major)
 }
