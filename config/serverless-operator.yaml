@@ -154,6 +154,16 @@ repositories:
       tests:
       - as: e2e-aws-ovn-continuous
         cron: 25 0 * * 6
+        reporter_config:
+          channel: '#serverless-ci'
+          job_states_to_report:
+          - success
+          - failure
+          - error
+          report_template: '{{if eq .Status.State "success"}} :rainbow: Job *{{.Spec.Job}}*
+            ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :rainbow:
+            {{else}} :volcano: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*.
+            <{{.Status.URL}}|View logs> :volcano: {{end}}'
         steps:
           cluster_profile: openshift-org-aws
           test:
@@ -194,6 +204,16 @@ repositories:
       tests:
       - as: e2e-azure-continuous
         cron: 6 7 * * 6
+        reporter_config:
+          channel: '#serverless-ci'
+          job_states_to_report:
+          - success
+          - failure
+          - error
+          report_template: '{{if eq .Status.State "success"}} :rainbow: Job *{{.Spec.Job}}*
+            ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :rainbow:
+            {{else}} :volcano: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*.
+            <{{.Status.URL}}|View logs> :volcano: {{end}}'
         steps:
           cluster_profile: openshift-org-azure
           test:
@@ -234,6 +254,16 @@ repositories:
       tests:
       - as: e2e-gcp-continuous
         cron: 10 14 * * 6
+        reporter_config:
+          channel: '#serverless-ci'
+          job_states_to_report:
+          - success
+          - failure
+          - error
+          report_template: '{{if eq .Status.State "success"}} :rainbow: Job *{{.Spec.Job}}*
+            ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :rainbow:
+            {{else}} :volcano: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*.
+            <{{.Status.URL}}|View logs> :volcano: {{end}}'
         steps:
           cluster_profile: openshift-org-gcp
           test:
@@ -289,6 +319,16 @@ repositories:
       tests:
       - as: e2e-hypershift-continuous
         cron: 43 20 * * 6
+        reporter_config:
+          channel: '#serverless-ci'
+          job_states_to_report:
+          - success
+          - failure
+          - error
+          report_template: '{{if eq .Status.State "success"}} :rainbow: Job *{{.Spec.Job}}*
+            ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :rainbow:
+            {{else}} :volcano: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*.
+            <{{.Status.URL}}|View logs> :volcano: {{end}}'
         steps:
           cluster_profile: aws-cspi-qe
           env:
@@ -334,6 +374,16 @@ repositories:
       tests:
       - as: e2e-sno-continuous
         cron: 24 10 * * 0
+        reporter_config:
+          channel: '#serverless-ci'
+          job_states_to_report:
+          - success
+          - failure
+          - error
+          report_template: '{{if eq .Status.State "success"}} :rainbow: Job *{{.Spec.Job}}*
+            ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :rainbow:
+            {{else}} :volcano: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*.
+            <{{.Status.URL}}|View logs> :volcano: {{end}}'
         steps:
           cluster_profile: openshift-org-gcp
           test:
@@ -361,6 +411,16 @@ repositories:
       tests:
       - as: e2e-vsphere-continuous
         cron: 26 4 * * 3
+        reporter_config:
+          channel: '#serverless-ci'
+          job_states_to_report:
+          - success
+          - failure
+          - error
+          report_template: '{{if eq .Status.State "success"}} :rainbow: Job *{{.Spec.Job}}*
+            ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :rainbow:
+            {{else}} :volcano: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*.
+            <{{.Status.URL}}|View logs> :volcano: {{end}}'
         steps:
           cluster_profile: vsphere-elastic
           env:
@@ -385,6 +445,16 @@ repositories:
       tests:
       - as: cr--operator-e2e--aws
         cron: 0 3,15 * * *
+        reporter_config:
+          channel: '#serverless-ci'
+          job_states_to_report:
+          - success
+          - failure
+          - error
+          report_template: '{{if eq .Status.State "success"}} :rainbow: Job *{{.Spec.Job}}*
+            ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :rainbow:
+            {{else}} :volcano: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*.
+            <{{.Status.URL}}|View logs> :volcano: {{end}}'
         steps:
           cluster_profile: aws-cspi-qe
           env:
@@ -500,6 +570,16 @@ repositories:
           workflow: firewatch-ipi-aws-cr
       - as: operator-e2e--aws-fips
         cron: 0 23 31 2 *
+        reporter_config:
+          channel: '#serverless-ci'
+          job_states_to_report:
+          - success
+          - failure
+          - error
+          report_template: '{{if eq .Status.State "success"}} :rainbow: Job *{{.Spec.Job}}*
+            ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :rainbow:
+            {{else}} :volcano: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*.
+            <{{.Status.URL}}|View logs> :volcano: {{end}}'
         steps:
           cluster_profile: aws-cspi-qe
           env:
@@ -629,6 +709,16 @@ repositories:
       tests:
       - as: olmv1-operator-e2e
         cron: 25 3 * * 6
+        reporter_config:
+          channel: '#serverless-ci'
+          job_states_to_report:
+          - success
+          - failure
+          - error
+          report_template: '{{if eq .Status.State "success"}} :rainbow: Job *{{.Spec.Job}}*
+            ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :rainbow:
+            {{else}} :volcano: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*.
+            <{{.Status.URL}}|View logs> :volcano: {{end}}'
         steps:
           cluster_profile: aws-serverless
           env:
@@ -649,6 +739,16 @@ repositories:
           workflow: openshift-e2e-aws
       - as: olmv1-operator-upgrade
         cron: 45 7 * * 0
+        reporter_config:
+          channel: '#serverless-ci'
+          job_states_to_report:
+          - success
+          - failure
+          - error
+          report_template: '{{if eq .Status.State "success"}} :rainbow: Job *{{.Spec.Job}}*
+            ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :rainbow:
+            {{else}} :volcano: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*.
+            <{{.Status.URL}}|View logs> :volcano: {{end}}'
         steps:
           cluster_profile: aws-serverless
           env:
