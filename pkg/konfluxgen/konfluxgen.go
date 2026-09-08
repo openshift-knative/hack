@@ -360,14 +360,73 @@ func Generate(cfg Config) error {
 			}
 
 			dockerfilePath := ib.ProjectDirectoryImageBuildInputs.DockerfilePath
+			isJavaImage := false
 			for _, r := range javaImages {
 				if r.MatchString(string(ib.To)) {
 					pipeline = DockerJavaBuild
+					isJavaImage = true
 					dockerfilePath = filepath.Dir(ib.ProjectDirectoryImageBuildInputs.DockerfilePath)
 					dockerfileName := filepath.Base(ib.ProjectDirectoryImageBuildInputs.DockerfilePath)
 					dockerfilePath = filepath.Join(dockerfilePath, "hermetic", dockerfileName)
 					break
 				}
+			}
+
+			// Determine prefetch deps based on image type
+			prefetchDeps := cfg.PrefetchDeps
+			if isJavaImage {
+				imageName := string(ib.To)
+
+				// For eventing-kafka-broker Java images, use Maven prefetch with specific paths
+				if strings.Contains(imageName, "eventing-kafka-broker-dispatcher") || strings.Contains(imageName, "ekb-dispatcher") {
+					// Dispatcher needs dispatcher-specific Maven paths
+					dispatcherPaths := []map[string]interface{}{
+						{"type": "x-maven", "path": "data-plane"},
+						{"type": "x-maven", "path": "data-plane/contract"},
+						{"type": "x-maven", "path": "data-plane/core"},
+						{"type": "x-maven", "path": "data-plane/receiver"},
+						{"type": "x-maven", "path": "data-plane/receiver-loom"},
+						{"type": "x-maven", "path": "data-plane/dispatcher"},
+						{"type": "x-maven", "path": "data-plane/dispatcher-loom"},
+					}
+					b, err := json.Marshal(dispatcherPaths)
+					if err != nil {
+						log.Fatal("Failed to marshal dispatcher Maven prefetch: ", err)
+					}
+					prefetchDeps = PrefetchDeps{PrefetchInput: string(b)}
+				} else if strings.Contains(imageName, "eventing-kafka-broker-receiver") || strings.Contains(imageName, "ekb-receiver") {
+					// Receiver needs receiver-specific Maven paths
+					receiverPaths := []map[string]interface{}{
+						{"type": "x-maven", "path": "data-plane"},
+						{"type": "x-maven", "path": "data-plane/contract"},
+						{"type": "x-maven", "path": "data-plane/core"},
+						{"type": "x-maven", "path": "data-plane/receiver"},
+						{"type": "x-maven", "path": "data-plane/receiver-loom"},
+					}
+					b, err := json.Marshal(receiverPaths)
+					if err != nil {
+						log.Fatal("Failed to marshal receiver Maven prefetch: ", err)
+					}
+					prefetchDeps = PrefetchDeps{PrefetchInput: string(b)}
+				} else if strings.Contains(imageName, "eventing-integrations") {
+					// For eventing-integrations Java images, extract component name and generate Maven prefetch
+					// Example: "kn-eventing-integrations-aws-ddb-streams-source-117" -> "aws-ddb-streams-source"
+					componentName := extractEventingIntegrationsComponent(imageName)
+					if componentName != "" {
+						integrationPaths := []map[string]interface{}{
+							{"path": componentName, "type": "x-maven"},
+							{"path": "tools/maven-plugin", "type": "x-maven"},
+							{"path": "tools", "type": "x-maven"},
+							{"path": ".", "type": "x-maven"},
+						}
+						b, err := json.Marshal(integrationPaths)
+						if err != nil {
+							log.Fatal("Failed to marshal eventing-integrations Maven prefetch: ", err)
+						}
+						prefetchDeps = PrefetchDeps{PrefetchInput: string(b)}
+					}
+				}
+				// For other Java images, keep the standard prefetch from cfg.PrefetchDeps
 			}
 
 			r := DockerfileApplicationConfig{
@@ -382,7 +441,7 @@ func Generate(cfg Config) error {
 				// Do not "prepend" tags as SO relies on the order.
 				Tags:           append(cfg.Tags, "latest"),
 				BuildArgs:      cfg.BuildArgs,
-				PrefetchDeps:   cfg.PrefetchDeps,
+				PrefetchDeps:   prefetchDeps,
 				DockerfilePath: dockerfilePath,
 
 				PipelineRunAnnotations: cfg.PipelineRunAnnotationsFunc(c.ReleaseBuildConfiguration, ib),
@@ -397,12 +456,8 @@ func Generate(cfg Config) error {
 				}
 			}
 
-			// TODO REVIEW: Remove special case once all hermetic builds are moved to docker-java-build pipeline With actual hermetic builds
-			if cfg.IsHermetic(c.ReleaseBuildConfiguration, ib) && pipeline != "docker-java-build" {
-				r.Hermetic = "true"
-			} else {
-				r.Hermetic = "false"
-			}
+			// All images use hermetic builds (both Java with Maven caching and Go/other images)
+			r.Hermetic = "true"
 
 			applications[appKey][Truncate(Sanitize(cfg.ComponentNameFunc(c.ReleaseBuildConfiguration, ib)))] = r
 		}
@@ -866,6 +921,34 @@ func makeValidName(n string) string {
 		n = n[:len(n)-1]
 	}
 	return n
+}
+
+// extractEventingIntegrationsComponent extracts the component name from eventing-integrations image names
+// Example: "kn-eventing-integrations-aws-ddb-streams-source-117" -> "aws-ddb-streams-source"
+func extractEventingIntegrationsComponent(imageName string) string {
+	// Remove prefix: everything up to and including "eventing-integrations-"
+	prefix := "eventing-integrations-"
+	idx := strings.Index(imageName, prefix)
+	if idx == -1 {
+		return ""
+	}
+	componentWithSuffix := imageName[idx+len(prefix):]
+
+	// Remove suffix: the branch identifier (e.g., "-117", "-116")
+	// Pattern: look for "-" followed by digits at the end
+	parts := strings.Split(componentWithSuffix, "-")
+	if len(parts) < 2 {
+		return componentWithSuffix
+	}
+
+	// Check if the last part is all digits (branch suffix)
+	lastPart := parts[len(parts)-1]
+	if _, err := strconv.Atoi(lastPart); err == nil {
+		// Last part is a number, remove it
+		return strings.Join(parts[:len(parts)-1], "-")
+	}
+
+	return componentWithSuffix
 }
 
 func WriteFileReplacingNewerTaskImages(name string, data []byte, perm os.FileMode) error {
