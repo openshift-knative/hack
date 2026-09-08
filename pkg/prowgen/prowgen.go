@@ -290,8 +290,6 @@ func SaveProwConfig(openShiftRelease Repository, repository Repository, config s
 	return os.WriteFile(outPath, out, os.ModePerm)
 }
 
-const slackReportTemplate = `{{if eq .Status.State "success"}} :rainbow: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :rainbow: {{else}} :volcano: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :volcano: {{end}}`
-
 func SaveReleaseBuildConfiguration(outConfig *string, cfg ReleaseBuildConfiguration) error {
 	dir := filepath.Join(*outConfig, filepath.Dir(cfg.Path))
 
@@ -304,69 +302,11 @@ func SaveReleaseBuildConfiguration(outConfig *string, cfg ReleaseBuildConfigurat
 		return err
 	}
 
-	if cfg.SlackChannel != "" {
-		out, err = addReporterConfigToTests(out, cfg.SlackChannel)
-		if err != nil {
-			return err
-		}
-	}
-
 	if err := os.WriteFile(filepath.Join(*outConfig, cfg.Path), out, os.ModePerm); err != nil {
 		return err
 	}
 
 	return copyOwnersFileIfNotPresent(dir)
-}
-
-// addReporterConfigToTests injects a reporter_config stanza into every test that
-// has a cron field, so Slack notifications are configured directly in the
-// ci-operator config yaml instead of via a separate .config.prowgen file.
-func addReporterConfigToTests(out []byte, slackChannel string) ([]byte, error) {
-	var rawConfig interface{}
-	if err := yaml.Unmarshal(out, &rawConfig); err != nil {
-		return nil, err
-	}
-
-	configMap, ok := rawConfig.(map[string]interface{})
-	if !ok {
-		return out, nil
-	}
-
-	testsRaw, ok := configMap["tests"]
-	if !ok {
-		return out, nil
-	}
-
-	tests, ok := testsRaw.([]interface{})
-	if !ok {
-		return out, nil
-	}
-
-	reporterConfig := map[string]interface{}{
-		"channel":              slackChannel,
-		"job_states_to_report": []interface{}{"success", "failure", "error"},
-		"report_template":      slackReportTemplate,
-	}
-
-	modified := false
-	for i, testRaw := range tests {
-		test, ok := testRaw.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		if _, hasCron := test["cron"]; hasCron {
-			test["reporter_config"] = reporterConfig
-			tests[i] = test
-			modified = true
-		}
-	}
-
-	if !modified {
-		return out, nil
-	}
-
-	configMap["tests"] = tests
-	return yaml.Marshal(rawConfig)
 }
 
 func copyOwnersFileIfNotPresent(dir string) error {

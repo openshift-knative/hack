@@ -1,100 +1,125 @@
 package prowgen
 
 import (
+	"math/rand"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"sigs.k8s.io/yaml"
+	cioperatorapi "github.com/openshift/ci-tools/pkg/api"
 )
 
-func TestAddReporterConfigToTests(t *testing.T) {
-	tests := []struct {
-		name         string
-		inputYAML    string
-		slackChannel string
-		wantErr      bool
-		check        func(t *testing.T, out []byte)
-	}{
-		{
-			name:         "adds reporter_config to cron tests only",
-			slackChannel: "#knative-eventing-ci",
-			inputYAML: `tests:
-- as: test-e2e
-- as: test-e2e-c
-  cron: 23 1 * * 2,6
-`,
-			check: func(t *testing.T, out []byte) {
-				var result map[string]interface{}
-				if err := yaml.Unmarshal(out, &result); err != nil {
-					t.Fatalf("failed to unmarshal output: %v", err)
-				}
-				tests := result["tests"].([]interface{})
-				if len(tests) != 2 {
-					t.Fatalf("expected 2 tests, got %d", len(tests))
-				}
-
-				// Non-cron test should not have reporter_config
-				presubmit := tests[0].(map[string]interface{})
-				if _, ok := presubmit["reporter_config"]; ok {
-					t.Error("non-cron test should not have reporter_config")
-				}
-
-				// Cron test should have reporter_config
-				cronTest := tests[1].(map[string]interface{})
-				rc, ok := cronTest["reporter_config"].(map[string]interface{})
-				if !ok {
-					t.Fatal("cron test missing reporter_config")
-				}
-				if diff := cmp.Diff("#knative-eventing-ci", rc["channel"]); diff != "" {
-					t.Errorf("channel mismatch (-want +got):\n%s", diff)
-				}
-				states := rc["job_states_to_report"].([]interface{})
-				if diff := cmp.Diff([]interface{}{"success", "failure", "error"}, states); diff != "" {
-					t.Errorf("job_states_to_report mismatch (-want +got):\n%s", diff)
-				}
-				if rc["report_template"] != slackReportTemplate {
-					t.Errorf("report_template mismatch: got %q", rc["report_template"])
-				}
+func TestDiscoverTestsSetsSlackReporterConfig(t *testing.T) {
+	r := Repository{
+		Org:          "testdata",
+		Repo:         "serving",
+		ImagePrefix:  "knative-serving",
+		SlackChannel: "#test-channel",
+		Dockerfiles: Dockerfiles{
+			Matches: []string{
+				"knative-images/.*",
 			},
 		},
-		{
-			name:         "no cron tests returns unchanged yaml",
-			slackChannel: "#knative-eventing-ci",
-			inputYAML: `tests:
-- as: test-e2e
-`,
-			check: func(t *testing.T, out []byte) {
-				var result map[string]interface{}
-				if err := yaml.Unmarshal(out, &result); err != nil {
-					t.Fatalf("failed to unmarshal output: %v", err)
-				}
-				test := result["tests"].([]interface{})[0].(map[string]interface{})
-				if _, ok := test["reporter_config"]; ok {
-					t.Error("expected no reporter_config when no cron tests")
-				}
-			},
-		},
-		{
-			name:         "no tests key returns unchanged yaml",
-			slackChannel: "#knative-eventing-ci",
-			inputYAML:    "metadata: {}\n",
-			check: func(t *testing.T, out []byte) {
-				if string(out) != "metadata: {}\n" {
-					t.Errorf("expected unchanged yaml, got %q", string(out))
-				}
-			},
+		E2ETests: []E2ETest{
+			{Match: "test-e2e$"},
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			out, err := addReporterConfigToTests([]byte(tt.inputYAML), tt.slackChannel)
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("addReporterConfigToTests() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if err == nil && tt.check != nil {
-				tt.check(t, out)
-			}
-		})
+	random := rand.New(rand.NewSource(1))
+	cfg := &cioperatorapi.ReleaseBuildConfiguration{}
+	opt := DiscoverTests(r, OpenShift{Version: "4.12"}, "knative-serving-source-image", nil, random)
+	if err := opt(cfg); err != nil {
+		t.Fatalf("DiscoverTests failed: %v", err)
+	}
+
+	var presubmit, cron *cioperatorapi.TestStepConfiguration
+	for i := range cfg.Tests {
+		if cfg.Tests[i].Cron != nil {
+			cron = &cfg.Tests[i]
+		} else {
+			presubmit = &cfg.Tests[i]
+		}
+	}
+
+	if presubmit == nil {
+		t.Fatal("expected a presubmit test")
+	}
+	if presubmit.SlackReporterConfig != nil {
+		t.Error("presubmit test should not have SlackReporterConfig")
+	}
+
+	if cron == nil {
+		t.Fatal("expected a cron test")
+	}
+	if cron.SlackReporterConfig == nil {
+		t.Fatal("cron test should have SlackReporterConfig")
+	}
+	if diff := cmp.Diff("#test-channel", cron.SlackReporterConfig.Channel); diff != "" {
+		t.Errorf("channel mismatch (-want +got):\n%s", diff)
+	}
+	if diff := cmp.Diff(cioperatorapi.DefaultSlackReporterJobStatesToReport, cron.SlackReporterConfig.JobStatesToReport); diff != "" {
+		t.Errorf("job_states_to_report mismatch (-want +got):\n%s", diff)
+	}
+	if cron.SlackReporterConfig.ReportTemplate != slackReportTemplate {
+		t.Errorf("report_template mismatch: got %q", cron.SlackReporterConfig.ReportTemplate)
 	}
 }
+
+func TestDiscoverTestsNoSlackReporterWhenNoChannel(t *testing.T) {
+	r := Repository{
+		Org:         "testdata",
+		Repo:        "serving",
+		ImagePrefix: "knative-serving",
+		Dockerfiles: Dockerfiles{
+			Matches: []string{
+				"knative-images/.*",
+			},
+		},
+		E2ETests: []E2ETest{
+			{Match: "test-e2e$"},
+		},
+	}
+
+	random := rand.New(rand.NewSource(1))
+	cfg := &cioperatorapi.ReleaseBuildConfiguration{}
+	opt := DiscoverTests(r, OpenShift{Version: "4.12"}, "knative-serving-source-image", nil, random)
+	if err := opt(cfg); err != nil {
+		t.Fatalf("DiscoverTests failed: %v", err)
+	}
+
+	for _, test := range cfg.Tests {
+		if test.SlackReporterConfig != nil {
+			t.Errorf("test %q should not have SlackReporterConfig when no SlackChannel is set", test.As)
+		}
+	}
+}
+
+func TestDiscoverTestsNoSlackReporterWhenSkipCron(t *testing.T) {
+	r := Repository{
+		Org:          "testdata",
+		Repo:         "serving",
+		ImagePrefix:  "knative-serving",
+		SlackChannel: "#test-channel",
+		Dockerfiles: Dockerfiles{
+			Matches: []string{
+				"knative-images/.*",
+			},
+		},
+		E2ETests: []E2ETest{
+			{Match: "test-e2e$", SkipCron: true},
+		},
+	}
+
+	random := rand.New(rand.NewSource(1))
+	cfg := &cioperatorapi.ReleaseBuildConfiguration{}
+	opt := DiscoverTests(r, OpenShift{Version: "4.12"}, "knative-serving-source-image", nil, random)
+	if err := opt(cfg); err != nil {
+		t.Fatalf("DiscoverTests failed: %v", err)
+	}
+
+	for _, test := range cfg.Tests {
+		if test.SlackReporterConfig != nil {
+			t.Errorf("test %q should not have SlackReporterConfig when SkipCron is true", test.As)
+		}
+	}
+}
+

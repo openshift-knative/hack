@@ -25,6 +25,7 @@ const (
 	midstreamCronTemplate  = "%d %d * * 2,6"
 	serverlessCronTemplate = "%d %d * * 1,5"
 	seed                   = 12345
+	slackReportTemplate    = `{{if eq .Status.State "success"}} :rainbow: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :rainbow: {{else}} :volcano: Job *{{.Spec.Job}}* ended with *{{.Status.State}}*. <{{.Status.URL}}|View logs> :volcano: {{end}}`
 	// Name of the cluster profile for starting new clusters from scratch.
 	// Introduced in https://github.com/openshift/ci-tools/pull/3978
 	serverlessClusterProfile = "aws-serverless"
@@ -248,6 +249,13 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 				for _, postStep := range cronTestConfiguration.MultiStageTestConfiguration.Post {
 					if postStep.LiteralTestStep != nil && strings.Contains(postStep.LiteralTestStep.As, "gather") {
 						postStep.OptionalOnSuccess = pointer.Bool(false)
+					}
+				}
+				if r.SlackChannel != "" {
+					cronTestConfiguration.SlackReporterConfig = &cioperatorapi.SlackReporterConfig{
+						Channel:           r.SlackChannel,
+						JobStatesToReport: cioperatorapi.DefaultSlackReporterJobStatesToReport,
+						ReportTemplate:    slackReportTemplate,
 					}
 				}
 				cfg.Tests = append(cfg.Tests, *cronTestConfiguration)
