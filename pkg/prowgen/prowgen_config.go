@@ -269,6 +269,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 
 			options := make([]ReleaseBuildConfigurationOption, 0, len(opts))
 			copy(options, opts)
+			options = append(options, EnableSecretsStoreCSIDriver())
 			if !ov.SkipPromotion {
 				if promotionIndex == 0 {
 					options = append(options, withNamePromotion(r, branch, branchName))
@@ -360,6 +361,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 
 				customBuildOptions := append(
 					opts,
+					EnableSecretsStoreCSIDriver(),
 					DiscoverImages(r, branch.SkipDockerFilesMatches),
 					DependenciesForTestSteps(),
 					// Custom build definitions are always on-demand only, that's also applied to image builds
@@ -607,6 +609,20 @@ func applyOptions(cfg *cioperatorapi.ReleaseBuildConfiguration, opts ...ReleaseB
 		}
 	}
 	return nil
+}
+
+// EnableSecretsStoreCSIDriver keeps the GSM/CSI credentials available to jobs
+// generated from these configurations. This must be set on the ci-operator
+// configuration because ci-operator-prowgen uses it when constructing the
+// generated Prow jobs.
+func EnableSecretsStoreCSIDriver() ReleaseBuildConfigurationOption {
+	return func(cfg *cioperatorapi.ReleaseBuildConfiguration) error {
+		if cfg.Prowgen == nil {
+			cfg.Prowgen = &cioperatorapi.ProwgenOverrides{}
+		}
+		cfg.Prowgen.EnableSecretsStoreCSIDriver = true
+		return nil
+	}
 }
 
 // ImagesSkipIfOnlyChanged adds common file regex to skip image builds on unrelated changes
