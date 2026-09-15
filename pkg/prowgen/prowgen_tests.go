@@ -80,7 +80,7 @@ func DiscoverTests(r Repository, openShift OpenShift, sourceImageName string, sk
 
 			var (
 				clusterClaim   *cioperatorapi.ClusterClaim
-				clusterProfile cioperatorapi.ClusterProfile
+				clusterProfile string
 				workflow       *string
 				env            cioperatorapi.TestEnvironment
 			)
