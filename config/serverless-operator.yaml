@@ -84,7 +84,7 @@ config:
         - name: GO_BUILDER
           pullSpec: brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_golang_1.26
         - name: GO_RUNTIME
-          pullSpec: registry.access.redhat.com/ubi9/ubi-minimal
+          pullSpec: registry.access.redhat.com/ubi9/ubi-minimal@sha256:984df0a2b8d9011d419b0ad260b25f6b74b7ce69ab0595b75522e30f8849f27f
         - name: JAVA_BUILDER
           pullSpec: registry.access.redhat.com/ubi9/openjdk-21
         - name: JAVA_RUNTIME
