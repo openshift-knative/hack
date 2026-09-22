@@ -1,0 +1,24 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>konflux-ci/mintmaker//config/renovate/renovate.json"],
+  "enabledManagers": ["custom.regex"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["^config/serverless-operator\\.yaml$"],
+      "matchStringsStrategy": "any",
+      "matchStrings": [
+        "pullSpec:\\s*(?<depName>registry\\.access\\.redhat\\.com/ubi9/ubi-minimal)(?:@(?<currentDigest>sha256:[a-f0-9]+))?"
+      ],
+      "datasourceTemplate": "docker",
+      "currentValueTemplate": "latest"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["custom.regex"],
+      "matchPackageNames": ["registry.access.redhat.com/ubi9/ubi-minimal"],
+      "pinDigests": true
+    }
+  ]
+}
