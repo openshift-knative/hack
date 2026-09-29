@@ -61,7 +61,6 @@ repositories:
   org: openshift-knative
   owners:
     approvers:
-    - creydr
     - dsimansk
     - lkingland
     - maschmid

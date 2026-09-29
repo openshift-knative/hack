@@ -81,17 +81,13 @@ repositories:
   owners:
     approvers:
     - aliok
-    - creydr
     - lberk
-    - matzew
     - Cali0707
     - rudyredhat1
     - Kaustubh-pande
     reviewers:
     - aliok
-    - creydr
     - lberk
-    - matzew
     - Cali0707
   promotion:
     namespace: openshift
