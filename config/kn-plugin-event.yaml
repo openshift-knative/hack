@@ -70,7 +70,6 @@ repositories:
     approvers:
     - dsimansk
     - cardil
-    - creydr
     - Kaustubh-pande
     - maschmid
     - openshift-cherrypick-robot
@@ -78,7 +77,6 @@ repositories:
     reviewers:
     - dsimansk
     - cardil
-    - creydr
     - maschmid
     - mvinkler
     - jrangelramos

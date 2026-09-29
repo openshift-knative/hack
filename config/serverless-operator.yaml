@@ -724,19 +724,15 @@ repositories:
   owners:
     approvers:
     - aliok
-    - creydr
     - dsimansk
     - lberk
-    - matzew
     - openshift-cherrypick-robot
     - Kaustubh-pande
     - maschmid
     - rudyredhat1
     reviewers:
     - aliok
-    - creydr
     - dsimansk
-    - matzew
     - Kaustubh-pande
   promotion:
     namespace: knative

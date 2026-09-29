@@ -92,7 +92,6 @@ repositories:
   org: openshift-knative
   owners:
     approvers:
-    - creydr
     - dsimansk
     - Kaustubh-pande
     - maschmid

@@ -131,7 +131,6 @@ repositories:
   org: openshift-knative
   owners:
     approvers:
-    - creydr
     - dsimansk
     - Fedosin
     - Kaustubh-pande
