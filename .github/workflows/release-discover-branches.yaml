@@ -32,7 +32,7 @@ jobs:
           version: latest
 
       - name: Install Kustomize
-        run: GO111MODULE=on go install sigs.k8s.io/kustomize/kustomize/v5@latest
+        run: go install sigs.k8s.io/kustomize/kustomize/v5@v5.8.1
 
       - name: Configure Git user
         run: |
