@@ -14,6 +14,15 @@ on:
           - prod
         required: true
         default: "prod"
+      advisory_type:
+        description: "Advisory type for the release notes"
+        type: choice
+        options:
+          - RHEA
+          - RHSA
+          - RHBA
+        required: true
+        default: "RHEA"
 defaults:
   run:
     shell: bash
@@ -57,7 +66,7 @@ jobs:
       - name: Generate Konflux component release CR
         working-directory: ./src/github.com/openshift-knative/hack
         run: |
-          KUBECONFIG=$HOME/.kube/config make generate-konflux-release ARGS="--environment ${{ inputs.environment }} --so-revision ${{ inputs.revision }} --type component"
+          KUBECONFIG=$HOME/.kube/config make generate-konflux-release ARGS="--environment ${{ inputs.environment }} --so-revision ${{ inputs.revision }} --type component --advisory-type ${{ inputs.advisory_type }}"
 
       - name: Create component release CR Pull Request
         env:
@@ -87,7 +96,7 @@ jobs:
       - name: Generate Konflux FBC release CRs
         working-directory: ./src/github.com/openshift-knative/hack
         run: |
-          KUBECONFIG=$HOME/.kube/config make generate-konflux-release ARGS="--environment ${{ inputs.environment }} --so-revision ${{ inputs.revision }} --type fbc"
+          KUBECONFIG=$HOME/.kube/config make generate-konflux-release ARGS="--environment ${{ inputs.environment }} --so-revision ${{ inputs.revision }} --type fbc --advisory-type ${{ inputs.advisory_type }}"
 
       - name: Create FBC release CR Pull Request
         env:
