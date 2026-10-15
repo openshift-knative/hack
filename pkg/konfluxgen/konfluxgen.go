@@ -1381,13 +1381,15 @@ type ReleaseConfig struct {
 	Snapshot            string
 	ReleasePlan         string
 	Environment         string
+	AdvisoryType        string
 	ResourcesOutputPath string
 }
 
 type Release struct {
-	Name        string
-	Snapshot    string
-	ReleasePlan string
+	Name         string
+	Snapshot     string
+	ReleasePlan  string
+	AdvisoryType string
 }
 
 func GenerateRelease(ctx context.Context, cfg ReleaseConfig) error {
@@ -1405,9 +1407,10 @@ func GenerateRelease(ctx context.Context, cfg ReleaseConfig) error {
 	}
 
 	data := Release{
-		Name:        relName,
-		Snapshot:    cfg.Snapshot,
-		ReleasePlan: cfg.ReleasePlan,
+		Name:         relName,
+		Snapshot:     cfg.Snapshot,
+		ReleasePlan:  cfg.ReleasePlan,
+		AdvisoryType: cfg.AdvisoryType,
 	}
 
 	if err := executeReleaseTemplate(data, releaseFile); err != nil {

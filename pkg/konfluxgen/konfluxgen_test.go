@@ -1,7 +1,9 @@
 package konfluxgen
 
 import (
+	"context"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -1269,5 +1271,37 @@ func TestWriteFileReplacingNewerTaskImages(t *testing.T) {
 
 	if diff := cmp.Diff(string(expected), string(got)); diff != "" {
 		t.Fatalf("(-want, +got)\n%s", diff)
+	}
+}
+
+func Test_GenerateRelease_AdvisoryType(t *testing.T) {
+	t.Parallel()
+
+	for _, advisoryType := range []string{"RHEA", "RHSA", "RHBA"} {
+		t.Run(advisoryType, func(t *testing.T) {
+			outputDir := t.TempDir()
+			cfg := ReleaseConfig{
+				Snapshot:            "my-snapshot",
+				ReleasePlan:         "my-release-plan",
+				Environment:         "stage",
+				AdvisoryType:        advisoryType,
+				ResourcesOutputPath: outputDir,
+			}
+
+			if err := GenerateRelease(context.TODO(), cfg); err != nil {
+				t.Fatalf("GenerateRelease failed: %v", err)
+			}
+
+			releaseFile := filepath.Join(outputDir, ReleasesDirName, "my-release-plan.yaml")
+			content, err := os.ReadFile(releaseFile)
+			if err != nil {
+				t.Fatalf("could not read generated release file: %v", err)
+			}
+
+			want := `type: "` + advisoryType + `"`
+			if !strings.Contains(string(content), want) {
+				t.Errorf("generated release does not contain %q, got:\n%s", want, string(content))
+			}
+		})
 	}
 }

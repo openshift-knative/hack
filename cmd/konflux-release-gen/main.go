@@ -31,18 +31,28 @@ func run() error {
 
 		stageEnv = "stage"
 		prodEnv  = "prod"
+
+		advisoryTypeRHEA = "RHEA"
+		advisoryTypeRHSA = "RHSA"
+		advisoryTypeRHBA = "RHBA"
 	)
 
-	var environment, soRevision, overrideSnapshotDir, output, releaseType string
+	var environment, soRevision, overrideSnapshotDir, output, releaseType, advisoryType string
 	pflag.StringVar(&environment, "environment", "prod", fmt.Sprintf("Environment to use. Available values: [%s, %s]", stageEnv, prodEnv))
 	pflag.StringVar(&soRevision, "so-revision", "main", "SO revision to get snapshots from")
 	pflag.StringVar(&releaseType, "type", "component", fmt.Sprintf("Type of the release. Available values: [%s, %s]", componentReleaseType, fbcReleaseType))
+	pflag.StringVar(&advisoryType, "advisory-type", advisoryTypeRHEA, fmt.Sprintf("Advisory type for the release notes. Available values: [%s, %s, %s]", advisoryTypeRHEA, advisoryTypeRHSA, advisoryTypeRHBA))
 	pflag.StringVar(&overrideSnapshotDir, "so-snapshot-directory", ".konflux-release", "The directory containing Serverless Operator override snapshots")
 	pflag.StringVar(&output, "output", ".konflux", "Path to output directory")
 	pflag.Parse()
 
 	if environment != stageEnv && environment != prodEnv {
 		return fmt.Errorf("invalid environment: %s", environment)
+	}
+
+	advisoryType = strings.ToUpper(advisoryType)
+	if advisoryType != advisoryTypeRHEA && advisoryType != advisoryTypeRHSA && advisoryType != advisoryTypeRHBA {
+		return fmt.Errorf("invalid advisory type: %s", advisoryType)
 	}
 
 	// clone SO repo to get metadata & snapshots for given revision
@@ -90,6 +100,7 @@ func run() error {
 			Snapshot:            snapshot,
 			ReleasePlan:         releasePlan,
 			Environment:         environment,
+			AdvisoryType:        advisoryType,
 			ResourcesOutputPath: outputDir,
 		}
 
@@ -112,6 +123,7 @@ func run() error {
 				Snapshot:            snapshot,
 				ReleasePlan:         releasePlan,
 				Environment:         environment,
+				AdvisoryType:        advisoryType,
 				ResourcesOutputPath: outputDir,
 			}
 
