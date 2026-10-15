@@ -31,9 +31,6 @@ jobs:
         with:
           version: latest
 
-      - name: Install Kustomize
-        run: go install sigs.k8s.io/kustomize/kustomize/v5@v5.8.1
-
       - name: Configure Git user
         run: |
           git config --global user.email "serverless-support@redhat.com"
@@ -54,11 +51,6 @@ jobs:
           repository: 'konflux-ci/rpm-lockfile-prototype'
           path: ./src/github.com/openshift-knative/rpm-lockfile-prototype
           ref: 'v0.15.0'
-
-      - name: Install podman
-        run: |
-          sudo apt-get update
-          sudo apt-get -y install podman
 
       - name: Build rpm-lockfile-prototype
         working-directory: ./src/github.com/openshift-knative/rpm-lockfile-prototype
