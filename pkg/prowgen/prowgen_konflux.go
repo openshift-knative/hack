@@ -571,7 +571,7 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 		buildArgs := append(buildArgs, fmt.Sprintf("OPM_IMAGE=%s", opmImage))
 		opmArgs := []string{"alpha", "render-template", "basic",
 			fmt.Sprintf("\"olm-catalog/serverless-operator-index/v%s/catalog-template.yaml\"", ocpVersion)}
-		if ocpMajorVersion == 4 && ocpMinorVersion >= 17 { // OCP 4.17+ OLM fix format flag
+		if (ocpMajorVersion == 4 && ocpMinorVersion >= 17) || ocpMajorVersion >= 5 {
 			opmArgs = append(opmArgs, "--migrate-level=bundle-object-to-csv-metadata")
 		}
 		fbcAppName := konfluxgen.FBCAppName(release, ocpVersion)
