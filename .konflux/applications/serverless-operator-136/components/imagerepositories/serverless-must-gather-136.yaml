@@ -1,0 +1,13 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: ImageRepository
+metadata:
+  annotations:
+    image-controller.appstudio.redhat.com/update-component-image: "true"
+  labels:
+    appstudio.redhat.com/application: serverless-operator-136
+    appstudio.redhat.com/component: serverless-must-gather-136
+  name: serverless-must-gather-136
+spec:
+  image:
+    name: serverless-operator-136/serverless-must-gather
+    visibility: public
