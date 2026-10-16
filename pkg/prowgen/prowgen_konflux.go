@@ -591,8 +591,8 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 					" )", ocpVersion)
 			},
 			OpmArgs:              opmArgs,
-			OpmOutputPath:        fmt.Sprintf("olm-catalog/serverless-operator-index/v%s/catalog/serverless-operator/catalog.yaml", ocpVersion),
-			FileToUpdatePullspec: fmt.Sprintf("olm-catalog/serverless-operator-index/v%s/catalog/serverless-operator/catalog.yaml", ocpVersion),
+			OpmOutputPath:        fmt.Sprintf("olm-catalog/serverless-operator-index/v%s/catalog/serverless-operator/catalog.json", ocpVersion),
+			FileToUpdatePullspec: fmt.Sprintf("olm-catalog/serverless-operator-index/v%s/catalog/serverless-operator/catalog.json", ocpVersion),
 			// IdmsPath is not set explicitly, using default value ".tekton/image-mirror-set.yaml"
 			AdditionalComponentConfigs: []konfluxgen.TemplateConfig{
 				{
