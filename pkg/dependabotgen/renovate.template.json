@@ -8,5 +8,11 @@
     "third_party/**",
     "vendor/**",
     "**/images-rekt.yaml"
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["tekton"],
+      "labels": ["skip-review"]
+    }
   ]
 }
