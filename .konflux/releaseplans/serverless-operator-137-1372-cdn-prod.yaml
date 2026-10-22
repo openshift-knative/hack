@@ -1,0 +1,20 @@
+apiVersion: appstudio.redhat.com/v1alpha1
+kind: ReleasePlan
+metadata:
+  labels:
+    release.appstudio.openshift.io/auto-release: 'false'
+    release.appstudio.openshift.io/releasePlanAdmission: 'serverless-operator-137-1372-cdn-prod'
+    release.appstudio.openshift.io/standing-attribution: 'true'
+  name: serverless-operator-137-1372-cdn-prod
+spec:
+  application: serverless-operator-137
+  target: rhtap-releng-tenant
+  data:
+    releaseNotes:
+      solution: |
+        The Red Hat OpenShift Serverless Client CLI (kn) provides a command-line interface enabling developers to manage Knative Serving and Eventing resources on OpenShift Serverless clusters across Linux, macOS, and Windows platforms.
+      description: "Red Hat OpenShift Serverless Client CLI (kn) version 1.37.2 provides updated command-line tool binaries for Linux, macOS, and Windows environments."
+      topic: |
+        Red Hat OpenShift Serverless Client CLI version 1.37.2 is now available. For more details, see the official product documentation: https://docs.redhat.com/documentation/en-us/red\_hat\_openshift\_serverless/1.37/
+      synopsis: "Red Hat OpenShift Serverless Client CLI 1.37.2."
+
