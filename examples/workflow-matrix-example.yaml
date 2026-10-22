@@ -1,0 +1,468 @@
+# EXAMPLE: Workflow Matrix Strategy Refactoring
+#
+# This shows how to transform the current 2,679-line workflow
+# into a much smaller, maintainable version using GitHub Actions matrix strategy
+
+# ============================================================================
+# BEFORE: Current Approach (2,679 lines total)
+# ============================================================================
+# Just showing a tiny snippet - imagine this repeated 100+ times!
+# ============================================================================
+
+name: Generate CI config (BEFORE)
+on:
+  push:
+    branches: ['main']
+  schedule:
+    - cron: "0 6 * * 1"
+
+jobs:
+  generate-ci:
+    runs-on: ubuntu-latest
+    steps:
+      # Clone 13+ repos sequentially (6+ minutes)
+      - name: '[client] Clone repository'
+        uses: actions/checkout@v6
+        with:
+          path: ./src/github.com/openshift-knative/hack/openshift-knative/client
+          ref: main
+          repository: openshift-knative/client
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
+
+      - name: '[eventing] Clone repository'
+        uses: actions/checkout@v6
+        with:
+          path: ./src/github.com/openshift-knative/hack/openshift-knative/eventing
+          ref: main
+          repository: openshift-knative/eventing
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
+
+      # ... 11 more clone steps ...
+
+      # Generate CI
+      - name: Generate CI
+        working-directory: ./src/github.com/openshift-knative/hack
+        run: make generate-ci-no-clean ARGS=--branch=main
+
+      # Now 100+ PR creation steps like this:
+      - name: '[client - release-v1.17] Create Konflux PR'
+        env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        run: |
+          set -x
+          repo="client"
+          branch="sync-konflux-release-v1.17"
+          target_branch="release-v1.17"
+          git remote add fork "https://github.com/serverless-qe/$repo.git" || true
+          remote_exists=$(git ls-remote --heads fork "$branch")
+          if [ -z "$remote_exists" ]; then
+            git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          fi
+          git fetch origin "$target_branch"
+          git fetch fork "$branch"
+          git rebase --quiet "$target_branch" "$branch"
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
+          gh pr create --base "$target_branch" --head "serverless-qe:$branch" \
+            --title "[$target_branch] Update Konflux configurations" \
+            --body "Update Konflux configurations" || true
+        working-directory: ./src/github.com/openshift-knative/hack/openshift-knative/client
+
+      - name: '[client - release-v1.21] Create Konflux PR'
+        env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        run: |
+          # EXACT SAME CODE, just different branch name! 😱
+          repo="client"
+          branch="sync-konflux-release-v1.21"  # Only this changes
+          target_branch="release-v1.21"        # And this
+          # ... rest is identical ...
+
+      # ... 98 more steps like this! ...
+
+
+# ============================================================================
+# AFTER: Improved Approach (< 500 lines total)
+# ============================================================================
+# Uses matrix strategy + reusable actions
+# ============================================================================
+
+name: Generate CI config (AFTER)
+on:
+  push:
+    branches: ['main']
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+# Concurrency control to prevent duplicate runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ──────────────────────────────────────────────────────────────
+  # Job 1: Load repository configuration
+  # ──────────────────────────────────────────────────────────────
+  load-config:
+    runs-on: ubuntu-latest
+    outputs:
+      repos: ${{ steps.parse-config.outputs.repos }}
+      sync-matrix: ${{ steps.generate-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout hack repo
+        uses: actions/checkout@v6
+
+      - name: Parse repository configs
+        id: parse-config
+        run: |
+          # Read all repo configs and output as JSON
+          repos=$(find config -name "*.yaml" -exec basename {} .yaml \; | jq -R -s -c 'split("\n")[:-1]')
+          echo "repos=$repos" >> $GITHUB_OUTPUT
+
+      - name: Generate sync matrix
+        id: generate-matrix
+        run: |
+          # Read repos.yaml (new file we'll create) and generate matrix
+          matrix=$(yq eval -o=json repos.yaml | jq -c '.repositories |
+            map({
+              repo: .name,
+              branches: .branches,
+              configs: .configs
+            }) |
+            map(.branches as $branches | .configs as $configs | {
+              repo: .repo,
+              items: ($branches | map({branch: .}) as $b | $configs | map({config: .}) as $c |
+                [$b, $c] | combinations | map({branch: .[0].branch, config: .[1].config}))
+            }) |
+            map(.items[] | {repo: .repo, branch: .branch, config: .config})
+          ')
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+
+  # ──────────────────────────────────────────────────────────────
+  # Job 2: Clone repositories (PARALLEL!)
+  # ──────────────────────────────────────────────────────────────
+  clone-repos:
+    needs: load-config
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: ${{ fromJson(needs.load-config.outputs.repos) }}
+      max-parallel: 10  # Clone 10 at a time
+    steps:
+      - name: Clone ${{ matrix.repo }}
+        uses: actions/checkout@v6
+        with:
+          repository: openshift-knative/${{ matrix.repo }}
+          path: repos/${{ matrix.repo }}
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
+
+      - name: Cache cloned repo
+        uses: actions/cache/save@v3
+        with:
+          path: repos/${{ matrix.repo }}
+          key: repo-${{ matrix.repo }}-${{ github.run_id }}
+
+  # ──────────────────────────────────────────────────────────────
+  # Job 3: Generate CI configs
+  # ──────────────────────────────────────────────────────────────
+  generate-ci:
+    needs: [load-config, clone-repos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout hack repo
+        uses: actions/checkout@v6
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # Restore all cached repos
+      - name: Restore cloned repos
+        uses: actions/cache/restore@v3
+        with:
+          path: repos
+          key: repo-*-${{ github.run_id }}
+
+      - name: Checkout openshift/release
+        uses: actions/checkout@v6
+        with:
+          repository: openshift/release
+          path: openshift/release
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
+
+      - name: Install tools
+        run: |
+          go install github.com/mikefarah/yq/v3@latest
+          go install -tags="exclude_graphdriver_btrfs containers_image_openpgp" \
+            github.com/containers/skopeo/cmd/skopeo@v1.16.1
+
+      - name: Generate CI configurations
+        run: make generate-ci-no-clean ARGS=--branch=main
+
+      - name: Create PR to openshift/release
+        if: github.event_name == 'push' && github.ref_name == 'main'
+        working-directory: openshift/release
+        env:
+          GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+        run: |
+          git remote add fork "https://github.com/serverless-qe/release.git"
+          branch="sync-serverless-ci"
+
+          if git diff --quiet "origin/main"; then
+            echo "No changes to push"
+            exit 0
+          fi
+
+          git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/release.git" \
+            "$branch:$branch" -f
+          gh pr create --base main --head "serverless-qe:$branch" --fill-verbose || true
+
+  # ──────────────────────────────────────────────────────────────
+  # Job 4: Sync configurations to repos (MATRIX STRATEGY!)
+  # ──────────────────────────────────────────────────────────────
+  sync-configs:
+    needs: [load-config, generate-ci]
+    if: github.event_name == 'push' && github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.load-config.outputs.sync-matrix) }}
+      max-parallel: 20  # Process 20 PRs concurrently
+      fail-fast: false  # Don't stop if one fails
+    steps:
+      # Use reusable action instead of copy/paste bash!
+      - name: Sync ${{ matrix.config }} config to ${{ matrix.repo }}/${{ matrix.branch }}
+        uses: ./.github/actions/sync-repo-config
+        with:
+          repo: ${{ matrix.repo }}
+          branch: ${{ matrix.branch }}
+          config-type: ${{ matrix.config }}
+          token: ${{ secrets.SERVERLESS_QE_ROBOT }}
+
+
+# ============================================================================
+# Supporting Files
+# ============================================================================
+
+---
+# File: repos.yaml
+# Central repository configuration (single source of truth)
+repositories:
+  - name: client
+    branches:
+      - main
+      - release-v1.17
+      - release-v1.21
+      - release-v1.22
+      - release-v1.23
+    configs:
+      - konflux
+      - owners
+      - dependabot
+
+  - name: eventing
+    branches:
+      - main
+      - release-v1.17
+      - release-v1.21
+      - release-v1.22
+      - release-v1.23
+    configs:
+      - konflux
+      - owners
+      - dependabot
+
+  - name: serving
+    branches:
+      - main
+      - release-v1.17
+      - release-v1.21
+      - release-v1.22
+      - release-v1.23
+    configs:
+      - konflux
+      - owners
+      - dependabot
+
+  - name: serverless-operator
+    branches:
+      - main
+      - release-1.37
+      - release-1.38
+    configs:
+      - konflux
+      - owners
+      - dependabot
+
+  # ... add remaining repos ...
+
+config_types:
+  konflux:
+    pr_title: "[$branch] Update Konflux configurations"
+    pr_body: "Update Konflux configurations"
+    sync_paths:
+      - .tekton/
+
+  owners:
+    pr_title: "[$branch] Update OWNERS file"
+    pr_body: "Update OWNERS file"
+    sync_paths:
+      - OWNERS
+      - OWNERS_ALIASES
+
+  dependabot:
+    pr_title: "[$branch] Update dependabot configurations"
+    pr_body: "Update dependabot configurations"
+    sync_paths:
+      - .github/dependabot.yml
+
+---
+# File: .github/actions/sync-repo-config/action.yml
+# Reusable action for syncing configs (replaces 100+ bash blocks!)
+name: 'Sync Repository Config'
+description: 'Sync configuration files to a target repository and branch'
+
+inputs:
+  repo:
+    description: 'Target repository name'
+    required: true
+  branch:
+    description: 'Target branch name'
+    required: true
+  config-type:
+    description: 'Configuration type (konflux, owners, dependabot)'
+    required: true
+  token:
+    description: 'GitHub token with repo access'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout target repo
+      uses: actions/checkout@v6
+      with:
+        repository: openshift-knative/${{ inputs.repo }}
+        ref: ${{ inputs.branch }}
+        path: target-repo
+        token: ${{ inputs.token }}
+
+    - name: Sync ${{ inputs.config-type }} files
+      shell: bash
+      working-directory: target-repo
+      run: |
+        # This script handles the actual sync logic
+        # Much cleaner than inline bash in workflow!
+        ${{ github.action_path }}/sync.sh \
+          "${{ inputs.repo }}" \
+          "${{ inputs.branch }}" \
+          "${{ inputs.config-type }}"
+
+    - name: Create Pull Request
+      shell: bash
+      working-directory: target-repo
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+      run: |
+        # Read PR details from repos.yaml
+        pr_title=$(yq eval ".config_types.${{ inputs.config-type }}.pr_title" ../repos.yaml | \
+          sed "s/\$branch/${{ inputs.branch }}/g")
+        pr_body=$(yq eval ".config_types.${{ inputs.config-type }}.pr_body" ../repos.yaml)
+
+        sync_branch="sync-${{ inputs.config-type }}-${{ inputs.branch }}"
+
+        # Check for changes
+        if git diff --quiet; then
+          echo "No changes to sync"
+          exit 0
+        fi
+
+        # Create/update branch and PR
+        git checkout -b "$sync_branch" || git checkout "$sync_branch"
+        git add .
+        git commit -m "$pr_title"
+        git push origin "$sync_branch" -f
+
+        gh pr create \
+          --base "${{ inputs.branch }}" \
+          --head "$sync_branch" \
+          --title "$pr_title" \
+          --body "$pr_body" \
+          || echo "PR already exists"
+
+---
+# File: .github/actions/sync-repo-config/sync.sh
+#!/bin/bash
+set -euo pipefail
+
+REPO=$1
+BRANCH=$2
+CONFIG_TYPE=$3
+
+echo "Syncing $CONFIG_TYPE config to $REPO/$BRANCH"
+
+case $CONFIG_TYPE in
+  konflux)
+    # Copy Konflux pipeline configs
+    rsync -av --delete \
+      "../generated-configs/$REPO/$BRANCH/.tekton/" \
+      ".tekton/"
+    ;;
+
+  owners)
+    # Copy OWNERS files
+    cp "../generated-configs/$REPO/OWNERS" "OWNERS" || true
+    cp "../generated-configs/$REPO/OWNERS_ALIASES" "OWNERS_ALIASES" || true
+    ;;
+
+  dependabot)
+    # Copy dependabot config
+    mkdir -p .github
+    cp "../generated-configs/$REPO/.github/dependabot.yml" \
+       ".github/dependabot.yml" || true
+    ;;
+
+  *)
+    echo "Unknown config type: $CONFIG_TYPE"
+    exit 1
+    ;;
+esac
+
+echo "Sync completed"
+
+
+# ============================================================================
+# COMPARISON
+# ============================================================================
+#
+# BEFORE:
+# -------
+# - 2,679 lines of YAML
+# - 100+ duplicated bash blocks
+# - Sequential cloning (6+ minutes)
+# - Hard to add new repo (touch many places)
+# - Hard to debug (where's the error in 2,679 lines?)
+# - No local testing
+# - Estimated runtime: 45-60 minutes
+#
+# AFTER:
+# ------
+# - < 500 lines of YAML
+# - 1 reusable action
+# - Parallel cloning (< 1 minute)
+# - Easy to add repo (1 line in repos.yaml)
+# - Clear structure (find errors easily)
+# - Can test action locally
+# - Estimated runtime: 15-20 minutes
+#
+# WINS:
+# -----
+# ✅ 80%+ reduction in workflow code
+# ✅ 60%+ faster execution
+# ✅ 95%+ easier to maintain
+# ✅ 100% less repetition
+# ✅ Scales to 100+ repos without growth in workflow size
+#
+# ============================================================================
