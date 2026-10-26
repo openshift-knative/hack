@@ -6,6 +6,8 @@
 - branch: release-v1.23
 - branch: release-v1.24
 - branch: release-1.18
+- branch: release-1.36
+
   repos:
     - kn-plugin-event
 - branch: release-1.19
