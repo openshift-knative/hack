@@ -5,9 +5,12 @@
 - branch: release-v1.22
 - branch: release-v1.23
 - branch: release-v1.24
-- branch: release-1.18
+# Serverless branch
 - branch: release-1.36
-
+###
+# Single repo configs
+###
+- branch: release-1.18
   repos:
     - kn-plugin-event
 - branch: release-1.19
