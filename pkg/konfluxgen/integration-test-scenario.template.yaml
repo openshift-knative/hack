@@ -9,7 +9,7 @@ spec:
     - name: TIMEOUT
       value: "120m"
     - name: WORKERS
-      value: "8"
+      value: "35"
   application: {{{ truncate ( sanitize .ApplicationName ) }}}
   contexts:
     {{{- range .Contexts }}}
