@@ -26,7 +26,6 @@ import (
 
 const (
 	unsupportedConfig = "pkg/discover/unsupported.yaml"
-	ignoredConfig     = "pkg/discover/ignored.yaml"
 )
 
 func Main() {
@@ -44,12 +43,12 @@ func Main() {
 		log.Fatalln(err)
 	}
 
-	ignoredBranches := make([]Ignored, 0)
-	if err := readYaml(ignoredConfig, &ignoredBranches); err != nil {
+	ignoredBranches, err := prowgen.IgnoredBranches()
+	if err != nil {
 		log.Fatalln(err)
 	}
 
-	err := filepath.Walk(*inputConfig, func(path string, info fs.FileInfo, err error) error {
+	err = filepath.Walk(*inputConfig, func(path string, info fs.FileInfo, err error) error {
 		if info.IsDir() || !strings.HasSuffix(path, ".yaml") {
 			return nil
 		}
@@ -78,7 +77,7 @@ func Main() {
 	}
 }
 
-func discover(ctx context.Context, path string, unsupported []Unsupported, ignored []Ignored) error {
+func discover(ctx context.Context, path string, unsupported []Unsupported, ignored []prowgen.Ignored) error {
 	inConfig := &prowgen.Config{}
 	if err := readYaml(path, inConfig); err != nil {
 		return err
@@ -95,7 +94,7 @@ func discover(ctx context.Context, path string, unsupported []Unsupported, ignor
 		}
 
 		configuredBranches := make([]string, 0, len(inConfig.Config.Branches))
-		for branchName, _ := range inConfig.Config.Branches {
+		for branchName := range inConfig.Config.Branches {
 			configuredBranches = append(configuredBranches, branchName)
 		}
 		slices.SortFunc(configuredBranches, prowgen.CmpBranches)
@@ -181,7 +180,7 @@ func discover(ctx context.Context, path string, unsupported []Unsupported, ignor
 	return writeYaml(path, inConfig)
 }
 
-func removeIgnoredBranches(in *prowgen.Config, ignored []Ignored) *prowgen.Config {
+func removeIgnoredBranches(in *prowgen.Config, ignored []prowgen.Ignored) *prowgen.Config {
 	for branch := range in.Config.Branches {
 		for _, ignore := range ignored {
 			if branch == ignore.Branch {
@@ -201,11 +200,6 @@ func removeIgnoredBranches(in *prowgen.Config, ignored []Ignored) *prowgen.Confi
 		}
 	}
 	return in
-}
-
-type Ignored struct {
-	Branch string   `json:"branch"`
-	Repos  []string `json:"repos"`
 }
 
 type Unsupported struct {

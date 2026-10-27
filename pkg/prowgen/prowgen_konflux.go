@@ -310,6 +310,20 @@ func ServerlessOperatorKonfluxVersions(ctx context.Context) (map[string]string, 
 		return nil, fmt.Errorf("failed to list branches for %q: %w", r.RepositoryDirectory(), err)
 	}
 
+	ignored, err := IgnoredBranches()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load ignored branches: %w", err)
+	}
+	// Filter out ignored branches (e.g. EOL releases whose branch still exists in the
+	// serverless-operator repository) so that no Konflux resources are generated for them.
+	sortedBranches = slices.DeleteFunc(sortedBranches, func(branch string) bool {
+		if IsBranchIgnored(ignored, branch, r.Repo) {
+			log.Printf("Skipping ignored branch %q of %q", branch, r.Repo)
+			return true
+		}
+		return false
+	})
+
 	config, err := LoadConfig("config/serverless-operator.yaml")
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config for %q: %w", r.RepositoryDirectory(), err)
