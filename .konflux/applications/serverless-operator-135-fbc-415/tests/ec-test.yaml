@@ -9,7 +9,7 @@ spec:
     - name: TIMEOUT
       value: "120m"
     - name: WORKERS
-      value: "8"
+      value: "35"
   application: serverless-operator-135-fbc-415
   contexts:
     - description: Application testing
