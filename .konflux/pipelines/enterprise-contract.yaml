@@ -1,0 +1,640 @@
+# Copy of https://github.com/redhat-appstudio/build-definitions/blob/main/pipelines/enterprise-contract.yaml
+# (source of truth: https://github.com/conforma/cli/blob/main/pipelines/enterprise-contract/0.1/enterprise-contract.yaml)
+# with the verify-enterprise-contract task embedded as a taskSpec (extracted from
+# quay.io/conforma/tekton-task:konflux@sha256:e2ac3444a229ce1688c96692ba2af166656be9313ac5cba750cac1c7daf3371d)
+# so that step memory limits can be raised for Serverless (SPRE-6906):
+# validate OOMed (exit 137) at 2Gi in ~300 of 1600 runs; report-json and
+# show-config OOMed at 256Mi. Limits here: validate 16Gi, report-json/show-config
+# 2Gi, helper steps unchanged at 256Mi.
+# Keep this file in sync with the upstream pipeline/task unless intentionally diverging.
+# The purpose of this pipeline is to execute the verify-enterprise-contract-v2 task for container
+# images that are built but not automatically released in order to provide early feedback to users.
+# When auto release is enabled, the task is executed by the release pipeline immediately after the
+# container images are built, thus it is not necessary to execute the task via this pipeline.
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: enterprise-contract
+  labels:
+    build.appstudio.redhat.com/pipeline: "enterprise-contract"
+spec:
+  params:
+    - name: SNAPSHOT
+      type: string
+      description: |
+        Spec section of an ApplicationSnapshot resource. Not all fields of the
+        resource are required. A minimal example:
+          {
+            "components": [
+              {
+                "containerImage": "quay.io/example/repo:latest"
+              }
+            ]
+          }
+        Each "containerImage" in the "components" array is validated.
+    - name: POLICY_CONFIGURATION
+      type: string
+      description: |
+        Name of the policy configuration (EnterpriseContractConfiguration
+        object) to use. `namespace/name` or `name` syntax supported. If
+        namespace is omitted the namespace where the task runs is used.
+      default: enterprise-contract-service/default
+    - name: SSL_CERT_DIR
+      type: string
+      description: |
+        Path to a directory containing SSL certs to be used when communicating
+        with external services. This is useful when using the integrated registry
+        and a local instance of Rekor on a development cluster which may use
+        certificates issued by a not-commonly trusted root CA. In such cases,
+        "/var/run/secrets/kubernetes.io/serviceaccount" is a good value. Multiple
+        paths can be provided by using the ":" separator.
+      default: ""
+    - name: PUBLIC_KEY
+      type: string
+      default: "k8s://openshift-pipelines/public-key"
+      description: |
+        Public key used to verify signatures. Must be a valid k8s cosign
+        reference, e.g. k8s://my-space/my-secret where my-secret contains
+        the expected cosign.pub attribute.
+    - name: WORKERS
+      type: string
+      description: Number of parallel workers to use for policy evaluation.
+      default: "2"
+    - name: CA_TRUST_CONFIGMAP_NAME
+      type: string
+      description: The name of the ConfigMap to read CA bundle data from.
+      default: "trusted-ca"
+    - name: CA_TRUST_CONFIG_MAP_KEY
+      type: string
+      description: The name of the key in the ConfigMap that contains the CA bundle data.
+      default: "ca-bundle.crt"
+    - name: EXTRA_RULE_DATA
+      type: string
+      description: Merge additional Rego variables into the policy data. Use syntax "key=value,key2=value2..."
+      default: ""
+    - name: SINGLE_COMPONENT
+      type: string
+      description: Reduce the Snapshot to only the component whose build caused the Snapshot to be created
+      default: "false"
+    - name: SINGLE_COMPONENT_CUSTOM_RESOURCE
+      type: string
+      description: PipelineRun ID
+      default: "pr/$(context.pipelineRun.name)"
+    - name: STRICT
+      type: string
+      description: |
+        A boolean flag that determines whether the result of the test will mark the TaskRun as passing or not.
+        Swap to false to make the IntegrationTestScenario informative.
+
+        Setting to false is useful on specific conditions but will always mark the integration test as successful and
+        humans will tend to ignore the test results if they failed. Use with caution.
+      default: "true"
+    - name: EFFECTIVE_TIME
+      type: string
+      description: Run policy checks with the provided time. Expects a
+        RFC3339 formatted value, e.g. "2026-06-24T00:00:00Z"
+      default: "now"
+  results:
+    - name: TEST_OUTPUT
+      value: "$(tasks.verify.results.TEST_OUTPUT)"
+  tasks:
+    - name: collect-keyless-params
+      taskRef:
+        resolver: bundles
+        params:
+          - name: bundle
+            value: quay.io/conforma/tekton-task:konflux@sha256:e2ac3444a229ce1688c96692ba2af166656be9313ac5cba750cac1c7daf3371d
+          - name: name
+            value: collect-keyless-params
+          - name: kind
+            value: task
+    - name: verify
+      runAfter:
+        - collect-keyless-params
+      params:
+        - name: POLICY_CONFIGURATION
+          value: "$(params.POLICY_CONFIGURATION)"
+        - name: IMAGES
+          value: "$(params.SNAPSHOT)"
+        - name: SSL_CERT_DIR
+          value: "$(params.SSL_CERT_DIR)"
+        - name: STRICT
+          value: "$(params.STRICT)"
+
+        - name: PUBLIC_KEY
+          # PUBLIC_KEY will be ignored if any of the CERTIFICATE_* params are present
+          value: "$(params.PUBLIC_KEY)"
+        - name: IGNORE_REKOR
+          # Set this true because Chains in default Konflux does not create Rekor entries
+          # when signing things. It will be ignored if any of the CERTIFICATE_* params
+          # because keyless verification does require Rekor.
+          value: "true"
+
+        - name: CERTIFICATE_OIDC_ISSUER
+          value: "$(tasks.collect-keyless-params.results.defaultOIDCIssuer)"
+        - name: CERTIFICATE_IDENTITY
+          value: "$(tasks.collect-keyless-params.results.tektonChainsIdentity)"
+        - name: TUF_MIRROR
+          value: "$(tasks.collect-keyless-params.results.tufUrl)"
+        - name: REKOR_HOST
+          value: "$(tasks.collect-keyless-params.results.rekorUrl)"
+
+        - name: WORKERS
+          value: "$(params.WORKERS)"
+        - name: CA_TRUST_CONFIGMAP_NAME
+          value: "$(params.CA_TRUST_CONFIGMAP_NAME)"
+        - name: CA_TRUST_CONFIG_MAP_KEY
+          value: "$(params.CA_TRUST_CONFIG_MAP_KEY)"
+        - name: EXTRA_RULE_DATA
+          value: "$(params.EXTRA_RULE_DATA)"
+        - name: SINGLE_COMPONENT
+          value: "$(params.SINGLE_COMPONENT)"
+        - name: SINGLE_COMPONENT_CUSTOM_RESOURCE
+          value: "$(params.SINGLE_COMPONENT_CUSTOM_RESOURCE)"
+        - name: EFFECTIVE_TIME
+          value: "$(params.EFFECTIVE_TIME)"
+      taskSpec:
+        description: Verify the Conforma policy is met
+        params:
+        - description: |
+            Spec section of an ApplicationSnapshot resource. Not all fields of the
+            resource are required. A minimal example:
+
+            ```json
+              {
+                "components": [
+                  {
+                    "containerImage": "quay.io/example/repo:latest"
+                  }
+                ]
+              }
+            ```
+
+            Each `containerImage` in the `components` array is validated.
+          name: IMAGES
+          type: string
+        - default: enterprise-contract-service/default
+          description: |
+            Name of the policy configuration (EnterpriseContractPolicy
+            resource) to use. `namespace/name` or `name` syntax supported. If
+            namespace is omitted the namespace where the task runs is used.
+            You can also specify a policy configuration using a git url, e.g.
+            `github.com/conforma/config//slsa3`.
+          name: POLICY_CONFIGURATION
+          type: string
+        - default: ""
+          description: Public key used to verify traditional long-lived signatures. Must
+            be a valid k8s cosign reference, e.g. k8s://my-space/my-secret where my-secret
+            contains the expected cosign.pub attribute. Required for traditional signing
+            key verification. Will be ignored if any of CERTIFICATE_IDENTITY, CERTIFICATE_IDENTITY_REGEXP,
+            CERTIFICATE_OIDC_ISSUER, or CERTIFICATE_OIDC_ISSUER_REGEXP are provided.
+          name: PUBLIC_KEY
+          type: string
+        - default: ""
+          description: Rekor host for transparency log lookups
+          name: REKOR_HOST
+          type: string
+        - default: ""
+          description: Expected identity in the signing certificate for keyless verification.
+            This should be the email or URI that was used when signing. You should provide
+            both CERTIFICATE_OIDC_ISSUER and CERTIFICATE_IDENTITY for keyless verification.
+            The PUBLIC_KEY param will be ignored if this is provided.
+          name: CERTIFICATE_IDENTITY
+          type: string
+        - default: ""
+          description: Expected OIDC issuer in the signing certificate for keyless verification.
+            This should match the issuer that provided the identity token used for signing.
+            You should provide both CERTIFICATE_OIDC_ISSUER and CERTIFICATE_IDENTITY for
+            keyless verification. The PUBLIC_KEY param will be ignored if this is provided.
+          name: CERTIFICATE_OIDC_ISSUER
+          type: string
+        - default: ""
+          description: Similar to CERTIFICATE_IDENTITY but the value is a regexp that will
+            be matched. Note that CERTIFICATE_IDENTITY takes precedence over this if both
+            are present.
+          name: CERTIFICATE_IDENTITY_REGEXP
+          type: string
+        - default: ""
+          description: Similar to CERTIFICATE_OIDC_ISSUER but a regexp that will be matched.
+            Note that CERTIFICATE_OIDC_ISSUER takes precedence over this if both are present.
+          name: CERTIFICATE_OIDC_ISSUER_REGEXP
+          type: string
+        - default: "false"
+          description: Skip Rekor transparency log checks during validation. Compatible
+            with traditional signing secret signature checks only. If any of the CERTIFICATE_*
+            keyless verification params are present, this value is disregarded and Rekor
+            transparency log checks are included.
+          name: IGNORE_REKOR
+          type: string
+        - default: ""
+          description: TUF mirror URL. Provide a value when NOT using public sigstore deployment.
+          name: TUF_MIRROR
+          type: string
+        - default: ""
+          description: |
+            Path to a directory containing SSL certs to be used when communicating
+            with external services. This is useful when using the integrated registry
+            and a local instance of Rekor on a development cluster which may use
+            certificates issued by a not-commonly trusted root CA. In such cases,
+            `/var/run/secrets/kubernetes.io/serviceaccount` is a good value. Multiple
+            paths can be provided by using the `:` separator.
+          name: SSL_CERT_DIR
+          type: string
+        - default: trusted-ca
+          description: The name of the ConfigMap to read CA bundle data from.
+          name: CA_TRUST_CONFIGMAP_NAME
+          type: string
+        - default: ca-bundle.crt
+          description: The name of the key in the ConfigMap that contains the CA bundle
+            data.
+          name: CA_TRUST_CONFIG_MAP_KEY
+          type: string
+        - default: "true"
+          description: Include rule titles and descriptions in the output. Set to `"false"`
+            to disable it.
+          name: INFO
+          type: string
+        - default: "true"
+          description: Fail the task if policy fails. Set to `"false"` to disable it.
+          name: STRICT
+          type: string
+        - default: /tekton/home
+          description: Value for the HOME environment variable.
+          name: HOMEDIR
+          type: string
+        - default: now
+          description: Run policy checks with the provided time.
+          name: EFFECTIVE_TIME
+          type: string
+        - default: "false"
+          description: Allow setting EFFECTIVE_TIME to a date in the past.
+          name: ALLOW_PAST_EFFECTIVE_TIME
+          type: string
+        - default: ""
+          description: Merge additional Rego variables into the policy data. Use syntax
+            "key=value,key2=value2..."
+          name: EXTRA_RULE_DATA
+          type: string
+        - default: sha256:0d3ab4efb94bd8ee361bda3146cae0c509c41d597431af658ce2570112efe469
+          description: Optional OCI digest to pin the release policy bundle. When provided,
+            the policy configuration is resolved and the reference oci::quay.io/conforma/release-policy:konflux
+            is replaced with oci::quay.io/conforma/release-policy@<digest>. Accepts a full
+            digest (sha256:abc123...) or just the hex hash (abc123...).
+          name: POLICY_BUNDLE_DIGEST
+          type: string
+        - default: "1"
+          description: Number of parallel workers to use for policy evaluation.
+          name: WORKERS
+          type: string
+        - default: ""
+          description: Use the OPA evaluator instead of the default conftest evaluator.
+            Set to "1" to enable.
+          name: EC_USE_OPA
+          type: string
+        - default: "false"
+          description: Reduce the Snapshot to only the component whose build caused the
+            Snapshot to be created
+          name: SINGLE_COMPONENT
+          type: string
+        - default: unknown
+          description: |
+            Name, including kind, of the Kubernetes resource to query for labels when single component mode is enabled, e.g. pr/somepipeline.
+          name: SINGLE_COMPONENT_CUSTOM_RESOURCE
+          type: string
+        - default: ""
+          description: |
+            Kubernetes namespace where the SINGLE_COMPONENT_NAME is found. Only used when single component mode is enabled.
+          name: SINGLE_COMPONENT_CUSTOM_RESOURCE_NS
+          type: string
+        - default: 1s
+          description: Base duration for exponential backoff calculation (e.g., "1s", "500ms")
+          name: RETRY_DURATION
+          type: string
+        - default: "2.0"
+          description: Exponential backoff multiplier (e.g., "2.0", "1.5")
+          name: RETRY_FACTOR
+          type: string
+        - default: "0.1"
+          description: Randomness factor for backoff calculation (0.0-1.0, e.g., "0.1",
+            "0.2")
+          name: RETRY_JITTER
+          type: string
+        - default: "3"
+          description: Maximum number of retry attempts
+          name: RETRY_MAX_RETRY
+          type: string
+        - default: 3s
+          description: Maximum wait time between retries (e.g., "3s", "10s")
+          name: RETRY_MAX_WAIT
+          type: string
+        results:
+        - description: Short summary of the policy evaluation for each image
+          name: TEST_OUTPUT
+        stepTemplate:
+          computeResources: {}
+          env:
+          - name: HOME
+            value: $(params.HOMEDIR)
+        steps:
+        - args:
+          - sigstore
+          - initialize
+          - --mirror
+          - $(params.TUF_MIRROR)
+          - --root
+          - $(params.TUF_MIRROR)/root.json
+          command:
+          - ec
+          computeResources:
+            limits:
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          image: quay.io/conforma/cli@sha256:6c6343486b739836c448277c00b1ec3c291e4ad10fd2b1767ff3984e89a43ad1
+          imagePullPolicy: IfNotPresent
+          name: initialize-tuf
+          when:
+          - input: $(params.TUF_MIRROR)
+            operator: notin
+            values:
+            - ""
+        - command:
+          - reduce-snapshot.sh
+          computeResources:
+            limits:
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          env:
+          - name: SNAPSHOT
+            value: $(params.IMAGES)
+          - name: SINGLE_COMPONENT
+            value: $(params.SINGLE_COMPONENT)
+          - name: CUSTOM_RESOURCE
+            value: $(params.SINGLE_COMPONENT_CUSTOM_RESOURCE)
+          - name: CUSTOM_RESOURCE_NAMESPACE
+            value: $(params.SINGLE_COMPONENT_CUSTOM_RESOURCE_NS)
+          - name: SNAPSHOT_PATH
+            value: $(params.HOMEDIR)/snapshot.json
+          image: quay.io/conforma/cli@sha256:6c6343486b739836c448277c00b1ec3c291e4ad10fd2b1767ff3984e89a43ad1
+          imagePullPolicy: IfNotPresent
+          name: reduce
+          onError: continue
+        - command:
+          - pin-konflux-policy-bundle.sh
+          computeResources:
+            limits:
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          env:
+          - name: POLICY_CONFIGURATION
+            value: $(params.POLICY_CONFIGURATION)
+          - name: POLICY_BUNDLE_DIGEST
+            value: $(params.POLICY_BUNDLE_DIGEST)
+          image: quay.io/conforma/cli@sha256:6c6343486b739836c448277c00b1ec3c291e4ad10fd2b1767ff3984e89a43ad1
+          imagePullPolicy: IfNotPresent
+          name: pin-policy-bundle
+          onError: continue
+        - computeResources:
+            limits:
+              memory: 16Gi
+            requests:
+              cpu: 1800m
+              memory: 8Gi
+          env:
+          - name: POLICY_CONFIGURATION
+            value: $(params.POLICY_CONFIGURATION)
+          - name: PUBLIC_KEY
+            value: $(params.PUBLIC_KEY)
+          - name: CERTIFICATE_IDENTITY
+            value: $(params.CERTIFICATE_IDENTITY)
+          - name: CERTIFICATE_OIDC_ISSUER
+            value: $(params.CERTIFICATE_OIDC_ISSUER)
+          - name: CERTIFICATE_IDENTITY_REGEXP
+            value: $(params.CERTIFICATE_IDENTITY_REGEXP)
+          - name: CERTIFICATE_OIDC_ISSUER_REGEXP
+            value: $(params.CERTIFICATE_OIDC_ISSUER_REGEXP)
+          - name: REKOR_HOST
+            value: $(params.REKOR_HOST)
+          - name: IGNORE_REKOR
+            value: $(params.IGNORE_REKOR)
+          - name: WORKERS
+            value: $(params.WORKERS)
+          - name: INFO
+            value: $(params.INFO)
+          - name: EFFECTIVE_TIME
+            value: $(params.EFFECTIVE_TIME)
+          - name: ALLOW_PAST_EFFECTIVE_TIME
+            value: $(params.ALLOW_PAST_EFFECTIVE_TIME)
+          - name: EXTRA_RULE_DATA
+            value: $(params.EXTRA_RULE_DATA)
+          - name: RETRY_MAX_WAIT
+            value: $(params.RETRY_MAX_WAIT)
+          - name: RETRY_MAX_RETRY
+            value: $(params.RETRY_MAX_RETRY)
+          - name: RETRY_DURATION
+            value: $(params.RETRY_DURATION)
+          - name: RETRY_FACTOR
+            value: $(params.RETRY_FACTOR)
+          - name: RETRY_JITTER
+            value: $(params.RETRY_JITTER)
+          - name: EC_USE_OPA
+            value: $(params.EC_USE_OPA)
+          - name: HOMEDIR
+            value: $(params.HOMEDIR)
+          - name: SSL_CERT_DIR
+            value: /tekton-custom-certs:/etc/ssl/certs:/etc/pki/tls/certs:/system/etc/security/cacerts:$(params.SSL_CERT_DIR)
+          image: quay.io/conforma/cli@sha256:6c6343486b739836c448277c00b1ec3c291e4ad10fd2b1767ff3984e89a43ad1
+          imagePullPolicy: IfNotPresent
+          name: validate
+          onError: continue
+          script: |
+            #!/bin/bash
+            set -euo pipefail
+
+            # Use policy override file if pin-policy-bundle produced one
+            if [[ -f "${HOMEDIR}/policy-with-pinned-bundle.yaml" ]]; then
+              POLICY_CONFIGURATION="${HOMEDIR}/policy-with-pinned-bundle.yaml"
+            fi
+
+            cmd_args=(
+              validate
+              image
+              --images="${HOMEDIR}/snapshot.json"
+              --policy="${POLICY_CONFIGURATION}"
+            )
+
+            # To keep bash logic as thin as possible we deliberately don't sanitize
+            # these params. If something is wrong or missing let Conforma handle it.
+
+            if [ -n "${CERTIFICATE_IDENTITY}" ] || \
+               [ -n "${CERTIFICATE_OIDC_ISSUER}" ] || \
+               [ -n "${CERTIFICATE_IDENTITY_REGEXP}" ] || \
+               [ -n "${CERTIFICATE_OIDC_ISSUER_REGEXP}" ]; then
+              # If *any* of the above are non-empty assume the intention is to
+              # try keyless verification
+
+              if [ -n "${CERTIFICATE_IDENTITY}" ]; then
+                cmd_args+=(
+                  --certificate-identity="${CERTIFICATE_IDENTITY}"
+                )
+              elif [ -n "${CERTIFICATE_IDENTITY_REGEXP}" ]; then
+                cmd_args+=(
+                  --certificate-identity-regexp="${CERTIFICATE_IDENTITY_REGEXP}"
+                )
+              fi
+
+              if [ -n "${CERTIFICATE_OIDC_ISSUER}" ]; then
+                cmd_args+=(
+                  --certificate-oidc-issuer="${CERTIFICATE_OIDC_ISSUER}"
+                )
+              elif [ -n "${CERTIFICATE_OIDC_ISSUER_REGEXP}" ]; then
+                cmd_args+=(
+                  --certificate-oidc-issuer-regexp="${CERTIFICATE_OIDC_ISSUER_REGEXP}"
+                )
+              fi
+
+              # Force --ignore-rekor to false since we need rekor
+              cmd_args+=(
+                --ignore-rekor=false
+              )
+            else
+              # Assume traditional signing secret verification
+              cmd_args+=(
+                --public-key="${PUBLIC_KEY}"
+                --ignore-rekor="${IGNORE_REKOR}"
+              )
+            fi
+
+            cmd_args+=(
+              --rekor-url="${REKOR_HOST}"
+              --workers="${WORKERS}"
+              --info="${INFO}"
+              --timeout=0
+              --strict=false
+              --show-successes=true
+              --show-policy-docs-link=true
+              --effective-time="${EFFECTIVE_TIME}"
+              --allow-past-effective-time="${ALLOW_PAST_EFFECTIVE_TIME}"
+              --extra-rule-data="${EXTRA_RULE_DATA}"
+              --retry-max-wait="${RETRY_MAX_WAIT}"
+              --retry-max-retry="${RETRY_MAX_RETRY}"
+              --retry-duration="${RETRY_DURATION}"
+              --retry-factor="${RETRY_FACTOR}"
+              --retry-jitter="${RETRY_JITTER}"
+              --output="text=${HOMEDIR}/text-report.txt?show-successes=false"
+              --output="json=${HOMEDIR}/report-json.json"
+              --output="appstudio=$(results.TEST_OUTPUT.path)"
+            )
+
+
+            # Execute Conforma with constructed arguments
+            exec ec "${cmd_args[@]}"
+          volumeMounts:
+          - mountPath: /etc/pki/tls/certs/ca-custom-bundle.crt
+            name: trusted-ca
+            readOnly: true
+            subPath: ca-bundle.crt
+        - args:
+          - jq . $(params.HOMEDIR)/report-json.json | awk '{gsub(/^ +/, ""); acc += length;
+            if (acc >= 8000) { printf "\n"; acc=length } printf $0 }'
+          command:
+          - sh
+          - -c
+          computeResources:
+            limits:
+              memory: 2Gi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          image: quay.io/conforma/cli@sha256:6c6343486b739836c448277c00b1ec3c291e4ad10fd2b1767ff3984e89a43ad1
+          imagePullPolicy: IfNotPresent
+          name: report-json
+          onError: continue
+        - args:
+          - .
+          - $(results.TEST_OUTPUT.path)
+          command:
+          - jq
+          computeResources:
+            limits:
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          image: quay.io/conforma/cli@sha256:6c6343486b739836c448277c00b1ec3c291e4ad10fd2b1767ff3984e89a43ad1
+          imagePullPolicy: IfNotPresent
+          name: summary
+          onError: continue
+        - args:
+          - version
+          command:
+          - ec
+          computeResources:
+            limits:
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          image: quay.io/conforma/cli@sha256:6c6343486b739836c448277c00b1ec3c291e4ad10fd2b1767ff3984e89a43ad1
+          imagePullPolicy: IfNotPresent
+          name: version
+        - args:
+          - '{policy: .policy, key: .key, "effective-time": .["effective-time"]}'
+          - $(params.HOMEDIR)/report-json.json
+          command:
+          - jq
+          computeResources:
+            limits:
+              memory: 2Gi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          image: quay.io/conforma/cli@sha256:6c6343486b739836c448277c00b1ec3c291e4ad10fd2b1767ff3984e89a43ad1
+          imagePullPolicy: IfNotPresent
+          name: show-config
+        - args:
+          - $(params.HOMEDIR)/text-report.txt
+          command:
+          - cat
+          computeResources: {}
+          image: quay.io/conforma/cli@sha256:6c6343486b739836c448277c00b1ec3c291e4ad10fd2b1767ff3984e89a43ad1
+          imagePullPolicy: IfNotPresent
+          name: detailed-report
+          onError: continue
+        - args:
+          - --argjson
+          - strict
+          - $(params.STRICT)
+          - -e
+          - |
+            .result == "SUCCESS" or .result == "WARNING" or ($strict | not)
+          - $(results.TEST_OUTPUT.path)
+          command:
+          - jq
+          computeResources:
+            limits:
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          image: quay.io/conforma/cli@sha256:6c6343486b739836c448277c00b1ec3c291e4ad10fd2b1767ff3984e89a43ad1
+          imagePullPolicy: IfNotPresent
+          name: assert
+        volumes:
+        - configMap:
+            items:
+            - key: $(params.CA_TRUST_CONFIG_MAP_KEY)
+              path: ca-bundle.crt
+            name: $(params.CA_TRUST_CONFIGMAP_NAME)
+            optional: true
+          name: trusted-ca
+        workspaces:
+        - description: The workspace where the snapshot spec json file resides
+          name: data
+          optional: true
+      timeout: 4h
