@@ -455,7 +455,7 @@ spec:
           cpu: 1800m
           memory: 4Gi
         limits:
-          memory: 4Gi
+          memory: 8Gi
       volumeMounts:
         - name: trusted-ca
           mountPath: /etc/pki/tls/certs/ca-custom-bundle.crt
