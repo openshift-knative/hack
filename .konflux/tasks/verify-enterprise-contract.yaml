@@ -15,8 +15,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Copy of https://github.com/conforma/tekton-catalog/blob/main/tasks/verify-enterprise-contract/0.1/verify-enterprise-contract.yaml
-# with a local divergence: the "validate" step memory request and limit are raised
-# from 2Gi to 4Gi so the step does not OOM (exit 137) on Serverless snapshots (SPRE-6906).
+# with local divergences in memory limits so steps do not OOM (exit 137) on Serverless
+# snapshots (SPRE-6906): "validate" limit raised from 2Gi to 16Gi, "report-json" and
+# "show-config" limits raised from 256Mi to 1Gi. Requests are unchanged from upstream.
 # Keep this file in sync with the upstream task unless intentionally diverging.
 
 apiVersion: tekton.dev/v1
@@ -453,9 +454,9 @@ spec:
       computeResources:
         requests:
           cpu: 1800m
-          memory: 4Gi
+          memory: 2Gi
         limits:
-          memory: 4Gi
+          memory: 16Gi
       volumeMounts:
         - name: trusted-ca
           mountPath: /etc/pki/tls/certs/ca-custom-bundle.crt
@@ -468,7 +469,7 @@ spec:
           cpu: 100m
           memory: 256Mi
         limits:
-          memory: 256Mi
+          memory: 1Gi
       image: quay.io/conforma/cli:latest@sha256:a8ae789b43ca77f5fe03f58e07c828fc00401a80bc0b7b2ff328246befe0bf1f
       imagePullPolicy: IfNotPresent
       onError: continue  # progress even if the step fails so we can see the debug logs
@@ -519,7 +520,7 @@ spec:
           cpu: 100m
           memory: 256Mi
         limits:
-          memory: 256Mi
+          memory: 1Gi
       image: quay.io/conforma/cli:latest@sha256:a8ae789b43ca77f5fe03f58e07c828fc00401a80bc0b7b2ff328246befe0bf1f
       imagePullPolicy: IfNotPresent
       command: [jq]

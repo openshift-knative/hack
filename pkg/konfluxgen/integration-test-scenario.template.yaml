@@ -19,9 +19,9 @@ spec:
   resolverRef:
     params:
       - name: url
-        value: 'https://github.com/redhat-appstudio/build-definitions'
+        value: 'https://github.com/openshift-knative/hack'
       - name: revision
         value: main
       - name: pathInRepo
-        value: pipelines/enterprise-contract.yaml
+        value: .konflux/pipelines/enterprise-contract.yaml
     resolver: git
