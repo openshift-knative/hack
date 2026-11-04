@@ -1,6 +1,6 @@
 # DO NOT EDIT! Generated Dockerfile for {{.main}}.
 ARG GO_BUILDER={{.builder}}
-ARG GO_RUNTIME=registry.access.redhat.com/ubi8/ubi-minimal
+ARG GO_RUNTIME=registry.access.redhat.com/ubi10/micro
 
 FROM $GO_BUILDER as builder
 
