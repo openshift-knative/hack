@@ -25,13 +25,13 @@ arches:
     name: tar
     evr: 2:1.30-13.el8_10
     sourcerpm: tar-1.30-13.el8_10.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/aarch64/baseos/os/Packages/t/tzdata-2026e-1.el8_10.noarch.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/aarch64/baseos/os/Packages/t/tzdata-2026f-1.el8_10.noarch.rpm
     repoid: ubi-8-for-aarch64-baseos-rpms
-    size: 566324
-    checksum: sha256:01bfbadab99667b5a99af113bd034f8a2c6538dcf986a407c4648072357b4f73
+    size: 567112
+    checksum: sha256:6035c565caa2d7932cd167775b8b79cf3f8f3851a939240c5ed91e1f68e7f9b5
     name: tzdata
-    evr: 2026e-1.el8_10
-    sourcerpm: tzdata-2026e-1.el8_10.src.rpm
+    evr: 2026f-1.el8_10
+    sourcerpm: tzdata-2026f-1.el8_10.src.rpm
   source:
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/aarch64/appstream/source/SRPMS/Packages/s/socat-1.7.4.1-2.el8_10.src.rpm
     repoid: ubi-8-for-aarch64-appstream-source-rpms
@@ -51,12 +51,12 @@ arches:
     checksum: sha256:6b9511f132b3d691379f8f4df65a84f8a9fa3048bc379c47d2bb291d37927d8b
     name: tar
     evr: 2:1.30-13.el8_10
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/aarch64/baseos/source/SRPMS/Packages/t/tzdata-2026e-1.el8_10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/aarch64/baseos/source/SRPMS/Packages/t/tzdata-2026f-1.el8_10.src.rpm
     repoid: ubi-8-for-aarch64-baseos-source-rpms
-    size: 984100
-    checksum: sha256:79a8bcc322787d0949494305e65494aea2703f8d8ee455e8c3e428a7477c79dc
+    size: 986436
+    checksum: sha256:1661274e62049778d775ac7dcae8975e828d01d915a8bf65b8612f70b17d06f6
     name: tzdata
-    evr: 2026e-1.el8_10
+    evr: 2026f-1.el8_10
   module_metadata: []
 - arch: ppc64le
   packages:
@@ -81,13 +81,13 @@ arches:
     name: tar
     evr: 2:1.30-13.el8_10
     sourcerpm: tar-1.30-13.el8_10.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/ppc64le/baseos/os/Packages/t/tzdata-2026e-1.el8_10.noarch.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/ppc64le/baseos/os/Packages/t/tzdata-2026f-1.el8_10.noarch.rpm
     repoid: ubi-8-for-ppc64le-baseos-rpms
-    size: 566324
-    checksum: sha256:01bfbadab99667b5a99af113bd034f8a2c6538dcf986a407c4648072357b4f73
+    size: 567112
+    checksum: sha256:6035c565caa2d7932cd167775b8b79cf3f8f3851a939240c5ed91e1f68e7f9b5
     name: tzdata
-    evr: 2026e-1.el8_10
-    sourcerpm: tzdata-2026e-1.el8_10.src.rpm
+    evr: 2026f-1.el8_10
+    sourcerpm: tzdata-2026f-1.el8_10.src.rpm
   source:
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/ppc64le/appstream/source/SRPMS/Packages/s/socat-1.7.4.1-2.el8_10.src.rpm
     repoid: ubi-8-for-ppc64le-appstream-source-rpms
@@ -107,12 +107,12 @@ arches:
     checksum: sha256:6b9511f132b3d691379f8f4df65a84f8a9fa3048bc379c47d2bb291d37927d8b
     name: tar
     evr: 2:1.30-13.el8_10
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/ppc64le/baseos/source/SRPMS/Packages/t/tzdata-2026e-1.el8_10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/ppc64le/baseos/source/SRPMS/Packages/t/tzdata-2026f-1.el8_10.src.rpm
     repoid: ubi-8-for-ppc64le-baseos-source-rpms
-    size: 984100
-    checksum: sha256:79a8bcc322787d0949494305e65494aea2703f8d8ee455e8c3e428a7477c79dc
+    size: 986436
+    checksum: sha256:1661274e62049778d775ac7dcae8975e828d01d915a8bf65b8612f70b17d06f6
     name: tzdata
-    evr: 2026e-1.el8_10
+    evr: 2026f-1.el8_10
   module_metadata: []
 - arch: s390x
   packages:
@@ -137,13 +137,13 @@ arches:
     name: tar
     evr: 2:1.30-13.el8_10
     sourcerpm: tar-1.30-13.el8_10.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/s390x/baseos/os/Packages/t/tzdata-2026e-1.el8_10.noarch.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/s390x/baseos/os/Packages/t/tzdata-2026f-1.el8_10.noarch.rpm
     repoid: ubi-8-for-s390x-baseos-rpms
-    size: 566324
-    checksum: sha256:01bfbadab99667b5a99af113bd034f8a2c6538dcf986a407c4648072357b4f73
+    size: 567112
+    checksum: sha256:6035c565caa2d7932cd167775b8b79cf3f8f3851a939240c5ed91e1f68e7f9b5
     name: tzdata
-    evr: 2026e-1.el8_10
-    sourcerpm: tzdata-2026e-1.el8_10.src.rpm
+    evr: 2026f-1.el8_10
+    sourcerpm: tzdata-2026f-1.el8_10.src.rpm
   source:
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/s390x/appstream/source/SRPMS/Packages/s/socat-1.7.4.1-2.el8_10.src.rpm
     repoid: ubi-8-for-s390x-appstream-source-rpms
@@ -163,12 +163,12 @@ arches:
     checksum: sha256:6b9511f132b3d691379f8f4df65a84f8a9fa3048bc379c47d2bb291d37927d8b
     name: tar
     evr: 2:1.30-13.el8_10
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/s390x/baseos/source/SRPMS/Packages/t/tzdata-2026e-1.el8_10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/s390x/baseos/source/SRPMS/Packages/t/tzdata-2026f-1.el8_10.src.rpm
     repoid: ubi-8-for-s390x-baseos-source-rpms
-    size: 984100
-    checksum: sha256:79a8bcc322787d0949494305e65494aea2703f8d8ee455e8c3e428a7477c79dc
+    size: 986436
+    checksum: sha256:1661274e62049778d775ac7dcae8975e828d01d915a8bf65b8612f70b17d06f6
     name: tzdata
-    evr: 2026e-1.el8_10
+    evr: 2026f-1.el8_10
   module_metadata: []
 - arch: x86_64
   packages:
@@ -193,13 +193,13 @@ arches:
     name: tar
     evr: 2:1.30-13.el8_10
     sourcerpm: tar-1.30-13.el8_10.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/x86_64/baseos/os/Packages/t/tzdata-2026e-1.el8_10.noarch.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/x86_64/baseos/os/Packages/t/tzdata-2026f-1.el8_10.noarch.rpm
     repoid: ubi-8-for-x86_64-baseos-rpms
-    size: 566324
-    checksum: sha256:01bfbadab99667b5a99af113bd034f8a2c6538dcf986a407c4648072357b4f73
+    size: 567112
+    checksum: sha256:6035c565caa2d7932cd167775b8b79cf3f8f3851a939240c5ed91e1f68e7f9b5
     name: tzdata
-    evr: 2026e-1.el8_10
-    sourcerpm: tzdata-2026e-1.el8_10.src.rpm
+    evr: 2026f-1.el8_10
+    sourcerpm: tzdata-2026f-1.el8_10.src.rpm
   source:
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/x86_64/appstream/source/SRPMS/Packages/s/socat-1.7.4.1-2.el8_10.src.rpm
     repoid: ubi-8-for-x86_64-appstream-source-rpms
@@ -219,10 +219,10 @@ arches:
     checksum: sha256:6b9511f132b3d691379f8f4df65a84f8a9fa3048bc379c47d2bb291d37927d8b
     name: tar
     evr: 2:1.30-13.el8_10
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/x86_64/baseos/source/SRPMS/Packages/t/tzdata-2026e-1.el8_10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/x86_64/baseos/source/SRPMS/Packages/t/tzdata-2026f-1.el8_10.src.rpm
     repoid: ubi-8-for-x86_64-baseos-source-rpms
-    size: 984100
-    checksum: sha256:79a8bcc322787d0949494305e65494aea2703f8d8ee455e8c3e428a7477c79dc
+    size: 986436
+    checksum: sha256:1661274e62049778d775ac7dcae8975e828d01d915a8bf65b8612f70b17d06f6
     name: tzdata
-    evr: 2026e-1.el8_10
+    evr: 2026f-1.el8_10
   module_metadata: []
