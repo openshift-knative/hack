@@ -590,7 +590,7 @@ func Generate(cfg Config) error {
 		if len(cfg.FBCImages) > 0 {
 			config.ECPolicyConfiguration = "rhtap-releng-tenant/fbc-ocp-serverless-stage"
 		} else {
-			config.ECPolicyConfiguration = "rhtap-releng-tenant/registry-standard-stage"
+			config.ECPolicyConfiguration = "rhtap-releng-tenant/registry-ocp-serverless-stage"
 		}
 
 		ecTestDir := filepath.Join(cfg.GlobalResourcesOutputPath, ApplicationsDirectoryName, appKey, "tests")
