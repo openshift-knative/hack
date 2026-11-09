@@ -11,13 +11,14 @@ metadata:
     rhel_target: el9
 spec:
   applications:
-    - serverless-operator-138-fbc-416
-    - serverless-operator-138-fbc-417
     - serverless-operator-138-fbc-418
     - serverless-operator-138-fbc-419
     - serverless-operator-138-fbc-420
     - serverless-operator-138-fbc-421
     - serverless-operator-138-fbc-422
+    - serverless-operator-138-fbc-423
+    - serverless-operator-138-fbc-50
+    - serverless-operator-138-fbc-51
   origin: ocp-serverless-tenant
   policy: fbc-ocp-serverless-stage
   data:
