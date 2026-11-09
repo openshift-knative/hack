@@ -19,10 +19,25 @@ defaults:
   run:
     shell: bash
 
+permissions:
+  contents: read
+
 jobs:
   generate-ci:
     name: generate-ci
     runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      # prowgen runs `make generate-release` inside each target repo (~34 times).
+      # knative.dev/hack's codegen-library.sh resets GOPATH to a fresh $TMPDIR/go
+      # per invocation, so the default $GOPATH/pkg/mod module cache is empty every
+      # time - roughly 2,668 module downloads per workflow run. GOMODCACHE takes
+      # precedence over $GOPATH/pkg/mod, and prowgen's exec helpers do not set
+      # cmd.Env, so pinning it here propagates to every child and they share one cache.
+      GOMODCACHE: ${{ github.workspace }}/.gomodcache
     steps:
       - name: Freeup disk space
         run: |
@@ -39,18 +54,15 @@ jobs:
       - name: Setup Golang
         uses: ./src/github.com/openshift-knative/hack/actions/setup-go
 
-      - name: Install yq
-        run: go install github.com/mikefarah/yq/v3@latest
-
-      - name: Install skopeo
-        run: go install -tags="exclude_graphdriver_btrfs containers_image_openpgp" github.com/containers/skopeo/cmd/skopeo@v1.16.1
-
-      - name: Install YAML2JSON
-        run: go install github.com/bronze1man/yaml2json@latest
-
-      - name: Convert configurations to JSON
-        working-directory: ./src/github.com/openshift-knative/hack
-        run: find config/*.yaml | xargs -I{} sh -c "yaml2json < {} > {}.json"
+      # Persists the shared module cache across runs. Rolling key: always restore
+      # the most recent cache, always save a fresh one.
+      - name: Cache Go modules for target-repo codegen
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.gomodcache
+          key: gomodcache-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            gomodcache-${{ runner.os }}-
 
       - name: Checkout openshift/release
         if: ${{ github.event_name == 'pull_request' }}

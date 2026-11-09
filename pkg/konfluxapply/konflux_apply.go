@@ -80,7 +80,7 @@ func apply(ctx context.Context, cfg ApplyConfig, config *prowgen.Config) error {
 			}
 
 			if err := prowgen.GitCheckout(ctx, r, bn); err != nil {
-				if !strings.Contains(err.Error(), "failed to run git [checkout") {
+				if !errors.Is(err, prowgen.ErrBranchNotFound) {
 					return fmt.Errorf("[%s] failed to checkout branch %q: %w", r.RepositoryDirectory(), bn, err)
 				}
 

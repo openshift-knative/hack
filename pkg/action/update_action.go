@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"log"
@@ -28,7 +29,6 @@ type Config struct {
 
 func UpdateAction(ctx context.Context, cfg Config) error {
 	var steps []interface{}
-	var cloneSteps []interface{}
 
 	y, err := os.ReadFile(cfg.InputAction)
 	if err != nil {
@@ -44,6 +44,9 @@ func UpdateAction(ctx context.Context, cfg Config) error {
 	}
 
 	err = filepath.Walk(cfg.InputConfigPath, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
 		if info.IsDir() || !strings.HasSuffix(path, ".yaml") {
 			return nil
 		}
@@ -53,21 +56,16 @@ func UpdateAction(ctx context.Context, cfg Config) error {
 			return err
 		}
 
-		cs, s, err := updateAction(ctx, inConfig)
+		s, err := updateAction(ctx, inConfig)
 		if err != nil {
 			return fmt.Errorf("failed to update action: %w", err)
 		}
-		cloneSteps = append(cloneSteps, cs...)
 		steps = append(steps, s...)
 
 		return nil
 	})
 	if err != nil {
 		return fmt.Errorf("failed to walk filesystem path %q: %w", cfg.InputConfigPath, err)
-	}
-
-	if err := AddNestedField(&node, cloneSteps, true, "jobs", "generate-ci", "steps"); err != nil {
-		return fmt.Errorf("failed to add cloned steps: %w", err)
 	}
 
 	if err := AddNestedField(&node, steps, false, "jobs", "generate-ci", "steps"); err != nil {
@@ -80,7 +78,11 @@ func UpdateAction(ctx context.Context, cfg Config) error {
 	if err := enc.Encode(&node); err != nil {
 		return fmt.Errorf("failed to encode node into buf: %w", err)
 	}
-	defer enc.Close()
+	// Close before reading buf: the encoder flushes on Close, so deferring it
+	// until after os.WriteFile would drop any buffered trailing bytes.
+	if err := enc.Close(); err != nil {
+		return fmt.Errorf("failed to close encoder: %w", err)
+	}
 
 	if err := os.WriteFile(cfg.OutputAction, buf.Bytes(), 0600); err != nil {
 		return fmt.Errorf("failed to write updates: %w", err)
@@ -110,29 +112,22 @@ gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$t
 `, repo, branch, targetBranch, msg)
 }
 
-func updateAction(ctx context.Context, inConfig *prowgen.Config) ([]interface{}, []interface{}, error) {
-	var cloneSteps []interface{}
+// updateAction returns the generated workflow steps for a single config file.
+//
+// It deliberately emits no repository-clone steps: the workflow checks out
+// openshift-knative/hack into the parent of ./openshift-knative/<repo>, and
+// actions/checkout cleans its target directory, so any clones placed there
+// beforehand are deleted before they can be read. The PR steps below instead
+// operate on the clones that the prowgen tool creates at run time.
+func updateAction(ctx context.Context, inConfig *prowgen.Config) ([]interface{}, error) {
 	var steps []interface{}
 	for _, r := range inConfig.Repositories {
 
 		if err := prowgen.GitMirror(ctx, r); err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
 		log.Println(r.RepositoryDirectory(), "update action")
-
-		cloneSteps = append(cloneSteps,
-			map[string]interface{}{
-				"name": fmt.Sprintf("[%s] Clone repository", r.Repo),
-				"if":   "${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref_name == 'main' }}",
-				"uses": "actions/checkout@v6",
-				"with": map[string]interface{}{
-					"repository": r.RepositoryDirectory(),
-					"ref":        "main",
-					"token":      "${{ secrets.SERVERLESS_QE_ROBOT }}",
-					"path":       fmt.Sprintf("./src/github.com/openshift-knative/hack/%s", r.RepositoryDirectory()),
-				},
-			})
 
 		addDependabotStepOnce := sync.OnceFunc(func() {
 
@@ -172,8 +167,8 @@ func updateAction(ctx context.Context, inConfig *prowgen.Config) ([]interface{},
 				}
 
 				if err := prowgen.GitCheckout(ctx, r, targetBranch); err != nil {
-					if !strings.Contains(err.Error(), "failed to run git [checkout") {
-						return nil, nil, err
+					if !errors.Is(err, prowgen.ErrBranchNotFound) {
+						return nil, err
 					}
 					// Skip non-existing branches
 					log.Println(r.RepositoryDirectory(), "Skipping non existing branch", branchName)
@@ -207,7 +202,7 @@ func updateAction(ctx context.Context, inConfig *prowgen.Config) ([]interface{},
 			steps = append(steps, addOwnersFileStep(r, "main"))
 		}
 	}
-	return cloneSteps, steps, nil
+	return steps, nil
 }
 
 func addOwnersFileStep(r prowgen.Repository, branchName string) map[string]interface{} {

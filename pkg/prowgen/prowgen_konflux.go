@@ -112,18 +112,27 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 
 						log.Printf("targetBranch: %s, soBranchName: %s, soVersion: %s\n", targetBranch, soBranchName, soVersion)
 
-						soMutex.Lock()
-						// Checkout s-o to get the right release version from project.yaml (e.g. 1.34.1)
+						// Read the release version (e.g. 1.34.1) from serverless-operator's
+						// project.yaml at the branch ref.
+						//
+						// Only the clone is shared mutable state, so only GitMirror needs the
+						// mutex; it is a no-op once the repository is on disk. The read itself
+						// used to be a GitCheckout of the single shared serverless-operator
+						// working tree, which forced every (repo, branch) pair - 45 of them -
+						// to serialize here. GitShow reads the object database instead.
 						soRepo := Repository{Org: "openshift-knative", Repo: "serverless-operator"}
-						if err := GitMirror(ctx, soRepo); err != nil {
-							return err
+						soMutex.Lock()
+						mirrorErr := GitMirror(ctx, soRepo)
+						soMutex.Unlock()
+						if mirrorErr != nil {
+							return mirrorErr
 						}
 
 						versionLabel := soBranchName
 						var buildArgs []string
-						if err := GitCheckout(ctx, soRepo, soBranchName); err != nil {
-							if !strings.Contains(err.Error(), "failed to run git [checkout") {
-								soMutex.Unlock()
+						raw, err := GitShow(ctx, soRepo, soBranchName, "olm-catalog/serverless-operator/project.yaml")
+						if err != nil {
+							if !errors.Is(err, ErrBranchNotFound) {
 								return err
 							}
 							// For non-existent branches we use the `.0` patch version if soVersion is set.
@@ -132,17 +141,12 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 							}
 							// For non-existent branches we keep going and use downstreamVersion for versionLabel.
 						} else {
-							soProjectYamlPath := filepath.Join(soRepo.RepositoryDirectory(),
-								"olm-catalog", "serverless-operator", "project.yaml")
-							soMetadata, err := project.ReadMetadataFile(soProjectYamlPath)
+							soMetadata, err := project.ParseMetadata(raw)
 							if err != nil {
-								soMutex.Unlock()
 								return err
 							}
-
 							versionLabel = soMetadata.Project.Version
 						}
-						soMutex.Unlock()
 						log.Println("Version label:", versionLabel)
 						buildArgs = append(buildArgs, fmt.Sprintf("VERSION=%s", versionLabel))
 

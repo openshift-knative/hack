@@ -11,10 +11,24 @@ on:
 defaults:
   run:
     shell: bash
+
+permissions:
+  contents: read
+
+# cancel-in-progress is deliberately false: `kubectl apply -Rf` against the
+# production cluster is not atomic, so cancelling a run mid-apply would leave
+# the cluster in a partially-updated state.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   konflux-apply:
     name: Apply Konflux Manifests
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
     steps:
       - name: Check out code
         uses: actions/checkout@v6

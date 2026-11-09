@@ -1,428 +1,235 @@
-# Current Architecture Overview
+# Architecture
 
-## System Diagram
+How `openshift-knative/hack` actually works, traced through the source. Every claim carries a
+`file:line` anchor. Items that could not be confirmed are marked **[unverified]**.
 
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│                     openshift-knative/hack (This Repo)                    │
-├──────────────────────────────────────────────────────────────────────────┤
-│                                                                           │
-│  ┌─────────────────────┐      ┌─────────────────────────────────────┐   │
-│  │   Configuration     │      │        Go Tools (cmd/)              │   │
-│  │   (config/)         │──────▶                                      │   │
-│  │                     │      │  • prowgen    - CI config generation│   │
-│  │  • client.yaml      │      │  • discover   - Branch discovery    │   │
-│  │  • eventing.yaml    │      │  • konflux-*  - Konflux management  │   │
-│  │  • serving.yaml     │      │  • generate   - Dockerfile gen      │   │
-│  │  • serverless-op... │      │  • sobranch   - Version mapping     │   │
-│  │  • 10+ more repos   │      │  • testselect - Test selection      │   │
-│  └─────────────────────┘      └─────────────────────────────────────┘   │
-│           │                                     │                         │
-│           │                                     │                         │
-│           ▼                                     ▼                         │
-│  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │          GitHub Actions Workflows (.github/workflows/)          │    │
-│  │                                                                  │    │
-│  │  1. release-generate-ci.yaml (2,679 lines!)                     │    │
-│  │     ├─ Clones 13 repos                                          │    │
-│  │     ├─ Runs prowgen for each                                    │    │
-│  │     ├─ Generates CI configs                                     │    │
-│  │     └─ Creates 100+ PRs                                         │    │
-│  │                                                                  │    │
-│  │  2. release-discover-branches.yaml                              │    │
-│  │     ├─ Discovers new release branches                           │    │
-│  │     ├─ Updates config files                                     │    │
-│  │     └─ Updates Konflux pipelines                                │    │
-│  │                                                                  │    │
-│  │  3. apply-konflux-manifests.yaml                                │    │
-│  │     └─ Applies manifests to Konflux cluster                     │    │
-│  │                                                                  │    │
-│  │  4. generate-release-crs.yaml                                   │    │
-│  │     └─ Generates release CRs for new releases                   │    │
-│  └─────────────────────────────────────────────────────────────────┘    │
-│                                                                           │
-└───────────────────────────────────┬───────────────────────────────────────┘
-                                    │
-                    ┌───────────────┴───────────────┐
-                    │                               │
-                    ▼                               ▼
-    ┌───────────────────────────┐   ┌──────────────────────────────┐
-    │  openshift/release        │   │  Component Repos (13+)       │
-    │                           │   │                              │
-    │  CI Configuration PRs     │   │  • client                    │
-    │  • Prow jobs              │   │  • eventing                  │
-    │  • Build configs          │   │  • serving                   │
-    │  • Test definitions       │   │  • serverless-operator       │
-    └───────────────────────────┘   │  • eventing-kafka-broker     │
-                                    │  • ... 8 more                │
-                                    │                              │
-                                    │  Each gets PRs for:          │
-                                    │  ├─ Konflux configs          │
-                                    │  ├─ OWNERS files             │
-                                    │  └─ Dependabot configs       │
-                                    └──────────────────────────────┘
-```
-
-## Data Flow
-
-### 1. Branch Discovery Flow (Daily)
-```
-┌─────────────┐
-│ Cron: 05:00 │
-└──────┬──────┘
-       │
-       ▼
-┌────────────────────────────────────────┐
-│ Workflow: release-discover-branches    │
-│                                        │
-│ 1. For each repo in config/            │
-│    ├─ Query GitHub API for branches   │
-│    ├─ Match pattern: release-*        │
-│    └─ Compare with config/*.yaml      │
-│                                        │
-│ 2. If new branches found:             │
-│    ├─ Update config/*.yaml            │
-│    ├─ Update Konflux pipelines        │
-│    ├─ Update RPM lock files           │
-│    └─ Create PR to hack repo          │
-└────────────────────────────────────────┘
-       │
-       ▼
-┌──────────────────────┐
-│ PR: "Add new         │
-│ midstream branches   │
-│ and update pipelines"│
-└──────────────────────┘
-```
-
-### 2. CI Config Generation Flow (Weekly + on Push)
-```
-┌─────────────────┐
-│ Cron: Mon 06:00 │
-│ or Push to main │
-└────────┬────────┘
-         │
-         ▼
-┌──────────────────────────────────────────────────────────┐
-│ Workflow: release-generate-ci (THE BIG ONE)              │
-│                                                          │
-│ Step 1: Clone ALL repos (sequential!)                   │
-│  ├─ backstage-plugins/main                              │
-│  ├─ client/main                                         │
-│  ├─ eventing/main                                       │
-│  ├─ ... (13 repos × ~4 branches each = 50+ clones)     │
-│  └─ openshift/release/main                              │
-│                                                          │
-│ Step 2: Generate CI configs                             │
-│  └─ Run prowgen for each config/*.yaml                  │
-│      ├─ Parse repo Makefiles                            │
-│      ├─ Generate Prow job configs                       │
-│      ├─ Generate build configs                          │
-│      └─ Output to openshift/release repo                │
-│                                                          │
-│ Step 3: Create PRs (100+ repetitive steps!)             │
-│  For each (repo, branch, config_type):                  │
-│    ├─ Check if remote branch exists                     │
-│    ├─ Create/update branch                              │
-│    ├─ Push changes                                      │
-│    └─ Create PR (or update existing)                    │
-│                                                          │
-│  Example matrix (incomplete!):                          │
-│    backstage-plugins × (main, release-v1.17, ...)       │
-│                      × (konflux, owners, dependabot)    │
-│    = 15 PRs                                             │
-│                                                          │
-│    × 13 repos = 195 PRs! 😱                             │
-└──────────────────────────────────────────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────────────────┐
-│ Results:                                    │
-│  • 1 PR to openshift/release (CI configs)   │
-│  • 1 PR to hack (Konflux configs)           │
-│  • ~194 PRs to component repos              │
-└─────────────────────────────────────────────┘
-```
-
-### 3. Release Flow (Manual)
-```
-┌────────────────────────┐
-│ Manual Trigger         │
-│ (workflow_dispatch)    │
-└───────────┬────────────┘
-            │
-            ▼
-┌─────────────────────────────────────────┐
-│ Workflow: generate-release-crs          │
-│                                         │
-│ 1. Generate release CRs                 │
-│    ├─ Component release CRs             │
-│    └─ FBC (catalog) release CRs         │
-│                                         │
-│ 2. Apply snapshot overrides             │
-│                                         │
-│ 3. Create PRs                           │
-│    ├─ Component release CR → hack repo  │
-│    └─ FBC release CR → hack repo        │
-└─────────────────────────────────────────┘
-            │
-            ▼
-┌─────────────────────────────────────────┐
-│ Manual Process:                         │
-│  1. Merge component PR                  │
-│  2. Wait for release pipeline success   │
-│  3. Then merge FBC PR                   │
-│     (FBC references released components)│
-└─────────────────────────────────────────┘
-```
-
-## Key Problems Visualized
-
-### Problem 1: Massive Repetition
-```yaml
-# This pattern is repeated 100+ times:
-
-- name: '[client - release-v1.17] Create Konflux PR'
-  run: |
-    set -x
-    repo="client"
-    branch="sync-konflux-release-v1.17"
-    target_branch="release-v1.17"
-    git remote add fork "https://github.com/serverless-qe/$repo.git" || true
-    remote_exists=$(git ls-remote --heads fork "$branch")
-    if [ -z "$remote_exists" ]; then
-      git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-    fi
-    git fetch origin "$target_branch"
-    git fetch fork "$branch"
-    git rebase --quiet "$target_branch" "$branch"
-    git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
-    gh pr create --base "$target_branch" --head "serverless-qe:$branch" \
-      --title "[$target_branch] Update Konflux configurations" \
-      --body "Update Konflux configurations" || true
-
-- name: '[client - release-v1.21] Create Konflux PR'
-  run: |
-    set -x
-    repo="client"
-    branch="sync-konflux-release-v1.21"  # ← Only difference!
-    target_branch="release-v1.21"        # ← Only difference!
-    # ... EXACT SAME CODE AGAIN ...
-
-# Repeated for:
-# - 13 repos
-# - ~4 branches each
-# - 3 config types each
-# = 156 nearly identical steps! 😱
-```
-
-### Problem 2: Sequential Cloning
-```
-Time ──────────────────────────────────────────────────▶
-
-Clone backstage-plugins  ████████ (30s)
-                                  Clone client  ████████ (30s)
-                                                          Clone eventing  ████████ (30s)
-                                                                                   ...
-Total: ~13 repos × 30s = 6.5 minutes just for cloning! ⏱️
-
-With parallel cloning:
-Clone all repos in parallel  ████████ (30s)
-Total: 30 seconds! 🚀
-```
-
-### Problem 3: Hard to Change
-```
-To add a new repository:
-  ❌ Edit workflow template: +50 lines
-  ❌ Edit generated workflow: +50 lines  
-  ❌ Test locally: impossible (GitHub Actions only)
-  ❌ Debug failures: parse 2,679 lines
-  ⏱️  Time: ~2 hours
-
-With improved architecture:
-  ✅ Add to repos.yaml: 1 line
-  ✅ Config auto-validated
-  ✅ Test locally with Dagger
-  ✅ Clear error messages
-  ⏱️  Time: ~5 minutes
-```
-
-## Technology Stack
-
-### Current Stack
-```
-┌─────────────────────────────────────────────┐
-│ Languages                                   │
-│  • Go (tooling)                             │
-│  • Bash (workflow scripts)                  │
-│  • YAML (configs + workflows)               │
-└─────────────────────────────────────────────┘
-┌─────────────────────────────────────────────┐
-│ Tools                                       │
-│  • GitHub Actions (orchestration)           │
-│  • prowgen (custom, Prow config gen)        │
-│  • Kustomize (Konflux manifests)            │
-│  • yq (YAML processing)                     │
-│  • skopeo (image operations)                │
-└─────────────────────────────────────────────┘
-┌─────────────────────────────────────────────┐
-│ External Systems                            │
-│  • GitHub API                               │
-│  • OpenShift CI (Prow)                      │
-│  • Konflux (build/release)                  │
-│  • Tekton (pipelines)                       │
-└─────────────────────────────────────────────┘
-```
-
-### Recommended Additions
-```
-┌─────────────────────────────────────────────┐
-│ Orchestration                               │
-│  • Dagger (local + CI, containerized)       │
-│  OR                                         │
-│  • Earthly (reproducible builds)            │
-└─────────────────────────────────────────────┘
-┌─────────────────────────────────────────────┐
-│ Configuration Management                    │
-│  • JSON Schema (validation)                 │
-│  • CUE (config validation + generation)     │
-└─────────────────────────────────────────────┘
-┌─────────────────────────────────────────────┐
-│ Observability                               │
-│  • OpenTelemetry (tracing)                  │
-│  • Prometheus (metrics)                     │
-│  • Grafana (dashboards)                     │
-└─────────────────────────────────────────────┘
-```
-
-## File Structure
-
-```
-/Users/kpande/midstream/hack/
-├── .github/
-│   ├── workflows/
-│   │   ├── release-generate-ci.yaml        (2,679 lines) 😱
-│   │   ├── release-discover-branches.yaml  (98 lines)
-│   │   ├── apply-konflux-manifests.yaml    (~100 lines)
-│   │   └── generate-release-crs.yaml       (~100 lines)
-│   └── actions/                            ← Would add reusable actions here
-│
-├── cmd/                                    # CLI tools
-│   ├── prowgen/                           # Most important tool
-│   ├── discover/
-│   ├── konflux-apply/
-│   ├── konflux-gen/
-│   ├── konflux-release-gen/
-│   └── ... (5 more)
-│
-├── config/                                 # Repo configurations
-│   ├── client.yaml
-│   ├── eventing.yaml
-│   ├── serving.yaml
-│   ├── serverless-operator.yaml           # Largest config
-│   └── ... (10 more)
-│
-├── pkg/                                    # Shared Go packages
-│   └── ... (17 packages)
-│
-├── openshift/                              # Generated output (gitignored)
-│   └── release/                           # openshift/release clone
-│
-└── openshift-knative/                      # Cloned repos (gitignored)
-    ├── client/
-    ├── eventing/
-    └── ... (13+ repos)
-```
-
-## Interaction with serverless-operator
-
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                    serverless-operator repo                          │
-├──────────────────────────────────────────────────────────────────────┤
-│                                                                       │
-│  • Main codebase for OpenShift Serverless Operator                   │
-│  • Contains actual operator implementation                           │
-│  • Has Makefile with build/test targets                              │
-│  • Multiple branches: main, release-1.37, release-1.38, etc.         │
-│                                                                       │
-│  Receives from hack repo:                                            │
-│  ├─ .tekton/ (Konflux pipeline configs)                              │
-│  ├─ OWNERS (maintainer list)                                         │
-│  └─ .github/dependabot.yml                                           │
-│                                                                       │
-│  Consumed by hack repo:                                              │
-│  └─ Makefile (parsed by prowgen to generate CI tests)                │
-│                                                                       │
-└───────────────────────────────┬──────────────────────────────────────┘
-                                │
-                                │ Managed by
-                                │
-                                ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│                         hack repo                                     │
-│                                                                       │
-│  config/serverless-operator.yaml (largest config file)               │
-│  ├─ Defines branches: main, release-1.37, release-1.38              │
-│  ├─ Defines OpenShift versions: 4.16, 4.20, 4.21, 4.22              │
-│  ├─ Defines Konflux settings                                        │
-│  └─ Defines promotion settings                                      │
-│                                                                       │
-│  Generates:                                                          │
-│  ├─ Prow CI jobs → openshift/release                                │
-│  ├─ Konflux manifests → serverless-operator/.tekton/                │
-│  └─ OWNERS, dependabot → serverless-operator/                       │
-└──────────────────────────────────────────────────────────────────────┘
-```
-
-## Performance Characteristics (Current)
-
-```
-Workflow: release-generate-ci
-├─ Trigger: Weekly + on push to main
-├─ Duration: ~45-60 minutes 😴
-│   ├─ Setup (checkout, install tools): ~2 min
-│   ├─ Clone repos: ~6.5 min (sequential)
-│   ├─ Generate CI: ~3 min
-│   ├─ Create PRs: ~30-45 min (API rate limits)
-│   └─ Overhead: ~3-5 min
-│
-├─ Resources:
-│   ├─ GitHub Actions runners: 1 ubuntu-latest
-│   ├─ API calls: ~500+ (potential rate limits)
-│   └─ Storage: ~5 GB (all cloned repos)
-│
-└─ Pain points:
-    ├─ Long feedback loop (commit → see results: ~1 hour)
-    ├─ Can't test locally
-    ├─ Hard to debug failures
-    └─ Wastes resources (re-clones everything)
-
-Workflow: release-discover-branches
-├─ Trigger: Daily at 05:00
-├─ Duration: ~10-15 minutes
-├─ Usually no changes (wasted runs)
-└─ Could be event-driven instead
-```
-
-## Success Metrics Baseline (Current State)
-
-To track improvement, here are current baseline metrics:
-
-| Metric | Current | Target (Post-Improvement) |
-|--------|---------|---------------------------|
-| Workflow file size | 2,679 lines | < 500 lines |
-| CI generation time | 45-60 min | < 20 min |
-| Time to add new repo | ~2 hours | < 5 min |
-| Number of API calls | ~500+ | < 100 |
-| Can test locally? | ❌ No | ✅ Yes |
-| Clear error messages? | ❌ No | ✅ Yes |
-| Parallel execution? | ❌ No | ✅ Yes |
-| Incremental updates? | ❌ No | ✅ Yes |
+> **Supersedes the previous revision**, whose performance figures were estimated rather than
+> measured and whose description of the workflow layer was wrong in a way that mattered. See
+> [Corrections](#corrections) at the bottom.
 
 ---
 
-## Next: See IMPROVEMENT_ROADMAP.md
+## What this repository is
 
-This document explains the current architecture. For detailed improvement recommendations and implementation plan, see `IMPROVEMENT_ROADMAP.md`.
+A control plane. It holds no product code. It reads configuration describing 13 midstream
+repositories, clones them, inspects them, and writes generated configuration **into** them and into
+`openshift/release`. Nearly everything it produces lands in another repository as a pull request.
+
+The unit of configuration is `config/<repo>.yaml` — 13 files, each with a `repositories:` list and a
+`config.branches:` map. Two further config files live outside that directory:
+`pkg/discover/unsupported.yaml` and `pkg/discover/ignored.yaml` (`discover.go:28-29`).
+
+---
+
+## Entry points
+
+Four scheduled or dispatched workflows. Everything else is a library.
+
+| Workflow | Trigger | Make target | Entry function |
+|---|---|---|---|
+| `release-generate-ci` | weekly Mon 06:00 + push to main | `generate-ci-no-clean` | `prowgen.Main()` — `prowgen.go:39` |
+| `release-discover-branches` | daily 05:00 | `discover-branches`, `konflux-update-pipelines` | `discover.Main()` — `discover.go:32` |
+| `apply-konflux-manifests` | daily 06:00 + push to `.konflux/**` | `konflux-apply` | `konfluxapply.Apply()` ×3 |
+| `generate-release-crs` | manual dispatch | `generate-konflux-release` | `cmd/konflux-release-gen/main.go` |
+
+### `prowgen.Main()` — the main pipeline
+
+`prowgen.go:39-181`, in order:
+
+1. Load all configs
+2. Sort `OpenShiftVersions` by semver (`:97`)
+3. **`errgroup`**: `InitializeOpenShiftReleaseRepository` concurrently with per-repository
+   `NewGenerateConfigs` (`:113`)
+4. `DeleteExistingReleaseBuildConfigurationForBranch`
+5. `SaveReleaseBuildConfiguration` → `SaveProwConfig` → `RunOpenShiftReleaseGenerator`
+6. `PushBranch` → `GenerateKonflux` → `GenerateOwners`
+
+Flags `-build`, `-push`, `-konflux`, `-owners` all default **true**.
+
+### Where the time actually goes
+
+Generation is **already parallel per repository** via the `errgroup` at `:113`. The serialization is
+one level down: `NewGenerateConfigs` (`prowgen_config.go:160`) calls `GitMirror` once, then loops
+branches **sequentially**, `GitCheckout`-ing each (`:193`) and re-reading that repo's `Makefile`
+(`prowgen_tests.go:321`) once per branch.
+
+The dominant cost is not hack's own logic. It is the target repositories' build tooling —
+`deepcopy-gen` and friends — invoked downstream with a cold module cache.
+
+**Measured**, CI run `40897223955` (2026-10-29):
+
+| | |
+|---|---|
+| `release-generate-ci` total | ~35 min |
+| └─ `Generate CI` step | **23m35s — 67% of the job** |
+| └─ `Freeup disk space` | 88s |
+| `go: downloading` lines, one run | **2,668** |
+| Repos cloned by prowgen itself | 14 (~106s) |
+
+---
+
+## Configuration schema
+
+Parsed YAML → JSON → `json.Unmarshal` (`prowgen.go:189`). **Only `json:` tags bind**, and
+`encoding/json` silently ignores unknown keys — so a misspelled field is discarded without error.
+
+**`Repository`** (`prowgen_config.go:23`) — `org`, `repo`, `promotion`, `imagePrefix`,
+`imageNameOverrides`, `slackChannel`, `canonicalGoRepository`, **`e2e`**, `dockerfiles`,
+`ignoreConfigs`, `customConfigs`, `images`, `tests`, `resources`, `owners`.
+
+**`Branch`** (`:85`) — `prowgen.disabled`, `promotion`, `openShiftVersions`, `skipE2EMatches`,
+`skipDockerFilesMatches`, `konflux`, `golangVersion`, `dependabotEnabled`.
+
+**`OpenShift`** (`:117`) — `version`, `useClusterPool`, `cron`, `skipCron`, `onDemand`,
+`customConfigs{enabled,includes,excludes}`, `candidateRelease`, `skipPromotion`, `skipE2EMatches`,
+`includeE2EMatches`.
+
+**`Konflux`** (`:101`) — `enabled`, `nudges`, `excludes`, `excludesImages`, `javaImages`,
+`imageOverrides[]{name,pullSpec}`.
+
+### Semantics worth knowing
+
+- **E2E tests are discovered, not declared.** `E2ETest.Match` is regex-matched against target lines
+  in the cloned repository's `Makefile` (`prowgen_tests.go:320-361`). Changing a target name
+  upstream changes the generated jobs.
+- `onDemand` → `always_run: false` on the presubmit.
+- `skipCron` suppresses periodics at **two independent levels**: per-test (`E2ETest.SkipCron`) and
+  per-OpenShift-version (`OpenShift.SkipCron`).
+- `includeE2EMatches` whitelists and overrides the branch-level set; `skipE2EMatches` blacklists.
+  Both compare **exactly** against `E2ETest.Match`, not against the resolved target name.
+- `customConfigs` bypasses Makefile discovery entirely: `releaseBuildConfiguration` is taken
+  verbatim, then enriched with images, base images, and step dependencies.
+
+### Schema defects
+
+- **`README.md:81` documents `e2eTests:`. The real key is `e2e`** (`prowgen_config.go:31`,
+  `json:"e2e,omitempty"`). Zero of 13 configs use `e2eTests`; 10 use `e2e`. Because unknown JSON
+  keys are dropped silently, following the README produces **no tests and no error**.
+- `nudges` and `excludesImages` are parsed but used by no config file — dead surface.
+- `imageNameOverrides` and `skipPromotion` have exactly one non-test code reference each.
+
+---
+
+## Artifact flow
+
+`konfluxgen.Config` writes to three distinct roots (`prowgen_konflux.go:225-228`):
+
+| Output root | Path | Contents |
+|---|---|---|
+| `PipelinesOutputPath` | `<target-repo>/.tekton` | Tekton PipelineRuns |
+| `ResourcesOutputPath` | `<target-repo>/.konflux` | `applications/<app>/components/`, `imagerepositories/` |
+| `GlobalResourcesOutputPath` | `hack/.konflux` | `applications/<app>/<app>.yaml`, `tests/` |
+
+**For serverless-operator, both resource roots collapse into hack's own `.konflux`**
+(`prowgen_konflux.go:353,457-460`). Confirmed: serverless-operator has no `.konflux` directory at
+all, and all 388 files under `hack/.konflux` are `serverless-operator-*`.
+
+`hack/.konflux` contents: `releases/` 65, `releaseplans/` 118, `releaseplanadmissions/` 22,
+`applications/` 37 (one per `<so-version>`, plus one per `<so-version>-fbc-<ocp>`).
+
+**`konflux-apply` never applies `releaseplanadmissions`.** `cmd/konflux-apply/main.go:22-25`
+defaults `additionalDirs` to `releaseplans` and `releases` only. The 22 RPA files are generated
+(`konfluxgen.go:1037,1097`) and committed, but never pushed to the cluster. This is plausibly
+deliberate — RPAs are normally owned by the Konflux tenant admin — but it is not documented.
+**[unverified]**
+
+Also written into every managed repository: `OWNERS` (`ownersfilegen.go:50`),
+`.github/dependabot.yml` (`dependabotgen.go:274`), `renovate.json` (`:293`),
+`.github/workflows/dependabot-deps.yaml` (`:354`). Prow CI configs go to
+`openshift/release/ci-operator/config/<org>/<repo>/`.
+
+---
+
+## Package coupling
+
+```
+action        -> dependabotgen ownersfilegen prowgen
+discover      -> action konfluxgen prowgen soversion
+dockerfilegen -> project prowgen rhel soversion util
+konfluxapply  -> prowgen
+konfluxgen    -> k8sresource soversion util
+prowgen       -> dependabotgen konfluxgen ownersfilegen project soversion util
+prowcopy, rhel, testselect -> prowgen
+```
+
+`pkg/prowgen` is the god package: **4,096 lines, 9 importers**, 7 of them other `pkg/` packages.
+Note the inversion — `prowgen → konfluxgen`, but `konfluxapply → prowgen`.
+
+### Two decomposition seams that are actually feasible
+
+Established by auditing what each importer genuinely consumes, not by inspection:
+
+1. **`pkg/config`** — the schema and loader. `konfluxapply`, `rhel`, and `dockerfilegen` import
+   `prowgen` *solely* for `Config`, `CommonConfig`, `Branch`, `Repository`, `Konflux`, `LoadConfig`,
+   `UnmarshalConfig`. Extracting these drops `rhel` to **zero** prowgen dependencies.
+2. **`pkg/git`** — `prowgen_git.go`, 188 lines. `testselect` uses *only*
+   `GitCheckout`/`GitClone`/`GitFetch`/`GitMerge`/`GitDiffNameOnly`/`Repository`; `konfluxapply`
+   adds `GitMirror` and `Run`. Extracting drops `testselect` to **zero** prowgen dependencies.
+
+Together these decouple **4 of 7** internal importers and leave the `prowgen`/`konfluxgen`
+entanglement as the only remaining knot. Both are type-and-function moves with no logic change —
+low risk, and they are a prerequisite for testing the packages that currently have none.
+
+---
+
+## Relationship with serverless-operator
+
+**hack reads from SO:**
+
+| Path | Used for | Anchor |
+|---|---|---|
+| `olm-catalog/serverless-operator/project.yaml` | the master version manifest | `prowgen_konflux.go:135,384` |
+| `Makefile` | e2e target discovery | `prowgen_tests.go:321` |
+| `olm-catalog/.../serverless-operator.clusterserviceversion.yaml` | CSV metadata | `prowgen_konflux.go:465` |
+| `openshift/ci-operator/**images**` | Dockerfile discovery | `prowgen_images_discovery.go:40-46` |
+| `rpms.lock.yaml`, `vendor/`, `go.mod` | presence probes | `prowgen_konflux.go:534-545` |
+
+`project.yaml` is the keystone: `project.version` (currently 1.37.3), `olm.replaces` /
+`skipRange` / `previousBundles`, `requirements.ocpVersion.{list,min,build,label}`,
+`requirements.golang`, and `dependencies.*_artifacts_branch` mapping each midstream component to its
+branch.
+
+**hack writes into SO:** `.tekton/` (38 files), `OWNERS`, `.github/dependabot.yml`,
+`renovate.json`, `.github/workflows/dependabot-deps.yaml`. **Not** `.konflux/` — that is centralized
+here.
+
+**SO-owned, hand-maintained:** `.konflux-release/override-snapshot-fbc-4*.yaml`, consumed by SO's
+own `make apply-override-snapshot` during `generate-release-crs`.
+
+---
+
+## Lifecycle of a release branch
+
+| # | Stage | Automation | Human step |
+|---|---|---|---|
+| 1 | Branch cut in a midstream repo | none | **manual**, upstream-driven |
+| 2 | `release-discover-branches` lists branches (`discover.go:109`), compares against `configuredBranches[len-1]`, adds config entries, regenerates the workflow via `action.UpdateAction`, refreshes Tekton bundles and RPM lockfiles | daily 05:00 | **merge the PR** |
+| 3 | `release-generate-ci` emits Prow configs → PR to `openshift/release`; Konflux manifests → PRs to each repo's `.tekton/` and hack's `.konflux/` | weekly + push | **merge ~114 PRs** |
+| 4 | `apply-konflux-manifests` pushes `.konflux/` to the production cluster | daily 06:00, unattended | none |
+| 5 | Version bump in `project.yaml` | none | **manual edit** |
+| 6 | `generate-release-crs` applies override snapshots, emits component then FBC Release CRs, opens two PRs labelled `do-not-merge/hold` | manual dispatch | **unhold component, await pipeline, then unhold FBC** |
+| 7 | `removeUnsupportedBranches` (`discover.go:224`) prunes config and `rm -rf`s `.konflux/**/serverless-operator-<Sanitize(v)>*` (`:269`) | daily, inside stage 2 | none |
+
+**Five of seven stages require human action.** Stage 6's ordering constraint — component Release
+must succeed before FBC — is enforced only by a label and the README;
+`cmd/konflux-release-gen/main.go` treats `--type component` and `--type fbc` as fully independent.
+
+Stage 4 is the only stage that mutates production infrastructure, and it is the only fully
+unattended one.
+
+---
+
+## Corrections
+
+The previous revision of this file was written without reading the Go source.
+
+| Previous claim | Reality |
+|---|---|
+| "45–60 min workflow, PR creation 30–45 min" | ~35 min; PR steps ~11 min. The real cost is `Generate CI` at 23m35s (67%). |
+| "~500+ API calls, rate-limit risk" | Never measured. No evidence. Disregard. |
+| "Sequential cloning is the bottleneck — parallelize it" | The 13 clone steps are **deleted** by `actions/checkout` at `release-generate-ci.yaml:134` before anything reads them. Also, generation is already parallel per repository via `errgroup`. |
+| "Nothing runs in parallel" | Per-repository generation is parallel; per-*branch* iteration inside `NewGenerateConfigs` is sequential. |
+| "The 2,679-line workflow should be refactored" | It is a generated artifact. `make unit-tests` diffs it. Change `pkg/action/update_action.go`. |
+| Config example using `e2eTests:` | The key is `e2e`. `e2eTests` is silently ignored. |
+
+See `IMPROVEMENT_ROADMAP.md` for the prioritized plan derived from this analysis.

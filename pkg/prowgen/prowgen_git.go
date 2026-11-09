@@ -1,6 +1,7 @@
 package prowgen
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -16,9 +17,49 @@ import (
 	"github.com/coreos/go-semver/semver"
 )
 
+// ErrBranchNotFound is returned by GitCheckout when the requested branch does
+// not exist in the repository. Callers must use errors.Is to detect it rather
+// than matching on error text, which cannot distinguish a missing branch from a
+// transient failure such as a network blip, expired auth or index.lock contention.
+var ErrBranchNotFound = errors.New("branch not found")
+
+// gitRefExists reports whether ref resolves to a commit in r. It is a local,
+// read-only lookup against the object database and does not touch the working
+// tree, so it is safe to call concurrently.
+func gitRefExists(ctx context.Context, r Repository, ref string) bool {
+	_, err := runQuiet(ctx, r, "git", "rev-parse", "--verify", "--quiet", ref+"^{commit}")
+	return err == nil
+}
+
 func GitCheckout(ctx context.Context, r Repository, branch string) error {
+	// Resolve the ref first: a failure here means the branch genuinely does not
+	// exist, whereas a bare `git checkout` failure would conflate that with
+	// transient errors.
+	if !gitRefExists(ctx, r, branch) {
+		return fmt.Errorf("%w: %q in %s", ErrBranchNotFound, branch, r.RepositoryDirectory())
+	}
 	_, err := Run(ctx, r, "git", "checkout", branch)
 	return err
+}
+
+// GitShow returns the contents of path at ref without modifying the working
+// tree. Prefer it over GitCheckout when only a handful of files are needed: a
+// checkout rewrites the entire worktree (~1.2s on the larger repositories) and
+// forces every caller sharing a clone to serialize. Reads go to the object
+// database, so GitShow is safe to call concurrently, including alongside a
+// checkout of the same repository.
+//
+// Returns ErrBranchNotFound if ref does not exist.
+func GitShow(ctx context.Context, r Repository, ref string, path string) ([]byte, error) {
+	if !gitRefExists(ctx, r, ref) {
+		return nil, fmt.Errorf("%w: %q in %s", ErrBranchNotFound, ref, r.RepositoryDirectory())
+	}
+	// git object paths are always slash-separated, independent of the host OS.
+	out, err := runQuiet(ctx, r, "git", "show", ref+":"+path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read %q at %q: %w", path, ref, err)
+	}
+	return out, nil
 }
 
 func GitMirror(ctx context.Context, r Repository) error {
@@ -85,38 +126,64 @@ var (
 	ignoreBranches = []string{"1.13"}
 )
 
+func isIgnoredBranch(branch string) bool {
+	for _, ignored := range ignoreBranches {
+		if strings.Contains(branch, ignored) {
+			return true
+		}
+	}
+	return false
+}
+
+// branchVersion resolves a branch name to its upstream semver, or returns an
+// error when the name is not parseable (for example "main").
+func branchVersion(branch string) (*semver.Version, error) {
+	if strings.HasPrefix(branch, "serverless-") {
+		return soversion.ToUpstreamVersion(branch), nil
+	}
+	return SemverFromReleaseBranch(branch)
+}
+
+// CmpBranches orders branches by their upstream version, sorting ignored and
+// unparseable names to the front.
+//
+// It must be a valid comparator: slices.SortFunc uses pdqsort, whose output is
+// unspecified if cmp(a,b) and cmp(b,a) ever agree in sign. The previous
+// implementation returned -1 for both when a and b were both ignored or both
+// unparseable, which made the sort order depend on input order and, via
+// discover.go taking the last element, could silently disable branch discovery.
+// Every branch below therefore falls through to a lexical tiebreak so that
+// equal-ranked names still produce a stable total order.
 func CmpBranches(a string, b string) int {
-	for _, branch := range ignoreBranches {
-		if strings.Contains(a, branch) {
-			return -1 // this is equivalent to ignoring the branch
-		}
-		if strings.Contains(b, branch) {
-			return 1 // this is equivalent to ignoring the branch
-		}
+	if a == b {
+		return 0
 	}
 
-	var av, bv *semver.Version
-	var err error
-
-	if strings.HasPrefix(a, "serverless-") {
-		av = soversion.ToUpstreamVersion(a)
-	} else {
-		av, err = SemverFromReleaseBranch(a)
-		if err != nil {
-			return -1 // this is equivalent to ignoring branches that aren't parseable
-		}
+	aIgnored, bIgnored := isIgnoredBranch(a), isIgnoredBranch(b)
+	switch {
+	case aIgnored && bIgnored:
+		return cmp.Compare(a, b)
+	case aIgnored:
+		return -1
+	case bIgnored:
+		return 1
 	}
 
-	if strings.HasPrefix(b, "serverless-") {
-		bv = soversion.ToUpstreamVersion(b)
-	} else {
-		bv, err = SemverFromReleaseBranch(b)
-		if err != nil {
-			return 1 // this is equivalent to ignoring branches that aren't parseable
-		}
+	av, aErr := branchVersion(a)
+	bv, bErr := branchVersion(b)
+	switch {
+	case aErr != nil && bErr != nil:
+		return cmp.Compare(a, b)
+	case aErr != nil:
+		return -1
+	case bErr != nil:
+		return 1
 	}
 
-	return av.Compare(*bv)
+	if c := av.Compare(*bv); c != 0 {
+		return c
+	}
+	return cmp.Compare(a, b)
 }
 
 func SemverFromReleaseBranch(b string) (*semver.Version, error) {

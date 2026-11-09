@@ -17,10 +17,17 @@ on:
         default: "release-v1.11"
         required: true
 
+permissions:
+  contents: read
+
 jobs:
   run-command:
     name: run-command ${{ inputs.repository }} - ${{ inputs.command }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout hack repo
         uses: actions/checkout@v6
@@ -53,10 +60,14 @@ jobs:
 
       - name: Generate release
         working-directory: "./src/github.com/${{ inputs.repository }}"
-        run: make ${{ inputs.command }}
+        env:
+          # Passed via env, never interpolated into the shell body: `inputs.command`
+          # is free-form text and `make ${{ inputs.command }}` would execute it.
+          COMMAND: ${{ inputs.command }}
+        run: make "$COMMAND"
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
         with:
           token: ${{ secrets.SERVERLESS_QE_ROBOT }}
           path: "./src/github.com/${{ inputs.repository }}"
