@@ -189,7 +189,7 @@ func NewGenerateConfigs(ctx context.Context, r Repository, cc CommonConfig, opts
 		}
 
 		if err := GitCheckout(ctx, r, branchName); err != nil {
-			return nil, fmt.Errorf("[%s] failed to checkout branch %s", r.RepositoryDirectory(), branchName)
+			return nil, fmt.Errorf("[%s] failed to checkout branch %s: %w", r.RepositoryDirectory(), branchName, err)
 		}
 
 		openshiftVersions := branch.OpenShiftVersions

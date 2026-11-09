@@ -67,12 +67,16 @@ konflux-update-pipelines:
 	kustomize build pkg/konfluxgen/kustomize/kustomize-fbc-builder/ --output pkg/konfluxgen/fbc-builder.yaml --load-restrictor LoadRestrictionsNone
 	kustomize build pkg/konfluxgen/kustomize/kustomize-bundle-build/ --output pkg/konfluxgen/bundle-build.yaml --load-restrictor LoadRestrictionsNone
 
+govet:
+	go vet ./...
+.PHONY: govet
+
 gotest:
-	go run gotest.tools/gotestsum@latest \
+	go run gotest.tools/gotestsum@v1.13.0 \
     		--format testname \
     		./...
 
-unit-tests: gotest
+unit-tests: govet gotest
 	rm -rf openshift/project/testoutput
 	rm -rf openshift/project/.github
 

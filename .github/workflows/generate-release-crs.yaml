@@ -26,11 +26,30 @@ on:
 defaults:
   run:
     shell: bash
+
+permissions:
+  contents: read
+
 jobs:
   gen-release-cr:
     name: Apply Konflux Override Snapshot
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
+      - name: Validate revision input
+        env:
+          REVISION: ${{ inputs.revision }}
+        run: |
+          # `revision` is free-form text that reaches git refs, branch names and
+          # shell commands in a job holding the production Konflux token.
+          if [[ ! "$REVISION" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+            echo "::error::Invalid revision '$REVISION' - allowed characters: A-Z a-z 0-9 . _ / -"
+            exit 1
+          fi
+
       - name: Checkout serverless operator
         uses: actions/checkout@v6
         with:
@@ -65,19 +84,25 @@ jobs:
 
       - name: Generate Konflux component release CR
         working-directory: ./src/github.com/openshift-knative/hack
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          REVISION: ${{ inputs.revision }}
+          ADVISORY_TYPE: ${{ inputs.advisory_type }}
         run: |
-          KUBECONFIG=$HOME/.kube/config make generate-konflux-release ARGS="--environment ${{ inputs.environment }} --so-revision ${{ inputs.revision }} --type component --advisory-type ${{ inputs.advisory_type }}"
+          KUBECONFIG=$HOME/.kube/config make generate-konflux-release ARGS="--environment $ENVIRONMENT --so-revision $REVISION --type component --advisory-type $ADVISORY_TYPE"
 
       - name: Create component release CR Pull Request
         env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          REVISION: ${{ inputs.revision }}
+          ENVIRONMENT: ${{ inputs.environment }}
         run: |
           set -x
           git remote add fork "https://github.com/serverless-qe/hack.git"
-          branch="release-crs-${{inputs.revision}}-component-${{inputs.environment}}"
+          branch="release-crs-${REVISION}-component-${ENVIRONMENT}"
           branch=${branch,,} #lower case of branch name
-          title="Add component Release CRs from ${{inputs.revision}} revision for ${{inputs.environment}}"
+          title="Add component Release CRs from ${REVISION} revision for ${ENVIRONMENT}"
           remote_exists=$(git ls-remote --heads fork "$branch")
           if [ -z "$remote_exists" ]; then
             # remote doesn't exist.
@@ -95,19 +120,25 @@ jobs:
 
       - name: Generate Konflux FBC release CRs
         working-directory: ./src/github.com/openshift-knative/hack
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          REVISION: ${{ inputs.revision }}
+          ADVISORY_TYPE: ${{ inputs.advisory_type }}
         run: |
-          KUBECONFIG=$HOME/.kube/config make generate-konflux-release ARGS="--environment ${{ inputs.environment }} --so-revision ${{ inputs.revision }} --type fbc --advisory-type ${{ inputs.advisory_type }}"
+          KUBECONFIG=$HOME/.kube/config make generate-konflux-release ARGS="--environment $ENVIRONMENT --so-revision $REVISION --type fbc --advisory-type $ADVISORY_TYPE"
 
       - name: Create FBC release CR Pull Request
         env:
           GH_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
           GITHUB_TOKEN: ${{ secrets.SERVERLESS_QE_ROBOT }}
+          REVISION: ${{ inputs.revision }}
+          ENVIRONMENT: ${{ inputs.environment }}
         run: |
           set -x
           git remote add fork "https://github.com/serverless-qe/hack.git"
-          branch="release-crs-${{inputs.revision}}-fbc-${{inputs.environment}}"
+          branch="release-crs-${REVISION}-fbc-${ENVIRONMENT}"
           branch=${branch,,} #lower case of branch name
-          title="Add FBC Release CRs from ${{inputs.revision}} revision for ${{inputs.environment}}"
+          title="Add FBC Release CRs from ${REVISION} revision for ${ENVIRONMENT}"
           remote_exists=$(git ls-remote --heads fork "$branch")
           if [ -z "$remote_exists" ]; then
             # remote doesn't exist.

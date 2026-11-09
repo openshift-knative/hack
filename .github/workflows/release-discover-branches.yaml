@@ -12,10 +12,21 @@ on:
     - cron: "0 5 * * *" # Daily at 05:00.
   workflow_dispatch: # Manual workflow trigger
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   discover-branches:
     name: generate-ci
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      pull-requests: write
     env:
       GOPATH: ${{ github.workspace }}
     steps:
@@ -27,7 +38,10 @@ jobs:
       - name: Setup Golang
         uses: ./src/github.com/openshift-knative/hack/actions/setup-go
 
-      - uses: tektoncd/actions/setup-tektoncd-cli@main
+      # Pinned to a commit SHA: this third-party action runs in a job that holds
+      # SERVERLESS_QE_ROBOT, so tracking a mutable branch would let anyone with
+      # push access to tektoncd/actions run code with that token.
+      - uses: tektoncd/actions/setup-tektoncd-cli@cd4768a594ec4a7af8ef72d73524a584cb564e34 # main @ 2026-09-11
         with:
           version: latest
 
@@ -76,7 +90,7 @@ jobs:
 
       - name: Create Discovery Pull Request
         if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'main'
-        uses: peter-evans/create-pull-request@v8
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
         with:
           token: ${{ secrets.SERVERLESS_QE_ROBOT }}
           path: ./src/github.com/openshift-knative/hack

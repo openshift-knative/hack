@@ -78,7 +78,7 @@ This generation works this way:
 - Periodic jobs can be disabled per test or per OpenShift version using `skipCron: true`:
   ```yaml
   # Per test:
-  e2eTests:
+  e2e:
   - match: "^test-e2e$"
     skipCron: true
 

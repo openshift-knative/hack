@@ -43,6 +43,12 @@ func ReadMetadataFile(path string) (*Metadata, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
+	return ParseMetadata(bytes)
+}
+
+// ParseMetadata parses project metadata from raw YAML, for callers that obtain
+// the content without going through the filesystem (for example `git show`).
+func ParseMetadata(b []byte) (*Metadata, error) {
 	m := &Metadata{}
-	return m, yaml.Unmarshal(bytes, m)
+	return m, yaml.Unmarshal(b, m)
 }
