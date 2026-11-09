@@ -35,6 +35,11 @@ type Config struct {
 	Repositories []Repository `json:"repositories,omitempty" yaml:"repositories,omitempty"`
 
 	Config CommonConfig `json:"config,omitempty" yaml:"config,omitempty"`
+
+	// DiscoverDisabled disables branch discovery for this configuration,
+	// i.e. cmd/discover will not add new release branches to it.
+	// CI configuration for already configured branches keeps being generated.
+	DiscoverDisabled bool `json:"discoverDisabled,omitempty" yaml:"discoverDisabled,omitempty"`
 }
 
 func Main() {

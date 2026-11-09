@@ -164,10 +164,6 @@ spec:
           repositories:
             - url: registry.redhat.io/openshift-serverless-1/kn-eventing-integrations-aws-sns-sink-rhel9
           pushSourceContainer: true
-        - name: kn-backstage-plugins-eventmesh-121
-          repositories:
-            - url: registry.redhat.io/openshift-serverless-1/kn-backstage-plugins-eventmesh-rhel9
-          pushSourceContainer: true
         - name: kn-plugin-event-sender-121
           repositories:
             - url: registry.redhat.io/openshift-serverless-1/kn-plugin-event-sender-rhel9

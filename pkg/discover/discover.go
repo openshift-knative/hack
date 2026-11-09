@@ -93,6 +93,11 @@ func discover(ctx context.Context, path string, unsupported []Unsupported, ignor
 			continue // nothing to do here
 		}
 
+		if inConfig.DiscoverDisabled {
+			log.Println(r.RepositoryDirectory(), "Branch discovery is disabled for this config, skipping")
+			continue
+		}
+
 		configuredBranches := make([]string, 0, len(inConfig.Config.Branches))
 		for branchName := range inConfig.Config.Branches {
 			configuredBranches = append(configuredBranches, branchName)

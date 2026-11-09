@@ -13,19 +13,7 @@ config:
       - onDemand: true
         version: "4.14"
       promotion: {}
-    release-v1.21:
-      konflux:
-        enabled: true
-      openShiftVersions:
-      - candidateRelease: true
-        onDemand: true
-        skipCron: true
-        version: "4.22"
-      - useClusterPool: true
-        version: "4.21"
-      - onDemand: true
-        version: "4.16"
-      promotion: {}
+discoverDisabled: true
 repositories:
 - dockerfiles: {}
   e2e:
