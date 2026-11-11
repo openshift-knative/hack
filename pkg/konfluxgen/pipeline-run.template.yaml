@@ -44,6 +44,8 @@ spec:
       value: '{{source_url}}'
     - name: hermetic
       value: "{{{ .Hermetic }}}"
+    - name: build-source-image
+      value: "true"
     {{{- if eq .Event "pull_request" }}}
     - name: image-expires-after
       value: 5d
@@ -55,6 +57,16 @@ spec:
     {{{- else }}}
     - name: output-image
       value: quay.io/redhat-user-workloads/ocp-serverless-tenant/{{{ truncate ( sanitize .ApplicationName ) }}}/{{{ truncate ( sanitize .ProjectDirectoryImageBuildStepConfiguration.To ) }}}:{{revision}}
+    - name: build-platforms
+      value:
+      {{{- if eq .Pipeline "bundle-build" }}}
+        - linux/x86_64
+      {{{- else }}}
+        - linux/x86_64
+        - linux/arm64
+        - linux/ppc64le
+        - linux/s390x
+      {{{- end }}}
     {{{- end }}}
     - name: revision
       value: '{{revision}}'
@@ -69,10 +81,6 @@ spec:
     {{{- if .PrefetchDeps.PrefetchInput }}}
     - name: prefetch-input
       value: '{{{ .PrefetchDeps.PrefetchInput }}}'
-    {{{- end }}}
-    {{{- if .PrefetchDeps.DevPackageManagers }}}
-    - name: prefetch-input-dev-package-managers
-      value: '{{{ .PrefetchDeps.DevPackageManagers }}}'
     {{{- end }}}
     {{{- if gt (len .OpmArgs) 0 }}}
     - name: opm-args

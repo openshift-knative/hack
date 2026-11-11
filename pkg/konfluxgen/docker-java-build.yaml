@@ -13,27 +13,6 @@ spec:
     _Uses `buildah` to create a multi-platform container image leveraging [trusted artifacts](https://konflux-ci.dev/architecture/ADR/0036-trusted-artifacts.html). It also optionally creates a source image and runs some build-time tests. This pipeline requires that the [multi platform controller](https://github.com/konflux-ci/multi-platform-controller) is deployed and configured on your Konflux instance. Information is shared between tasks using OCI artifacts instead of PVCs. EC will pass the [`trusted_task.trusted`](https://conforma.dev/docs/policy/packages/release_trusted_task.html#trusted_task__trusted) policy as long as all data used to build the artifact is generated from trusted tasks.
     This pipeline is pushed as a Tekton bundle to [quay.io](https://quay.io/repository/konflux-ci/tekton-catalog/pipeline-docker-build-multi-platform-oci-ta?tab=tags)_
   params:
-  - default:
-    - linux/x86_64
-    - linux/arm64
-    - linux/ppc64le
-    - linux/s390x
-    description: List of platforms to build the container images on. The available
-      set of values is determined by the configuration of the multi-platform-controller.
-    name: build-platforms
-    type: array
-  - default: --all-projects --org=3e1a4cca-ebfb-495f-b64c-3cc960d566b4 --exclude=test*,vendor,third_party
-    description: Append arguments to Snyk code command.
-    name: snyk-args
-    type: string
-  - default: "true"
-    description: Build a source image.
-    name: build-source-image
-    type: string
-  - default: "false"
-    description: 'Enable in-development package managers. WARNING: the behavior may
-      change at any time without notice. Use at your own risk.'
-    name: prefetch-input-dev-package-managers
   - default: []
     description: Additional image tags
     name: additional-tags
@@ -74,6 +53,10 @@ spec:
     description: Image tag expiration time, time values could be something like 1h,
       2d, 3w for hours, days, and weeks, respectively.
     name: image-expires-after
+    type: string
+  - default: "false"
+    description: Build a source image.
+    name: build-source-image
     type: string
   - default: "true"
     description: Add built image into an OCI image index
@@ -124,6 +107,12 @@ spec:
       etc.) from the resulting image.
     name: omit-history
     type: string
+  - default:
+    - linux/x86_64
+    description: List of platforms to build the container images on. The available
+      set of values is determined by the configuration of the multi-platform-controller.
+    name: build-platforms
+    type: array
   results:
   - description: ""
     name: IMAGE_URL
@@ -138,92 +127,6 @@ spec:
     name: CHAINS-GIT_COMMIT
     value: $(tasks.clone-repository.results.commit)
   tasks:
-  - matrix:
-      params:
-      - name: image-platform
-        value:
-        - $(params.build-platforms)
-    name: roxctl-scan
-    params:
-    - name: image-digest
-      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
-    - name: image-url
-      value: $(tasks.build-image-index.results.IMAGE_URL)
-    runAfter:
-    - build-image-index
-    taskRef:
-      params:
-      - name: name
-        value: roxctl-scan
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-roxctl-scan:0.1@sha256:97e2b2cdca9110fdc8a93ba585a1a1a743f989f2fd85f4073f6e5ea9ad2ce828
-      - name: kind
-        value: task
-      resolver: bundles
-    timeout: 20m
-    when:
-    - input: $(params.skip-checks)
-      operator: in
-      values:
-      - "false"
-  - name: sast-snyk-check
-    params:
-    - name: ARGS
-      value: $(params.snyk-args)
-    - name: image-digest
-      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
-    - name: image-url
-      value: $(tasks.build-image-index.results.IMAGE_URL)
-    - name: TARGET_DIRS
-      value: $(params.sast-target-dirs)
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
-    runAfter:
-    - build-image-index
-    taskRef:
-      params:
-      - name: name
-        value: sast-snyk-check-oci-ta
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-sast-snyk-check-oci-ta:0.5.1@sha256:53443febc3a87ea6d4baacffc70d6f7dbdd1b4e69e0852337661097c73433519
-      - name: kind
-        value: task
-      resolver: bundles
-    when:
-    - input: $(params.skip-checks)
-      operator: in
-      values:
-      - "false"
-  - name: prefetch-dependencies
-    params:
-    - name: dev-package-managers
-      value: $(params.prefetch-input-dev-package-managers)
-    - name: input
-      value: $(params.prefetch-input)
-    - name: enable-package-registry-proxy
-      value: $(params.enable-package-registry-proxy)
-    - name: SOURCE_ARTIFACT
-      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
-    - name: ociStorage
-      value: $(params.output-image).prefetch
-    - name: ociArtifactExpiresAfter
-      value: $(params.image-expires-after)
-    runAfter:
-    - clone-repository
-    taskRef:
-      params:
-      - name: name
-        value: prefetch-dependencies-oci-ta
-      - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.11.0@sha256:e670e563939f8c5582b64b1f693ae104a3f4cba4dfd651ecbd15f341307c86b9
-      - name: kind
-        value: task
-      resolver: bundles
-    workspaces:
-    - name: git-basic-auth
-      workspace: git-auth
-    - name: netrc
-      workspace: netrc
   - name: apply-tags
     params:
     - name: ADDITIONAL_TAGS
@@ -280,6 +183,34 @@ spec:
     workspaces:
     - name: basic-auth
       workspace: git-auth
+  - name: prefetch-dependencies
+    params:
+    - name: input
+      value: $(params.prefetch-input)
+    - name: enable-package-registry-proxy
+      value: $(params.enable-package-registry-proxy)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+    - name: ociStorage
+      value: $(params.output-image).prefetch
+    - name: ociArtifactExpiresAfter
+      value: $(params.image-expires-after)
+    runAfter:
+    - clone-repository
+    taskRef:
+      params:
+      - name: name
+        value: prefetch-dependencies-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.11.0@sha256:e670e563939f8c5582b64b1f693ae104a3f4cba4dfd651ecbd15f341307c86b9
+      - name: kind
+        value: task
+      resolver: bundles
+    workspaces:
+    - name: git-basic-auth
+      workspace: git-auth
+    - name: netrc
+      workspace: netrc
   - matrix:
       params:
       - name: PLATFORM
@@ -412,6 +343,33 @@ spec:
       - "false"
   - matrix:
       params:
+      - name: image-platform
+        value:
+        - $(params.build-platforms)
+    name: roxctl-scan
+    params:
+    - name: image-digest
+      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
+    - name: image-url
+      value: $(tasks.build-image-index.results.IMAGE_URL)
+    runAfter:
+    - build-image-index
+    taskRef:
+      params:
+      - name: name
+        value: roxctl-scan
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-roxctl-scan:0.1@sha256:3841b3d56dad2fad1feebf03af775ac4f0baa627808db0621b52decea658bd7b
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values:
+      - "false"
+  - matrix:
+      params:
       - name: platform
         value:
         - $(params.build-platforms)
@@ -427,6 +385,32 @@ spec:
         value: ecosystem-cert-preflight-checks
       - name: bundle
         value: quay.io/konflux-ci/tekton-catalog/task-ecosystem-cert-preflight-checks:0.2@sha256:cc7d71d9be01e9221d8753a1f1a7caaf0fb93048df69e9a95c359068dc730578
+      - name: kind
+        value: task
+      resolver: bundles
+    when:
+    - input: $(params.skip-checks)
+      operator: in
+      values:
+      - "false"
+  - name: sast-snyk-check
+    params:
+    - name: image-digest
+      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
+    - name: image-url
+      value: $(tasks.build-image-index.results.IMAGE_URL)
+    - name: TARGET_DIRS
+      value: $(params.sast-target-dirs)
+    - name: SOURCE_ARTIFACT
+      value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+    runAfter:
+    - build-image-index
+    taskRef:
+      params:
+      - name: name
+        value: sast-snyk-check-oci-ta
+      - name: bundle
+        value: quay.io/konflux-ci/tekton-catalog/task-sast-snyk-check-oci-ta:0.5.1@sha256:53443febc3a87ea6d4baacffc70d6f7dbdd1b4e69e0852337661097c73433519
       - name: kind
         value: task
       resolver: bundles

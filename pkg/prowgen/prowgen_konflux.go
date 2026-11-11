@@ -544,8 +544,7 @@ func getCLIArtifactsImage(ocpVersion string) (string, error) {
 func getPrefetchDeps(repo Repository) (*konfluxgen.PrefetchDeps, error) {
 	prefetchDeps := konfluxgen.PrefetchDeps{}
 	if _, err := os.Stat(filepath.Join(repo.RepositoryDirectory(), "rpms.lock.yaml")); err == nil {
-		// If rpms.lock.yaml is present enable dev-package-managers and RPM caching
-		prefetchDeps.DevPackageManagers = "true"
+		// If rpms.lock.yaml is present enable RPM caching
 		prefetchDeps.WithRPMs()
 	}
 
