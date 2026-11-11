@@ -168,7 +168,11 @@ func (pd *PrefetchDeps) WithRPMs() {
 	pd.PrefetchInput = string(b)
 }
 
-func (pd *PrefetchDeps) WithUnvendoredGo(path string) {
+// WithGoModules enables gomod prefetch for the Go module at the given path.
+// Works for both vendored and unvendored modules: Hermeto downloads unvendored
+// dependencies, and for vendored ones it validates the vendor directory and
+// reports the dependencies with hermeto:found_by annotations.
+func (pd *PrefetchDeps) WithGoModules(path string) {
 	types := make([]map[string]interface{}, 0)
 	if pd.PrefetchInput != "" {
 		if err := json.Unmarshal([]byte(pd.PrefetchInput), &types); err != nil {
