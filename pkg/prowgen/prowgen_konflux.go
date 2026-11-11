@@ -2,7 +2,9 @@ package prowgen
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -205,7 +207,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 
 						nudges := b.Konflux.Nudges
 
-						prefetchDeps, err := getPrefetchDeps(r)
+						prefetchDeps, err := getPrefetchDeps(r, targetBranch)
 						if err != nil {
 							return fmt.Errorf("could not get prefetchDeps: %w", err)
 						}
@@ -422,7 +424,7 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 			buildArgs = append(buildArgs, fmt.Sprintf("CLI_ARTIFACTS=%s", cliImage))
 		}
 
-		prefetchDeps, err := getPrefetchDeps(r)
+		prefetchDeps, err := getPrefetchDeps(r, branch)
 		if err != nil {
 			return fmt.Errorf("could not get prefetchDeps: %w", err)
 		}
@@ -541,7 +543,7 @@ func getCLIArtifactsImage(ocpVersion string) (string, error) {
 	}
 }
 
-func getPrefetchDeps(repo Repository) (*konfluxgen.PrefetchDeps, error) {
+func getPrefetchDeps(repo Repository, branch string) (*konfluxgen.PrefetchDeps, error) {
 	prefetchDeps := konfluxgen.PrefetchDeps{}
 	if _, err := os.Stat(filepath.Join(repo.RepositoryDirectory(), "rpms.lock.yaml")); err == nil {
 		// If rpms.lock.yaml is present enable dev-package-managers and RPM caching
@@ -549,13 +551,15 @@ func getPrefetchDeps(repo Repository) (*konfluxgen.PrefetchDeps, error) {
 		prefetchDeps.WithRPMs()
 	}
 
-	// Enable gomod prefetch for all Go projects. For repositories with vendored
-	// dependencies Hermeto does not download anything, but it validates the vendor
-	// directory and reports the dependencies with hermeto:found_by annotations,
-	// which is required by the sbom_spdx.hermeto_attribution_required policy rule
-	// (becomes a failure on 2027-01-15).
-	if _, err := os.Stat(filepath.Join(repo.RepositoryDirectory(), "go.mod")); err == nil {
-		prefetchDeps.WithGoModules("." /* root of the repository */)
+	_, err := os.Stat(filepath.Join(repo.RepositoryDirectory(), "vendor"))
+	if err != nil {
+		if !errors.Is(err, fs.ErrNotExist) {
+			return nil, fmt.Errorf("[%s - %s] failed to verify if the project uses Go vendoring: %w", repo.RepositoryDirectory(), branch, err)
+		}
+		if _, err := os.Stat(filepath.Join(repo.RepositoryDirectory(), "go.mod")); err == nil {
+			// If it's a Go project and no vendor dir is present enable Go caching
+			prefetchDeps.WithUnvendoredGo("." /* root of the repository */)
+		}
 	}
 
 	if repo.IsEventingIntegrations() {
