@@ -2,7 +2,6 @@ apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
   labels:
-    app.kubernetes.io/version: "0.1"
     pipelines.openshift.io/runtime: fbc
     pipelines.openshift.io/strategy: fbc
     pipelines.openshift.io/used-by: build-cloud
