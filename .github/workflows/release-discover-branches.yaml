@@ -27,9 +27,14 @@ jobs:
       - name: Setup Golang
         uses: ./src/github.com/openshift-knative/hack/actions/setup-go
 
-      - uses: tektoncd/actions/setup-tektoncd-cli@main
-        with:
-          version: latest
+      - name: Install tkn
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          url=$(curl -s https://api.github.com/repos/tektoncd/cli/releases/latest \
+            | jq -r '.assets[] | select(.name | test("tkn_.*_Linux_x86_64.tar.gz$")).browser_download_url')
+          curl -sL "$url" | tar -xz -C "$HOME/.local/bin" tkn
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          tkn version
 
       - name: Configure Git user
         run: |
