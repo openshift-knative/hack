@@ -4,6 +4,13 @@ kind: Kustomization
 resources:
   - ../fbc-builder.yaml
 patches:
+  # The prefetch patch must run first: it addresses tasks/params by index in the
+  # pristine upstream fbc-builder.yaml layout, before the strategic-merge patches
+  # below relocate the tasks they touch.
+  - path: patch_prefetch_artifact.patch.yaml
+    target:
+      kind: Pipeline
+      name: fbc-builder
   - path: ../patch_additional_tags.patch.yaml
     target:
       kind: Pipeline
