@@ -24,6 +24,13 @@ func GenerateOwners(ctx context.Context, configs []*Config) error {
 		config := config
 		eg.Go(func() error {
 			for _, r := range config.Repositories {
+				if genCache.Skip(ctx, r) {
+					if err := genCache.RestoreBranches(ctx, r); err != nil {
+						return err
+					}
+					continue
+				}
+
 				branchesInGit, err := Branches(ctx, r, "*")
 				if err != nil {
 					return fmt.Errorf("could not get branches for %q: %w", r.Repo, err)
@@ -52,6 +59,10 @@ func GenerateOwners(ctx context.Context, configs []*Config) error {
 					if err := createOwnersFile(ctx, r, "main"); err != nil {
 						return fmt.Errorf("failed to create ownersfile for branch main: %w", err)
 					}
+				}
+
+				if err := genCache.SnapshotBranches(ctx, r); err != nil {
+					return err
 				}
 			}
 
@@ -88,6 +99,7 @@ func createOwnersFile(ctx context.Context, r Repository, branchName string) erro
 	if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
 		return err
 	}
+	genCache.RecordBranch(r, pushBranch, branchName)
 
 	// This is a special GH log format: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#example-grouping-log-lines
 	log.Printf("::endgroup::\n\n")

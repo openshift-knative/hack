@@ -42,6 +42,10 @@ type Config struct {
 	DiscoverDisabled bool `json:"discoverDisabled,omitempty" yaml:"discoverDisabled,omitempty"`
 }
 
+// genCache is the generation cache initialized by Main; a nil or disabled
+// cache makes all caching calls no-ops.
+var genCache *GenCache
+
 func Main() {
 	ctx := context.TODO()
 
@@ -58,9 +62,19 @@ func Main() {
 	push := flag.Bool("push", true, "Whether to commit and push the changes")
 	konflux := flag.Bool("konflux", true, "Whether to generate Konflux config")
 	owners := flag.Bool("owners", true, "Whether to generate OWNERS files")
+	cacheDir := flag.String("cache-dir", DefaultGenCacheDir, "Generation cache directory, repositories whose generation inputs are unchanged are restored from it instead of being regenerated (empty disables caching)")
 	flag.Parse()
 
 	log.Println(*inputConfig, *outConfig)
+
+	// The cache key must reflect what is (and is not) generated.
+	var err error
+	genCache, err = NewGenCache(ctx, *cacheDir, fmt.Sprintf(
+		"config=%s build=%t konflux=%t owners=%t", *inputConfig, *build, *konflux, *owners))
+	if err != nil {
+		log.Fatalln("Failed to initialize generation cache:", err)
+	}
+	defer genCache.Save()
 
 	var inConfigs []*Config
 
@@ -120,14 +134,26 @@ func Main() {
 
 			repositoriesGenerateConfigs.Go(func() error {
 
-				cfgs, err := NewGenerateConfigs(generatorsCtx, repository, inConfig.Config)
-				if err != nil {
-					return err
+				skip := genCache.Skip(generatorsCtx, repository)
+
+				var cfgs []ReleaseBuildConfiguration
+				if !skip {
+					var err error
+					cfgs, err = NewGenerateConfigs(generatorsCtx, repository, inConfig.Config)
+					if err != nil {
+						return err
+					}
 				}
 
 				// Wait for the openshift/release initialization goroutine.
 				if err := openshiftReleaseInitialization.Wait(); err != nil {
 					return fmt.Errorf("failed waiting for %s initialization: %w", openShiftRelease.RepositoryDirectory(), err)
+				}
+
+				if skip {
+					// Restore the previously generated openshift/release files
+					// (initialization deleted them).
+					return genCache.RestoreOSReleaseFiles(repository)
 				}
 
 				// Delete existing configuration for each configured branch.
@@ -152,7 +178,7 @@ func Main() {
 					return err
 				}
 
-				return nil
+				return genCache.RecordOSReleaseFiles(repository)
 			})
 		}
 	}
