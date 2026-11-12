@@ -1,18 +1,4 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "enabledManagers": ["tekton"],
-  "commitMessagePrefix": "[{{baseBranch}}]",
-  "ignorePaths": [
-    "**/.konflux-release/**",
-    "**/override-snapshot.yaml",
-    "third_party/**",
-    "vendor/**",
-    "**/images-rekt.yaml"
-  ],
-  "packageRules": [
-    {
-      "matchManagers": ["tekton"],
-      "labels": ["skip-review"]
-    }
-  ]
+  "extends": ["github>openshift-knative/hack//renovate/default.json"]
 }

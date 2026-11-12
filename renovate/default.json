@@ -1,0 +1,19 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Shared Renovate preset for openshift-knative repositories. Note: MintMaker's instance config (https://github.com/konflux-ci/mintmaker/blob/main/config/renovate/renovate.json) is inherited implicitly as the merge base for every managed repository - do not extend it explicitly here. This file only contains org-specific deltas.",
+  "enabledManagers": ["tekton"],
+  "commitMessagePrefix": "[{{baseBranch}}]",
+  "ignorePaths": [
+    "**/.konflux-release/**",
+    "**/override-snapshot.yaml",
+    "third_party/**",
+    "vendor/**",
+    "**/images-rekt.yaml"
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["tekton"],
+      "labels": ["skip-review"]
+    }
+  ]
+}
