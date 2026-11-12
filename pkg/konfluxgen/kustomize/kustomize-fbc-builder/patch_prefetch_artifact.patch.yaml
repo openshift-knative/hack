@@ -1,0 +1,17 @@
+# Task bundles renamed the hermetic artifact param/result from CACHI2_ARTIFACT to
+# PREFETCH_ARTIFACT (prefetch-dependencies-oci-ta 0.11+, buildah-remote-oci-ta 0.14.1+).
+# The upstream pipeline-fbc-builder bundle in quay.io/konflux-ci/tekton-catalog is not
+# migrated yet, so rename it here to match the task versions renovate bumps to.
+# JSON6902 ops instead of a strategic-merge patch: strategic merge relocates the
+# patched task/param to the front of their lists, while these ops rename in place.
+# The `test` op guards against silent mispatching if the upstream pipeline sync
+# shifts the task/param indices -- kustomize build then fails loudly instead.
+- op: test
+  path: /spec/tasks/5/params/16/name
+  value: CACHI2_ARTIFACT
+- op: replace
+  path: /spec/tasks/5/params/16/name
+  value: PREFETCH_ARTIFACT
+- op: replace
+  path: /spec/tasks/5/params/16/value
+  value: $(tasks.prefetch-dependencies.results.PREFETCH_ARTIFACT)
