@@ -329,24 +329,27 @@ func ServerlessOperatorKonfluxVersions(ctx context.Context) (map[string]string, 
 		return nil, fmt.Errorf("failed to load config for %q: %w", r.RepositoryDirectory(), err)
 	}
 
+	// Generate Konflux resources for every release branch that is configured
+	// in config/serverless-operator.yaml (i.e. still supported) and exists in
+	// the repository. The discovery job adds new branches to the config and
+	// removes unsupported (EOL) ones, so the config is the source of truth
+	// for the supported versions.
 	konfluxVersions := make(map[string]string, len(sortedBranches))
-	for i, branch := range sortedBranches {
-		// First branch we will build the operator with konflux
-		if v := os.Getenv("FIRST_KONFLUX_BRANCH"); (v != "" && v == branch) || branch == "release-1.35" {
-			for j := i; j < len(sortedBranches); j++ {
-				konfluxVersions[sortedBranches[j]] = sortedBranches[j]
-			}
+	for _, branch := range sortedBranches {
+		if b, ok := config.Config.Branches[branch]; ok && b.Konflux != nil && b.Konflux.Enabled {
+			konfluxVersions[branch] = branch
 		}
+	}
 
-		if b, ok := config.Config.Branches["main"]; ok && b.Konflux.Enabled {
-			last := sortedBranches[len(sortedBranches)-1]
-			last = strings.ReplaceAll(last, "release-v", "")
-			last = strings.ReplaceAll(last, "release-", "")
-			last += ".0"
-			v := semver.New(last)
-			v.BumpMinor()
-			konfluxVersions[fmt.Sprintf("release-%d.%d", v.Major, v.Minor)] = "main"
-		}
+	// The main branch is built as the next (not yet cut) release version.
+	if b, ok := config.Config.Branches["main"]; ok && b.Konflux != nil && b.Konflux.Enabled && len(sortedBranches) > 0 {
+		last := sortedBranches[len(sortedBranches)-1]
+		last = strings.ReplaceAll(last, "release-v", "")
+		last = strings.ReplaceAll(last, "release-", "")
+		last += ".0"
+		v := semver.New(last)
+		v.BumpMinor()
+		konfluxVersions[fmt.Sprintf("release-%d.%d", v.Major, v.Minor)] = "main"
 	}
 
 	log.Println("serverless operator - konflux versions", konfluxVersions)

@@ -6,6 +6,7 @@
 - branch: release-v1.23
 - branch: release-v1.24
 # Serverless branch
+- branch: release-1.35
 - branch: release-1.36
 ###
 # Single repo configs
