@@ -302,3 +302,39 @@ func TestGenCacheRestoreEmptyBranch(t *testing.T) {
 		t.Fatalf("empty sync branch must be restored at the target tip, got %v", refs)
 	}
 }
+
+func TestGenCacheLocalHeadsFiltersIrrelevantBranches(t *testing.T) {
+	gencacheTestEnv(t)
+	ctx := context.Background()
+	r := Repository{Org: "openshift-knative", Repo: "testrepo"}
+	initTestRepo(t, r)
+
+	// Branches generation actually reads.
+	gitTestCmd(t, r, "git", "branch", "release-v1.17")
+	gitTestCmd(t, r, "git", "branch", "release-1.36")
+	gitTestCmd(t, r, "git", "branch", "release-next")
+	// Branches generation never reads: automation, konflux and personal
+	// branches that move constantly and must not invalidate the cache key.
+	gitTestCmd(t, r, "git", "branch", "auto/update-generated-files-release-1.37")
+	gitTestCmd(t, r, "git", "branch", "konflux-purge-kn-test-116")
+	gitTestCmd(t, r, "git", "branch", "konflux/references/release-v1.17")
+	gitTestCmd(t, r, "git", "branch", "dependabot/go_modules/main-x")
+	gitTestCmd(t, r, "git", "branch", "somebody-patch-1")
+	gitTestCmd(t, r, "git", "branch", "appstudio-kn-test-115")
+
+	heads, err := genCacheLocalHeads(ctx, r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]bool{"main": true, "release-v1.17": true, "release-1.36": true, "release-next": true}
+	for branch := range heads {
+		if !want[branch] {
+			t.Errorf("irrelevant branch %q leaked into cache heads", branch)
+		}
+	}
+	for branch := range want {
+		if _, ok := heads[branch]; !ok {
+			t.Errorf("relevant branch %q missing from cache heads", branch)
+		}
+	}
+}

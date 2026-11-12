@@ -74,7 +74,11 @@ func Main() {
 	if err != nil {
 		log.Fatalln("Failed to initialize generation cache:", err)
 	}
-	defer genCache.Save()
+	defer func() {
+		if err := genCache.Save(); err != nil {
+			log.Println("Failed to save generation cache:", err)
+		}
+	}()
 
 	var inConfigs []*Config
 
@@ -184,30 +188,30 @@ func Main() {
 	}
 	// Wait for the openshift/release initialization goroutine and repositories generators goroutines.
 	if err := openshiftReleaseInitialization.Wait(); err != nil {
-		log.Fatalln("Failed waiting for", openShiftRelease.RepositoryDirectory(), "initialization", err)
+		genCache.Fatalf("Failed waiting for %s initialization: %v", openShiftRelease.RepositoryDirectory(), err)
 	}
 
 	if err := repositoriesGenerateConfigs.Wait(); err != nil {
-		log.Fatalln("Failed waiting for repositories generator", err)
+		genCache.Fatalf("Failed waiting for repositories generator: %v", err)
 	}
 	if *build {
 		if err := RunOpenShiftReleaseGenerator(ctx, openShiftRelease); err != nil {
-			log.Fatalln("Failed to run openshift/release generator:", err)
+			genCache.Fatalf("Failed to run openshift/release generator: %v", err)
 		}
 	}
 	if *push {
 		if err := PushBranch(ctx, openShiftRelease, remote, *branch, "Sync Serverless CI "+*inputConfig); err != nil {
-			log.Fatalln("Failed to push branch to openshift/release fork", *remote, err)
+			genCache.Fatalf("Failed to push branch to openshift/release fork %s: %v", *remote, err)
 		}
 	}
 	if *konflux {
 		if err := GenerateKonflux(ctx, openShiftRelease, inConfigs); err != nil {
-			log.Fatalln("Failed to generate Konflux configurations: %w", err)
+			genCache.Fatalf("Failed to generate Konflux configurations: %v", err)
 		}
 	}
 	if *owners {
 		if err := GenerateOwners(ctx, inConfigs); err != nil {
-			log.Fatalln("Failed to generate OWNERS files: %w", err)
+			genCache.Fatalf("Failed to generate OWNERS files: %v", err)
 		}
 	}
 }

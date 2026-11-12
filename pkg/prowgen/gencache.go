@@ -13,9 +13,6 @@ import (
 	"sort"
 	"strings"
 	"sync"
-
-	"github.com/openshift-knative/hack/pkg/dependabotgen"
-	"github.com/openshift-knative/hack/pkg/ownersfilegen"
 )
 
 // Generation cache: prowgen's output for a repository is a deterministic
@@ -159,10 +156,13 @@ func (c *GenCache) Skip(ctx context.Context, r Repository) bool {
 	c.mu.Lock()
 	entry := c.entries[key]
 	c.mu.Unlock()
-	skip := entry != nil &&
-		entry.GenHash == c.genHash &&
-		genCacheHeadsEqual(entry.RepoHeads, heads) &&
-		genCacheHeadsEqual(entry.SOHeads, soHeads)
+	genHashMatch := entry != nil && entry.GenHash == c.genHash
+	repoHeadsMatch := entry != nil && genCacheHeadsEqual(entry.RepoHeads, heads)
+	soHeadsMatch := entry != nil && genCacheHeadsEqual(entry.SOHeads, soHeads)
+	skip := genHashMatch && repoHeadsMatch && soHeadsMatch
+
+	log.Printf("[%s] generation cache: skip=%v (genHash=%v repoHeads=%v soHeads=%v, entry=%v)",
+		key, skip, genHashMatch, repoHeadsMatch, soHeadsMatch, entry != nil)
 
 	return c.decide(key, skip, heads, soHeads)
 }
@@ -261,6 +261,7 @@ func (c *GenCache) SnapshotBranches(ctx context.Context, r Repository) error {
 	c.mu.Lock()
 	c.dirty = true
 	c.mu.Unlock()
+	log.Printf("[%s] generation cache: snapshotted %d sync branches", key, len(branches))
 	return nil
 }
 
@@ -349,6 +350,7 @@ func (c *GenCache) RecordOSReleaseFiles(r Repository) error {
 	c.mu.Lock()
 	c.dirty = true
 	c.mu.Unlock()
+	log.Printf("[%s] generation cache: recorded %d openshift/release files", r.RepositoryDirectory(), len(files))
 	return nil
 }
 
@@ -396,7 +398,21 @@ func (c *GenCache) Save() error {
 	if err := os.WriteFile(tmp, data, 0600); err != nil {
 		return err
 	}
-	return os.Rename(tmp, state)
+	if err := os.Rename(tmp, state); err != nil {
+		return err
+	}
+	log.Printf("generation cache: saved %d entries (%d bytes) to %s", len(c.entries), len(data), state)
+	return nil
+}
+
+// Fatalf saves the cache state and then exits fatally, so that a failed
+// generation run does not silently discard what was recorded so far (a plain
+// log.Fatalln would skip the deferred Save via os.Exit).
+func (c *GenCache) Fatalf(format string, args ...any) {
+	if err := c.Save(); err != nil {
+		log.Printf("generation cache: failed to save state: %v", err)
+	}
+	log.Fatalf(format, args...)
 }
 
 func (c *GenCache) patchDir(repoKey, branch string) string {
@@ -440,8 +456,13 @@ func genCacheResolveRef(ctx context.Context, r Repository, branch string) (strin
 }
 
 // genCacheLocalHeads returns the branch -> sha map of a repository workspace,
-// combining local and remote-tracking refs and excluding prowgen's own sync
-// branches (which would make the key self-referential across runs).
+// combining local and remote-tracking refs and keeping only branches that are
+// generation inputs: main, release-next and release branches. Prowgen's own
+// sync branches are excluded (they would make the key self-referential), and
+// so are automation branches (auto/*, konflux/*, dependabot/*, personal
+// patches) that generation never reads - serverless-operator in particular
+// has constantly-moving automation branches that would otherwise invalidate
+// every repository's cache key on every run.
 func genCacheLocalHeads(ctx context.Context, r Repository) (map[string]string, error) {
 	out, err := Run(ctx, r, "git", "for-each-ref", "--format=%(refname) %(objectname)", "refs/heads", "refs/remotes/origin")
 	if err != nil {
@@ -458,14 +479,24 @@ func genCacheLocalHeads(ctx context.Context, r Repository) (map[string]string, e
 		if branch == "HEAD" || branch == ref {
 			continue
 		}
-		if strings.HasPrefix(branch, KonfluxBranchPrefix) ||
-			strings.HasPrefix(branch, ownersfilegen.SyncBranchPrefix) ||
-			strings.HasPrefix(branch, dependabotgen.SyncBranchPrefix) {
+		if !genCacheRelevantBranch(branch) {
 			continue
 		}
 		heads[branch] = sha
 	}
 	return heads, nil
+}
+
+// genCacheRelevantBranch reports whether a branch is a generation input:
+// the branches prowgen checks out (configured target branches) are main,
+// release-next and release-* branches. This is the documented assumption
+// behind the generation cache key; a config change that introduces a
+// differently-named branch still invalidates the cache via the generation
+// hash (config/ is hashed).
+func genCacheRelevantBranch(branch string) bool {
+	return branch == "main" ||
+		branch == "release-next" ||
+		strings.HasPrefix(branch, "release-")
 }
 
 func genCacheHeadsEqual(a, b map[string]string) bool {
