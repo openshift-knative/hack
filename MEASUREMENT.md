@@ -15,3 +15,5 @@ the cache.
 ## Run 2 — warm (docs-only commit, generation hash unchanged)
 
 - Pending — recorded on the PR after completion.
+
+- Run 2 note: warm run at 18:41 did not skip (under investigation); re-recorded state from full regeneration.
