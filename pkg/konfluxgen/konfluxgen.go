@@ -137,7 +137,6 @@ type Config struct {
 }
 
 type PrefetchDeps struct {
-	DevPackageManagers string
 	/*
 		Example: '[{ "type": "rpm" }, {"type": "gomod", "path": "."}]'
 	*/

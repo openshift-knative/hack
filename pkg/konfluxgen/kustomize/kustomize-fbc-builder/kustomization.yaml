@@ -13,11 +13,5 @@ patches:
   - path: patch_opm_before_lifecycle.patch.yaml
     target:
       kind: Pipeline
-  - path: ../patch_source_image.patch.yaml
-    target:
-      kind: Pipeline
-  - path: ../patch_build_platforms_default.patch.yaml
-    target:
-      kind: Pipeline
 openapi:
   path: ../pipeline_schema.json
