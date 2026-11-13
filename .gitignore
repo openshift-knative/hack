@@ -23,3 +23,6 @@ rpms.lock.yaml
 
 # MacOS
 .DS_Store
+
+# prowgen generation cache
+/.prowgen-cache
