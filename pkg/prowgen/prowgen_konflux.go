@@ -602,6 +602,11 @@ func generateFBCApplications(soMetadata *project.Metadata, openshiftRelease Repo
 			PipelinesOutputPath:       fmt.Sprintf("%s/.tekton", r.RepositoryDirectory()),
 			AdditionalTektonCELExpressionFunc: func(cfg cioperatorapi.ReleaseBuildConfiguration, ib cioperatorapi.ProjectDirectoryImageBuildStepConfiguration) string {
 				return fmt.Sprintf("&& ("+
+					// The catalog template is shared across OCP versions, the per-version
+					// v<ver>/catalog-template.yaml files are symlinks to it. The symlink
+					// blobs do not change when the shared template is updated, so the
+					// shared file must be matched explicitly to trigger the FBC pipelines.
+					" files.all.exists(x, x.matches('^olm-catalog/serverless-operator-index/catalog-template.yaml$')) ||"+
 					" files.all.exists(x, x.matches('^olm-catalog/serverless-operator-index/v%s/')) ||"+
 					" files.all.exists(x, x.matches('^.tekton/'))"+
 					" )", ocpVersion)
