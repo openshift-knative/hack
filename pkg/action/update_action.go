@@ -97,14 +97,18 @@ repo="%s"
 branch="%s"
 target_branch="%s"
 git remote add fork "https://github.com/serverless-qe/$repo.git" || true # ignore: already exists errors
+git fetch origin "$target_branch"
+git fetch fork "$branch"
+git rebase --quiet "$target_branch" "$branch"
+if git diff --quiet "$target_branch" "$branch"; then
+  echo "[$repo] $branch has no changes against $target_branch, skipping push and PR creation"
+  exit 0
+fi
 remote_exists=$(git ls-remote --heads fork "$branch")
 if [ -z "$remote_exists" ]; then
   # remote doesn't exist.
   git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f || exit 1
 fi
-git fetch origin "$target_branch"
-git fetch fork "$branch"
-git rebase --quiet "$target_branch" "$branch"
 git push "https://serverless-qe:${GH_TOKEN}@github.com/serverless-qe/$repo.git" "$branch:$branch" -f
 gh pr create --base "$target_branch" --head "serverless-qe:$branch" --title "[$target_branch] %[4]v" --body "%[4]v" || true
 `, repo, branch, targetBranch, msg)
