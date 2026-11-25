@@ -22,6 +22,7 @@ spec:
     - serverless-operator-137-fbc-422
     - serverless-operator-137-fbc-50
     - serverless-operator-137-fbc-423
+    - serverless-operator-137-fbc-51
   origin: ocp-serverless-tenant
   policy: fbc-ocp-serverless-prod
   data:
