@@ -2,7 +2,7 @@ apiVersion: appstudio.redhat.com/v1alpha1
 kind: ReleasePlan
 metadata:
   labels:
-    release.appstudio.openshift.io/auto-release: 'true'
+    release.appstudio.openshift.io/auto-release: 'false'
     release.appstudio.openshift.io/releasePlanAdmission: 'serverless-operator-137-1372-fbc-stage'
     release.appstudio.openshift.io/standing-attribution: 'true'
   name: serverless-operator-137-fbc-419-1372-stage
