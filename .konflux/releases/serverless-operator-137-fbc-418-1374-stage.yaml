@@ -3,7 +3,7 @@ kind: Release
 metadata:
   name: serverless-operator-137-fbc-418-1374-stage
 spec:
-  snapshot: serverless-operator-137-fbc-418-override-snapshot-c3bac174
+  snapshot: serverless-operator-137-fbc-418-override-snapshot-884517d5
   releasePlan: serverless-operator-137-fbc-418-1374-stage
   data:
     releaseNotes:
