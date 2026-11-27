@@ -1253,9 +1253,11 @@ func GenerateComponentsReleasePlans(resourceOutputPath string, appName string, s
 	}
 
 	stage := ReleasePlan{
-		Name:                     planNameFunc(appName, soVersion, StageEnv),
-		ApplicationName:          appName,
-		AutoRelease:              "true", // Auto release for stage
+		Name:            planNameFunc(appName, soVersion, StageEnv),
+		ApplicationName: appName,
+		// Auto-release creates a conflict with same images being pushed with override snapshot
+		// and previous auto-release successful run. Temporarily disabled until we figure out the correct flow.
+		AutoRelease:              "false", // Auto release for stage
 		ReleasePlanAdmissionName: rpaNameFunc(appName, soVersion, StageEnv),
 		SOVersion:                soVersion,
 	}
