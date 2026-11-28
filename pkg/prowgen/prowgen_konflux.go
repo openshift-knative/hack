@@ -61,6 +61,13 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 					continue
 				}
 
+				if genCache.Skip(ctx, r) {
+					if err := genCache.RestoreBranches(ctx, r); err != nil {
+						return err
+					}
+					continue
+				}
+
 				dependabotConfig := dependabotgen.NewDependabotConfig()
 
 				for branchName, b := range config.Config.Branches {
@@ -203,6 +210,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 							if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
 								return err
 							}
+							genCache.RecordBranch(r, pushBranch, targetBranch)
 						}
 
 						nudges := b.Konflux.Nudges
@@ -251,6 +259,7 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 						if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
 							return err
 						}
+						genCache.RecordBranch(r, pushBranch, targetBranch)
 
 						// This is a special GH log format: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#example-grouping-log-lines
 						log.Printf("::endgroup::\n\n")
@@ -258,6 +267,10 @@ func GenerateKonflux(ctx context.Context, openshiftRelease Repository, configs [
 				}
 
 				if err := writeDependabotConfig(ctx, dependabotConfig, r); err != nil {
+					return err
+				}
+
+				if err := genCache.SnapshotBranches(ctx, r); err != nil {
 					return err
 				}
 
@@ -297,6 +310,7 @@ func writeDependabotConfig(ctx context.Context, dependabotConfig *dependabotgen.
 		if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
 			return err
 		}
+		genCache.RecordBranch(r, pushBranch, dependabotgen.DefaultTargetBranch)
 	} else {
 		log.Println("No dependabot configurations")
 	}
@@ -358,6 +372,10 @@ func ServerlessOperatorKonfluxVersions(ctx context.Context) (map[string]string, 
 }
 
 func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Repository, r Repository, config *Config) error {
+
+	if genCache.Skip(ctx, r) {
+		return genCache.RestoreBranches(ctx, r)
+	}
 
 	dependabotConfig := dependabotgen.NewDependabotConfig()
 
@@ -515,6 +533,7 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 		if err := PushBranch(ctx, r, nil, pushBranch, commitMsg); err != nil {
 			return err
 		}
+		genCache.RecordBranch(r, pushBranch, branch)
 
 		// This is a special GH log format: https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/workflow-commands-for-github-actions#example-grouping-log-lines
 		log.Printf("::endgroup::\n\n")
@@ -524,7 +543,7 @@ func GenerateKonfluxServerlessOperator(ctx context.Context, openshiftRelease Rep
 		return err
 	}
 
-	return nil
+	return genCache.SnapshotBranches(ctx, r)
 }
 
 func getCLIArtifactsImage(ocpVersion string) (string, error) {

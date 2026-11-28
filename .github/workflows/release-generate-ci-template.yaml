@@ -74,6 +74,14 @@ jobs:
           git config --global user.email "serverless-support@redhat.com"
           git config --global user.name "serverless-qe"
 
+      - name: Restore generation cache
+        uses: actions/cache@v4
+        with:
+          path: ./src/github.com/openshift-knative/hack/.prowgen-cache
+          key: prowgen-gencache-${{ github.run_id }}
+          restore-keys: |
+            prowgen-gencache-
+
       - name: Generate CI
         working-directory: ./src/github.com/openshift-knative/hack
         run: make generate-ci-no-clean ARGS=--branch=main
